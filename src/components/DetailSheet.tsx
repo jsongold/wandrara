@@ -1,11 +1,14 @@
 "use client";
 
-// 詳細を下からスライドさせて出すシート。ハンドルを下に引く・背景を押す・Esc で閉じる（router.back）。
+// 詳細を下からスライドさせて出すシート。ハンドルを下に引く・背景を押す・Esc・閉じるで閉じる（router.back）。
+// 上がる動きは CSS（globals.css の .sheet-panel）。閉じるときは下へ滑らせてから戻る。
+// ブラウザの戻る（iOS の戻るスワイプなど）で閉じたときは、ブラウザ側の動きに任せる。
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { SheetCloseContext } from "./sheet-context";
 
 const CLOSE_DISTANCE = 120; // これ以上引き下げたら閉じる（px）
-const CLOSE_MS = 220;
+const CLOSE_MS = 320; // globals.css の --sheet-close-ms と合わせる
 
 export function DetailSheet({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -44,18 +47,18 @@ export function DetailSheet({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label="スポットの詳細">
+    <div data-sheet={closing ? "closing" : "open"} className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label="スポットの詳細">
       <button
         type="button"
         aria-label="閉じる"
         onClick={close}
-        className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${closing ? "opacity-0" : "animate-[sheet-fade_200ms_ease-out]"}`}
+        className={`sheet-backdrop absolute inset-0 bg-black/50 transition-opacity duration-300 ${closing ? "opacity-0" : ""}`}
       />
       <div
-        className="relative flex h-[94dvh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-3xl bg-[#f7f6f2] shadow-2xl motion-safe:animate-[sheet-up_300ms_cubic-bezier(0.2,0.8,0.2,1)]"
+        className="sheet-panel relative flex h-[94dvh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-3xl bg-[#f7f6f2] shadow-2xl"
         style={{
           transform: closing ? "translateY(100%)" : `translateY(${dragY}px)`,
-          transition: dragging ? "none" : `transform ${CLOSE_MS}ms ease-out`,
+          transition: dragging ? "none" : `transform ${CLOSE_MS}ms cubic-bezier(0.32, 0.72, 0, 1)`,
         }}
       >
         <div
@@ -68,7 +71,9 @@ export function DetailSheet({ children }: { children: ReactNode }) {
         >
           <span className="h-1.5 w-11 rounded-full bg-white/80 shadow" />
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <SheetCloseContext value={close}>{children}</SheetCloseContext>
+        </div>
       </div>
     </div>
   );

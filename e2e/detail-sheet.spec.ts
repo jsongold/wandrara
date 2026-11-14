@@ -73,3 +73,36 @@ test("詳細で再読み込みすると全画面になり、戻るで条件つ�
   await page.getByRole("button", { name: "戻る" }).click();
   await expectHomeWithQuery(page);
 });
+
+test("閉じるときは下へ滑ってから戻り、裏のトップも元の大きさに戻る", async ({ page }) => {
+  await openSheet(page);
+  await expect(page.locator("[data-home]")).toHaveCSS("transform", "matrix(0.94, 0, 0, 0.94, 0, 0)");
+  await sheet(page).getByRole("button", { name: "閉じる" }).last().click();
+  // 滑っている間はまだ詳細の URL のまま
+  await expect(sheet(page).locator(".sheet-panel")).toHaveAttribute("style", /translateY\(100%\)/);
+  await expect(page).toHaveURL(new RegExp(`/spots/${SPOT}$`));
+  await expectHomeWithQuery(page);
+  await expect(page.locator("[data-home]")).toHaveCSS("transform", "none");
+});
+
+async function swipeTo(page: Page, scope: ReturnType<Page["locator"]>, index: number) {
+  // スワイプ＝横スクロール。scroll-snap で 1 枚ずつ止まる
+  await scope.locator("[aria-roledescription=carousel] > div").first().evaluate((el, i) => el.scrollTo({ left: el.clientWidth * i }), index);
+}
+
+test("トップのカードの写真を横にスワイプして切り替え、タップで詳細を開く", async ({ page }) => {
+  const card = page.getByRole("group", { name: /ヴィラ キング 熱海/ }).first();
+  await expect(card.getByText(/^1 \/ \d+$/)).toBeVisible();
+  await swipeTo(page, page.locator("article").first(), 1);
+  await expect(card.getByText(/^2 \/ \d+$/)).toBeVisible();
+  await card.locator("[aria-roledescription=slide]").nth(1).locator("a").click({ force: true });
+  await expect(sheet(page).getByRole("heading", { level: 1 })).toBeVisible();
+});
+
+test("詳細の写真も横にスワイプして切り替えられる", async ({ page }) => {
+  await openSheet(page);
+  const photos = sheet(page).getByRole("group", { name: /ヴィラ キング 熱海/ });
+  await expect(photos.getByText(/^1 \/ \d+$/)).toBeVisible();
+  await swipeTo(page, sheet(page), 2);
+  await expect(photos.getByText(/^3 \/ \d+$/)).toBeVisible();
+});

@@ -85,7 +85,7 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
         areaLabel: areaLabel(s.areaId, catalog.areas, locale),
         kindLabel: KIND_LABEL[s.kind],
         relLabel: "関連する体験",
-        hero: s.photos[0] ?? null,
+        photos: s.photos,
         href: `/spots/${s.id}`,
         anchor: s,
         members: [s],
@@ -106,7 +106,7 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
         areaLabel: `${members.length}か所で体験できる${scope}`,
         kindLabel: "体験",
         relLabel: "体験できる場所",
-        hero: anchor.photos[0] ?? null,
+        photos: anchor.photos,
         href: `/spots/${anchor.id}`,
         anchor,
         members,
@@ -183,7 +183,7 @@ export function buildFeed(ctx: Ctx, strategies: Strategies): FeedPage {
   const ordered = strategies.order(primary, ctx);
   const tiles = dedupeRelatedTiles(strategies.secondary(ordered.cards, ctx));
   const cards: FeedCard[] = ordered.cards.map((c, i) => ({
-    key: c.key, title: c.title, areaLabel: c.areaLabel, kindLabel: c.kindLabel, relLabel: c.relLabel, hero: c.hero, href: c.href, tiles: tiles[i],
+    key: c.key, title: c.title, areaLabel: c.areaLabel, kindLabel: c.kindLabel, relLabel: c.relLabel, photos: c.photos, href: c.href, tiles: tiles[i],
   }));
   return { cards, orderLabel: ordered.label, emptyReason: cards.length === 0 ? "no-match" : null };
 }

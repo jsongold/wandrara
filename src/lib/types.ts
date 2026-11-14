@@ -60,7 +60,7 @@ export type FeedCard = {
   areaLabel: string;   // 例：「箱根・芦ノ湖」、体験カードは「3か所で体験できる」
   kindLabel: string;   // 例：「宿」「体験」
   relLabel: string;    // 例：「関連する体験」「体験できる場所」
-  hero: Photo | null;
+  photos: Photo[]; // 先頭がカードの最初の写真。横にスワイプして切り替える
   href: string;        // 詳細へのリンク（体験カードは先頭の場所）
   tiles: Tile[];
 };
