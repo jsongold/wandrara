@@ -7,13 +7,16 @@ export default defineConfig({
   fullyParallel: false,
   use: {
     baseURL: process.env.BASE_URL ?? `http://localhost:${port}`,
-    ...devices["iPhone 13"],
-    browserName: "chromium",
     // 保護されたプレビューに向けるとき：vercel env run -- で VERCEL_OIDC_TOKEN を渡す
     extraHTTPHeaders: process.env.BASE_URL && process.env.VERCEL_OIDC_TOKEN
       ? { "x-vercel-trusted-oidc-idp-token": process.env.VERCEL_OIDC_TOKEN }
       : undefined,
   },
+  // スマホの画面を Chromium と WebKit（Safari のエンジン）の両方で確かめる
+  projects: [
+    { name: "chromium", use: { ...devices["iPhone 13"], browserName: "chromium" } },
+    { name: "webkit", use: { ...devices["iPhone 13"], browserName: "webkit" } },
+  ],
   webServer: process.env.BASE_URL
     ? undefined
     : { command: `pnpm build && pnpm start --port ${port}`, url: `http://localhost:${port}`, timeout: 180_000, reuseExistingServer: false },

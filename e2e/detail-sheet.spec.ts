@@ -129,3 +129,28 @@ test("端まで引いても、ページ全体の再読み込みやバウンス�
   await openSheet(page);
   expect(await sheet(page).locator(".sheet-backdrop").evaluate((el) => getComputedStyle(el).touchAction)).toBe("none");
 });
+
+async function expectHomeUsable(page: Page) {
+  await page.getByRole("button", { name: /エリアを選ぶ/ }).click();
+  await expect(page.getByText("すべてのエリア")).toBeVisible();
+}
+
+test("閉じてから同じスポットを開き直しても、シートが出て、閉じた後もトップを操作できる", async ({ page }) => {
+  await openSheet(page);
+  await sheet(page).getByRole("button", { name: "閉じる" }).last().click();
+  await expectHomeWithQuery(page);
+  // 閉じたシートは隠れて残る（cacheComponents）。開き直したときに「閉じている途中」のままだと画面が固まる
+  await openSheet(page);
+  await expect(sheet(page).locator(".sheet-panel")).not.toHaveAttribute("style", /translateY\(100%\)/);
+  await page.keyboard.press("Escape");
+  await expectHomeWithQuery(page);
+  await expectHomeUsable(page);
+});
+
+test("ブラウザの戻るで閉じても、裏のトップが縮んだまま残らない", async ({ page }) => {
+  await openSheet(page);
+  await page.goBack();
+  await expectHomeWithQuery(page);
+  await expect(page.locator("[data-home]")).toHaveCSS("transform", "none");
+  await expectHomeUsable(page);
+});

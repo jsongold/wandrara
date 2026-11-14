@@ -54,7 +54,7 @@ body {
 [data-home] {
   transition: transform var(--sheet-open-ms) var(--sheet-ease), filter var(--sheet-open-ms) var(--sheet-ease), border-radius var(--sheet-open-ms) var(--sheet-ease);
 }
-body:has([data-sheet="open"]) [data-home] {
+html[data-sheet="open"] [data-home] {
   transform: scale(0.94);
   border-radius: 16px;
   filter: brightness(0.75);
@@ -64,5 +64,5 @@ body:has([data-sheet="open"]) [data-home] {
 @media (prefers-reduced-motion: reduce) {
   .sheet-panel { animation-name: sheet-fade !important; }
   [data-home] { transition: none; }
-  body:has([data-sheet="open"]) [data-home] { transform: none; border-radius: 0; }
+  html[data-sheet="open"] [data-home] { transform: none; border-radius: 0; }
 }

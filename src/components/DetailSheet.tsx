@@ -29,6 +29,22 @@ export function DetailSheet({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [close]);
 
+  // 裏のトップを縮める合図（globals.css の html[data-sheet]）。表示している間だけ付ける
+  useEffect(() => {
+    const root = document.documentElement;
+    root.dataset.sheet = closing ? "closing" : "open";
+    return () => { delete root.dataset.sheet; };
+  }, [closing]);
+
+  // cacheComponents では閉じたシートが消えずに隠れて残り、同じスポットを開くとそのまま出てくる。
+  // 隠れるときに「閉じている途中」を戻しておかないと、透明な背景が画面を覆ってトップを押せなくなる。
+  useEffect(() => () => {
+    setClosing(false);
+    setDragY(0);
+    setDragging(false);
+    start.current = null;
+  }, []);
+
   function onPointerDown(e: PointerEvent<HTMLDivElement>) {
     start.current = e.clientY;
     setDragging(true);
