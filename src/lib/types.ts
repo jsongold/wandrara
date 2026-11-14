@@ -22,7 +22,7 @@ export type Photo = {
 export type Spot = {
   id: string;
   kind: SpotKind;
-  areaId: string;
+  areaId: string | null;
   name: LocalizedText;
   summary: LocalizedText | null;
   editorialRank: number;
