@@ -31,9 +31,9 @@ function areaIndex(areas: Area[]) {
   return new Map(areas.map((a) => [a.id, a]));
 }
 
-export function areaLabel(areaId: string, areas: Area[], locale: Locale): string {
+export function areaLabel(areaId: string | null, areas: Area[], locale: Locale): string {
   const idx = areaIndex(areas);
-  const a = idx.get(areaId);
+  const a = areaId ? idx.get(areaId) : undefined;
   if (!a) return "";
   const parent = a.parentId ? idx.get(a.parentId) : undefined;
   return parent ? `${t(parent.name, locale)}・${t(a.name, locale)}` : t(a.name, locale);
@@ -42,11 +42,14 @@ export function areaLabel(areaId: string, areas: Area[], locale: Locale): string
 // 指定エリア（地域でも地区でも）に入るか
 export function inArea(spot: Spot, area: string, areas: Area[]): boolean {
   if (area === "all") return true;
+  if (!spot.areaId) return false;
   if (spot.areaId === area) return true;
   return areaIndex(areas).get(spot.areaId)?.parentId === area;
 }
 
-function regionOf(areaId: string, areas: Area[]): string {
+// エリアの無いスポットは地域も無い（null）
+function regionOf(areaId: string | null, areas: Area[]): string | null {
+  if (!areaId) return null;
   const a = areaIndex(areas).get(areaId);
   return a?.parentId ?? areaId;
 }
@@ -82,7 +85,7 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
         areaLabel: areaLabel(s.areaId, catalog.areas, locale),
         kindLabel: KIND_LABEL[s.kind],
         relLabel: "関連する体験",
-        hero: s.photos[0] ?? null,
+        photos: s.photos,
         href: `/spots/${s.id}`,
         anchor: s,
         members: [s],
@@ -103,7 +106,7 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
         areaLabel: `${members.length}か所で体験できる${scope}`,
         kindLabel: "体験",
         relLabel: "体験できる場所",
-        hero: anchor.photos[0] ?? null,
+        photos: anchor.photos,
         href: `/spots/${anchor.id}`,
         anchor,
         members,
@@ -152,7 +155,7 @@ export const relatedExperiences: SecondaryStrategy = (cards, ctx) => {
     const region = regionOf(a.areaId, catalog.areas);
     return catalog.spots
       .filter((s) => s.kind === "experience" && s.id !== a.id && inArea(s, query.area, catalog.areas))
-      .filter((s) => regionOf(s.areaId, catalog.areas) === region)
+      .filter((s) => region !== null && regionOf(s.areaId, catalog.areas) === region)
       .sort((x, y) => Number(y.areaId === a.areaId) - Number(x.areaId === a.areaId) || x.editorialRank - y.editorialRank)
       .slice(0, MAX_TILES)
       .map((s) => tileOf(s, ctx));
@@ -180,7 +183,7 @@ export function buildFeed(ctx: Ctx, strategies: Strategies): FeedPage {
   const ordered = strategies.order(primary, ctx);
   const tiles = dedupeRelatedTiles(strategies.secondary(ordered.cards, ctx));
   const cards: FeedCard[] = ordered.cards.map((c, i) => ({
-    key: c.key, title: c.title, areaLabel: c.areaLabel, kindLabel: c.kindLabel, relLabel: c.relLabel, hero: c.hero, href: c.href, tiles: tiles[i],
+    key: c.key, title: c.title, areaLabel: c.areaLabel, kindLabel: c.kindLabel, relLabel: c.relLabel, photos: c.photos, href: c.href, tiles: tiles[i],
   }));
   return { cards, orderLabel: ordered.label, emptyReason: cards.length === 0 ? "no-match" : null };
 }

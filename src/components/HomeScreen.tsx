@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
+import { saveLastDiscoverUrl } from "@/lib/last-discover";
 import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Photo, SortKey } from "@/lib/types";
 import { Icon } from "./icons";
+import { PhotoCarousel } from "./PhotoCarousel";
 
 type Props = { query: DiscoverQuery; feed: FeedPage; categories: CategoryView[]; areas: AreaGroupView[] };
 type Sheet = null | "area" | "filter" | "login";
@@ -48,6 +50,11 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
   const [isPending, startTransition] = useTransition();
   const [sheet, setSheet] = useState<Sheet>(null);
 
+  // 全画面の詳細から戻るときのために、今の条件を控えておく
+  useEffect(() => {
+    saveLastDiscoverUrl(serializeDiscoverQuery(query));
+  }, [query]);
+
   function go(next: Partial<DiscoverQuery>) {
     const merged: DiscoverQuery = { ...query, ...next };
     startTransition(() => {
@@ -66,7 +73,7 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
   const currentArea = areaName(areas, query.area);
 
   return (
-    <div className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
+    <div data-home className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
       {/* Feed */}
       <div
         className="absolute inset-0 overflow-y-auto pb-[190px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -262,22 +269,18 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
 function FeedCardView({ card }: { card: FeedCard }) {
   return (
     <article className="flex flex-col">
-      <Link
-        href={card.href}
-        aria-label={`${card.title}の詳細を開く`}
-        className="relative block h-[520px] text-white no-underline"
-        style={photoStyle(card.hero)}
-      >
-        {(card.hero?.isDemo ?? true) && (
-          <span className="absolute left-4 top-[76px] rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold tracking-[0.06em]">写真（デモ）</span>
+      {/* 写真は横にスワイプで切り替え、タップで詳細を開く */}
+      <PhotoCarousel photos={card.photos} href={card.href} label={card.title} className="h-[520px] text-white" counterClassName="right-4 top-[76px]">
+        {(card.photos[0]?.isDemo ?? true) && (
+          <span className="pointer-events-none absolute left-4 top-[76px] rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold tracking-[0.06em]">写真（デモ）</span>
         )}
-        <span className="absolute inset-x-0 bottom-0 h-[200px] bg-gradient-to-b from-transparent to-black/60" />
-        <span className="absolute inset-x-4 bottom-5 flex flex-col gap-1.5">
+        <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[200px] bg-gradient-to-b from-transparent to-black/60" />
+        <span className="pointer-events-none absolute inset-x-4 bottom-5 flex flex-col gap-1.5">
           <span className="self-start rounded-md border border-white/50 px-2 py-[3px] text-[11px] font-semibold">{card.kindLabel}</span>
           <span className="text-2xl font-bold leading-[1.3]">{card.title}</span>
           <span className="text-[13px] text-white/90">{card.areaLabel}</span>
         </span>
-      </Link>
+      </PhotoCarousel>
       {card.tiles.length > 0 && (
         <section className="flex flex-col gap-2.5 px-3 pb-7 pt-3.5">
           <h2 className="m-0 text-xs font-semibold tracking-[0.04em] text-white/75">{card.relLabel}</h2>

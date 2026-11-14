@@ -1,8 +1,8 @@
-import Link from "next/link";
 import type { CSSProperties } from "react";
-import type { Photo, SpotDetailView } from "@/lib/types";
+import type { SpotDetailView } from "@/lib/types";
+import { BackButton } from "./BackButton";
 import { FactRows } from "./FactRows";
-import { Icon } from "./icons";
+import { PhotoCarousel } from "./PhotoCarousel";
 
 const GLASS: CSSProperties = {
   background: "rgba(18,18,16,0.46)",
@@ -10,33 +10,20 @@ const GLASS: CSSProperties = {
   WebkitBackdropFilter: "blur(14px)",
 };
 
-// 写真があれば写真、無ければデモ用の色面（空と地面）
-function photoStyle(photo: Photo | null): CSSProperties {
-  if (photo?.url && !photo.isDemo) {
-    return { backgroundImage: `url(${photo.url})`, backgroundSize: "cover", backgroundPosition: "center" };
-  }
-  const sky = photo?.placeholderSky ?? "#8f9692";
-  const land = photo?.placeholderLand ?? "#2e322f";
-  return { background: `linear-gradient(180deg, ${sky} 0%, ${sky} 56%, ${land} 56%, ${land} 100%)` };
-}
-
-export function SpotDetail({ spot, backHref }: { spot: SpotDetailView; backHref: string }) {
+// variant: page=全画面（共有リンク・再読み込み）、sheet=トップの上に重ねるシート
+export function SpotDetail({ spot, variant }: { spot: SpotDetailView; variant: "page" | "sheet" }) {
   const hero = spot.photos[0] ?? null;
   return (
-    <main className="mx-auto min-h-[100dvh] w-full max-w-[480px] bg-[#f7f6f2] text-[#141413]">
-      <div className="relative h-[420px]" style={photoStyle(hero)}>
-        <div className="absolute inset-x-4 top-3.5 flex justify-between">
-          <Link href={backHref} aria-label="戻る" className="flex h-11 w-11 items-center justify-center rounded-full text-white" style={GLASS}>
-            <Icon name="back" />
-          </Link>
+    <main className={`mx-auto w-full max-w-[480px] bg-[#f7f6f2] text-[#141413] ${variant === "page" ? "min-h-[100dvh]" : ""}`}>
+      {/* 写真は横にスワイプで切り替える */}
+      <PhotoCarousel photos={spot.photos} label={spot.title} className="h-[420px]">
+        <div className={`absolute left-4 ${variant === "sheet" ? "top-6" : "top-3.5"}`}>
+          <BackButton variant={variant} style={GLASS} />
         </div>
         {(hero?.isDemo ?? true) && (
-          <span className="absolute bottom-4 left-4 rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold text-white">写真（デモ）</span>
+          <span className="pointer-events-none absolute bottom-4 left-4 rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold text-white">写真（デモ）</span>
         )}
-        {spot.photos.length > 1 && (
-          <span className="absolute bottom-4 right-4 rounded-xl bg-[rgba(15,15,14,0.6)] px-2.5 py-1 text-xs font-semibold text-white">1 / {spot.photos.length}</span>
-        )}
-      </div>
+      </PhotoCarousel>
 
       <div className="flex flex-col gap-7 px-5 pb-10 pt-5">
         <section className="flex flex-col gap-2">
