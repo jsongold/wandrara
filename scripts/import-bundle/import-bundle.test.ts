@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatFactValue, planImport, slugify, type Bundle, type BundleSpot, type Refs } from "./plan";
 import { sniffImage, uploadPhotos } from "./photo";
-import { quoteLiteral, renderSql } from "./sql";
 
 const refs = (spots: [string, string | null][] = []): Refs => ({
   areas: new Set(["hakone", "sengokuhara"]),
@@ -163,16 +162,5 @@ describe("photos", () => {
     expect(uploaded).toEqual([expect.stringMatching(/^spots\/s\/[0-9a-f]{16}\.png$/)]);
     expect(rows).toMatchObject([{ url: `https://cdn/${uploaded[0]}`, original_url: "https://example.com/a.png" }]);
     expect(errors[0]).toContain("x.png");
-  });
-});
-
-describe("renderSql", () => {
-  it("データは 1 つのリテラルに入り、シングルクォートはエスケープされる", () => {
-    const plan = planImport(bundle(spot({ name: { ja: "O'Hara's 宿" } })), refs());
-    const sql = renderSql(plan, []);
-    expect(sql.startsWith("begin;")).toBe(true);
-    expect(sql.trimEnd().endsWith("commit;")).toBe(true);
-    expect(sql).toContain("O''Hara''s");
-    expect(quoteLiteral("a'b")).toBe("'a''b'");
   });
 });

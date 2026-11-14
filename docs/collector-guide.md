@@ -17,12 +17,15 @@
 
 ## 投入のしかた
 ```
-pnpm import:bundle data/<フォルダ>/<bundle>.json --dry-run   # 検証して DB で試し、ロールバックする
-pnpm import:bundle data/<フォルダ>/<bundle>.json             # 写真をバケットに置き、1 トランザクションで投入する
+pnpm import:bundle data/<フォルダ>/<bundle>.json --dry-run   # 検証して DB で試し、取り消す
+pnpm import:bundle data/<フォルダ>/<bundle>.json             # 写真をバケットに置き、下書き（draft）として投入する
+pnpm spot:status --list draft                               # 下書きの一覧
+pnpm spot:status <external_ref> published                   # 公開する（draft に戻すこともできる）
 ```
+- 投入したスポットは下書きで、公開するまで画面に出ない。公開中のスポットを入れ直すと下書きに戻る。
 - 同じ `external_ref` を入れ直すと更新になる（事実・写真・料金・カテゴリは入れ替え）。
-- `verification_status: "candidate"` は公開せず、原本（`import_records`）だけに残す。
-- 前提：`supabase` CLI にログイン済みで、リポジトリが対象プロジェクトに link 済み。
+- `verification_status: "candidate"` は投入せず、原本（`import_records`）だけに残す。
+- 前提：環境変数か `.env.local` に `NEXT_PUBLIC_SUPABASE_URL` と `SUPABASE_SECRET_KEY`（Supabase の Settings → API Keys のシークレットキー）。
 
 ## 優先順位
 1. 名前・所在地（市町村・地区・緯度経度）・公式 URL・カテゴリ
