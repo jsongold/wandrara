@@ -7,7 +7,8 @@ export type SpotKind = "stay" | "place" | "experience";
 export type SortKey = "editorial" | "fresh";
 export type FactStatus = "verified" | "unverified" | "unknown";
 
-export type Area = { id: string; parentId: string | null; name: LocalizedText; sort: number };
+export type LatLng = { lat: number; lng: number };
+export type Area = { id: string; parentId: string | null; name: LocalizedText; sort: number; coords: LatLng | null }; // coords は代表地点
 export type Category = { id: string; mode: Mode; parentId: string | null; name: LocalizedText; icon: string; sort: number };
 
 export type Photo = {
@@ -23,6 +24,7 @@ export type Spot = {
   id: string;
   kind: SpotKind;
   areaId: string | null;
+  coords: LatLng | null; // スポット自身の座標。無ければ距離はエリアの代表地点で測る
   name: LocalizedText;
   summary: LocalizedText | null;
   editorialRank: number;

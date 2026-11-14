@@ -1,22 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { parseDiscoverQuery, serializeDiscoverQuery, DEFAULT_QUERY } from "./discover-query";
-import { buildFeed, dedupeRelatedTiles, resolveLocalizedText, type Catalog } from "./feed";
+import { buildFeed, dedupeRelatedTiles, distanceKm, resolveLocalizedText, type Catalog } from "./feed";
 import { loadFeedStrategies } from "./feed-config";
-import type { DiscoverQuery, Spot, Tile } from "./types";
+import type { DiscoverQuery, LatLng, Spot, Tile } from "./types";
 
 const photo = { url: null, license: null, credit: null, isDemo: true, placeholderSky: "#aaa", placeholderLand: "#333" };
-const spot = (id: string, kind: Spot["kind"], areaId: string, categoryIds: string[], rank: number): Spot => ({
-  id, kind, areaId, categoryIds, editorialRank: rank, isDemo: true, createdAt: `2026-11-${String(rank).padStart(2, "0")}T00:00:00Z`,
+const spot = (id: string, kind: Spot["kind"], areaId: string | null, categoryIds: string[], rank: number, coords: LatLng | null = null): Spot => ({
+  id, kind, areaId, coords, categoryIds, editorialRank: rank, isDemo: true, createdAt: `2026-11-${String(rank).padStart(2, "0")}T00:00:00Z`,
   name: { ja: id }, summary: null, photos: [photo],
 });
 
 const catalog: Catalog = {
   areas: [
-    { id: "hakone", parentId: null, name: { ja: "箱根" }, sort: 1 },
-    { id: "ashinoko", parentId: "hakone", name: { ja: "芦ノ湖" }, sort: 1 },
-    { id: "gora", parentId: "hakone", name: { ja: "強羅" }, sort: 2 },
-    { id: "izu", parentId: null, name: { ja: "伊豆" }, sort: 2 },
-    { id: "shimoda", parentId: "izu", name: { ja: "下田" }, sort: 1 },
+    // 代表地点は migration 20261115120000 と同じ値
+    { id: "hakone", parentId: null, name: { ja: "箱根" }, sort: 1, coords: { lat: 35.2324, lng: 139.1069 } },
+    { id: "ashinoko", parentId: "hakone", name: { ja: "芦ノ湖" }, sort: 1, coords: { lat: 35.2104, lng: 139.0025 } },
+    { id: "gora", parentId: "hakone", name: { ja: "強羅" }, sort: 2, coords: { lat: 35.2486, lng: 139.0391 } },
+    { id: "izu", parentId: null, name: { ja: "伊豆" }, sort: 2, coords: null },
+    { id: "shimoda", parentId: "izu", name: { ja: "下田" }, sort: 1, coords: { lat: 34.6987, lng: 138.9387 } },
   ],
   categories: [
     { id: "stay", mode: "place", parentId: null, name: { ja: "宿" }, icon: "bed", sort: 1 },
@@ -62,11 +63,29 @@ describe("buildFeed", () => {
     expect(run({ area: "hakone" }).cards.map((c) => c.key)).toEqual(["gora-inn", "lake-inn"]);
     expect(run({ area: "gora" }).cards.map((c) => c.key)).toEqual(["gora-inn"]);
   });
-  it("関連タイルは同じ地域の体験で、同じ地区を先に出す", () => {
+  it("関連タイルは近い体験から順に出し、30km より遠いものは出さない", () => {
+    const gora = run({ area: "gora" }).cards[0];
+    expect(gora.relLabel).toBe("近くの体験");
+    expect(gora.tiles.map((x) => x.spotId)).toEqual(["gora-bath", "lake-walk"]); // 下田の体験は 50km 以上離れている
+    expect(gora.tiles[0].sub).toBe("箱根・強羅・1km 以内");
+    expect(gora.tiles[1].sub).toMatch(/^箱根・芦ノ湖・約\d+km$/);
+  });
+  it("エリアで絞り込んでも、近くの体験はエリアの境をまたいで出す", () => {
     const lake = run({ area: "ashinoko" }).cards[0];
-    expect(lake.tiles.map((x) => x.spotId)).toEqual(["lake-walk"]);
-    const gora = run({ cat: "stay", area: "hakone" }).cards[0];
-    expect(gora.tiles.map((x) => x.spotId)[0]).toBe("gora-bath");
+    expect(lake.tiles.map((x) => x.spotId)).toEqual(["lake-walk", "gora-bath"]);
+  });
+  it("スポット自身の座標があればそれで測り、エリアが無くても近くの体験を出す", () => {
+    const nearShimoda = spot("cove-inn", "stay", null, ["stay"], 9, { lat: 34.70, lng: 138.95 });
+    const feed = buildFeed({ catalog: { ...catalog, spots: [...catalog.spots, nearShimoda] }, query: { ...DEFAULT_QUERY, q: "cove" }, locale: "ja" }, loadFeedStrategies({}));
+    expect(feed.cards[0].tiles.map((x) => x.spotId)).toEqual(["shimoda-hike"]);
+  });
+  it("座標もエリアの代表地点も無い場所には、関連タイルを出さない", () => {
+    const nowhere = spot("nowhere-inn", "stay", null, ["stay"], 9);
+    const feed = buildFeed({ catalog: { ...catalog, spots: [...catalog.spots, nowhere] }, query: { ...DEFAULT_QUERY, q: "nowhere" }, locale: "ja" }, loadFeedStrategies({}));
+    expect(feed.cards[0].tiles).toEqual([]);
+  });
+  it("距離は大円距離で測る（芦ノ湖〜強羅は約 5km）", () => {
+    expect(distanceKm({ lat: 35.2104, lng: 139.0025 }, { lat: 35.2486, lng: 139.0391 })).toBeCloseTo(5.3, 0);
   });
   it("Experience モードは体験の種類ごとに 1 枚にまとめる", () => {
     const feed = run({ mode: "experience" });

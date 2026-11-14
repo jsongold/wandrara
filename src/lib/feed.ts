@@ -1,5 +1,5 @@
 // フィードの組み立て。並べ方・メインの選び方・関連タイルの選び方の 3 戦略を独立に差し替えられる。
-import type { Area, Category, DiscoverQuery, FeedCard, FeedPage, Locale, LocalizedText, Spot, Tile } from "./types";
+import type { Area, Category, DiscoverQuery, FeedCard, FeedPage, LatLng, Locale, LocalizedText, Spot, Tile } from "./types";
 
 export type Catalog = { areas: Area[]; categories: Category[]; spots: Spot[] };
 export type Ctx = { catalog: Catalog; query: DiscoverQuery; locale: Locale };
@@ -84,7 +84,7 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
         title: t(s.name, locale),
         areaLabel: areaLabel(s.areaId, catalog.areas, locale),
         kindLabel: KIND_LABEL[s.kind],
-        relLabel: "関連する体験",
+        relLabel: "近くの体験",
         photos: s.photos,
         href: `/spots/${s.id}`,
         anchor: s,
@@ -159,6 +159,51 @@ export const relatedExperiences: SecondaryStrategy = (cards, ctx) => {
       .sort((x, y) => Number(y.areaId === a.areaId) - Number(x.areaId === a.areaId) || x.editorialRank - y.editorialRank)
       .slice(0, MAX_TILES)
       .map((s) => tileOf(s, ctx));
+  });
+};
+
+// ---- 距離で結ぶ ----
+
+export const NEARBY_KM = 30; // これより遠い体験は「近く」に出さない
+
+// 2 点間の距離（km、球面の大円距離）
+export function distanceKm(a: LatLng, b: LatLng): number {
+  const rad = (d: number) => (d * Math.PI) / 180;
+  const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lng - a.lng) / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(h));
+}
+
+// 距離を測る地点：スポット自身の座標 → エリアの代表地点 → 親の地域の代表地点
+export function pointOf(s: Spot, areas: Area[]): LatLng | null {
+  if (s.coords) return s.coords;
+  const idx = areaIndex(areas);
+  const a = s.areaId ? idx.get(s.areaId) : undefined;
+  return a?.coords ?? (a?.parentId ? idx.get(a.parentId)?.coords ?? null : null);
+}
+
+function distanceLabel(km: number): string {
+  return km < 1 ? "1km 以内" : `約${Math.round(km)}km`;
+}
+
+// 場所カード：近い体験から順に（エリアの絞り込みとは関係なく、境をまたいで探す）。体験カード：その体験ができる場所
+export const nearbyExperiences: SecondaryStrategy = (cards, ctx) => {
+  const { catalog, query } = ctx;
+  return cards.map((card) => {
+    if (query.mode === "experience") {
+      return card.members.filter((s) => s.id !== card.anchor.id).concat(card.anchor).slice(0, MAX_TILES).map((s) => tileOf(s, ctx));
+    }
+    const from = pointOf(card.anchor, catalog.areas);
+    if (!from) return [];
+    return catalog.spots
+      .filter((s) => s.kind === "experience" && s.id !== card.anchor.id)
+      .flatMap((s) => {
+        const to = pointOf(s, catalog.areas);
+        return to ? [{ s, km: distanceKm(from, to) }] : [];
+      })
+      .filter((x) => x.km <= NEARBY_KM)
+      .sort((x, y) => x.km - y.km || x.s.editorialRank - y.s.editorialRank)
+      .slice(0, MAX_TILES)
+      .map(({ s, km }) => ({ ...tileOf(s, ctx), sub: `${areaLabel(s.areaId, catalog.areas, ctx.locale)}・${distanceLabel(km)}` }));
   });
 };
 

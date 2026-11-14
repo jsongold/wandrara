@@ -2,7 +2,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { cacheLife } from "next/cache";
 import { areaLabel, resolveLocalizedText, type Catalog } from "./feed";
-import type { AreaGroupView, CategoryView, Fact, Locale, Mode, Photo, Spot, SpotDetailView } from "./types";
+import type { AreaGroupView, CategoryView, Fact, LatLng, Locale, Mode, Photo, Spot, SpotDetailView } from "./types";
 
 function supabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -17,24 +17,28 @@ const toPhoto = (p: PhotoRow): Photo => ({
   url: p.url, license: p.license, credit: p.credit, isDemo: p.is_demo, placeholderSky: p.placeholder_sky, placeholderLand: p.placeholder_land,
 });
 
+function toLatLng(r: { lat: number | null; lng: number | null }): LatLng | null {
+  return r.lat === null || r.lng === null ? null : { lat: r.lat, lng: r.lng };
+}
+
 export async function getCatalog(): Promise<Catalog> {
   "use cache";
   cacheLife("minutes");
   const db = supabase();
   const [areas, categories, spots] = await Promise.all([
-    db.from("areas").select("id, parent_id, name, sort").order("sort"),
+    db.from("areas").select("id, parent_id, name, sort, lat, lng").order("sort"),
     db.from("categories").select("id, mode, parent_id, name, icon, sort").order("sort"),
-    db.from("spots").select("id, kind, area_id, name, summary, editorial_rank, is_demo, created_at, spot_categories(category_id), spot_photos(url, license, credit, is_demo, placeholder_sky, placeholder_land, sort)"),
+    db.from("spots").select("id, kind, area_id, lat, lng, name, summary, editorial_rank, is_demo, created_at, spot_categories(category_id), spot_photos(url, license, credit, is_demo, placeholder_sky, placeholder_land, sort)"),
   ]);
   if (areas.error || categories.error || spots.error) {
     const err = areas.error ?? categories.error ?? spots.error;
     throw new Error(`Supabase の読み込みに失敗しました: ${err?.message}`);
   }
   return {
-    areas: areas.data.map((a) => ({ id: a.id, parentId: a.parent_id, name: a.name, sort: a.sort })),
+    areas: areas.data.map((a) => ({ id: a.id, parentId: a.parent_id, name: a.name, sort: a.sort, coords: toLatLng(a) })),
     categories: categories.data.map((c) => ({ id: c.id, mode: c.mode, parentId: c.parent_id, name: c.name, icon: c.icon, sort: c.sort })),
     spots: spots.data.map((s): Spot => ({
-      id: s.id, kind: s.kind, areaId: s.area_id, name: s.name, summary: s.summary, editorialRank: s.editorial_rank, isDemo: s.is_demo, createdAt: s.created_at,
+      id: s.id, kind: s.kind, areaId: s.area_id, coords: toLatLng(s), name: s.name, summary: s.summary, editorialRank: s.editorial_rank, isDemo: s.is_demo, createdAt: s.created_at,
       categoryIds: (s.spot_categories as { category_id: string }[]).map((x) => x.category_id),
       photos: [...(s.spot_photos as PhotoRow[])].sort((a, b) => a.sort - b.sort).map(toPhoto),
     })),

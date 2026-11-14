@@ -1,9 +1,10 @@
 // 3 つの戦略を名前で選ぶ。環境変数で差し替えられ、UI は変えずに済む。
-import { orderEditorial, primaryByMode, relatedExperiences, type Strategies } from "./feed";
+import { nearbyExperiences, orderEditorial, primaryByMode, relatedExperiences, type Strategies } from "./feed";
 
 const ORDER = { editorial: orderEditorial };
 const PRIMARY = { "by-mode": primaryByMode };
-const SECONDARY = { "related-experiences": relatedExperiences };
+// nearby：場所と体験を距離で結ぶ（既定）。related-experiences：同じ地域の中で結ぶ（旧）
+const SECONDARY = { nearby: nearbyExperiences, "related-experiences": relatedExperiences };
 
 type Names = { order?: string; primary?: string; secondary?: string };
 
@@ -19,6 +20,6 @@ export function loadFeedStrategies(names: Names = {
   return {
     order: pick(ORDER, names.order, "editorial"),
     primary: pick(PRIMARY, names.primary, "by-mode"),
-    secondary: pick(SECONDARY, names.secondary, "related-experiences"),
+    secondary: pick(SECONDARY, names.secondary, "nearby"),
   };
 }

@@ -162,3 +162,11 @@ test("ブラウザの戻るで閉じても、裏のトップが縮んだまま�
   await expect(page.locator("[data-home]")).toHaveCSS("transform", "none");
   await expectHomeUsable(page);
 });
+
+test("熱海の宿にも、距離で選んだ近くの体験が出る（地域をまたぐ）", async ({ page }) => {
+  const card = page.locator("article").filter({ has: page.locator(`a[href="/spots/${SPOT}"]`) }).first();
+  await expect(card.getByText("近くの体験")).toBeVisible();
+  const tiles = card.locator("section a");
+  expect(await tiles.count()).toBeGreaterThan(0);
+  await expect(tiles.first()).toContainText(/約\d+km|1km 以内/);
+});
