@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "import:bundle": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-bundle.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",
@@ -20,6 +21,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "tailwindcss": "4.3.3",
