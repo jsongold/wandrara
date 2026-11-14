@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wandrara.app/schema/content-bundle.schema.json",
+  "title": "WANDRARA content bundle",
+  "description": "コレクターが集めたスポット情報の取り込み形式。事実には必ず出典を付ける。分からないものは status=unknown にし、値を推測しない。",
+  "type": "object",
+  "required": ["bundle_version", "collected_at", "collector", "spots"],
+  "additionalProperties": false,
+  "properties": {
+    "bundle_version": { "const": "1" },
+    "collected_at": { "type": "string", "format": "date-time" },
+    "collector": { "type": "string", "description": "収集したエージェント・人の名前" },
+    "spots": { "type": "array", "items": { "$ref": "#/$defs/spot" } }
+  },
+  "$defs": {
+    "localized": {
+      "type": "object",
+      "description": "言語ごとの文。少なくとも ja か en のどちらか。機械翻訳なら machine_translated に言語を入れる",
+      "properties": {
+        "ja": { "type": "string" },
+        "en": { "type": "string" },
+        "machine_translated": { "type": "array", "items": { "enum": ["ja", "en"] } }
+      },
+      "anyOf": [{ "required": ["ja"] }, { "required": ["en"] }],
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["type", "retrieved_at"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["official", "government", "ota", "media", "review_site", "field_research", "prior_research", "other"] },
+        "name": { "type": "string", "description": "例：公式サイト、楽天トラベル、箱根町観光協会" },
+        "url": { "type": "string", "format": "uri" },
+        "retrieved_at": { "type": "string", "format": "date", "description": "その出典を見た日" },
+        "evidence": { "type": "string", "maxLength": 300, "description": "根拠になった原文の短い抜き出し（300字以内）" }
+      }
+    },
+    "fact": {
+      "type": "object",
+      "required": ["key", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,40}$", "description": "ガイドの事実キー一覧から選ぶ。無ければ新しいキーを作ってよい" },
+        "value": { "description": "型はキーごと（数値・真偽・文字列・localized・配列）。status=unknown なら省く" },
+        "unit": { "type": "string", "description": "例：person, minute, yen, car" },
+        "status": { "enum": ["verified", "unverified", "unknown", "conflict"], "description": "verified=公式など一次情報で確認。unverified=二次情報のみ。unknown=見つからない。conflict=出典同士が食い違う" },
+        "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+        "note": { "$ref": "#/$defs/localized" }
+      },
+      "allOf": [
+        { "if": { "properties": { "status": { "enum": ["verified", "unverified", "conflict"] } } }, "then": { "required": ["value", "sources"], "properties": { "sources": { "minItems": 1 } } } },
+        { "if": { "properties": { "status": { "const": "conflict" } } }, "then": { "properties": { "sources": { "minItems": 2 } } } }
+      ]
+    },
+    "price": {
+      "type": "object",
+      "required": ["amount", "currency", "unit", "taxes_included", "sources"],
+      "additionalProperties": false,
+      "properties": {
+        "amount": { "type": "number", "minimum": 0 },
+        "amount_max": { "type": "number", "minimum": 0, "description": "幅があるときの上限" },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "unit": { "enum": ["per_night_unit", "per_night_person", "per_person", "per_group", "per_experience", "per_vehicle", "entry"] },
+        "guests": { "type": "integer", "minimum": 1, "description": "その金額が前提とする人数" },
+        "applies_to": { "$ref": "#/$defs/localized", "description": "例：平日、繁忙期、2025年夏" },
+        "taxes_included": { "type": "boolean" },
+        "fees_included": { "type": "boolean", "description": "清掃料・サービス料などを含むか" },
+        "fees_note": { "$ref": "#/$defs/localized" },
+        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/source" } }
+      }
+    },
+    "photo": {
+      "type": "object",
+      "required": ["source_page_url", "license"],
+      "additionalProperties": false,
+      "properties": {
+        "url": { "type": "string", "format": "uri", "description": "画像ファイルの URL。license が none なら入れない" },
+        "source_page_url": { "type": "string", "format": "uri", "description": "画像が載っていたページ" },
+        "license": { "enum": ["cc0", "cc_by", "cc_by_sa", "public_domain", "permission_granted", "press_kit", "own", "none"], "description": "利用条件が明示されていないものは none（候補として記録だけする）" },
+        "credit": { "type": "string" },
+        "permission_evidence_url": { "type": "string", "format": "uri", "description": "permission_granted / press_kit の根拠" },
+        "alt": { "$ref": "#/$defs/localized" },
+        "subject": { "enum": ["exterior", "room", "bath", "view", "food", "activity", "landscape", "other"] }
+      },
+      "allOf": [
+        { "if": { "properties": { "license": { "const": "none" } } }, "then": { "not": { "required": ["url"] } }, "else": { "required": ["url", "credit"] } }
+      ]
+    },
+    "review_ref": {
+      "type": "object",
+      "required": ["source", "language"],
+      "additionalProperties": false,
+      "description": "レビューは本文を転載せず、出典へのリンクと要点だけを持つ。本文の掲載は許諾が取れてから",
+      "properties": {
+        "source": { "$ref": "#/$defs/source" },
+        "language": { "type": "string", "pattern": "^[a-z]{2}$" },
+        "posted_at": { "type": "string", "format": "date" },
+        "observations": { "type": "array", "items": { "$ref": "#/$defs/localized" }, "description": "具体的な観察の要約（例：「夜は波の音が大きい」）。評価点は入れない" }
+      }
+    },
+    "spot": {
+      "type": "object",
+      "required": ["external_ref", "kind", "name", "location", "categories", "verification_status"],
+      "additionalProperties": false,
+      "properties": {
+        "external_ref": { "type": "string", "description": "元データの ID（例：hotels.tsv の catalog_id）。同じ施設の再収集で同じ値にする" },
+        "slug": { "type": "string", "pattern": "^[a-z0-9-]{3,60}$", "description": "URL 用。無ければ取り込み側で作る" },
+        "kind": { "enum": ["stay", "place", "experience"] },
+        "name": { "$ref": "#/$defs/localized" },
+        "name_sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+        "location": {
+          "type": "object",
+          "required": ["prefecture", "municipality"],
+          "additionalProperties": false,
+          "properties": {
+            "prefecture": { "type": "string" },
+            "municipality": { "type": "string" },
+            "district": { "type": "string", "description": "例：仙石原、強羅、白浜" },
+            "area_id": { "type": "string", "description": "既存のエリア ID（hakone, ashinoko, ito, shimoda など）。分からなければ省く" },
+            "address": { "$ref": "#/$defs/localized" },
+            "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+            "lng": { "type": "number", "minimum": -180, "maximum": 180 },
+            "geo_precision": { "enum": ["exact", "street", "district", "municipality"] },
+            "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } }
+          }
+        },
+        "categories": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "既存カテゴリ ID（stay, onsentown, coast, plateau, lake / onsen, hike, gourmet, wine, beach, bbq, camp）。合うものが無ければ new: を付けて提案（例：new:sauna）" },
+        "summary": { "$ref": "#/$defs/localized", "description": "2〜3文の紹介。事実の主張を含めるなら facts にも入れて出典を付ける" },
+        "official_url": { "type": "string", "format": "uri" },
+        "booking_links": {
+          "type": "array",
+          "items": { "type": "object", "required": ["label", "url"], "additionalProperties": false, "properties": { "label": { "type": "string" }, "url": { "type": "string", "format": "uri" }, "is_official": { "type": "boolean" } } }
+        },
+        "facts": { "type": "array", "items": { "$ref": "#/$defs/fact" } },
+        "prices": { "type": "array", "items": { "$ref": "#/$defs/price" } },
+        "photos": { "type": "array", "items": { "$ref": "#/$defs/photo" } },
+        "reviews": { "type": "array", "items": { "$ref": "#/$defs/review_ref" } },
+        "related_external_refs": { "type": "array", "items": { "type": "string" }, "description": "近くで体験できること・泊まれる場所など、関係するスポットの external_ref" },
+        "verification_status": { "enum": ["candidate", "collected", "verified"], "description": "candidate=名前だけ。collected=出典つきで項目を集めた。verified=公式で主要項目を確認" },
+        "collector_notes": { "type": "string" }
+      }
+    }
+  }
+}
