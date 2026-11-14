@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
+import { saveLastDiscoverUrl } from "@/lib/last-discover";
 import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Photo, SortKey } from "@/lib/types";
 import { Icon } from "./icons";
 
@@ -47,6 +48,11 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [sheet, setSheet] = useState<Sheet>(null);
+
+  // 全画面の詳細から戻るときのために、今の条件を控えておく
+  useEffect(() => {
+    saveLastDiscoverUrl(serializeDiscoverQuery(query));
+  }, [query]);
 
   function go(next: Partial<DiscoverQuery>) {
     const merged: DiscoverQuery = { ...query, ...next };

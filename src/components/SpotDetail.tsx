@@ -1,8 +1,7 @@
-import Link from "next/link";
 import type { CSSProperties } from "react";
 import type { Photo, SpotDetailView } from "@/lib/types";
+import { BackButton } from "./BackButton";
 import { FactRows } from "./FactRows";
-import { Icon } from "./icons";
 
 const GLASS: CSSProperties = {
   background: "rgba(18,18,16,0.46)",
@@ -20,15 +19,14 @@ function photoStyle(photo: Photo | null): CSSProperties {
   return { background: `linear-gradient(180deg, ${sky} 0%, ${sky} 56%, ${land} 56%, ${land} 100%)` };
 }
 
-export function SpotDetail({ spot, backHref }: { spot: SpotDetailView; backHref: string }) {
+// variant: page=全画面（共有リンク・再読み込み）、sheet=トップの上に重ねるシート
+export function SpotDetail({ spot, variant }: { spot: SpotDetailView; variant: "page" | "sheet" }) {
   const hero = spot.photos[0] ?? null;
   return (
-    <main className="mx-auto min-h-[100dvh] w-full max-w-[480px] bg-[#f7f6f2] text-[#141413]">
+    <main className={`mx-auto w-full max-w-[480px] bg-[#f7f6f2] text-[#141413] ${variant === "page" ? "min-h-[100dvh]" : ""}`}>
       <div className="relative h-[420px]" style={photoStyle(hero)}>
-        <div className="absolute inset-x-4 top-3.5 flex justify-between">
-          <Link href={backHref} aria-label="戻る" className="flex h-11 w-11 items-center justify-center rounded-full text-white" style={GLASS}>
-            <Icon name="back" />
-          </Link>
+        <div className={`absolute inset-x-4 flex justify-between ${variant === "sheet" ? "top-6" : "top-3.5"}`}>
+          <BackButton variant={variant} style={GLASS} />
         </div>
         {(hero?.isDemo ?? true) && (
           <span className="absolute bottom-4 left-4 rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold text-white">写真（デモ）</span>

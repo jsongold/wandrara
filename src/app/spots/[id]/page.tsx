@@ -16,5 +16,5 @@ async function Spot({ params }: Pick<PageProps<"/spots/[id]">, "params">) {
   const { id } = await params;
   const spot = await getSpotDetail(id, "ja");
   if (!spot) notFound();
-  return <SpotDetail spot={spot} backHref="/" />;
+  return <SpotDetail spot={spot} variant="page" />;
 }
