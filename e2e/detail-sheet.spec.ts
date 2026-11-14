@@ -106,3 +106,26 @@ test("詳細の写真も横にスワイプして切り替えられる", async ({
   await swipeTo(page, sheet(page), 2);
   await expect(photos.getByText(/^3 \/ \d+$/)).toBeVisible();
 });
+
+test("写真の上で指を動かした後は、詳細を開かない（スワイプをタップと取り違えない）", async ({ page }) => {
+  const card = page.getByRole("group", { name: /ヴィラ キング 熱海/ }).first();
+  const box = (await card.boundingBox())!;
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x, y - 80, { steps: 6 }); // 上へ
+  await page.mouse.move(x, y + 40, { steps: 6 }); // そして下へ
+  await page.mouse.up();
+  await page.waitForTimeout(800);
+  await expect(page).toHaveURL(QUERY);
+  await expect(sheet(page)).toBeHidden();
+  // 普通のタップでは開く
+  await openSheet(page);
+});
+
+test("端まで引いても、ページ全体の再読み込みやバウンスを起こさない設定になっている", async ({ page }) => {
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).overscrollBehaviorY)).toBe("none");
+  expect(await page.evaluate(() => getComputedStyle(document.body).overscrollBehaviorY)).toBe("none");
+  await openSheet(page);
+  expect(await sheet(page).locator(".sheet-backdrop").evaluate((el) => getComputedStyle(el).touchAction)).toBe("none");
+});

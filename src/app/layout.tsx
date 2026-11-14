@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { BfcacheGuard } from "@/components/BfcacheGuard";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,6 +28,7 @@ export default function RootLayout({ children, sheet }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         {children}
         {sheet}
+        <BfcacheGuard />
       </body>
     </html>
   );

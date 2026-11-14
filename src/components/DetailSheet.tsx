@@ -52,7 +52,7 @@ export function DetailSheet({ children }: { children: ReactNode }) {
         type="button"
         aria-label="閉じる"
         onClick={close}
-        className={`sheet-backdrop absolute inset-0 bg-black/50 transition-opacity duration-300 ${closing ? "opacity-0" : ""}`}
+        className={`sheet-backdrop absolute inset-0 touch-none bg-black/50 transition-opacity duration-300 ${closing ? "opacity-0" : ""}`}
       />
       <div
         className="sheet-panel relative flex h-[94dvh] w-full max-w-[480px] flex-col overflow-hidden rounded-t-3xl bg-[#f7f6f2] shadow-2xl"

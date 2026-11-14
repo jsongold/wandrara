@@ -37,6 +37,9 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
   const slides: (Photo | null)[] = photos.length > 0 ? photos : [null];
   const scroller = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
+  // スワイプ（指が動いた・ブラウザがスクロールに切り替えた）の後はタップとして扱わない
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const swiped = useRef(false);
 
   function onScroll() {
     const el = scroller.current;
@@ -50,7 +53,23 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
   }
 
   return (
-    <div className={`relative overflow-hidden ${className}`} role="group" aria-roledescription="carousel" aria-label={label}>
+    <div
+      className={`relative overflow-hidden ${className}`}
+      role="group"
+      aria-roledescription="carousel"
+      aria-label={label}
+      onPointerDown={(e) => { pointerStart.current = { x: e.clientX, y: e.clientY }; swiped.current = false; }}
+      onPointerMove={(e) => {
+        const s = pointerStart.current;
+        if (s && Math.hypot(e.clientX - s.x, e.clientY - s.y) > 8) swiped.current = true;
+      }}
+      onPointerCancel={() => { swiped.current = true; }}
+      onClickCapture={(e) => {
+        if (!swiped.current) return;
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
       <div
         ref={scroller}
         onScroll={onScroll}
