@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BfcacheGuard } from "@/components/BfcacheGuard";
+import { DebugOverlay } from "@/components/DebugOverlay";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,6 +30,7 @@ export default function RootLayout({ children, sheet }: LayoutProps<"/">) {
         {children}
         {sheet}
         <BfcacheGuard />
+        <DebugOverlay />
       </body>
     </html>
   );

@@ -73,7 +73,7 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
       <div
         ref={scroller}
         onScroll={onScroll}
-        className="flex h-full w-full snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex h-full w-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {slides.map((p, i) => (
           <div key={i} className="h-full w-full shrink-0 snap-center snap-always" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>

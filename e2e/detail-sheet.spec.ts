@@ -123,11 +123,19 @@ test("写真の上で指を動かした後は、詳細を開かない（スワ�
   await openSheet(page);
 });
 
-test("端まで引いても、ページ全体の再読み込みやバウンスを起こさない設定になっている", async ({ page }) => {
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).overscrollBehaviorY)).toBe("none");
-  expect(await page.evaluate(() => getComputedStyle(document.body).overscrollBehaviorY)).toBe("none");
+test("シートの背景はスワイプを受けない（指の操作がページ全体に伝わらない）", async ({ page }) => {
   await openSheet(page);
   expect(await sheet(page).locator(".sheet-backdrop").evaluate((el) => getComputedStyle(el).touchAction)).toBe("none");
+});
+
+test("?debug=1 の診断表示は出ても操作を邪魔しない", async ({ page }) => {
+  await page.goto(QUERY + "&debug=1");
+  await expect(page.getByText(/^beat \d+/)).toBeVisible();
+  await openSheet(page);
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(new RegExp("/\\?area=atami"));
+  await page.getByRole("button", { name: /エリアを選ぶ/ }).click();
+  await expect(page.getByText("すべてのエリア")).toBeVisible();
 });
 
 async function expectHomeUsable(page: Page) {

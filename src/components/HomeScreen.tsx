@@ -76,7 +76,7 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
     <div data-home className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
       {/* Feed */}
       <div
-        className="absolute inset-0 overflow-y-auto overscroll-y-contain pb-[190px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="absolute inset-0 overflow-y-auto pb-[190px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
       >

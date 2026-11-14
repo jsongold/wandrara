@@ -25,13 +25,6 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* スマホで端まで引いたときに、ページ全体の「引っぱって再読み込み」やバウンスを起こさない。
-   シートを開いたまま再読み込みされると全画面の詳細に移ってしまうため。 */
-html,
-body {
-  overscroll-behavior: none;
-}
-
 /* 詳細シート：下からスライドして上がり、下へ滑って閉じる（閉じる動きは DetailSheet.tsx の transform） */
 :root {
   --sheet-ease: cubic-bezier(0.32, 0.72, 0, 1); /* iOS のシートに近い減速 */
