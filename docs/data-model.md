@@ -10,24 +10,24 @@ flowchart TB
   Tour
   Accommodation
   Experience
-  Location
+  Nature
 
   User -- 作る --> Tour
   User -- 運営する（運営者） --> Accommodation
   User -- 運営する（運営者） --> Experience
   Tour -- 含む --> Accommodation
   Tour -- 含む --> Experience
-  Tour -- 含む --> Location
+  Tour -- 含む --> Nature
   Accommodation -- できる --> Experience
-  Accommodation -- ある --> Location
-  Experience -- 行われる --> Location
-  Location -- 含む --> Location
+  Accommodation -- 近い --> Nature
+  Experience -- 行われる --> Nature
+  Nature -- 含む --> Nature
 ```
 
 | モデル | 意味 |
 |---|---|
 | User | 使う人。旅行者として Tour を作る。運営者なら宿・体験を運営する |
-| Tour | User が作る旅の計画。宿・体験・場所を順に含む |
+| Tour | User が作る旅の計画。宿・体験・自然を順に含む |
 | Accommodation | 宿 |
 | Experience | 体験 |
-| Location | 場所。地域も見どころも含み、場所が場所を含む |
+| Nature | 自然。海岸・山・湖・高原・渓谷など（城ヶ崎海岸、芦ノ湖、仙石原高原）。自然が自然を含む |
