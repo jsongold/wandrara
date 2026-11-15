@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "import:bundle": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-bundle.ts",
+    "bundle:validate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/validate-bundle.ts",
     "db:generate": "drizzle-kit generate",
     "collector:key": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/collector-key.ts",
     "dest:publish": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/dest-publish.ts",
