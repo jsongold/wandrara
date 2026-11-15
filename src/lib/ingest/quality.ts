@@ -81,7 +81,19 @@ export const QUALITY_RULES: Record<string, Check[]> = {
   village: [...common, coords, atLeast("access", "行き方（access）")],
 };
 
+export const QUALITY_VERSION = "v1";
+
+export type QualityIssue = { path: string; message: string };
+
+/** 決まりを当てた結果。score は満たした決まりの割合（0〜100 の整数。100 = 全部満たす） */
+export function evaluateQuality(coreType: string, d: DestInput): { score: number; issues: QualityIssue[] } {
+  const rules = QUALITY_RULES[coreType] ?? [];
+  const issues = rules.filter((c) => !c.ok(d)).map(({ path, message }) => ({ path, message }));
+  const score = rules.length ? Math.round((100 * (rules.length - issues.length)) / rules.length) : 100;
+  return { score, issues };
+}
+
 /** 決まりに合わない項目を「<path> <理由>」で返す。prefix は bundle なら "/dests/<i>" */
 export function checkQuality(coreType: string, d: DestInput, prefix = ""): string[] {
-  return (QUALITY_RULES[coreType] ?? []).filter((c) => !c.ok(d)).map((c) => `${prefix}${c.path} ${c.message}`);
+  return evaluateQuality(coreType, d).issues.map((c) => `${prefix}${c.path} ${c.message}`);
 }

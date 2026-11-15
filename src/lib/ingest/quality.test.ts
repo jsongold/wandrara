@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DestInput } from "./bundle.ts";
 import { CORES } from "./cores.ts";
-import { checkQuality, QUALITY_RULES } from "./quality.ts";
+import { checkQuality, evaluateQuality, QUALITY_RULES } from "./quality.ts";
 
 const loc = { lat: 35.1, lng: 139.07 };
 const base = (core: Record<string, unknown>, details: Record<string, Record<string, unknown>[]>, opts: { address?: boolean } = {}): DestInput => ({
@@ -72,4 +72,21 @@ describe("checkQuality", () => {
       expect(errors[0].startsWith(`${path} `)).toBe(true);
     });
   }
+});
+
+describe("evaluateQuality", () => {
+  it("score は満たした決まりの割合（整数）。issues は path と message", () => {
+    expect(evaluateQuality("nature", complete.nature())).toEqual({ score: 100, issues: [] });
+    const d = complete.nature(); // nature の決まりは 6 つ
+    d.photos = [];
+    d.details!.access = [];
+    const r = evaluateQuality("nature", d);
+    expect(r.score).toBe(67); // 4 / 6
+    expect(r.issues.map((i) => i.path)).toEqual(["/photos", "/details/access"]);
+    expect(Number.isInteger(r.score)).toBe(true);
+  });
+
+  it("知らない種類は 100（決まりが無い）", () => {
+    expect(evaluateQuality("unknown", complete.nature()).score).toBe(100);
+  });
 });
