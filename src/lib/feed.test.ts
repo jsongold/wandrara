@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseDiscoverQuery, serializeDiscoverQuery, DEFAULT_QUERY } from "./discover-query";
-import { buildFeed, dedupeRelatedTiles, resolveLocalizedText, type Catalog } from "./feed";
+import { buildFeed, dedupeRelatedTiles, MAX_CARD_PHOTOS, resolveLocalizedText, type Catalog } from "./feed";
 import { loadFeedStrategies } from "./feed-config";
 import { MODES } from "./modes";
 import type { DestCard, DiscoverQuery, Tile } from "./types";
@@ -56,6 +56,14 @@ describe("parseDiscoverQuery / serializeDiscoverQuery", () => {
 });
 
 describe("buildFeed", () => {
+  it("カードの写真は MAX_CARD_PHOTOS 枚まで（詳細の写真は減らさない）", () => {
+    const photo = (i: number) => ({ url: `https://x/${i}.jpg`, license: null, credit: null, isDemo: false, placeholderSky: null, placeholderLand: null });
+    const many = { ...dest("many", "accommodation", "gora", [], 7), photos: Array.from({ length: 12 }, (_, i) => photo(i)) };
+    const feed = buildFeed({ catalog: { ...catalog, dests: [many] }, query: DEFAULT_QUERY, locale: "ja" }, loadFeedStrategies({}));
+    expect(feed.cards[0].photos).toHaveLength(MAX_CARD_PHOTOS);
+    expect(feed.cards[0].photos[0].url).toBe("https://x/0.jpg");
+    expect(many.photos).toHaveLength(12);
+  });
   it("stay は accommodation だけを公開日の新しい順で並べる", () => {
     const feed = run({});
     expect(feed.cards.map((c) => c.key)).toEqual(["gora-inn", "lake-inn", "shimoda-inn"]);

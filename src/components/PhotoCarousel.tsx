@@ -14,12 +14,22 @@ function placeholder(photo: Photo | null): CSSProperties {
   return { background: `linear-gradient(180deg, ${sky} 0%, ${sky} 56%, ${land} 56%, ${land} 100%)` };
 }
 
-function Slide({ photo, index, eager }: { photo: Photo | null; index: number; eager: boolean }) {
-  if (photo?.url && !photo.isDemo) {
+// near：今の写真と前後 1 枚。それ以外は <img> を作らない（画像の展開でメモリを使い切らないため）
+function Slide({ photo, index, eager, near }: { photo: Photo | null; index: number; eager: boolean; near: boolean }) {
+  if (photo?.url && !photo.isDemo && near) {
     return (
       // Supabase Storage の画像をそのまま出す（next/image の最適化は使わない）
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={photo.url} alt="" draggable={false} loading={eager ? "eager" : "lazy"} decoding="async" data-index={index} className="h-full w-full select-none object-cover" />
+      <img
+        src={photo.url}
+        alt=""
+        draggable={false}
+        loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : "auto"}
+        decoding="async"
+        data-index={index}
+        className="h-full w-full select-none object-cover"
+      />
     );
   }
   return <span className="block h-full w-full" style={placeholder(photo)} />;
@@ -32,9 +42,10 @@ type Props = {
   counterClassName?: string;
   className?: string;
   children?: ReactNode; // 写真の上に重ねるもの（タイトルなど。操作を邪魔しないよう pointer-events-none にする）
+  priority?: boolean; // 1 枚目を先に読む（画面の最初に見える写真だけ true にする）
 };
 
-export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-4 right-4", className = "", children }: Props) {
+export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-4 right-4", className = "", children, priority = true }: Props) {
   const slides: (Photo | null)[] = photos.length > 0 ? photos : [null];
   const m = useMessages();
   const scroller = useRef<HTMLDivElement>(null);
@@ -81,10 +92,10 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
           <div key={i} className="h-full w-full shrink-0 snap-center snap-always" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>
             {href ? (
               <Link href={href} tabIndex={i === 0 ? 0 : -1} aria-hidden={i === 0 ? undefined : true} aria-label={i === 0 ? m.photos.open(label) : undefined} className="block h-full w-full" draggable={false}>
-                <Slide photo={p} index={i} eager={i === 0} />
+                <Slide photo={p} index={i} eager={priority && i === 0} near={Math.abs(i - index) <= 1} />
               </Link>
             ) : (
-              <Slide photo={p} index={i} eager={i === 0} />
+              <Slide photo={p} index={i} eager={priority && i === 0} near={Math.abs(i - index) <= 1} />
             )}
           </div>
         ))}
