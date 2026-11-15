@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794720310152,
+      "tag": "20261115052510_drop_legacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794720312895,
+      "tag": "20261115052512_functions_before",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794720319267,
+      "tag": "20261115052519_data_model",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794720321982,
+      "tag": "20261115052521_functions_after",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794720324732,
+      "tag": "20261115052524_dictionary",
+      "breakpoints": true
+    }
+  ]
+}
