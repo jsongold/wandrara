@@ -177,67 +177,81 @@ pre{background:var(--chip);border-radius:8px;padding:12px;overflow:auto;font-siz
 type AccommodationView = DestCommon &amp; {
   coreType: "accommodation"
   kind: Label            // バッジに出すだけ。出し分けには使わない
-  rooms: Room[]          // 部屋（一棟貸しは 1 棟で 1 件）
-  baths: Bath[]          // 風呂（サウナを含む）
   stay: { checkIn: string; checkOut: string }  // 必須。紹介文の下に必ず出す
-  priceHint?: PriceHint      // 料金（参考）：部屋ごとの 人数・最小・最大・備考
+  priceHint?: PriceHint  // 料金（参考）：部屋ごとの 人数・最小・最大・備考
+  rooms: Room[]          // 部屋（一棟貸しは 1 棟で 1 件）
   meals: Meal[]          // 食事
+  baths: Bath[]          // 風呂（サウナを含む）
   amenities: AmenityGroup[]  // 設備：中カテゴリ → 小カテゴリ
-  pets?: { allowed: boolean; size?: Label; fee?: number }  // ペット
+  internet?: Internet        // 設備の Wi-Fi の行の下に開く
+  pets?: Pets
   conditions: Conditions     // 条件
-  parking?: { spaces?: number; paid?: boolean }
-  access: { station?: string; walkMinutes?: number; busMinutes?: number }
-  surroundings?: { neighborDistanceM?: number; view?: Label }
-  cautions: { kind: Label; note: string }[]
+  parking?: Parking
+  access: Access
+  surroundings?: Surroundings
+  cautions: { kind: Label; note: LocalizedText }[]
   bookingLinks: BookingLink[]
-  sources: { name: string; url: string; type: Label; retrievedAt: string;
-             fields: Label[] }[]   // 出典（どの項目の出典か）
+  sources: Source[]          // 出典（どの項目の出典か）
   license?: { kind: Label; number?: string }
-}</pre></div>
+}
+
+type Money = { amount: number; currency: string; taxIncluded?: boolean }
+type Label = { value: string; label: string }</pre></div>
 <div class="card"><pre>type Room = {
+  key: string            // dest の中の名前。料金・写真はこれで指す
   name?: string          // 一棟貸しは無し（「1 棟」と出す）
-  guestsMin?: number; guestsMax?: number
+  capacity?: number      // 泊まれる最大人数（料金がかかる人数とは別）
   areaSqm?: number; tatami?: number; style?: Label  // 和・洋・和洋
-  bedrooms?: { beds: Bed[] }[]
+  view?: Label; smoking?: Label                     // 禁煙・喫煙
+  bedrooms: { name?: string; beds: { type: Label; count: number }[] }[]
+  photos: Photo[]        // subject がこの部屋の写真
 }
 
 type Bath = {
-  kind: Label   // 大浴場・露天・内風呂・貸切・客室露天・サウナ
-  hotSpring?: boolean
-  capacity?: number                          // 主にサウナ
-  coldBath?: boolean; outdoorRest?: boolean  // サウナのとき
-  reservation?: boolean; paid?: boolean
+  kind: Label            // 大浴場・露天・内風呂・貸切・客室露天・客室内・サウナ
+  saunaStyle?: Label     // バレル・ドライ・スチーム（サウナのとき）
+  hotSpring?: boolean; spring?: string; source?: Label  // 泉質・源泉の扱い
+  capacity?: number
+  coldBath?: boolean; outdoorRest?: boolean
+  hours?: { from: string; to: string }
+  gender?: Label         // 男女別・混浴・貸切・男女入替
+  reservation?: { required: boolean; when?: Label; slotMinutes?: number }
+  fee?: Money            // 無料は 0
 }
 
-type Meal = { kind: Label; place?: Label; from?: string; to?: string;
-  allergyConsult?: boolean; none?: boolean }
+type Meal = {
+  meal: Label            // 朝食・夕食
+  offered: boolean       // false＝出ない（「夕食なし」）
+  style?: Label          // ビュッフェ・会席・定食
+  place?: Label; hours?: { from: string; to: string }
+  slots?: string[]       // 選べる開始時刻（18:00・19:00）
+  fee?: Money            // 素泊まりに足す 1 名の料金
+  allergyConsult?: boolean; selfCook?: boolean
+}
 
 // 設備は 2 段の語彙。小カテゴリ（bbq・wifi …）が 1 つの中カテゴリ（屋外・通信 …）に属する
 type AmenityGroup = { group: Label; items: Amenity[] }
-type Amenity = { code: Label; paid?: boolean; count?: number
-  options?: Label[] }   // 付いているもの（electric_grill・covered …）。行の下に開く詳細に出す
-
-// 条件は決まった欄だけ。あるものだけ行に出す
-type Conditions = { smoking?: boolean; parties?: boolean; fireworks?: boolean;
-  quiet?: TimeRange; minNights?: number }
+type Amenity = { code: Label; paid?: boolean; count?: number; options?: Label[] }
+type Internet = { wifi?: boolean; downMbps?: number; upMbps?: number;
+  measuredAt?: string; desk?: Label }   // 机：全室・一部・共用部
+type Pets = { allowed: boolean; size?: Label; fee?: Money }
+type Conditions = { smoking?: Label   // なし・指定の場所・可
+  parties?: boolean; fireworks?: boolean; quiet?: TimeRange
+  bbqUntil?: string; minNights?: number }
+type Parking = { place?: Label; spaces?: number; maxHeightM?: number; fee?: Money }
+type Access = { station?: string; mode?: Label   // 徒歩・バス・車・送迎
+  minutes?: number; shuttle?: boolean; slopeOrStairs?: boolean
+  needsCar?: boolean; route?: LocalizedText }
+type Source = { name: string; url: string; type: Label; retrievedAt: string; fields: Label[] }
 
 // 料金（参考）：部屋ごとに 1 行の表。細かいことは行の下に開く（全部の表は出さない）
 type PriceHint = {
   per: Label; currency: string; taxIncluded?: boolean   // 1 棟 1 泊・1 室 1 泊・1 名 1 泊
-  rows: {
-    roomType: string; guestsMin?: number; guestsMax?: number
-    min: number; max: number
-    note: Label[]                                  // 素泊まり・2 食つき など（言葉は語彙から）
-  }[]
-  fees: Price[]          // 諸経費・入湯税（開いたとき）
+  rows: { room: string; guestsMin?: number; guestsMax?: number   // 料金がかかる人数
+          min: number; max: number; note: Label[] }[]          // 素泊まり・2 食つき
+  fees: Price[]; children: Price[]   // 開いたとき（諸経費・入湯税・子ども）
   detailsUrl?: string
-}
-
-// 通信は設備の 1 行（Wi-Fi）。詳細に accommodation_internet の中身を出す
-type Internet = { wifi?: boolean; downMbps?: number; upMbps?: number;
-  measuredAt?: string; desk?: Label }
-
-type Label = { value: string; label: string }</pre></div>
+}</pre></div>
 </div>
 <div class="card">
 <h3>画面のトピック（どの kind でも同じ並び）</h3>
@@ -264,14 +278,14 @@ type Label = { value: string; label: string }</pre></div>
 <h3>タップで詳細（行と、その下に開く詳細の分け方）</h3>
 <table>
 <tr><th>トピック</th><th>行に出す</th><th>タップで、行の下に開く</th></tr>
-<tr><td>部屋</td><td>名前・定員・広さ</td><td>寝室ごとの寝具・眺望・喫煙・その部屋の写真</td></tr>
-<tr><td>風呂</td><td>種類・温泉か</td><td>時間・予約・料金・水風呂・外気浴・男女入替</td></tr>
-<tr><td>食事</td><td>時間・場所</td><td>形式・料金・アレルギー</td></tr>
+<tr><td>部屋</td><td>名前・定員・広さ</td><td>寝室ごとの名前と寝具・眺望・喫煙・その部屋の写真</td></tr>
+<tr><td>風呂</td><td>種類・温泉か</td><td>サウナの種類・泉質・時間・男女別・予約（いつ・何分）・料金・水風呂・外気浴</td></tr>
+<tr><td>食事</td><td>時間・場所（出ないときは「なし」）</td><td>形式・選べる時刻・料金・アレルギー・自炊</td></tr>
 <tr><td>設備</td><td>中カテゴリと小カテゴリの名前</td><td>数・有料か・付いているもの（電気グリル・屋根の下 など）</td></tr>
 <tr><td>駐車場</td><td>台数・有料か</td><td>場所・車高の制限・料金</td></tr>
-<tr><td>アクセス</td><td>最寄り駅と時間</td><td>住所・道順・送迎</td></tr>
+<tr><td>アクセス</td><td>最寄り駅・手段（徒歩・バス）と時間</td><td>住所・道順・送迎・坂や階段・車が要るか</td></tr>
 <tr><td>料金</td><td>部屋ごとに 1 行（部屋・人数・最小・最大・備考）</td><td>追加の料金（諸経費・入湯税）・食事や子どもの料金。平日・祝日などの区分ごとの値は出さない</td></tr>
-<tr><td>設備の通信</td><td>Wi-Fi</td><td>実測の速さ・測った日・仕事用の机（accommodation_internet）</td></tr>
+<tr><td>設備の通信</td><td>Wi-Fi</td><td>下り・上りの速さ・測った日・仕事用の机（全室・一部・共用部）</td></tr>
 <tr><td>出典</td><td>出典の名前と、どの項目の出典か</td><td>URL・種類・取得日</td></tr>
 </table>
 <p><b>持っている情報は全部見られるようにする。</b>型に持つ欄は、行か、行の下に開く詳細のどちらかに必ず出る（どこにも出ない欄は作らない）。詳しいほど品質が高い。ただし料金は、区分 × 人数の表をそのまま出さない。部屋ごとに 1 行の表（部屋・人数・最小・最大・備考）にし、開くと追加の料金などが見える。平日・祝日などの区分ごとの値は、不正確だとクレームの元になるので画面に出さない（DB には型で持つ）。出典も最後に出す。</p>
@@ -285,40 +299,45 @@ type Label = { value: string; label: string }</pre></div>
 <div><pre>type SeasonRule = {
   validFrom: string; validTo: string  // この料金表の期間（YYYY-MM-DD）
   isDefault: boolean   // どの区分にも当てはまらない日（「②③④以外」）
-  priority: number     // 重なったら大きい方が勝つ（「③④以外」）
+  priority: number     // 重なったら大きい方が勝つ
   weekdays?: (1|2|3|4|5|6|7)[]        // 1=月 … 7=日（体験の weekdays と同じ）
-  holidays?: boolean                  // 祝日
-  dayBeforeHoliday?: boolean          // 祝前日
+  holidays?: boolean; dayBeforeHoliday?: boolean
   dates?: { from: string; to: string }[]  // 当てはまる日（年つき）
 }
 
 type Price = {
-  kind: "room" | "service_fee" | "bath_tax" | "lodging_tax" | "cleaning"
-  per: "house_night" | "person_night" | "stay"
-  amount: number; amountMax?: number; currency: string
-  taxIncluded?: boolean
-  guestsMin?: number; guestsMax?: number   // room の人数の幅
-  audience?: "adult" | "child" | "all"
-  ageMin?: number; ageMax?: number         // 子ども料金の年齢
-  meals?: "none" | "breakfast" | "dinner" | "both"
+  kind: "room" | "meal" | "service_fee" | "bath_tax" | "lodging_tax" | "cleaning"
+  per: "house_night" | "room_night" | "person_night" | "stay"
+  room?: string        // 部屋の key（kind=room）
   season?: string      // 区分の key。空なら全部の日
+  amount?: number; amountMax?: number; currency: string; taxIncluded?: boolean
+  ratePercent?: number // 大人の料金に対する割合（子ども 70% など）。amount とどちらか
+  guestsMin?: number; guestsMax?: number   // この料金がかかる人数（部屋の定員とは別）
+  audience?: "all" | "adult" | "child"
+  ageMin?: number; ageMax?: number
+  meals?: "none" | "breakfast" | "dinner" | "both"
+  includes?: ("service_fee" | "bath_tax" | "lodging_tax" | "cleaning")[]
+                       // この料金に含まれるもの。合計で二重に足さない
 }</pre></div>
 <div><pre>// 日付から区分を決める（言葉を読まずに決まる）
 function seasonFor(date, seasons) {
-  const hits = seasons.filter(s =&gt; !s.isDefault
-    &amp;&amp; inRange(date, s.validFrom, s.validTo)
+  const live = seasons.filter(s =&gt; inRange(date, s.validFrom, s.validTo))
+  const hits = live.filter(s =&gt; !s.isDefault
     &amp;&amp; (s.weekdays?.includes(isoWeekday(date))
      || s.dates?.some(d =&gt; inRange(date, d.from, d.to))
      || (s.holidays &amp;&amp; isHoliday(date))
      || (s.dayBeforeHoliday &amp;&amp; isHoliday(next(date)))))
-  return maxBy(hits, "priority") ?? seasons.find(s =&gt; s.isDefault)
+  return maxBy(hits, "priority") ?? live.find(s =&gt; s.isDefault)
+  // 期間の外なら undefined（料金なし）。期限切れの料金は返さない
 }
 
 // 1 泊の合計
-total = room(season, guests).amount
-      + Σ fees: per=person_night → amount × 対象の人数
-                per=house_night  → amount
-                per=stay         → amount ÷ 泊数</pre>
+r = room(room, season, guests)
+total = r.amount
+      + Σ fees（r.includes に入っている kind は足さない）:
+          per=person_night → amount × audience と年齢に当たる人数
+          per=room_night / house_night → amount
+          per=stay → amount ÷ 泊数</pre>
 <p class="mute">祝日・祝前日は祝日の暦（辞書）が要る。今は列だけ用意し、暦は後で足す。</p></div>
 </div>
 <h3>wr-ito-033 を型で書くと（入力の bundle）</h3>
@@ -335,7 +354,7 @@ total = room(season, guests).amount
   { "key": "s4", "priority": 3, "valid_from": "2026-04-01", "valid_to": "2027-03-31", "dates": [] }
 ],
 "prices": [
-  { "kind": "room", "per": "house_night", "season": "s1", "guests_min": 2, "guests_max": 2, "amount": 45000, "currency": "JPY", "tax_included": true },
+  { "kind": "room", "per": "house_night", "room": "house", "season": "s1", "guests_min": 2, "guests_max": 2, "amount": 45000, "currency": "JPY", "tax_included": true },
   …（s1〜s4 × 人数。s3 の 2〜5 名・s4 の 2〜8 名は 1 行）
   { "kind": "service_fee", "per": "person_night", "audience": "all",   "amount": 550, "currency": "JPY", "tax_included": true },
   { "kind": "bath_tax",    "per": "person_night", "audience": "adult", "amount": 300, "currency": "JPY" }
@@ -389,7 +408,7 @@ total = room(season, guests).amount
 <table>
 <tr><th>種類</th><td>一棟貸し</td></tr>
 <tr><th>チェックイン/アウト</th><td><span class="flag">原本に無い</span></td></tr>
-<tr><th>定員</th><td>12 名 <span class="flag">料金は 8 名まで。食い違い</span></td></tr>
+<tr><th>定員</th><td>12 名 <span class="mute">料金は 8 名までしか載っていない（9〜12 名の料金は不明）。定員と料金の人数は別に持つ</span></td></tr>
 <tr><th>寝室</th><td>1F：ダブル 1・シングル 1<br>2F：セミダブル 2<br>2F：セミダブル 2<br><span class="mute">原本では出典の文にだけあり、beds は空だった</span></td></tr>
 </table>
 </div>
@@ -426,15 +445,21 @@ total = room(season, guests).amount
 <div class="card">
 <table>
 <tr><th>変更</th><th>中身</th><th>入力（bundle）での書き方</th></tr>
-<tr><td>accommodation_price_seasons（新）</td><td>料金区分。key（dest の中で一意）・valid_from/to・is_default・priority・weekdays（integer[]、1=月）・holidays・day_before_holiday。名前や文の列は持たない</td><td>details.price_seasons[]</td></tr>
+<tr><td>参照（dest の中の key）</td><td>accommodation_units と accommodation_price_seasons に key（dest の中で一意）を足す。料金→部屋・料金→区分・写真→部屋は key で指し、structure の段で id に結ぶ（handoff ingest-pipeline）。入口が詳細どうしの参照を受けない決まりはそのまま</td><td>prices[].room・prices[].season・photos[].subject に key</td></tr>
+<tr><td>accommodation_price_seasons（新）</td><td>料金区分。key・valid_from/to・is_default・priority・weekdays（integer[]、1=月）・holidays・day_before_holiday。名前や文の列は持たない。「料金の条件は全部型で持つ」ので必要</td><td>details.price_seasons[]</td></tr>
 <tr><td>accommodation_price_season_dates（新）</td><td>区分に当てはまる日付（開始・終了）</td><td>price_seasons[].dates[]（入れ子）</td></tr>
-<tr><td>accommodation_prices（直す）</td><td>宿泊料と追加の料金を 1 つの表に。kind（room・service_fee・bath_tax・lodging_tax・cleaning）・per（house_night・person_night・stay）・audience・guests_min/max・season（区分の key。空なら全部の日）。guests・valid_from/to・込み別の列はやめる</td><td>details.prices[]（season は key で指す）</td></tr>
-<tr><td>accommodation_baths（直す）</td><td>種類に indoor・sauna を足す。温泉か（hot_spring）・定員（capacity）・水風呂（has_cold_bath）・外気浴（has_outdoor_rest）を足す。サウナ用の列は他の種類では NULL</td><td>今どおり（details.baths[]）</td></tr>
-<tr><td>accommodation_rules（直す）</td><td>pets_allowed</td><td>今どおり</td></tr>
-<tr><td>語彙（コードの一覧）</td><td>設備は小カテゴリ（code）と中カテゴリ（group）の 2 段で決める。accommodation_amenities.kind は小カテゴリの code だけを持ち、中カテゴリは一覧から引く。注意点・風呂の種類も値とラベルで決め、DB の check・bundle の zod・出力のラベルが同じ一覧を見る</td><td>決まった値だけ受け付ける</td></tr>
+<tr><td>accommodation_prices（直す）</td><td>kind（room・meal・service_fee・bath_tax・lodging_tax・cleaning）・per（house_night・room_night・person_night・stay）・room と season（key）・audience・age_min/max・rate_percent・guests_min/max・includes（text[]）。guests・valid_from/to と、込み別の 4 列（tax 以外）は includes に置き換える</td><td>details.prices[]</td></tr>
+<tr><td>accommodation_units（直す）</td><td>key・smoking（禁煙・喫煙）。capacity は泊まれる最大人数のまま（料金の人数とは別）</td><td>今どおり＋key</td></tr>
+<tr><td>accommodation_baths（直す）</td><td>kind に indoor・sauna を足す。sauna_style・hot_spring・capacity・has_cold_bath・has_outdoor_rest・gender（男女別・混浴・貸切・男女入替。swaps_by_gender をやめる）・reservation_timing・slot_minutes</td><td>今どおり</td></tr>
+<tr><td>accommodation_meals（直す）</td><td>offered（出ないことも持つ）・style（ビュッフェ・会席・定食）・slots（time[]）・amount・currency</td><td>今どおり</td></tr>
+<tr><td>accommodation_access（直す）</td><td>mode（walk・bus・car・shuttle）。station_minutes は mode の分数として読む</td><td>今どおり</td></tr>
+<tr><td>accommodation_rules（直す）</td><td>pets_allowed・pet_size・pet_amount・pet_currency。smoking は今の 3 値のまま出力も Label で出す</td><td>今どおり</td></tr>
+<tr><td>accommodation_internet（直す）</td><td>measured_mbps を down_mbps・up_mbps に分け、measured_at を足す。has_desk を desk（all_rooms・some_rooms・common）に</td><td>今どおり</td></tr>
+<tr><td>accommodation_amenities（直す）</td><td>kind は語彙の code（6 章）。options（text[]、code ごとに決めた値だけ）・count を足す</td><td>決まった値だけ受け付ける</td></tr>
+<tr><td>dest_sources（新・全コア共通）</td><td>dest_id・name・url・type・retrieved_at・fields（text[]）。今は dest_imports の原本にしか無い</td><td>sources[]（今と同じ形）</td></tr>
+<tr><td>語彙（コードの一覧）</td><td>一覧はコードに 1 つ。DB の check・bundle の zod・出力のラベルが同じ一覧を見る。今の bundle は core.kind しか一覧で確かめていないので、詳細の語彙も zod に出す。新しい表は CoreDef.details にも登録する</td><td>一覧に無い値は受け付けない</td></tr>
 </table>
-<p class="mute">料金から区分は、id ではなく dest の中の key で指す（入れ直しても壊れない）。今の「詳細どうしの参照は入力で受けない」の決まりを、この参照だけ変える（未決）。出力では kind=room を rates、それ以外を「このほか」に分ける。新しい表には created_at・updated_at を付ける。</p>
-</div>
+<p class="mute">新しい表には created_at・updated_at を付ける。宿のチェックイン・アウトの必須は、取り込みの検証（PR #30 の quality.ts と validation）で拒む。</p></div>
 <h2>6. 設備の語彙（案）</h2>
 <div class="card">
 <p>設備は 2 段の一覧で決める。中カテゴリ 11・小カテゴリ 47。画面では中カテゴリを行の名前、小カテゴリを値に並べ、付いているもの（options）は行の下に開く詳細に出す。</p>
@@ -517,6 +542,23 @@ total = room(season, guests).amount
 <li>OTA・Google の設備コードとの対応表を今作るか</li>
 </ul>
 </div>
+</div>
+<h2>7. Codex のレビューと対応</h2>
+<div class="card">
+<p>PR #32 を Codex が今の DB・取り込みの処理と照らし合わせた指摘と、このページで直したところ。</p>
+<table>
+<tr><th>重さ</th><th>指摘</th><th>対応</th><th>直した章</th></tr>
+<tr><td>P1</td><td>部屋ごとの料金・部屋の写真を今は取り込めない（料金→部屋の参照を入口が受けない）</td><td>部屋と区分に key を持たせ、料金・写真は key で指す。structure の段で id に結ぶ</td><td>2 Room.key・2.5 Price.room・5 参照</td></tr>
+<tr><td>P1</td><td>食事の形式・朝食だけの料金・夕食が無いこと・時刻の選択、アクセスの徒歩とバスの区別に入れ場所が無い</td><td>Meal に offered・style・slots・fee、Access に mode を足す</td><td>2 Meal・Access・5 meals・access</td></tr>
+<tr><td>P1</td><td>料金の型が足りない（1 室 1 泊・誰にかかるか・年齢・子どもの割合）</td><td>per に room_night、audience・age_min/max・rate_percent を足す</td><td>2.5 Price・5 prices</td></tr>
+<tr><td>P2</td><td>客室の喫煙・サウナの種類・予約のタイミングと時間・男女別・ペットの大きさと料金・Wi-Fi の上り下りと測った日と机の範囲が無い</td><td>Room.smoking、Bath の saunaStyle・gender・reservation、Pets、Internet を足す。Wi-Fi は「あると良い」から「要る」に</td><td>2・5</td></tr>
+<tr><td>P2</td><td>画面用の型が DB に追いついていない（風呂の時間・泉質、駐車場の場所・車高 など）。Internet の型がどこからも使われていない</td><td>型を DB の列に合わせて全部書き直し、AccommodationView に internet を入れた</td><td>2</td></tr>
+<tr><td>P2</td><td>bundle は語彙の制約に自動では付いてこない</td><td>語彙の一覧を bundle の zod にも出す、新しい表は CoreDef に登録する、と書いた</td><td>5 語彙</td></tr>
+<tr><td>P2</td><td>料金→区分の参照が未決で、「料金の条件は全部型で持つ」と矛盾</td><td>key で指し structure の段で結ぶ、と決めた。区分の表は「要る」にした</td><td>5 参照・price_seasons</td></tr>
+<tr><td>P2</td><td>込み別の列を消すと入湯税を二重に足すおそれ。区分の判定が期限切れの料金を返す</td><td>includes を足し、合計で含まれるものは足さない。seasonFor は期間の中だけを見る</td><td>2.5</td></tr>
+<tr><td>P2</td><td>料金が 8 名までなのを定員 12 名との食い違いとしていたが、矛盾とは言えない</td><td>部屋の定員と料金がかかる人数を分けて持つ。4 章の印を直した</td><td>2 Room.capacity・4</td></tr>
+</table>
+<p class="mute">投入の流れ（raw → validate → staging → structure → validate → DB → view → web）の実装は別の作業（handoff ingest-pipeline）。</p>
 </div>
 </main>
 <script>
