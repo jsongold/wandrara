@@ -64,6 +64,13 @@
       "when": 1794737111477,
       "tag": "20261115100511_dest_quality_check_grant",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794737796947,
+      "tag": "20261115101636_dest_quality_check_revoke",
+      "breakpoints": true
     }
   ]
 }
