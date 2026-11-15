@@ -64,33 +64,54 @@ tours                 名前・説明・登録した User・公開/非公開
 
 ### コアと詳細
 
-コアの表には「検索・並び替え・結合に使う列」だけを置き、それ以外の詳細はコアごとの `details`（型つき JSON、jsonb）1 つにまとめる。details の形は core_type ごとの zod で決める。
+列にするか details にするかは、取り込みの決まり（`src/lib/ingest/quality.ts`）に合わせる。
+
+| 決まりでの扱い | 置き場所 | 守り方 |
+|---|---|---|
+| 1 つの値で必須（地域・位置・チェックイン/アウト・所要時間） | コアの表の列 | DB の NOT NULL・CHECK と取り込みの決まり |
+| 「1 つ以上要る」一覧（部屋・料金・営業時間・行き方 など） | details の中 | details の zod で 1 件以上 |
+| 決まりに無い（任意） | details の中 | details の zod（書かなくてよい） |
+| 検索・並び替えに使う（任意でも） | コアの表の列 | details から作る（正は details） |
+
+details はコアごとの型つき JSON（jsonb）1 つ。形は core_type ごとの zod で決める。下の「必須」は quality.ts の決まり。
 
 ```
-accommodations                 operator_id・種類（ホテル・旅館・一棟貸し・民宿・ペンション・グランピング・キャンプ場）・位置・地域・チェックイン/アウト・公式 URL・details
-└ details                      rooms（key・定員・㎡・畳・和洋・眺望・喫煙・寝室と寝具）
+accommodations                 operator_id・種類（ホテル・旅館・一棟貸し・民宿・ペンション・グランピング・キャンプ場）・公式 URL・details
+                               必須の列：地域・位置（範囲の中）・チェックイン・チェックアウト
+└ details                      必須：rooms（定員のある部屋が 1 つ以上）・prices（金額・通貨・人数のある料金が 1 つ以上）
+                               rooms（key・定員・㎡・畳・和洋・眺望・喫煙・寝室と寝具）
                                baths（種類〔サウナを含む〕・温泉か・泉質・時間・男女・予約・料金・水風呂・外気浴）
                                meals（朝/夕・出るか・形式・場所・時間・選べる時刻・料金・アレルギー・自炊）
                                prices（seasons〔key・期間・曜日・祝日・日付〕・items〔種類・単位・room と season の key・人数・対象と年齢・割合・含むもの〕）
                                amenities（語彙の code・付いているもの・数・有料か）・internet（上り/下り・測った日・机）
                                pets・rules・parking・access（手段と時間・送迎・坂）・surroundings・cautions・licenses・booking_links・sources
 
-experiences                    operator_id・種類・地域・所要時間・要予約・公式 URL・details
-└ details                      courses（key）・prices（course の key）・schedules・locations（座標が 1 つとは限らない）・inclusions・cautions・booking_links・sources
+experiences                    operator_id・種類・要予約・公式 URL・details
+                               必須の列：地域・所要時間
+└ details                      必須：prices（1 つ以上）・locations（範囲の中の座標が 1 つ以上）
+                               courses（key）・prices（course の key）・schedules・locations（座標が 1 つとは限らない）・inclusions・cautions・booking_links・sources
 
-natures                        種類・位置・地域・保護の区分・details
-└ details                      seasons・hours・fees・access・trails・restrictions・cautions・sources
+natures                        種類・保護の区分・details
+                               必須の列：地域・位置
+└ details                      必須：access（1 つ以上）
+                               seasons・hours・fees・access・trails・restrictions・cautions・sources
 
-villages                       種類・位置・地域・details
-└ details                      walks・shop_hours・access・events・cautions・sources
+villages                       種類・details
+                               必須の列：地域・位置
+└ details                      必須：access（1 つ以上）
+                               walks・shop_hours・access・events・cautions・sources
 
-buildings                      operator_id・種類・位置・地域・公式 URL・details
-└ details                      hours・fees・access・events・cautions・sources
+buildings                      operator_id・種類・公式 URL・details
+                               必須の列：地域・位置
+└ details                      必須：hours（1 つ以上）・fees（無料は 0）
+                               hours・fees・access・events・cautions・sources
 
-hotsprings                     operator_id・種類・位置・地域・公式 URL・details
-└ details                      baths・hours・fees・amenities・access・cautions・sources
+hotsprings                     operator_id・種類・公式 URL・details
+                               必須の列：地域・位置
+└ details                      必須：hours・fees（大人の料金）・baths（泉質のある浴槽）
+                               baths・hours・fees・amenities・access・cautions・sources
 
-*_texts                        名前・紹介・住所（言語ごと。名前で検索するので表のまま）
+*_texts                        名前・紹介・住所（言語ごと。名前で検索するので表のまま。名前と紹介は必須、住所は位置を持つコアで必須）
 ```
 
 - 検索や並び替えに使う値は、details から列に出す（例：宿の料金の最小・最大で並べるなら、取り込みのときに列にも書く）。出した列の正は details
@@ -120,10 +141,10 @@ dest_imports          投入された入力の原本（出典・確認の状態�
 
 ## 3. 決まり
 - **コアを増やすとき**：コアの表（主キー dest_id）と details の zod を作る。Tour・保存・写真・分類・公開の表は直さない
-- **表にするか details にするか**：次のどれかに当たるものだけを表（または列）にする。それ以外は details
-  - ほかの dest や機能から指される（destinations・写真・分類・公開・Tour）
-  - dest をまたいで検索・並び替え・結合する（種類・地域・位置・チェックイン/アウト など）
-  - ファイルや外の仕組みとつながる（写真と Storage）
+- **列にするか details にするか**：取り込みの決まり（quality.ts）に合わせる（2 章の表）。1 つの値で必須なものと検索・並び替えに使うものは列、一覧の必須と任意は details
+- **表にするもの**：ほかの dest や機能から指されるもの（destinations・写真・分類・公開・Tour）と、ファイルとつながるもの（写真と Storage）
+- **決まりの正は 1 か所**：必須の決まりは quality.ts に置き、列の NOT NULL・CHECK と details の zod（1 件以上）が同じ決まりに合うようにする。決まりを変えたら両方を同じ PR で直す
+- **「どちらか一方」の決まり**（公式 URL か出典のどちらか など）は列の制約にできないので、取り込みの決まりだけで確かめる
 - **details の形**：core_type ごとの zod で決め、書き込む前に必ず確かめる。値の種類は語彙の一覧から選ぶ。DB 側でも JSON Schema（Supabase の pg_jsonschema）で確かめる（使えるかは確かめてから決める）
 - **形を変えるとき**：zod を直し、投入の原本（dest_imports）から作り直す。migration は表の列を変えるときだけ
 - **項目が無いとき**：欄を書かない（JSON にキーが無い）。分かっている値は、その型（false・0 など）で持つ
@@ -158,6 +179,7 @@ dest_imports          投入された入力の原本（出典・確認の状態�
 今変える理由：beta 前で本番は開発環境として扱える。投入の原本が dest_imports に全部残っていて作り直せる。投入の作り直し（handoff ingest-pipeline）の structure の段の書き込み先をこの形にすれば、二度作らずに済む
 
 手順
+0. 必須の列は先に作り、NOT NULL は付けずに始める。今は必須の値が欠けた dest が公開されている（チェックイン/アウトなし 77・座標なし 122、2026-11-15 の点検）。直し終わってから NOT NULL を付ける
 1. 宿だけで移す：accommodations に details を足し、zod・取り込み（plan・apply）・画面用の型（docs/proposals/web-output-model-spec.html の 2 章）・詳細の画面を直す。wr-ito-033 で確かめる
 2. 原本から宿の details を作り直すスクリプトで、全部の宿を移す。移ったら宿の詳細の表を消す
 3. 残りの 5 種類を同じ形で移す
@@ -165,6 +187,7 @@ dest_imports          投入された入力の原本（出典・確認の状態�
 
 未決
 - pg_jsonschema を使うか（Supabase で使えるか、zod から JSON Schema を作れるか）
+- quality.ts の決まりから、列の制約と details の zod をどう作るか（手で合わせるか、1 つの定義から作るか）
 - 料金の最小・最大など、どの値を列に出すか（画面の並び替え・絞り込みで決める）
 - 体験の locations（座標が複数）を details に入れたとき、近さの計算をどうするか
 
