@@ -13,7 +13,3 @@ export const MODE_IDS = Object.keys(MODES) as Mode[];
 export function otherMode(mode: Mode): Mode {
   return mode === "stay" ? "do" : "stay";
 }
-
-export function modeOf(coreType: string): Mode | null {
-  return MODE_IDS.find((m) => (MODES[m] as readonly string[]).includes(coreType)) ?? null;
-}

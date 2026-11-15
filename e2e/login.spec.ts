@@ -14,6 +14,6 @@ test("next が外部サイトなら / になる", async ({ page }) => {
 });
 
 test("next が相対パスならそのまま使う", async ({ page }) => {
-  await page.goto("/login?next=/spots/x");
-  await expect(page.getByTestId("login-next")).toHaveValue("/spots/x");
+  await page.goto("/login?next=/d/x");
+  await expect(page.getByTestId("login-next")).toHaveValue("/d/x");
 });

@@ -2,7 +2,7 @@
 
 # WANDRARA データモデル
 
-状態：案（2026-11-15）。今のマイルストーンで作る範囲。
+状態：実装済み（2026-11-15）。今のマイルストーンで作る範囲。正本はコード（`src/db/schema`）で、この資料は考え方を書く。
 
 ## 1. ビジネスモデル
 
@@ -139,8 +139,14 @@ publications          dest_id・状態・公開日時・承認者
 ```
 regions               箱根・伊豆などの範囲（自治体コードも）
 categories            分類（親子を持つ）
-amenity_codes など     設備・規則のコード（OTA や Google のコードへの対応）
-languages・currencies・fx_rates
+amenity_codes など     設備・規則のコード（OTA や Google のコードへの対応）（まだ作っていない）
+languages・currencies・fx_rates（まだ作っていない）
+```
+
+### 投入
+```
+collector_keys        エージェント用の API キー（User ごと。sha256 だけを持つ・取り消せる）
+dest_imports          投入された入力の原本（出典・確認の状態もここに残る）
 ```
 
 ## 3. 決まり
@@ -151,6 +157,13 @@ languages・currencies・fx_rates
 - **翻訳**：コアごとの *_texts に、列と型を保ったまま持つ（何でも入る field_name / text の形にしない）
 - **近さ**：コアの位置から計算する。テーブルには持たない
 - **spot という語は使わない**
+
+### 実装で決めたこと
+- **詳細の行の中の文**（注意点・メモなど）は、列ごとに jsonb の LocalizedText（`{"ja": "...", "en": "..."}`）で持つ。名前・紹介・住所は *_texts
+- **詳細の表は全部 dest_id を持つ**（入れ子の子も）。消す・入れ直す・RLS の判定を dest_id だけでできる
+- **投入**：エージェントは API キー（collector_keys）で `POST /api/{core}` に送り、受け取った入力そのものは dest_imports に残す。登録すると publications は draft になり、管理者が公開する
+- **詳細どうしの参照**（unit_id・booking_link_id・course_id など）は、今は入力で受けない（入れ子の親を指す列は、入れ子の位置から入る）
+- **ログイン**：メールのリンク（Supabase Auth）。Google は後で（`NEXT_PUBLIC_AUTH_GOOGLE=1` のときだけ出る）
 
 ## 4. 次のマイルストーンで検討
 - 近さで分からないつながり（宿泊者限定の体験、宿が手配する体験、集合場所など）。案：つながりの持ち主のコアに、相手の dest_id をカラムで持つ。role は使わない
