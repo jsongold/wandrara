@@ -46,11 +46,12 @@ describe("parseDiscoverQuery / serializeDiscoverQuery", () => {
   });
   it("往復で同じ条件になる", () => {
     const q: DiscoverQuery = { mode: "do", area: "gora", cat: "onsen", sort: "fresh", q: "湯" };
-    const url = serializeDiscoverQuery(q);
-    expect(parseDiscoverQuery(Object.fromEntries(new URLSearchParams(url.slice(2))))).toEqual(q);
+    const url = serializeDiscoverQuery(q, "en");
+    expect(url.startsWith("/en?")).toBe(true);
+    expect(parseDiscoverQuery(Object.fromEntries(new URLSearchParams(url.slice(4))))).toEqual(q);
   });
   it("既定値は URL から省く", () => {
-    expect(serializeDiscoverQuery(DEFAULT_QUERY)).toBe("/");
+    expect(serializeDiscoverQuery(DEFAULT_QUERY, "ja")).toBe("/ja");
   });
 });
 
@@ -59,7 +60,7 @@ describe("buildFeed", () => {
     const feed = run({});
     expect(feed.cards.map((c) => c.key)).toEqual(["gora-inn", "lake-inn", "shimoda-inn"]);
     expect(feed.cards[0].kindLabel).toBe("宿");
-    expect(feed.cards[0].href).toBe("/d/gora-inn");
+    expect(feed.cards[0].href).toBe("/ja/d/gora-inn");
     expect(feed.orderLabel).toBe("編集部のおすすめ順");
   });
   it("do は stay 以外の core_type を dest 単位で出す", () => {

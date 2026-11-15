@@ -1,5 +1,5 @@
 import { MODE_IDS } from "./modes";
-import type { DiscoverQuery, Mode, SortKey } from "./types";
+import type { DiscoverQuery, Locale, Mode, SortKey } from "./types";
 
 export const DEFAULT_QUERY: DiscoverQuery = { mode: "stay", area: "all", cat: "all", sort: "editorial", q: "" };
 
@@ -28,8 +28,8 @@ export function parseDiscoverQuery(params: RawParams): DiscoverQuery {
   };
 }
 
-// 探索条件を URL に戻す。既定値は省く
-export function serializeDiscoverQuery(query: DiscoverQuery): string {
+// 探索条件を URL（言語つきのトップ）に戻す。既定値は省く
+export function serializeDiscoverQuery(query: DiscoverQuery, locale: Locale): string {
   const p = new URLSearchParams();
   if (query.mode !== DEFAULT_QUERY.mode) p.set("mode", query.mode);
   if (query.area !== "all") p.set("area", query.area);
@@ -37,5 +37,5 @@ export function serializeDiscoverQuery(query: DiscoverQuery): string {
   if (query.sort !== DEFAULT_QUERY.sort) p.set("sort", query.sort);
   if (query.q) p.set("q", query.q);
   const s = p.toString();
-  return s ? `/?${s}` : "/";
+  return s ? `/${locale}?${s}` : `/${locale}`;
 }

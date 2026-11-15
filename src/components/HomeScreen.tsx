@@ -6,12 +6,13 @@ import { useEffect, useState, useTransition, type CSSProperties, type FormEvent,
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
 import { MODE_LABEL, otherMode } from "@/lib/modes";
-import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Photo, SortKey } from "@/lib/types";
+import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Locale, Photo, SortKey } from "@/lib/types";
 import { AccountButton } from "./AccountButton";
+import { LanguageSwitch } from "./LanguageSwitch";
 import { Icon } from "./icons";
 import { PhotoCarousel } from "./PhotoCarousel";
 
-type Props = { query: DiscoverQuery; feed: FeedPage; categories: CategoryView[]; areas: AreaGroupView[] };
+type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPage; categories: CategoryView[]; areas: AreaGroupView[] };
 type Sheet = null | "area" | "filter";
 
 const GLASS: CSSProperties = {
@@ -47,20 +48,20 @@ function areaName(areas: AreaGroupView[], id: string): string {
   return "全エリア";
 }
 
-export function HomeScreen({ query, feed, categories, areas }: Props) {
+export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [sheet, setSheet] = useState<Sheet>(null);
 
   // 全画面の詳細から戻るときのために、今の条件を控えておく
   useEffect(() => {
-    saveLastDiscoverUrl(serializeDiscoverQuery(query));
-  }, [query]);
+    saveLastDiscoverUrl(serializeDiscoverQuery(query, locale));
+  }, [query, locale]);
 
   function go(next: Partial<DiscoverQuery>) {
     const merged: DiscoverQuery = { ...query, ...next };
     startTransition(() => {
-      router.replace(serializeDiscoverQuery(merged), { scroll: false });
+      router.replace(serializeDiscoverQuery(merged, locale), { scroll: false });
     });
   }
 
@@ -108,8 +109,14 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
           <span className="text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{feed.orderLabel} · デモ表示</span>
         </div>
         <div className="flex gap-2">
+          <LanguageSwitch
+            locale={locale}
+            className="flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-full px-3 text-[13px] font-semibold text-white"
+            style={GLASS}
+          />
           <AccountButton
-            next={serializeDiscoverQuery(query)}
+            locale={locale}
+            next={serializeDiscoverQuery(query, locale)}
             className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-white"
             style={GLASS}
           />
