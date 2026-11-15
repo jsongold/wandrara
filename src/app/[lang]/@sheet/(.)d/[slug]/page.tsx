@@ -22,7 +22,7 @@ async function Dest({ params }: Pick<PageProps<"/[lang]/d/[slug]">, "params">) {
   if (!isLocale(lang)) notFound();
   const dest = await getDestDetail(slug, lang);
   if (!dest) notFound();
-  return <DestDetail dest={dest} variant="sheet" />;
+  return <DestDetail dest={dest} variant="sheet" locale={lang} />;
 }
 
 function SheetSkeleton() {

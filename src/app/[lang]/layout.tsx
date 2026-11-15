@@ -4,6 +4,8 @@ import { BfcacheGuard } from "@/components/BfcacheGuard";
 import { DebugOverlay } from "@/components/DebugOverlay";
 import { notFound } from "next/navigation";
 import { isLocale, LOCALES } from "@/lib/i18n/locale";
+import { messages } from "@/lib/i18n/messages";
+import { LocaleProvider } from "@/lib/i18n/use-locale";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -16,10 +18,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "WANDRARA",
-  description: "箱根・伊豆の場所と体験を、写真から見つける。",
-};
+export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Promise<Metadata> {
+  const { lang } = await params;
+  return { title: "WANDRARA", description: messages(isLocale(lang) ? lang : "ja").meta.description };
+}
 
 export function generateStaticParams() {
   return LOCALES.map((lang) => ({ lang }));
@@ -35,10 +37,12 @@ export default async function RootLayout({ children, sheet, params }: LayoutProp
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
-        {sheet}
-        <BfcacheGuard />
-        <DebugOverlay />
+        <LocaleProvider locale={lang}>
+          {children}
+          {sheet}
+          <BfcacheGuard />
+          <DebugOverlay />
+        </LocaleProvider>
       </body>
     </html>
   );

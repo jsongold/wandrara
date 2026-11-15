@@ -5,6 +5,7 @@ import type { PgTable } from "drizzle-orm/pg-core";
 import { cacheLife } from "next/cache";
 import { getCatalog, photoUrl } from "./data";
 import { areaLabel, resolveLocalizedText } from "./feed";
+import { messages } from "./i18n/messages";
 import { coreByType } from "./ingest/cores";
 import type { CoreDef } from "../db/schema/_shared";
 import type { FactView, Locale, Photo } from "./types";
@@ -25,13 +26,13 @@ type Row = Record<string, unknown>;
 /** 画面に出す値の文字列。null は null のまま返す（呼び出し側で捨てる） */
 export function formatValue(v: unknown, locale: Locale, kindLabels: Record<string, string> = {}): string | null {
   if (v === null || v === undefined) return null;
-  if (typeof v === "boolean") return v ? "あり" : "なし";
+  if (typeof v === "boolean") return v ? messages(locale).common.yes : messages(locale).common.no;
   if (typeof v === "number") return String(v);
   if (typeof v === "string") {
     if (kindLabels[v]) return kindLabels[v];
     return /^\d{2}:\d{2}:\d{2}$/.test(v) ? v.slice(0, 5) : v;
   }
-  if (Array.isArray(v)) return v.length ? v.map((x) => formatValue(x, locale)).filter(Boolean).join("、") : null;
+  if (Array.isArray(v)) return v.length ? v.map((x) => formatValue(x, locale)).filter(Boolean).join(messages(locale).common.listSep) : null;
   if (typeof v === "object") return resolveLocalizedText(v as Record<string, string>, locale).text || null;
   return String(v);
 }

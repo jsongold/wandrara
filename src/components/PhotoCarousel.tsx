@@ -4,6 +4,7 @@
 // href があれば各写真がリンクになる（スワイプはスクロール、タップは遷移）。
 import Link from "next/link";
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useMessages } from "@/lib/i18n/use-locale";
 import type { Photo } from "@/lib/types";
 import { Icon } from "./icons";
 
@@ -35,6 +36,7 @@ type Props = {
 
 export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-4 right-4", className = "", children }: Props) {
   const slides: (Photo | null)[] = photos.length > 0 ? photos : [null];
+  const m = useMessages();
   const scroller = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
   // スワイプ（指が動いた・ブラウザがスクロールに切り替えた）の後はタップとして扱わない
@@ -78,7 +80,7 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
         {slides.map((p, i) => (
           <div key={i} className="h-full w-full shrink-0 snap-center snap-always" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>
             {href ? (
-              <Link href={href} tabIndex={i === 0 ? 0 : -1} aria-hidden={i === 0 ? undefined : true} aria-label={i === 0 ? `${label}の詳細を開く` : undefined} className="block h-full w-full" draggable={false}>
+              <Link href={href} tabIndex={i === 0 ? 0 : -1} aria-hidden={i === 0 ? undefined : true} aria-label={i === 0 ? m.photos.open(label) : undefined} className="block h-full w-full" draggable={false}>
                 <Slide photo={p} index={i} eager={i === 0} />
               </Link>
             ) : (
@@ -97,12 +99,12 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
           </span>
           {/* マウスの環境だけ前後ボタンを出す（タッチはスワイプ） */}
           {index > 0 && (
-            <button type="button" onClick={() => go(-1)} aria-label="前の写真" className="absolute left-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white [@media(hover:hover)]:flex">
+            <button type="button" onClick={() => go(-1)} aria-label={m.photos.prev} className="absolute left-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/45 text-white [@media(hover:hover)]:flex">
               <Icon name="back" size={18} />
             </button>
           )}
           {index < slides.length - 1 && (
-            <button type="button" onClick={() => go(1)} aria-label="次の写真" className="absolute right-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 rotate-180 items-center justify-center rounded-full bg-black/45 text-white [@media(hover:hover)]:flex">
+            <button type="button" onClick={() => go(1)} aria-label={m.photos.next} className="absolute right-2 top-1/2 hidden h-9 w-9 -translate-y-1/2 rotate-180 items-center justify-center rounded-full bg-black/45 text-white [@media(hover:hover)]:flex">
               <Icon name="back" size={18} />
             </button>
           )}
