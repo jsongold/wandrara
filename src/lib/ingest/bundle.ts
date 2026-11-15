@@ -1,10 +1,12 @@
-// bundle v2 と API の入力（DestInput）の検証。core・details の中身は drizzle-zod の insert スキーマから作る
+// bundle v2 と API の入力（DestInput）の検証。core・details の中身は drizzle-zod の insert スキーマから作る。
+// 形が合ったら、種類ごとの中身の決まり（quality.ts）も確かめる
 import { getTableName } from "drizzle-orm";
 import { getTableColumns } from "drizzle-orm/utils";
 import { getTableConfig, type PgColumn, type PgTable } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { CORES } from "./cores.ts";
+import { checkQuality } from "./quality.ts";
 import type { CoreDef } from "../../db/schema/_shared.ts";
 
 export type DestInput = Record<string, unknown> & {
@@ -159,16 +161,22 @@ export type Bundle = {
   dests: (DestInput & { core_type: string })[];
 };
 
-/** bundle ファイル用（photos は file / url） */
+/** bundle ファイル用（photos は file / url）。1 件でも中身の決まりに合わなければ bundle 全体を通さない */
 export function parseBundle(json: unknown): ParseResult<Bundle> {
   const r = bundleSchema().safeParse(json);
-  return r.success ? { ok: true, value: r.data as unknown as Bundle } : { ok: false, errors: formatIssues(r.error) };
+  if (!r.success) return { ok: false, errors: formatIssues(r.error) };
+  const value = r.data as unknown as Bundle;
+  const errors = value.dests.flatMap((d, i) => checkQuality(d.core_type, d, `/dests/${i}`));
+  return errors.length ? { ok: false, errors } : { ok: true, value };
 }
 
-/** API 用（photos は storage_key 必須） */
+/** API 用（photos は storage_key 必須）。中身の決まりも同じものを確かめる（スクリプトを通さずに API を呼んでも同じ） */
 export function parseDestInput(core: CoreDef, json: unknown): ParseResult<DestInput> {
   const r = destInputSchema(core).safeParse(json);
-  return r.success ? { ok: true, value: r.data as unknown as DestInput } : { ok: false, errors: formatIssues(r.error) };
+  if (!r.success) return { ok: false, errors: formatIssues(r.error) };
+  const value = r.data as unknown as DestInput;
+  const errors = checkQuality(core.coreType, value);
+  return errors.length ? { ok: false, errors } : { ok: true, value };
 }
 
 /** bundle の JSON Schema（i5 が schema/ に書き出す） */

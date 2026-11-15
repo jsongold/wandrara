@@ -4,10 +4,11 @@ import { registerDest } from "./apply.ts";
 import { coreByType } from "./cores.ts";
 import { parseDestInput } from "./bundle.ts";
 import { contentHash } from "./hash.ts";
+import { withAccommodationQuality } from "./test-fixtures.ts";
 
 const acc = coreByType("accommodation")!;
 const principal = { keyId: "k1", userId: "u1" };
-const body = () => ({
+const body = () => withAccommodationQuality({
   ref: "WR-x-001",
   core: { kind: "private_rental", region_id: "atami" },
   texts: [{ lang: "ja", name: "ヴィラ" }],
@@ -123,7 +124,7 @@ describe("registerDest", () => {
 
   it("中身が変われば draft", async () => {
     const { db } = mockDb(ex, { content_hash: hashOf(body()), status: "published" });
-    const r = await registerDest(db, acc, { ...body(), texts: [{ lang: "ja", name: "別の名前" }] }, principal);
+    const r = await registerDest(db, acc, { ...body(), texts: [{ lang: "ja", name: "別の名前", summary: "s", address: "a" }] }, principal);
     expect(r).toMatchObject({ ok: true, unchanged: false, status: "draft" });
   });
 
