@@ -1,167 +1,4300 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://wandrara.app/schema/content-bundle.schema.json",
-  "title": "WANDRARA content bundle",
-  "description": "コレクターが集めたスポット情報の取り込み形式。事実には必ず出典を付ける。分からないものは status=unknown にし、値を推測しない。",
   "type": "object",
-  "required": ["bundle_version", "collected_at", "collector", "spots"],
-  "additionalProperties": false,
   "properties": {
-    "bundle_version": { "const": "1" },
-    "collected_at": { "type": "string", "format": "date-time" },
-    "collector": { "type": "string", "description": "収集したエージェント・人の名前" },
-    "spots": { "type": "array", "items": { "$ref": "#/$defs/spot" } },
-    "areas": { "type": "array", "items": { "$ref": "#/$defs/area" }, "description": "追加・更新するエリア。spot が使う area_id が DB にもここにも無ければ、取り込み側が地区名か市町村名で作る" },
-    "categories": { "type": "array", "items": { "$ref": "#/$defs/category" }, "description": "追加・更新するカテゴリ（ラベル）。spot が使うカテゴリが DB にもここにも無ければ、取り込み側が ID を名前にして作る" }
-  },
-  "$defs": {
-    "area": {
-      "type": "object",
-      "required": ["id", "name"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9-]{1,40}$" },
-        "parent_id": { "type": "string", "description": "上の地域（例：熱海なら izu）。省くと地域そのものになる" },
-        "name": { "$ref": "#/$defs/localized" }
-      }
+    "bundle_version": {
+      "type": "string",
+      "const": "2"
     },
-    "category": {
-      "type": "object",
-      "required": ["id", "mode", "name"],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9-]{1,40}$" },
-        "mode": { "enum": ["place", "experience"], "description": "place=場所で探す、experience=体験で探す" },
-        "parent_id": { "type": "string" },
-        "name": { "$ref": "#/$defs/localized" },
-        "icon": { "type": "string", "description": "画面のアイコン名。無い名前なら汎用のアイコンになる" }
-      }
+    "collector": {
+      "type": "string",
+      "minLength": 1
     },
-    "localized": {
-      "type": "object",
-      "description": "言語ごとの文。少なくとも ja か en のどちらか。機械翻訳なら machine_translated に言語を入れる",
-      "properties": {
-        "ja": { "type": "string" },
-        "en": { "type": "string" },
-        "machine_translated": { "type": "array", "items": { "enum": ["ja", "en"] } }
-      },
-      "anyOf": [{ "required": ["ja"] }, { "required": ["en"] }],
-      "additionalProperties": false
+    "collected_at": {
+      "type": "string",
+      "minLength": 1
     },
-    "source": {
-      "type": "object",
-      "required": ["type", "retrieved_at"],
-      "additionalProperties": false,
-      "properties": {
-        "type": { "enum": ["official", "government", "ota", "media", "review_site", "field_research", "prior_research", "other"] },
-        "name": { "type": "string", "description": "例：公式サイト、楽天トラベル、箱根町観光協会" },
-        "url": { "type": "string", "format": "iri" },
-        "retrieved_at": { "type": "string", "format": "date", "description": "その出典を見た日" },
-        "evidence": { "type": "string", "maxLength": 300, "description": "根拠になった原文の短い抜き出し（300字以内）" }
-      }
-    },
-    "fact": {
-      "type": "object",
-      "required": ["key", "status"],
-      "additionalProperties": false,
-      "properties": {
-        "key": { "type": "string", "pattern": "^[a-z][a-z0-9_]{1,40}$", "description": "ガイドの事実キー一覧から選ぶ。無ければ新しいキーを作ってよい" },
-        "value": { "description": "型はキーごと（数値・真偽・文字列・localized・配列）。status=unknown なら省く" },
-        "unit": { "type": "string", "description": "例：person, minute, yen, car" },
-        "status": { "enum": ["verified", "unverified", "unknown", "conflict"], "description": "verified=公式など一次情報で確認。unverified=二次情報のみ。unknown=見つからない。conflict=出典同士が食い違う" },
-        "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
-        "note": { "$ref": "#/$defs/localized" }
-      },
-      "allOf": [
-        { "if": { "properties": { "status": { "enum": ["verified", "unverified", "conflict"] } } }, "then": { "required": ["value", "sources"], "properties": { "sources": { "type": "array", "minItems": 1 } } } },
-        { "if": { "properties": { "status": { "const": "conflict" } } }, "then": { "properties": { "sources": { "type": "array", "minItems": 2 } } } }
-      ]
-    },
-    "price": {
-      "type": "object",
-      "required": ["amount", "currency", "unit", "taxes_included", "sources"],
-      "additionalProperties": false,
-      "properties": {
-        "amount": { "type": "number", "minimum": 0 },
-        "amount_max": { "type": "number", "minimum": 0, "description": "幅があるときの上限" },
-        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
-        "unit": { "enum": ["per_night_unit", "per_night_person", "per_person", "per_group", "per_experience", "per_vehicle", "entry"] },
-        "guests": { "type": "integer", "minimum": 1, "description": "その金額が前提とする人数" },
-        "applies_to": { "$ref": "#/$defs/localized", "description": "例：平日、繁忙期、2025年夏" },
-        "taxes_included": { "type": "boolean" },
-        "fees_included": { "type": "boolean", "description": "清掃料・サービス料などを含むか" },
-        "fees_note": { "$ref": "#/$defs/localized" },
-        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/source" } }
-      }
-    },
-    "photo": {
-      "type": "object",
-      "required": ["source_page_url", "license"],
-      "additionalProperties": false,
-      "properties": {
-        "url": { "type": "string", "format": "iri", "description": "画像ファイルの URL。取り込み時にダウンロードしてバケットに置く" },
-        "file": { "type": "string", "pattern": "^[^/].*\\.(jpe?g|png|webp|avif)$", "description": "bundle の JSON から見た画像ファイルの相対パス（例：images/001.jpg）。url の代わりに使える。spot が 1 件の bundle で、どの写真にも url / file が無ければ images/ の画像を名前順に全部使う" },
-        "source_page_url": { "type": "string", "format": "iri", "description": "画像が載っていたページ" },
-        "license": { "enum": ["cc0", "cc_by", "cc_by_sa", "public_domain", "permission_granted", "press_kit", "own", "none"], "description": "利用条件。分からなければ none" },
-        "credit": { "type": "string" },
-        "permission_evidence_url": { "type": "string", "format": "iri", "description": "permission_granted / press_kit の根拠" },
-        "alt": { "$ref": "#/$defs/localized" },
-        "subject": { "enum": ["exterior", "room", "bath", "view", "food", "activity", "landscape", "other"] }
-      }
-    },
-    "review_ref": {
-      "type": "object",
-      "required": ["source", "language"],
-      "additionalProperties": false,
-      "description": "レビューは本文を転載せず、出典へのリンクと要点だけを持つ。本文の掲載は許諾が取れてから",
-      "properties": {
-        "source": { "$ref": "#/$defs/source" },
-        "language": { "type": "string", "pattern": "^[a-z]{2}$" },
-        "posted_at": { "type": "string", "format": "date" },
-        "observations": { "type": "array", "items": { "$ref": "#/$defs/localized" }, "description": "具体的な観察の要約（例：「夜は波の音が大きい」）。評価点は入れない" }
-      }
-    },
-    "spot": {
-      "type": "object",
-      "required": ["external_ref", "kind", "name", "location", "categories", "verification_status"],
-      "additionalProperties": false,
-      "properties": {
-        "external_ref": { "type": "string", "description": "元データの ID（例：hotels.tsv の catalog_id）。同じ施設の再収集で同じ値にする" },
-        "slug": { "type": "string", "pattern": "^[a-z0-9-]{3,60}$", "description": "URL 用。無ければ取り込み側で作る" },
-        "kind": { "enum": ["stay", "place", "experience"] },
-        "name": { "$ref": "#/$defs/localized" },
-        "name_sources": { "type": "array", "items": { "$ref": "#/$defs/source" } },
-        "location": {
-          "type": "object",
-          "required": ["prefecture", "municipality"],
-          "additionalProperties": false,
-          "properties": {
-            "prefecture": { "type": "string" },
-            "municipality": { "type": "string" },
-            "district": { "type": "string", "description": "例：仙石原、強羅、白浜" },
-            "area_id": { "type": "string", "pattern": "^[a-z0-9-]{1,40}$", "description": "エリア ID（hakone, ashinoko, ito, shimoda など）。新しい ID でもよい（areas に書くか、取り込み側が作る）。分からなければ省く" },
-            "address": { "$ref": "#/$defs/localized" },
-            "lat": { "type": "number", "minimum": -90, "maximum": 90 },
-            "lng": { "type": "number", "minimum": -180, "maximum": 180 },
-            "geo_precision": { "enum": ["exact", "street", "district", "municipality"] },
-            "sources": { "type": "array", "items": { "$ref": "#/$defs/source" } }
+    "dests": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "core_type": {
+                "type": "string",
+                "const": "accommodation"
+              },
+              "ref": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "slug": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{3,60}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "verification_status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "core": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "hotel",
+                          "ryokan",
+                          "private_rental",
+                          "minshuku",
+                          "pension",
+                          "glamping",
+                          "campsite"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "region_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "prefecture": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "municipality": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "district": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lat": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lng": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "geo_precision": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "check_in": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "check_out": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "official_url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "texts": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "lang": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "address": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "lang",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "units": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "capacity": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "area_sqm": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "tatami": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "style": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "view": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "bedrooms": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "anyOf": [
+                                  {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "propertyNames": {
+                                          "type": "string"
+                                        },
+                                        "additionalProperties": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "beds": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "bed_type": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "count": {
+                                      "anyOf": [
+                                        {
+                                          "type": "integer",
+                                          "minimum": -2147483648,
+                                          "maximum": 2147483647
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  },
+                                  "additionalProperties": false
+                                }
+                              }
+                            },
+                            "additionalProperties": false
+                          }
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "baths": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "source_type": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "spring": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "open_from": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "open_to": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "needs_reservation": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "amount": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "currency": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "swaps_by_gender": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "meals": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "meal": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "place": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "served_from": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "served_to": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "allergy_ok": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "self_cook": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "booking_links": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "is_official": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "url"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prices": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "amount": {
+                          "type": [
+                            "number",
+                            "string"
+                          ]
+                        },
+                        "amount_max": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "currency": {
+                          "type": "string"
+                        },
+                        "guests": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "meals": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "valid_from": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "valid_to": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "tax_included": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "bath_tax_included": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "lodging_tax_included": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "cleaning_fee_included": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "amenities": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string"
+                        },
+                        "is_paid": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "parkings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "place": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "spaces": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "max_height_m": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "amount": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "currency": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "internet": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "has_wifi": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "measured_mbps": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "has_desk": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "rules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "quiet_from": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "quiet_to": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "bbq_until": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "min_nights": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "smoking": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "parties_allowed": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "fireworks_allowed": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "garbage": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "access": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "nearest_station": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "station_minutes": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "has_shuttle": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "has_slope_or_stairs": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "needs_car": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "winter_restriction": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "surroundings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "neighbor_distance_m": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "sightlines": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "noise_sources": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "view": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "elevation_m": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "cautions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "licenses": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "number": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "categories": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "photos": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "file": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "license": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "credit": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source_page_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "original_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "subject": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "exterior",
+                            "room",
+                            "bath",
+                            "view",
+                            "food",
+                            "activity",
+                            "landscape",
+                            "other"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "region": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{1,40}$"
+                  },
+                  "name": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "parent_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "required": [
+              "core_type",
+              "core",
+              "texts"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "core_type": {
+                "type": "string",
+                "const": "experience"
+              },
+              "ref": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "slug": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{3,60}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "verification_status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "core": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "tour",
+                          "workshop",
+                          "tasting",
+                          "activity",
+                          "facility_use",
+                          "event"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "region_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "duration_minutes": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": -2147483648,
+                        "maximum": 2147483647
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "reservation_required": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "official_url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "texts": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "lang": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "address": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "lang",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "courses": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "description": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "duration_minutes": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "min_people": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "max_people": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "min_age": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "languages": {
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "prices": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "unit": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "audience": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "amount": {
+                          "type": [
+                            "number",
+                            "string"
+                          ]
+                        },
+                        "amount_max": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "currency": {
+                          "type": "string"
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "schedules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "start_month": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "end_month": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "weekdays": {
+                          "anyOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "integer",
+                                "minimum": -2147483648,
+                                "maximum": 2147483647
+                              }
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "start_time": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "end_time": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "rain_policy": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "locations": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lat": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "minimum": -140737488355328,
+                              "maximum": 140737488355327
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "lng": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "minimum": -140737488355328,
+                              "maximum": 140737488355327
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "geo_precision": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "address": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "inclusions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "item": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "cautions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "booking_links": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "url": {
+                          "type": "string"
+                        },
+                        "is_official": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "url"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "categories": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "photos": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "file": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "license": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "credit": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source_page_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "original_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "subject": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "exterior",
+                            "room",
+                            "bath",
+                            "view",
+                            "food",
+                            "activity",
+                            "landscape",
+                            "other"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "region": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{1,40}$"
+                  },
+                  "name": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "parent_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "required": [
+              "core_type",
+              "core",
+              "texts"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "core_type": {
+                "type": "string",
+                "const": "nature"
+              },
+              "ref": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "slug": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{3,60}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "verification_status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "core": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "coast",
+                          "mountain",
+                          "lake",
+                          "highland",
+                          "gorge",
+                          "waterfall",
+                          "forest",
+                          "volcano"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "region_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "prefecture": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "municipality": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "district": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lat": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lng": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "geo_precision": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "protection": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "texts": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "lang": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "address": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "lang",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "seasons": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "subject": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "month_from": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "month_to": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "hours_fees": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "open_time": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "close_time": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "closed_note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "amount": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "amount_max": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "currency": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "access": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "has_parking": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "parking_note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "nearest_station": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "walk_minutes": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "trails": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "distance_km": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "elevation_gain_m": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "difficulty": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "duration_minutes": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "restrictions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "date_from": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "date_to": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "cautions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "categories": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "photos": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "file": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "license": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "credit": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source_page_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "original_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "subject": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "exterior",
+                            "room",
+                            "bath",
+                            "view",
+                            "food",
+                            "activity",
+                            "landscape",
+                            "other"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "region": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{1,40}$"
+                  },
+                  "name": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "parent_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "required": [
+              "core_type",
+              "core",
+              "texts"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "core_type": {
+                "type": "string",
+                "const": "village"
+              },
+              "ref": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "slug": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{3,60}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "verification_status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "core": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "onsen_town",
+                          "post_town",
+                          "fishing_village",
+                          "temple_town",
+                          "castle_town"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "region_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "prefecture": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "municipality": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "district": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lat": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lng": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "geo_precision": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "texts": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "lang": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "address": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "lang",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "walks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "area": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "duration_min": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "shop_hours": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "opens_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "closes_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "access": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "season": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "cautions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "categories": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "photos": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "file": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "license": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "credit": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source_page_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "original_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "subject": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "exterior",
+                            "room",
+                            "bath",
+                            "view",
+                            "food",
+                            "activity",
+                            "landscape",
+                            "other"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "region": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{1,40}$"
+                  },
+                  "name": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "parent_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "required": [
+              "core_type",
+              "core",
+              "texts"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "core_type": {
+                "type": "string",
+                "const": "building"
+              },
+              "ref": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "slug": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{3,60}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "verification_status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "core": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "museum",
+                          "shrine",
+                          "temple",
+                          "castle",
+                          "observatory",
+                          "historic_building"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "region_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "prefecture": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "municipality": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "district": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lat": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lng": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "geo_precision": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "official_url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "texts": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "lang": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "address": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "lang",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "hours": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "open_time": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "close_time": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "closed_days": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "fees": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "amount": {
+                          "type": [
+                            "number",
+                            "string"
+                          ]
+                        },
+                        "amount_max": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "currency": {
+                          "type": "string"
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "access": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "how_to_get": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "has_parking": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "parking_capacity": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "parking_note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "start_date": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "end_date": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "season": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "cautions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "categories": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "photos": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "file": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "license": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "credit": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source_page_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "original_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "subject": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "exterior",
+                            "room",
+                            "bath",
+                            "view",
+                            "food",
+                            "activity",
+                            "landscape",
+                            "other"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "region": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{1,40}$"
+                  },
+                  "name": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "parent_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "required": [
+              "core_type",
+              "core",
+              "texts"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "core_type": {
+                "type": "string",
+                "const": "hotspring"
+              },
+              "ref": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "slug": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{3,60}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "verification_status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "core": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "day_use",
+                          "public_bath",
+                          "foot_bath"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "region_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "prefecture": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "municipality": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "district": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lat": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lng": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": -140737488355328,
+                        "maximum": 140737488355327
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "geo_precision": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "official_url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "texts": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "lang": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "address": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "lang",
+                    "name"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "details": {
+                "type": "object",
+                "properties": {
+                  "baths": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "bath_type": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "spring_handling": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "spring_quality": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "hours": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "opens_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "closes_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "closed_days": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "fees": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "fee_kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "amount": {
+                          "type": [
+                            "number",
+                            "string"
+                          ]
+                        },
+                        "amount_max": {
+                          "type": [
+                            "number",
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "currency": {
+                          "type": "string"
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "amenities": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "towel": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "rest_area": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "meal": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "access": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "nearest_station": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "parking": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "parking_capacity": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": -2147483648,
+                              "maximum": 2147483647
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "cautions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "note": {
+                          "anyOf": [
+                            {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "propertyNames": {
+                                    "type": "string"
+                                  },
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "additionalProperties": false
+              },
+              "categories": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "photos": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "file": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "license": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "credit": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source_page_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "original_url": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "subject": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "exterior",
+                            "room",
+                            "bath",
+                            "view",
+                            "food",
+                            "activity",
+                            "landscape",
+                            "other"
+                          ]
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "alt": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "region": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]{1,40}$"
+                  },
+                  "name": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "parent_id": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "name"
+                ],
+                "additionalProperties": false
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "required": [
+              "core_type",
+              "core",
+              "texts"
+            ],
+            "additionalProperties": false
           }
-        },
-        "categories": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "カテゴリ ID（stay, onsentown, coast, plateau, lake / onsen, hike, gourmet, wine, beach, bbq, camp）。新しい ID でもよい（categories に書くか、取り込み側が作る）。new: の接頭辞は外して扱う" },
-        "summary": { "$ref": "#/$defs/localized", "description": "2〜3文の紹介。事実の主張を含めるなら facts にも入れて出典を付ける" },
-        "official_url": { "type": "string", "format": "iri" },
-        "booking_links": {
-          "type": "array",
-          "items": { "type": "object", "required": ["label", "url"], "additionalProperties": false, "properties": { "label": { "type": "string" }, "url": { "type": "string", "format": "iri" }, "is_official": { "type": "boolean" } } }
-        },
-        "facts": { "type": "array", "items": { "$ref": "#/$defs/fact" } },
-        "prices": { "type": "array", "items": { "$ref": "#/$defs/price" } },
-        "photos": { "type": "array", "items": { "$ref": "#/$defs/photo" } },
-        "reviews": { "type": "array", "items": { "$ref": "#/$defs/review_ref" } },
-        "related_external_refs": { "type": "array", "items": { "type": "string" }, "description": "近くで体験できること・泊まれる場所など、関係するスポットの external_ref" },
-        "verification_status": { "enum": ["candidate", "collected", "verified"], "description": "candidate=名前だけ。collected=出典つきで項目を集めた。verified=公式で主要項目を確認" },
-        "collector_notes": { "type": "string" }
+        ]
       }
     }
-  }
+  },
+  "required": [
+    "bundle_version",
+    "collector",
+    "collected_at",
+    "dests"
+  ],
+  "additionalProperties": false
 }
