@@ -1,9 +1,9 @@
 // 3 つの戦略を名前で選ぶ。環境変数で差し替えられ、UI は変えずに済む。
-import { orderEditorial, primaryByMode, relatedExperiences, type Strategies } from "./feed";
+import { orderEditorial, primaryByMode, relatedOtherMode, type Strategies } from "./feed";
 
 const ORDER = { editorial: orderEditorial };
 const PRIMARY = { "by-mode": primaryByMode };
-const SECONDARY = { "related-experiences": relatedExperiences };
+const SECONDARY = { "related-other-mode": relatedOtherMode };
 
 type Names = { order?: string; primary?: string; secondary?: string };
 
@@ -19,6 +19,6 @@ export function loadFeedStrategies(names: Names = {
   return {
     order: pick(ORDER, names.order, "editorial"),
     primary: pick(PRIMARY, names.primary, "by-mode"),
-    secondary: pick(SECONDARY, names.secondary, "related-experiences"),
+    secondary: pick(SECONDARY, names.secondary, "related-other-mode"),
   };
 }

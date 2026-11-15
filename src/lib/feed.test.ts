@@ -2,16 +2,17 @@ import { describe, expect, it } from "vitest";
 import { parseDiscoverQuery, serializeDiscoverQuery, DEFAULT_QUERY } from "./discover-query";
 import { buildFeed, dedupeRelatedTiles, resolveLocalizedText, type Catalog } from "./feed";
 import { loadFeedStrategies } from "./feed-config";
-import type { DiscoverQuery, Spot, Tile } from "./types";
+import { MODES } from "./modes";
+import type { DestCard, DiscoverQuery, Tile } from "./types";
 
-const photo = { url: null, license: null, credit: null, isDemo: true, placeholderSky: "#aaa", placeholderLand: "#333" };
-const spot = (id: string, kind: Spot["kind"], areaId: string, categoryIds: string[], rank: number): Spot => ({
-  id, kind, areaId, categoryIds, editorialRank: rank, isDemo: true, createdAt: `2026-11-${String(rank).padStart(2, "0")}T00:00:00Z`,
-  name: { ja: id }, summary: null, photos: [photo],
+const dest = (id: string, coreType: string, regionId: string, categoryIds: string[], day: number): DestCard => ({
+  id, coreType, slug: id, regionId, categoryIds, isDemo: true, name: { ja: id }, summary: null, photos: [],
+  createdAt: `2026-11-${String(10 - day).padStart(2, "0")}T00:00:00Z`,
+  publishedAt: `2026-11-${String(day).padStart(2, "0")}T00:00:00Z`,
 });
 
 const catalog: Catalog = {
-  areas: [
+  regions: [
     { id: "hakone", parentId: null, name: { ja: "箱根" }, sort: 1 },
     { id: "ashinoko", parentId: "hakone", name: { ja: "芦ノ湖" }, sort: 1 },
     { id: "gora", parentId: "hakone", name: { ja: "強羅" }, sort: 2 },
@@ -19,18 +20,16 @@ const catalog: Catalog = {
     { id: "shimoda", parentId: "izu", name: { ja: "下田" }, sort: 1 },
   ],
   categories: [
-    { id: "stay", mode: "place", parentId: null, name: { ja: "宿" }, icon: "bed", sort: 1 },
-    { id: "coast", mode: "place", parentId: null, name: { ja: "海辺" }, icon: "sun", sort: 2 },
-    { id: "onsen", mode: "experience", parentId: null, name: { ja: "温泉" }, icon: "steam", sort: 1 },
-    { id: "hike", mode: "experience", parentId: null, name: { ja: "ハイキング" }, icon: "hike", sort: 2 },
+    { id: "onsen", parentId: null, name: { ja: "温泉" }, icon: "steam", sort: 1 },
+    { id: "coast", parentId: null, name: { ja: "海辺" }, icon: "sun", sort: 2 },
   ],
-  spots: [
-    spot("lake-inn", "stay", "ashinoko", ["stay"], 2),
-    spot("gora-inn", "stay", "gora", ["stay"], 1),
-    spot("shimoda-inn", "stay", "shimoda", ["stay", "coast"], 3),
-    spot("lake-walk", "experience", "ashinoko", ["hike"], 4),
-    spot("gora-bath", "experience", "gora", ["onsen"], 5),
-    spot("shimoda-hike", "experience", "shimoda", ["hike"], 6),
+  dests: [
+    dest("lake-inn", "accommodation", "ashinoko", ["onsen"], 2),
+    dest("gora-inn", "accommodation", "gora", ["onsen"], 3),
+    dest("shimoda-inn", "accommodation", "shimoda", ["coast"], 1),
+    dest("lake-walk", "nature", "ashinoko", [], 4),
+    dest("gora-bath", "hotspring", "gora", ["onsen"], 5),
+    dest("shimoda-hike", "experience", "shimoda", [], 6),
   ],
 };
 
@@ -41,8 +40,12 @@ describe("parseDiscoverQuery / serializeDiscoverQuery", () => {
   it("不正値は既定に戻す", () => {
     expect(parseDiscoverQuery({ mode: "x", sort: "y", area: "A B", cat: "<s>" })).toEqual(DEFAULT_QUERY);
   });
+  it("mode の既定は stay", () => {
+    expect(DEFAULT_QUERY.mode).toBe("stay");
+    expect(parseDiscoverQuery({ mode: "place" }).mode).toBe("stay");
+  });
   it("往復で同じ条件になる", () => {
-    const q: DiscoverQuery = { mode: "experience", area: "gora", cat: "onsen", sort: "fresh", q: "湯" };
+    const q: DiscoverQuery = { mode: "do", area: "gora", cat: "onsen", sort: "fresh", q: "湯" };
     const url = serializeDiscoverQuery(q);
     expect(parseDiscoverQuery(Object.fromEntries(new URLSearchParams(url.slice(2))))).toEqual(q);
   });
@@ -52,27 +55,31 @@ describe("parseDiscoverQuery / serializeDiscoverQuery", () => {
 });
 
 describe("buildFeed", () => {
-  it("Place モードは場所だけを編集部の順で並べる", () => {
+  it("stay は accommodation だけを公開日の新しい順で並べる", () => {
     const feed = run({});
     expect(feed.cards.map((c) => c.key)).toEqual(["gora-inn", "lake-inn", "shimoda-inn"]);
+    expect(feed.cards[0].kindLabel).toBe("宿");
+    expect(feed.cards[0].href).toBe("/d/gora-inn");
     expect(feed.orderLabel).toBe("編集部のおすすめ順");
   });
-  it("カテゴリとエリアで即時に絞り込める", () => {
+  it("do は stay 以外の core_type を dest 単位で出す", () => {
+    const feed = run({ mode: "do" });
+    expect(feed.cards.map((c) => c.key)).toEqual(["shimoda-hike", "gora-bath", "lake-walk"]);
+    const others = MODES.stay as readonly string[];
+    expect(feed.cards.every((c) => !others.includes(catalog.dests.find((d) => d.id === c.key)!.coreType))).toBe(true);
+  });
+  it("カテゴリと地域で絞り込める", () => {
     expect(run({ cat: "coast" }).cards.map((c) => c.key)).toEqual(["shimoda-inn"]);
     expect(run({ area: "hakone" }).cards.map((c) => c.key)).toEqual(["gora-inn", "lake-inn"]);
     expect(run({ area: "gora" }).cards.map((c) => c.key)).toEqual(["gora-inn"]);
   });
-  it("関連タイルは同じ地域の体験で、同じ地区を先に出す", () => {
+  it("関連タイルは もう片方の mode の同じ地域で、同じ地区を先に出す", () => {
     const lake = run({ area: "ashinoko" }).cards[0];
-    expect(lake.tiles.map((x) => x.spotId)).toEqual(["lake-walk"]);
-    const gora = run({ cat: "stay", area: "hakone" }).cards[0];
-    expect(gora.tiles.map((x) => x.spotId)[0]).toBe("gora-bath");
-  });
-  it("Experience モードは体験の種類ごとに 1 枚にまとめる", () => {
-    const feed = run({ mode: "experience" });
-    // 並びは並べ方の戦略（代表スポットの編集部の順）が決める
-    expect(feed.cards.map((c) => c.title)).toEqual(["ハイキング", "温泉"]);
-    expect(feed.cards[0].areaLabel).toBe("2か所で体験できる");
+    expect(lake.tiles.map((x) => x.destId)).toEqual(["lake-walk"]);
+    const gora = run({ area: "hakone" }).cards[0];
+    expect(gora.tiles.map((x) => x.destId)[0]).toBe("gora-bath");
+    const bath = run({ mode: "do", area: "gora" }).cards[0];
+    expect(bath.tiles.map((x) => x.destId)).toEqual(["gora-inn"]);
   });
   it("該当なしは理由つきで空を返す", () => {
     const feed = run({ q: "存在しない" });
@@ -87,14 +94,14 @@ describe("buildFeed", () => {
 });
 
 describe("dedupeRelatedTiles", () => {
-  const tile = (id: string): Tile => ({ spotId: id, label: id, sub: "", photo: null, href: "" });
+  const tile = (id: string): Tile => ({ destId: id, label: id, sub: "", photo: null, href: "" });
   it("隣のカードと同じタイルを間引く", () => {
     const out = dedupeRelatedTiles([[tile("a"), tile("b")], [tile("a"), tile("c")]]);
-    expect(out[1].map((x) => x.spotId)).toEqual(["c"]);
+    expect(out[1].map((x) => x.destId)).toEqual(["c"]);
   });
   it("全部重複なら元のタイルを残す", () => {
     const out = dedupeRelatedTiles([[tile("a")], [tile("a")]]);
-    expect(out[1].map((x) => x.spotId)).toEqual(["a"]);
+    expect(out[1].map((x) => x.destId)).toEqual(["a"]);
   });
 });
 
