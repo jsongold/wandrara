@@ -1,8 +1,8 @@
-目的：WANDRARA に必要なデータモデルを層に分けて書き出し、表を作る前に決める。データ構造はこのサービスの中心なので、migration はこの資料が決まってから書く。
+目的：WANDRARA に必要なデータモデルを、利用者から語彙までのまとまりごとに書き出し、表を作る前に決める。データ構造はこのサービスの中心なので、migration はこの資料が決まってから書く。
 
 # WANDRARA データモデル
 
-状態：案（2026-11-15）。層・DataClass・主なフィールドと、処理の Input → Output まで。型・索引・RLS は次の段階で詰める。
+状態：案（2026-11-15）。DataClass・主なフィールドと、処理の Input → Output まで。型・索引・RLS は次の段階で詰める。
 
 ## 1. 前提
 
@@ -14,45 +14,105 @@
 - 後で：AI が作るパッケージ、物産やパートナー商品の販売、現地取材
 
 ### 原則
-1. **層で分ける**。上の層は下の層を参照してよいが、下の層は上の層を参照しない
-2. **Status は独立させる**。どの層のものも指せるが、どの層からも参照されない
+1. **利用者 → 作るもの → 宿・体験・場所 → 中身 → 語彙 の順に持つ・使う**。逆向きに持たない
+2. **Status は独立させる**。どのモデルも指せるが、どのモデルからも参照されない
 3. **処理は矢印で書く**。DataClass は自分を作った処理を持たない。処理が残す記録は Log に置く
 4. **ビジネスの言葉を使う**。「spot」のような何でも入る言葉は使わない
-5. **宿・体験・場所は同列**（L3）。宿と体験は「本体 → 単位 → 料金」の同じ形
-6. **事実は値と出典を一緒に持つ**（Wikidata の statement の形）。項目は L5 の Property で型を決める
+5. **宿・体験・場所は同列**。宿と体験は「本体 → 単位 → 料金」の同じ形
+6. **事実は値と出典を一緒に持つ**（Wikidata の statement の形）。項目は語彙の Property で型を決める
 7. **不明と「無い」を分ける**
 8. **言語は増える**。名前・説明は本体に持たず、Text（言語ごと）に持つ
-9. **外部の標準に対応づける**。自前のコードを正とし、観光庁・OTA・Google・OSM などへの対応を L5 に持つ
+9. **外部の標準に対応づける**。自前のコードを正とし、観光庁・OTA・Google・OSM などへの対応を語彙に持つ
 
-## 2. 層
+## 2. モデルの全体
 
-```
-L1 利用者       User（旅行者 / 運営者 / エージェント / 編集者）
-L2 作るもの     Tour・TourItem・SavedItem・TourShare・Curation（編集部のおすすめ）
-L3 提供されるもの Accommodation ・ Experience ・ Location（同列）
-L4 中身         Unit・Option・Price・Media・Fact・Text・Review・Tag・ExternalId
-L5 語彙         Category・Property・Source・Language・Currency・FxRate
-
-Status          公開・確認などの状態（独立）
-Log             処理が残す記録（取り込み・翻訳・状態の変更）
-```
-
-参照の向き：L1 → L2 → L3 → L4 → L5。Status と Log は各層を指すが、各層からは指されない。
+矢印は「持つ・使う」の向き。上のまとまり（利用者）から下のまとまり（語彙）へ向かい、逆向きは無い。Status と Log は点線で他のモデルを指すが、他のモデルからは指されない。
 
 ```mermaid
 flowchart TB
-  L1[L1 利用者] --> L2[L2 作るもの]
-  L1 -- 運営する --> L3
-  L2 --> L3[L3 宿・体験・場所]
-  L3 --> L4[L4 中身]
-  L4 --> L5[L5 語彙]
-  Status[Status] -.-> L1 & L2 & L3 & L4
-  Log[Log] -.-> L1 & L2 & L3 & L4
+  subgraph users[利用者]
+    User
+    OperatorProfile
+    AgentKey
+  end
+  subgraph creations[作るもの]
+    Tour --> TourItem
+    TourShare
+    SavedItem
+    Curation
+  end
+  subgraph offerings[宿・体験・場所]
+    Accommodation
+    Experience
+    Location
+    Placement
+    AccommodationExperience
+    LocationParent
+  end
+  subgraph contents[中身]
+    Unit --> UnitBed
+    Option
+    Price
+    Fact --> FactQualifier
+    Fact --> FactSource
+    Media
+    Text
+    Review
+    Tag
+    ExternalId
+  end
+  subgraph vocab[語彙]
+    Category
+    Property
+    Source
+    Language
+    Currency
+    FxRate
+  end
+  subgraph status[Status]
+    Status_[Status]
+  end
+  subgraph log[Log]
+    IngestRun --> IngestRecord
+    StatusChange
+    TranslationRun
+    SearchDocument
+  end
+
+  User --> OperatorProfile
+  User --> AgentKey
+  User -- Operates --> Accommodation
+  User -- Operates --> Experience
+  User --> Tour
+  User --> SavedItem
+  User --> Curation
+  Tour --> TourShare
+  TourItem --> Accommodation & Experience & Location
+  SavedItem --> Accommodation & Experience & Location
+  Placement --> Accommodation & Experience
+  Placement --> Location
+  LocationParent --> Location
+  AccommodationExperience --> Accommodation & Experience
+  Accommodation --> Unit
+  Experience --> Option
+  Unit --> Price
+  Option --> Price
+  Accommodation & Experience & Location --> Fact & Media & Text & Review & Tag & ExternalId
+  Fact --> Property
+  FactSource --> Source
+  Price --> Source
+  Review --> Source
+  Tag --> Category
+  Text --> Language
+  Price --> Currency
+  Status_ -.-> Accommodation & Experience & Location & Fact & Price & Media & Text
+  StatusChange -.-> Status_
+  IngestRecord -.-> Accommodation & Experience & Location
 ```
 
 区分：**β** ベータで使う／**後** 後で足す（形だけ決める）
 
-## 3. L1 利用者
+## 3. 利用者
 
 **User**（β）：アカウント（Supabase Auth の auth.users と 1 対 1）
 - id、display_name、preferred_language、preferred_currency
@@ -62,13 +122,13 @@ flowchart TB
 - user_id、legal_name、kind（company / individual / municipality / association）、website
 - license_numbers（旅館業許可・住宅宿泊事業の届出番号など）
 
-**Operates**（β）：運営者がどの宿・体験を運営するか（L1 → L3）
+**Operates**（β）：運営者がどの宿・体験を運営するか
 - user_id、subject_id（Accommodation か Experience）、role（owner / manager）
 
 **AgentKey**（β）：エージェントの API キー
 - id、user_id（agent）、name、key_hash、created_at、revoked_at、last_used_at
 
-## 4. L2 作るもの
+## 4. 作るもの
 
 **Tour**（β）：My Tour。id、user_id、name、created_at、updated_at
 
@@ -84,9 +144,9 @@ flowchart TB
 
 **UserReview**（後）：利用者が投稿するレビュー
 
-## 5. L3 提供されるもの
+## 5. 宿・体験・場所
 
-**Subject**（β）：宿・体験・場所の共通の ID。L2 や L4 はここを指す
+**Subject**（β）：宿・体験・場所の共通の ID。作るものや中身はここを指す
 - id、type（accommodation / experience / location）、slug、is_demo
 
 **Accommodation**（β）：宿
@@ -111,7 +171,7 @@ flowchart TB
 **AccommodationExperience**（β）：宿と体験の対等な関係
 - accommodation_id、experience_id、relation（on_site / arranged_by_property / partner）
 
-## 6. L4 中身
+## 6. 中身
 
 **Unit**（β）：宿の単位。部屋タイプか一棟
 - id、accommodation_id、unit_type（room_type / whole_property / bed_in_dorm / site）
@@ -160,7 +220,7 @@ flowchart TB
 
 **ExternalId**（β）：subject_id、scheme（google_place / osm / wikidata / municipality_code / rakuten_travel / jalan / booking / airbnb / collector）、value、url。(scheme, value) は一意
 
-## 7. L5 語彙
+## 7. 語彙
 
 **Category**（β）：自前の分類。宿・体験・場所で同じ分類を使う。id、icon、sort
 - **CategoryParent**：child_id、parent_id（親は複数でもよい）
@@ -209,17 +269,17 @@ flowchart TB
 | 検証 | Bundle（未検証の JSON）→ **validateBundle** → 検証済みの Bundle ／ エラー |
 | 計画 | Bundle と既存の Subject・Category → **planImport** → 取り込み計画 |
 | 写真の配置 | 写真の中身 → **storeMedia** → storage_key と Media |
-| 保存 | 取り込み計画 → **applyImport** → L3・L4、Status（publication = draft）、IngestRun・IngestRecord |
+| 保存 | 取り込み計画 → **applyImport** → 宿・体験・場所と中身、Status（publication = draft）、IngestRun・IngestRecord |
 | 翻訳 | 原文の Text → **translate**（モデルは差し替え可）→ 訳の Text、Status（translation = machine）、TranslationRun。source_hash がずれたものだけ訳し直す |
-| 確認 | Subject と L4 → **review** → 確認用のまとめ（事実・出典・写真・料金・不足） |
+| 確認 | Subject と中身 → **review** → 確認用のまとめ（事実・出典・写真・料金・不足） |
 | 承認 | Subject と User → **approve** → Status（publication = published）と StatusChange。条件：有効な全言語の Text がそろい、写真の権利を確かめた |
 | 取り下げ | Subject と User → **withdraw** → Status（publication = withdrawn）と StatusChange |
 | 事実の表示 | Fact の集まりと Status → **resolveFacts** → 画面に出す値（rank が最上位、conflict は「食い違い」） |
-| フィード | 公開中の L3 と Curation → **buildFeed**（並び順・主カード・関連の 3 戦略を差し替え可）→ フィード |
+| フィード | 公開中の宿・体験・場所と Curation → **buildFeed**（並び順・主カード・関連の 3 戦略を差し替え可）→ フィード |
 | 場所 → 体験 | Location → **findExperiences**（LocationParent・Placement・距離）→ Experience の一覧 |
 | 体験 → 場所 | Experience か Category → **findLocations** → Location の一覧 |
-| 検索の準備 | L3 と Text → **index** → SearchDocument |
-| 検索 | 検索語 → **search**（全文と埋め込み。だめなら文字の一致）→ L3 の一覧 |
+| 検索の準備 | 宿・体験・場所と Text → **index** → SearchDocument |
+| 検索 | 検索語 → **search**（全文と埋め込み。だめなら文字の一致）→ 宿・体験・場所の一覧 |
 | 為替 | 外部の為替（Frankfurter）→ **fetchRates**（日次）→ FxRate |
 | 換算 | Price・FxRate・表示通貨 → **convert** → 参考価格（為替の日時つき。無ければ換算しない） |
 | 保存（利用者） | User と Subject → **save / unsave** → SavedItem |
@@ -271,7 +331,7 @@ flowchart TB
 | name / summary（{ja,en} の JSON） | Text |
 
 ## 14. 決めること
-1. L3 の共通の ID の名前（今は Subject）
+1. 宿・体験・場所の共通の ID の名前（今は Subject）
 2. Location に地域と見どころをまとめてよいか
 3. Status に Fact の確認状態まで入れてよいか（画面で信頼度として出すので、読むたびに結合が要る）
 4. 運営者のアカウントをベータで作るか（今は OperatorProfile だけ先に持つこともできる）
