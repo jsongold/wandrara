@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- 検証のテストで、わざと形の崩れた入力を作るため */
 import { describe, expect, it } from "vitest";
 import { bundleJsonSchema, parseBundle, parseDestInput } from "./bundle.ts";
 import { coreByType } from "./cores.ts";
