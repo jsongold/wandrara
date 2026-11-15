@@ -20,14 +20,23 @@ pnpm import:bundle <bundle.json> --dry-run   # check the shape and photos only; 
 pnpm import:bundle <bundle.json>             # upload photos and register each dest as a draft
 ```
 
-| Output | Meaning |
-| --- | --- |
-| `dry-run: dest N 件 / 写真 N 枚を確認した` | Shape and photos are fine. Nothing has been sent yet |
-| `draft: <ref> → /d/<slug>` | Registered as a draft. Once published it appears at https://wandrara.vercel.app/d/<slug> |
-| `bundle が正しくない:` followed by a list | The bundle has shape errors. Fix each path in the list (e.g. `/dests/0/core/kind`) |
-| `error: <ref>: <reason>` | That dest was not registered. Fix it and run again |
+Each dest is sent on its own, so read the result per `ref`:
 
-Sending the same `ref` again updates the same dest (a published dest goes back to draft). If any dest fails, the exit code is 1.
+| Case | What you see | What to do next |
+| --- | --- | --- |
+| New registration | `draft: <ref> → /d/<slug>` for a ref never sent before | Nothing. The WANDRARA team publishes it; it then appears at https://wandrara.vercel.app/d/<slug> |
+| Full replace | `draft: <ref> → /d/<slug>` for a ref you sent before | The dest now holds exactly what you sent this time (see "Updates replace everything" below). A published dest is back in draft |
+| Partial success | Some `draft:` lines and some `error:` lines; exit code 1 | Remove the refs that printed `draft:` from the bundle, fix the rest, and run again. Do not resend the whole bundle: every resent dest goes back to draft, including ones already published |
+| Not registered | `error: <ref>: <reason>` where the reason is a photo error or an API answer (400 invalid data, 401 bad key, 403 not allowed, 409 ref conflict) | Nothing was saved for that ref. Fix the cause and send it again |
+| Result unknown | `error: <ref>: <reason>` where the reason is a network error, a timeout or HTTP 5xx | The dest may or may not have been saved. Ask the WANDRARA team to check that ref. If you resend, use the same ref and the complete data |
+
+`dry-run: dest N 件 / 写真 N 枚を確認した` means the shape and photos are fine and nothing has been sent. `bundle が正しくない:` followed by a list means the bundle has shape errors and nothing has been sent; fix each path in the list (e.g. `/dests/0/core/kind`).
+
+### Updates replace everything
+
+There is no partial update. Sending a `ref` that already exists deletes everything stored for that dest — core columns, details, texts, photos and categories — and stores only what you sent. Anything you leave out is not kept. For example, resending a dest with only new prices removes its photos and amenities.
+
+Always resend one dest with its complete data.
 
 ## Resources and where they go
 
@@ -57,7 +66,7 @@ One entry in `dests`:
 | Field | Required | Content |
 | --- | --- | --- |
 | `core_type` | yes | accommodation / experience / nature / village / building / hotspring |
-| `ref` | yes | The source's ID (e.g. `WR-atami-008`). The same ref updates the same dest |
+| `ref` | yes | `<prefix>-<id>` (letters, digits, `_`, `-`; up to 80 chars). Unique across all agents and core types. See "Choosing ref" |
 | `slug` | no | The URL name (lowercase letters, digits, hyphens; 3–60 chars). Derived from ref if omitted. Never changes for an existing dest |
 | `core` | yes | Columns of the core table (kind, location, official URL, ...) |
 | `texts` | yes | Per language: `lang`, `name` (required), `summary`, `address` |
@@ -67,6 +76,20 @@ One entry in `dests`:
 | `region` | no | `{id, name, parent_id}`. Created when `core.region_id` is not in the DB yet |
 | `sources` | no | Array of sources (`type`, `url`, `retrieved_at`, `evidence`). Not stored as columns; kept in the raw import record |
 | `verification_status` | no | verified / unverified / conflict. Kept in the raw import record |
+
+### Choosing ref
+
+A `ref` identifies one dest across all of WANDRARA, not only within your agent. The API checks it like this:
+
+- A new ref creates a new dest.
+- A ref you registered before replaces that dest (see "Updates replace everything").
+- A ref registered by someone else, or registered with a different `core_type`, is refused with 409 and nothing changes.
+
+Rules:
+
+1. Use the prefix the WANDRARA team assigns to your agent (e.g. `WR`), followed by an ID that is unique within your data: `WR-atami-008`.
+2. Keep the same ref for the same place every time you collect it again.
+3. To take over a dest someone else registered (for example, after a re-collection by a different agent), ask the WANDRARA team. They check the existing ref and reassign it to you. Do not create a second ref for the same place.
 
 Do not write `dest_id`, `id`, `sort` or `operator_id` (`sort` follows array order). Columns that point from a nested child to its parent, or from one detail to another (such as `unit_id` on accommodation prices or baths), are not accepted for now.
 
@@ -101,6 +124,8 @@ List each photo in `photos`. `pnpm import:bundle` does the upload, so you do not
 Accepted formats are jpeg, png, webp and avif, up to 10 MB each. The format is detected from the file contents, not the extension. Images that are only placed in `images/` are not used — list every image you want in `photos`.
 
 If any photo of a dest cannot be read or uploaded, that dest is not registered and an `error:` line is printed. Other dests continue.
+
+Uploaded photos are public even while the dest is a draft: they are stored in a public bucket, and anyone with the URL can fetch them. Photos with `license: "none"` (rights not confirmed) are currently accepted and stored the same way, so they are reachable by URL before the WANDRARA team reviews the dest.
 
 ## Example (one stay)
 
