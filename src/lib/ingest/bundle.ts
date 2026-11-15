@@ -130,7 +130,16 @@ function bundleSchema() {
     bundle_version: z.literal("2"),
     collector: z.string().min(1),
     collected_at: z.string().min(1),
-    dests: z.array(dests),
+    // 同じ ref を 2 回書いた bundle は受けない（並列で送ると、新規なら 2 つ目が ref の重複で落ち、既存ならどちらが残るか決まらない）
+    dests: z.array(dests).superRefine((ds, ctx) => {
+      const first = new Map<string, number>();
+      (ds as { ref?: string | null }[]).forEach((d, i) => {
+        if (!d.ref) return;
+        const j = first.get(d.ref);
+        if (j === undefined) first.set(d.ref, i);
+        else ctx.addIssue({ code: "custom", path: [i, "ref"], message: `ref ${d.ref} が /dests/${j} と重なっている。1 つの bundle に同じ ref は 1 回だけ` });
+      });
+    }),
   });
 }
 
