@@ -111,7 +111,8 @@ pre{background:var(--chip);border-radius:8px;padding:12px;overflow:auto;font-siz
 .p-body.new section .p-btn+.p-btn{margin-top:-4px}
 .p-body.new .p-drop{background:#f6f4ef;border-radius:10px;padding:2px 10px 4px;margin:0 0 8px}
 .p-body.new .p-drop .p-fact{font-size:12px;padding:6px 0}
-.p-body.new .p-mapph{height:110px;border-radius:10px;margin:2px 0 10px!important;border:0}
+.p-body.new .vocab td{vertical-align:top}.vocab td code{font-size:11px;color:var(--mute)}
+.p-mapph{height:110px;border-radius:10px;margin:2px 0 10px!important;border:0}
 .p-body.new>.p-note{text-align:center;margin-top:6px!important}
 @keyframes p-open{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .p-fact.tap:active{background:#efece4}
@@ -119,6 +120,7 @@ pre{background:var(--chip);border-radius:8px;padding:12px;overflow:auto;font-siz
 .p-stay{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:10px;padding:5px 11px;border-radius:99px;background:#efece4;line-height:1}
 .p-stay .k{font-size:9.5px;font-weight:700;letter-spacing:.08em;color:#8a867c}
 .p-stay b{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.p-stay.miss b{color:#b5b0a5}
 .p-stay .ln{width:14px;height:1px;background:#b9b4a8;margin:0 2px}
 .p-mapph{height:160px;border-radius:16px;border:1px solid #d0d5cf;background:#dfe3de;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
 </style>
@@ -147,7 +149,7 @@ pre{background:var(--chip);border-radius:8px;padding:12px;overflow:auto;font-siz
 <h2>2. 型は core_type ごとに 1 つ</h2>
 <div class="card">
 <p>出力の型は 2 段。<b>DestCommon</b>（全コア共通）→ <b>AccommodationView</b>（core_type ごと）。<b>kind では出し分けない</b>。kind はバッジに出すだけで、画面はどの kind でも同じ並びで出し、データの無いトピックは出さない。</p>
-<p>画面の見出しは、トピックごとに独立させる。チェックイン・アウトは見出しにせず、紹介文のすぐ下に時刻だけを並べる。そのあとの並びは 料金 → 部屋 → 食事 → 風呂 → 設備 → ペット → 条件 → 駐車場 → アクセス → 周辺 → 注意点 → 予約。<b>設備</b>と<b>条件</b>だけは、小さな項目をまとめる見出しにする。</p>
+<p>画面の見出しは、トピックごとに独立させる。チェックイン・アウトは宿に必須で、どの宿でも必ず出す。見出しにせず、紹介文のすぐ下に時刻だけを並べる。そのあとの並びは 料金 → 部屋 → 食事 → 風呂 → 設備 → ペット → 条件 → 駐車場 → アクセス → 周辺 → 注意点 → 予約。<b>設備</b>と<b>条件</b>だけは、小さな項目をまとめる見出しにする。</p>
 </div>
 <div class="grid">
 <div class="card"><pre>type DestCommon = {
@@ -162,7 +164,7 @@ type AccommodationView = DestCommon &amp; {
   kind: Label            // バッジに出すだけ。出し分けには使わない
   rooms: Room[]          // 部屋（一棟貸しは 1 棟で 1 件）
   baths: Bath[]          // 風呂（サウナを含む）
-  stay: { checkIn?: string; checkOut?: string }  // チェックイン・アウト（紹介文の下）
+  stay: { checkIn: string; checkOut: string }  // 必須。紹介文の下に必ず出す
   priceHint?: PriceHint      // 料金（参考）：最小と最大
   meals: Meal[]          // 食事
   amenities: AmenityGroup[]  // 設備：中カテゴリ → 小カテゴリ
@@ -215,7 +217,7 @@ type Label = { value: string; label: string }</pre></div>
 <h3>画面のトピック（どの kind でも同じ並び）</h3>
 <table>
 <tr><th>見出し</th><th>出力の欄</th><th>元の表</th></tr>
-<tr><td>チェックイン・アウト（紹介文の下。見出しなし）</td><td>stay</td><td>accommodations の check_in・check_out</td></tr>
+<tr><td>チェックイン・アウト（必須。紹介文の下。見出しなし）</td><td>stay</td><td>accommodations の check_in・check_out</td></tr>
 <tr><td>料金（参考）</td><td>priceHint</td><td>prices・price_seasons から作る</td></tr>
 <tr><td>部屋</td><td>rooms</td><td>units・bedrooms・beds</td></tr>
 <tr><td>食事</td><td>meals</td><td>meals</td></tr>
@@ -376,6 +378,7 @@ total = room(season, guests).amount
 <h1 class="p-title">ポッケまほろ伊豆</h1>
 <p class="p-area">伊豆・伊東</p>
 <p class="p-sum">温泉とサウナを所有する、という滞在。伊豆高原の一日一組限定のプライベートヴィラ。敷地内に 8 名程度のバレルサウナ、温泉の内風呂と露天風呂、海を望む BBQ 場。</p>
+<div class="p-stay miss"><span class="k">IN</span><b>--:--</b><span class="ln"></span><span class="k">OUT</span><b>--:--</b></div>
 </section>
 <section>
 <h2 class="p-h">料金（参考）</h2>
@@ -452,7 +455,7 @@ total = room(season, guests).amount
 <li>デザイン（バッジ・タイトル・紹介文・行・アクセス）は今のまま。行の並べ方と中身だけを変える</li>
 <li>「未検証」のラベルは画面に出さない（確認の状態はデータには残す）</li>
 <li>詳細のある行（›）をタップすると、その行のすぐ下に詳細が開く（ページやシートは出さない）</li>
-<li>トピックはそれぞれ独立した見出しにし、チェックイン・アウトは紹介文のすぐ下に時刻だけ。そのあと 料金 → 部屋 → 食事 … の順に出す。ペットも独立。設備と条件だけは、小さな項目をまとめる見出し</li>
+<li>トピックはそれぞれ独立した見出しにし、チェックイン・アウトは必須で、紹介文のすぐ下に時刻だけを必ず出す（wr-ito-033 は元データに無いので、見本では --:--。本来は upload の validation で落ちる）。そのあと 料金 → 部屋 → 食事 … の順に出す。ペットも独立。設備と条件だけは、小さな項目をまとめる見出し</li>
 <li>設備は中カテゴリ（風呂・キッチン・屋外・通信・駐車場 …）を行の名前にし、小カテゴリ（個々の設備）を値に並べる</li>
 <li>同じ種類の行は 1 行にまとめる（風呂 1〜3 → 風呂）。値はラベルで出す（open_air → 露天風呂）</li>
 <li>料金は全部を載せず、参考の最小と最大（それぞれの人数・日の条件つき）だけ。詳細は公式サイトへのリンク。注意点の 19 行は出さない</li>
@@ -686,6 +689,89 @@ total = room(season, guests).amount
 <tr><td>語彙（コードの一覧）</td><td>設備は小カテゴリ（code）と中カテゴリ（group）の 2 段で決める。accommodation_amenities.kind は小カテゴリの code だけを持ち、中カテゴリは一覧から引く。注意点・風呂の種類も値とラベルで決め、DB の check・bundle の zod・出力のラベルが同じ一覧を見る</td><td>決まった値だけ受け付ける</td></tr>
 </table>
 <p class="mute">料金から区分は、id ではなく dest の中の key で指す（入れ直しても壊れない）。今の「詳細どうしの参照は入力で受けない」の決まりを、この参照だけ変える（未決）。出力では kind=room を rates、それ以外を「このほか」に分ける。新しい表には created_at・updated_at を付ける。</p>
+</div>
+<h2>6. 設備の語彙（案）</h2>
+<div class="card">
+<p>設備は 2 段の一覧で決める。中カテゴリ 11・小カテゴリ 47。画面では中カテゴリを行の名前、小カテゴリを値に並べ、付いているもの（options）は行の下に開く詳細に出す。</p>
+<table class="vocab">
+<tr><th>中カテゴリ</th><th>小カテゴリ</th><th>付いているもの（options）</th><th>今のデータ</th></tr>
+<tr><td rowspan="9"><b>キッチン</b><br><code>kitchen</code></td><td>キッチン <code>kitchen</code></td><td></td><td>ito-033・atami-008</td></tr>
+<tr><td>コンロ <code>stove</code></td><td>ih・gas</td><td></td></tr>
+<tr><td>電子レンジ <code>microwave</code></td><td></td><td></td></tr>
+<tr><td>冷蔵庫 <code>refrigerator</code></td><td></td><td></td></tr>
+<tr><td>炊飯器 <code>rice_cooker</code></td><td></td><td></td></tr>
+<tr><td>調理器具 <code>cookware</code></td><td></td><td></td></tr>
+<tr><td>食器 <code>tableware</code></td><td></td><td></td></tr>
+<tr><td>食洗機 <code>dishwasher</code></td><td></td><td></td></tr>
+<tr><td>コーヒーメーカー <code>coffee_maker</code></td><td></td><td></td></tr>
+<tr><td rowspan="5"><b>屋外</b><br><code>outdoor</code></td><td>BBQ <code>bbq</code></td><td>electric_grill・charcoal・gas・covered（屋根の下）</td><td>ito-033・atami-008</td></tr>
+<tr><td>焚き火 <code>fire_pit</code></td><td></td><td></td></tr>
+<tr><td>テラス・デッキ <code>terrace</code></td><td></td><td></td></tr>
+<tr><td>庭 <code>garden</code></td><td></td><td></td></tr>
+<tr><td>プール <code>pool</code></td><td>heated・private</td><td></td></tr>
+<tr><td rowspan="3"><b>通信・仕事</b><br><code>internet</code></td><td>Wi-Fi <code>wifi</code></td><td></td><td>ito-033</td></tr>
+<tr><td>有線 LAN <code>wired_lan</code></td><td></td><td></td></tr>
+<tr><td>仕事用の机 <code>workspace</code></td><td></td><td></td></tr>
+<tr><td rowspan="5"><b>洗面</b><br><code>toiletries</code></td><td>タオル <code>towel</code></td><td>bath_towel</td><td></td></tr>
+<tr><td>シャンプー・ボディソープ <code>shampoo</code></td><td>organic</td><td>ito-033</td></tr>
+<tr><td>歯ブラシ <code>toothbrush</code></td><td></td><td></td></tr>
+<tr><td>ドライヤー <code>hair_dryer</code></td><td></td><td>ito-033</td></tr>
+<tr><td>部屋着 <code>pajamas</code></td><td></td><td></td></tr>
+<tr><td rowspan="4"><b>洗濯</b><br><code>laundry</code></td><td>洗濯機 <code>washing_machine</code></td><td></td><td>ito-033</td></tr>
+<tr><td>乾燥機 <code>dryer</code></td><td></td><td></td></tr>
+<tr><td>コインランドリー <code>coin_laundry</code></td><td></td><td></td></tr>
+<tr><td>アイロン <code>iron</code></td><td></td><td></td></tr>
+<tr><td rowspan="5"><b>室内</b><br><code>room</code></td><td>エアコン <code>air_conditioner</code></td><td></td><td></td></tr>
+<tr><td>床暖房 <code>floor_heating</code></td><td></td><td></td></tr>
+<tr><td>テレビ <code>tv</code></td><td>large</td><td>atami-008</td></tr>
+<tr><td>プロジェクター <code>projector</code></td><td></td><td></td></tr>
+<tr><td>金庫 <code>safe</code></td><td></td><td></td></tr>
+<tr><td rowspan="4"><b>娯楽</b><br><code>entertainment</code></td><td>カラオケ <code>karaoke</code></td><td></td><td>atami-008</td></tr>
+<tr><td>麻雀卓 <code>mahjong</code></td><td>automatic</td><td>atami-008</td></tr>
+<tr><td>ゲーム機 <code>game_console</code></td><td></td><td>atami-008</td></tr>
+<tr><td>ボードゲーム <code>board_games</code></td><td></td><td></td></tr>
+<tr><td rowspan="3"><b>子ども</b><br><code>kids</code></td><td>ベビーベッド <code>crib</code></td><td></td><td></td></tr>
+<tr><td>子ども用のいす <code>high_chair</code></td><td></td><td></td></tr>
+<tr><td>子ども用のアメニティ <code>kids_amenities</code></td><td></td><td></td></tr>
+<tr><td rowspan="4"><b>館内</b><br><code>facility</code></td><td>売店 <code>shop</code></td><td></td><td></td></tr>
+<tr><td>ラウンジ <code>lounge</code></td><td></td><td></td></tr>
+<tr><td>ジム <code>gym</code></td><td></td><td></td></tr>
+<tr><td>自動販売機 <code>vending_machine</code></td><td></td><td></td></tr>
+<tr><td rowspan="3"><b>サービス</b><br><code>service</code></td><td>24 時間フロント <code>front_24h</code></td><td></td><td></td></tr>
+<tr><td>荷物の預かり <code>luggage_storage</code></td><td></td><td></td></tr>
+<tr><td>非対面のチェックイン <code>self_checkin</code></td><td></td><td></td></tr>
+<tr><td rowspan="2"><b>バリアフリー</b><br><code>accessibility</code></td><td>段差なし <code>step_free</code></td><td></td><td></td></tr>
+<tr><td>エレベーター <code>elevator</code></td><td></td><td></td></tr>
+</table>
+<p class="mute">「今のデータ」は wr-ito-033 の投入の原本と、手元の wr-atami-008 の bundle に出てくるもの。今は kind が自由な文字（kitchen・bbq・sauna）で、カラオケ・麻雀などは note の文の中にしか無い。</p>
+</div>
+<div class="grid">
+<div class="card">
+<h3>決まり（案）</h3>
+<ul>
+<li>小カテゴリの code は、1 つの中カテゴリにだけ属する</li>
+<li>一覧はコードに 1 つだけ置き、DB の check・bundle の zod・出力のラベルが同じ一覧を見る</li>
+<li>accommodation_amenities.kind は小カテゴリの code。options（text[]、一覧で決めた値だけ）と count（数）を足す</li>
+<li>一覧に無い code は upload で受け付けない。足りなければ一覧を直す PR を出す</li>
+<li>中カテゴリの並び順は一覧の順。画面もその順に出す</li>
+</ul>
+</div>
+<div class="card">
+<h3>設備に入れないもの</h3>
+<ul>
+<li>風呂・サウナ → 風呂（baths）</li>
+<li>駐車場 → 駐車場（parkings）</li>
+<li>ペット → ペット</li>
+<li>朝食・夕食・自炊の可否 → 食事（meals）</li>
+<li>送迎 → アクセス（access）</li>
+</ul>
+<h3>未決</h3>
+<ul>
+<li>accommodation_internet をやめて wifi の行に寄せるか（実測の速さの置き場）</li>
+<li>note の文を残すか（残しても画面には出さない案）</li>
+<li>OTA・Google の設備コードとの対応表を今作るか</li>
+</ul>
+</div>
 </div>
 </main>
 <script>
