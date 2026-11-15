@@ -1,0 +1,17 @@
+{
+  "bundle_version": "2",
+  "collector": "test-collector",
+  "collected_at": "2026-11-15T10:00:00+09:00",
+  "dests": [
+    {
+      "core_type": "accommodation",
+      "ref": "WR-test-001",
+      "slug": "import-test-001",
+      "core": { "kind": "ryokan", "region_id": "atami", "prefecture": "静岡県", "municipality": "熱海市" },
+      "texts": [{ "lang": "ja", "name": "取り込みテスト", "summary": "テスト用" }],
+      "categories": ["onsen"],
+      "photos": [{ "file": "001.png", "license": "none", "subject": "exterior" }],
+      "region": { "id": "atami", "name": { "ja": "熱海" } }
+    }
+  ]
+}
