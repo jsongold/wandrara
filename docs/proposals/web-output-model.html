@@ -96,6 +96,23 @@ pre{background:var(--chip);border-radius:8px;padding:12px;overflow:auto;font-siz
 .p-drop .p-fact{font-size:12px;padding:6px 0}
 .p-drop .p-fact:last-child{border-bottom:none}
 .p-drop .p-subph{height:120px;margin:8px 0 4px}
+/* 提案の画面：見出しは小さなラベル、行は白いカードの中に詰めて並べる */
+.p-body.new{gap:10px;padding-top:16px}
+.p-body.new>section:first-child{margin-bottom:6px}
+.p-body.new>section:not(:first-child){background:#fff;border-radius:14px;padding:10px 14px 4px;box-shadow:0 1px 2px rgba(20,20,19,.04)}
+.p-body.new .p-h{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:#8a867c;margin:0 0 2px;padding:0;border:0}
+.p-body.new .p-fact{font-size:13px;padding:8px 0;border-bottom:1px solid rgba(20,20,19,.06);align-items:baseline}
+.p-body.new .p-fact:last-of-type{border-bottom:0}
+.p-body.new .p-fact span:first-child{color:#8a867c;font-size:12px}
+.p-body.new .p-fact .v{font-weight:500;color:#141413}
+.p-body.new .p-fact.tap .v::after{font-size:13px;margin-left:6px;color:#b5b0a5}
+.p-body.new .p-note{font-size:11px;color:#8a867c;margin:4px 0 8px!important}
+.p-body.new section .p-btn{padding:9px;font-size:12.5px;border-radius:10px;margin:0 0 10px}
+.p-body.new section .p-btn+.p-btn{margin-top:-4px}
+.p-body.new .p-drop{background:#f6f4ef;border-radius:10px;padding:2px 10px 4px;margin:0 0 8px}
+.p-body.new .p-drop .p-fact{font-size:12px;padding:6px 0}
+.p-body.new .p-mapph{height:110px;border-radius:10px;margin:2px 0 10px!important;border:0}
+.p-body.new>.p-note{text-align:center;margin-top:6px!important}
 @keyframes p-open{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .p-fact.tap:active{background:#efece4}
 .p-subph{height:150px;border-radius:16px;background:#cfd3cc;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
@@ -376,7 +393,7 @@ total = room(season, guests).amount
 <div class="p-fact sub"><span>寝室 2（2F）</span><span class="v">セミダブル 2</span></div>
 <div class="p-fact sub"><span>寝室 3（2F）</span><span class="v">セミダブル 2</span></div>
 </div>
-<div class="p-fact"><span>寝室</span><span class="v">3 室（ダブル・シングル・セミダブル）</span></div>
+<div class="p-fact"><span>寝室</span><span class="v">3 室</span></div>
 </section>
 <section>
 <h2 class="p-h">風呂</h2>
