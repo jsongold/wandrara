@@ -1,4 +1,5 @@
 // フィードの組み立て。並べ方・メインの選び方・関連タイルの選び方の 3 戦略を独立に差し替えられる。
+import { coreLabels } from "./i18n/core-labels";
 import { messages } from "./i18n/messages";
 import { CORES } from "./ingest/cores";
 import { MODES, otherMode } from "./modes";
@@ -28,8 +29,9 @@ export function resolveLocalizedText(text: LocalizedText | null | undefined, loc
 
 const t = (x: LocalizedText | null | undefined, locale: Locale) => resolveLocalizedText(x, locale).text;
 
-export function kindLabelOf(coreType: string): string {
-  return CORES.find((c) => c.coreType === coreType)?.label ?? "";
+export function kindLabelOf(coreType: string, locale: Locale): string {
+  const core = CORES.find((c) => c.coreType === coreType);
+  return core ? coreLabels(core, locale).label : "";
 }
 
 function regionIndex(regions: Region[]) {
@@ -84,7 +86,7 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
       key: d.id,
       title: t(d.name, locale),
       areaLabel: areaLabel(d.regionId, catalog.regions, locale),
-      kindLabel: kindLabelOf(d.coreType),
+      kindLabel: kindLabelOf(d.coreType, locale),
       relLabel: query.mode === "stay" ? messages(locale).home.relStay : messages(locale).home.relDo,
       photos: d.photos,
       href: `/${locale}/d/${d.slug}`,
