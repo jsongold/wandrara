@@ -24,19 +24,29 @@ function admin(): SupabaseClient {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-// テスト用 User を探し、無ければ作る（public.users の行は trigger で作られる）
-export async function ensureTestUser(): Promise<TestUser> {
-  const client = admin();
-  const target = email().toLowerCase();
+async function findUser(client: SupabaseClient, target: string): Promise<TestUser | null> {
   for (let page = 1; ; page++) {
     const { data, error } = await client.auth.admin.listUsers({ page, perPage: 1000 });
     if (error) throw new Error(`listUsers に失敗: ${error.message}`);
     const found = data.users.find((u) => u.email?.toLowerCase() === target);
     if (found) return { id: found.id, email: found.email ?? target };
-    if (data.users.length < 1000) break;
+    if (data.users.length < 1000) return null;
   }
+}
+
+// テスト用 User を探し、無ければ作る（public.users の行は trigger で作られる）。
+// 並行する実行が同時に作ろうとして createUser が失敗したら、探し直す
+export async function ensureTestUser(): Promise<TestUser> {
+  const client = admin();
+  const target = email().toLowerCase();
+  const existing = await findUser(client, target);
+  if (existing) return existing;
   const { data, error } = await client.auth.admin.createUser({ email: target, email_confirm: true });
-  if (error || !data.user) throw new Error(`createUser に失敗: ${error?.message}`);
+  if (error || !data.user) {
+    const raced = await findUser(client, target);
+    if (raced) return raced;
+    throw new Error(`createUser に失敗: ${error?.message}`);
+  }
   return { id: data.user.id, email: data.user.email ?? target };
 }
 
