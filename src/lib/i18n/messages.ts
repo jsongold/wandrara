@@ -66,13 +66,13 @@ const ja = {
     viaEmail: "メールでログイン中",
     logout: "ログアウト",
     logoutConfirm: "ログアウトしますか",
-    logoutNote: "保存したスポットと My Tour はアカウントに残ります。共有したリンクはログアウトしても見られます。",
+    logoutNote: "保存したものと My Tour はアカウントに残ります。共有したリンクはログアウトしても見られます。",
     cancel: "キャンセル",
   },
   login: {
     tagline: "箱根・伊豆を、写真から見つける",
     title: "ログイン",
-    lead: "スポットの保存と My Tour の作成にはログインが必要です。見るだけならログインは要りません。",
+    lead: "保存と My Tour の作成にはログインが必要です。見るだけならログインは要りません。",
     google: "Google で続ける",
     or: "または",
     email: "メールアドレス",
@@ -278,6 +278,13 @@ const ja = {
       photos: "写真",
     } as Record<string, string>,
   },
+  saves: {
+    save: "保存する",
+    unsave: "保存を外す",
+    title: "保存したもの",
+    empty: "まだ保存したものはありません。気になる宿や体験のハートを押すと、ここに並びます",
+    openList: "保存したもの",
+  },
 };
 
 export type Messages = typeof ja;
@@ -346,13 +353,13 @@ const en: Messages = {
     viaEmail: "Logged in with email",
     logout: "Log out",
     logoutConfirm: "Log out?",
-    logoutNote: "Your saved places and My Tours stay in your account. Links you shared still work after you log out.",
+    logoutNote: "Your saved items and My Tours stay in your account. Links you shared still work after you log out.",
     cancel: "Cancel",
   },
   login: {
     tagline: "Find Hakone and Izu, starting from photos",
     title: "Log in",
-    lead: "Log in to save places and make a My Tour. You don't need to log in just to browse.",
+    lead: "Log in to save stays and experiences and make a My Tour. You don't need to log in just to browse.",
     google: "Continue with Google",
     or: "or",
     email: "Email address",
@@ -555,6 +562,13 @@ const en: Messages = {
       booking_links: "Booking",
       photos: "Photos",
     },
+  },
+  saves: {
+    save: "Save",
+    unsave: "Remove from saved",
+    title: "Saved",
+    empty: "Nothing saved yet. Tap the heart on a stay or experience to keep it here.",
+    openList: "Saved",
   },
 };
 
