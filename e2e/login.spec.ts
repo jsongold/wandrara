@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-test("ログイン画面が開き、Google・メール欄・送るボタンが見える", async ({ page }) => {
+test("ログイン画面が開き、Google は出ず、メール欄・送るボタンが見える", async ({ page }) => {
   await page.goto("/login");
-  await expect(page.getByRole("button", { name: "Google で続ける" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Google で続ける" })).toHaveCount(0);
   await expect(page.getByLabel("メールアドレス")).toBeVisible();
   await expect(page.getByRole("button", { name: "ログイン用のリンクを送る" })).toBeVisible();
   await expect(page.getByTestId("login-next")).toHaveValue("/");
