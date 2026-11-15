@@ -4,7 +4,7 @@ import { CORES } from "./cores.ts";
 import { checkQuality, QUALITY_RULES } from "./quality.ts";
 
 const loc = { lat: 35.1, lng: 139.07 };
-const base = (core: Record<string, unknown>, details: Record<string, Record<string, unknown>[]>, opts: { address?: boolean } = {}): DestInput => ({
+const base = (core: Record<string, unknown>, details: Record<string, unknown>, opts: { address?: boolean } = {}): DestInput => ({
   core: { region_id: "atami", ...core },
   texts: [{ lang: "en", name: "N", summary: "S", ...(opts.address === false ? {} : { address: "A" }) }],
   details,
@@ -15,7 +15,10 @@ const base = (core: Record<string, unknown>, details: Record<string, Record<stri
 /** 種類ごとに、決まりを全部満たす入力 */
 const complete: Record<string, () => DestInput> = {
   accommodation: () =>
-    base({ ...loc, check_in: "15:00", check_out: "10:00" }, { units: [{ capacity: 4 }], prices: [{ amount: "20000", currency: "JPY", guests: 2 }] }),
+    base(
+      { ...loc, check_in: "15:00", check_out: "10:00" },
+      { rooms: [{ key: "main", capacity: 4 }], prices: { items: [{ kind: "room", per: "room_night", room: "main", amount: 20000, currency: "JPY" }] } },
+    ),
   experience: () =>
     base({ duration_minutes: 90, official_url: "https://example.com/" }, { prices: [{ amount: 3000, currency: "JPY" }], locations: [loc] }, { address: false }),
   building: () => base(loc, { hours: [{ open_time: "09:00" }], fees: [{ amount: 0, currency: "JPY" }] }),
@@ -43,10 +46,15 @@ describe("checkQuality", () => {
     expect(checkQuality("nature", d, "/dests/3")).toEqual(["/dests/3/texts name と summary が要る（どの言語でもよい）"]);
   });
 
+  type AccDetails = { rooms: Record<string, unknown>[]; prices: { items: Record<string, unknown>[] } };
+  const acc = (d: DestInput) => d.details as AccDetails;
   const missing: [string, string, (d: DestInput) => void][] = [
-    ["accommodation", "/details/prices", (d) => (d.details!.prices = [])],
-    ["accommodation", "/details/prices", (d) => (d.details!.prices = [{ amount: 0, currency: "JPY", guests: 2 }])],
-    ["accommodation", "/details/units", (d) => (d.details!.units = [{ name: "和室" }])],
+    ["accommodation", "/details/prices/items", (d) => (acc(d).prices.items = [])],
+    ["accommodation", "/details/prices/items", (d) => (acc(d).prices.items[0].amount = 0)],
+    ["accommodation", "/details/prices/items", (d) => (acc(d).prices.items[0].kind = "cleaning")],
+    ["accommodation", "/details/prices/items", (d) => delete d.details!.prices],
+    ["accommodation", "/details/rooms", (d) => delete acc(d).rooms[0].capacity],
+    ["accommodation", "/photos", (d) => (d.photos = [{ storage_key: "a.jpg", room: "annex" }])],
     ["accommodation", "/core/check_in", (d) => delete d.core.check_out],
     ["accommodation", "/texts", (d) => delete d.texts[0].address],
     ["accommodation", "/core/lat", (d) => (d.core.lat = 26.2)], // 那覇：範囲の外
@@ -72,4 +80,17 @@ describe("checkQuality", () => {
       expect(errors[0].startsWith(`${path} `)).toBe(true);
     });
   }
+
+  it("accommodation: 写真の room が rooms にあれば通る", () => {
+    const d = complete.accommodation();
+    d.photos = [{ storage_key: "a.jpg", room: "main" }, { storage_key: "b.jpg" }];
+    expect(checkQuality("accommodation", d)).toEqual([]);
+  });
+
+  it("accommodation: 出どころは details.sources[].url でもよい", () => {
+    const d = complete.accommodation();
+    d.sources = [];
+    (d.details as Record<string, unknown>).sources = [{ name: "公式", url: "https://example.com/", type: "official", retrieved_at: "2026-11-15" }];
+    expect(checkQuality("accommodation", d)).toEqual([]);
+  });
 });

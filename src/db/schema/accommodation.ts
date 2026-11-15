@@ -12,6 +12,7 @@ import {
   textsColumns,
   type CoreDef,
 } from "./_shared.ts";
+import { accommodationDetailsSchema } from "../../lib/accommodation/schema.ts";
 import { destinations } from "./common.ts";
 import { operators } from "./people.ts";
 
@@ -304,6 +305,8 @@ export const accommodationCore: CoreDef = {
   texts: accommodationTexts,
   columns: { kind: "種類", checkIn: "チェックイン", checkOut: "チェックアウト", officialUrl: "公式 URL" },
   kindLabels: KIND_LABELS,
+  // 投入は details の JSON 1 つ（accommodations.details）。下の表は、まだ集め直していない宿を詳細の画面で読むためだけに残す
+  detailsSchema: accommodationDetailsSchema,
   details: [
     { key: "units", table: accommodationUnits, label: "部屋", columns: { name: "名前", capacity: "定員", areaSqm: "広さ(㎡)", tatami: "畳", style: "和洋", view: "眺望" } },
     { key: "bedrooms", table: accommodationBedrooms, label: "寝室", columns: { name: "名前" }, parent: { key: "units", column: "unitId" } },

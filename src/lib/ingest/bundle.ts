@@ -95,8 +95,9 @@ function destShape(core: CoreDef, photos: z.ZodType): Record<string, z.ZodType> 
   const kinds = Object.keys(core.kindLabels);
   if (coreShape.kind && kinds.length) coreShape.kind = z.enum(kinds as [string, ...string[]]).nullish();
   const textsShape = columnShape(core.texts, (c) => c.name === "dest_id");
+  // detailsSchema を持つコアは詳細の表（core.details）を入力に使わない
   const details: Record<string, z.ZodType> = {};
-  for (const d of core.details.filter((x) => !x.parent)) details[d.key] = z.array(detailSchema(core, d.key)).optional();
+  if (!core.detailsSchema) for (const d of core.details.filter((x) => !x.parent)) details[d.key] = z.array(detailSchema(core, d.key)).optional();
   return {
     ref: z.string().regex(/^[A-Za-z0-9_-]{1,80}$/, "ref は英数字・_・- の 1〜80 文字").nullish(),
     slug: z

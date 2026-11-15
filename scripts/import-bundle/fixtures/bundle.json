@@ -21,8 +21,12 @@
       },
       "texts": [{ "lang": "ja", "name": "取り込みテスト", "summary": "テスト用", "address": "静岡県熱海市" }],
       "details": {
-        "units": [{ "capacity": 2 }],
-        "prices": [{ "amount": 20000, "currency": "JPY", "guests": 2, "tax_included": true }]
+        "rooms": [{ "key": "washitsu", "name": { "ja": "和室" }, "capacity": 2, "tatami": 8 }],
+        "baths": [{ "kind": "public", "hot_spring": true }],
+        "prices": {
+          "items": [{ "kind": "room", "per": "person_night", "room": "washitsu", "amount": 20000, "currency": "JPY", "tax_included": true, "meals": "both" }]
+        },
+        "sources": [{ "name": "公式サイト", "url": "https://example.com/", "type": "official", "retrieved_at": "2026-11-15" }]
       },
       "categories": ["onsen"],
       "photos": [{ "file": "001.png", "license": "none", "subject": "exterior" }],
