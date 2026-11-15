@@ -1,21 +1,25 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getCurrentUser } from "../../lib/auth/next";
+import { getCurrentUser } from "@/lib/auth/next";
+import { isLocale, withLocale } from "@/lib/i18n/locale";
 import { signOut } from "./actions";
 
-export default function AccountPage(props: PageProps<"/account">) {
+export default function AccountPage(props: PageProps<"/[lang]/account">) {
   return (
     <Suspense fallback={<div className="min-h-dvh bg-[#faf9f6]" />}>
-      <Account searchParams={props.searchParams} />
+      <Account params={props.params} searchParams={props.searchParams} />
     </Suspense>
   );
 }
 
-async function Account({ searchParams }: Pick<PageProps<"/account">, "searchParams">) {
+async function Account({ params, searchParams }: Pick<PageProps<"/[lang]/account">, "params" | "searchParams">) {
+  const { lang } = await params;
+  if (!isLocale(lang)) notFound();
+  const to = (path: string) => withLocale(lang, path);
   const confirming = (await searchParams).logout === "1";
   const user = await getCurrentUser();
-  if (!user) redirect("/login?next=/account");
+  if (!user) redirect(to(`/login?next=${encodeURIComponent(to("/account"))}`));
 
   const email = user.email ?? "";
   const meta = user.user_metadata as { full_name?: string; name?: string } | null;
@@ -25,7 +29,7 @@ async function Account({ searchParams }: Pick<PageProps<"/account">, "searchPara
   return (
     <div className="relative mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-[#faf9f6] text-[#171717]">
       <div className="flex h-14 items-center gap-1 px-2">
-        <Link href="/" aria-label="戻る" className="flex size-11 items-center justify-center">
+        <Link href={to("/")} aria-label="戻る" className="flex size-11 items-center justify-center">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#171717" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 5l-7 7 7 7" />
           </svg>
@@ -46,7 +50,7 @@ async function Account({ searchParams }: Pick<PageProps<"/account">, "searchPara
           </div>
         </div>
         <Link
-          href="/account?logout=1"
+          href={to("/account?logout=1")}
           className="mt-auto flex h-[52px] items-center justify-center rounded-[26px] border border-[#d6d3cb] bg-white text-[15px] font-medium text-[#a1361f] no-underline"
         >
           ログアウト
@@ -55,7 +59,7 @@ async function Account({ searchParams }: Pick<PageProps<"/account">, "searchPara
 
       {confirming && (
         <>
-          <Link href="/account" aria-label="閉じる" className="absolute inset-0 z-10 bg-black/45" />
+          <Link href={to("/account")} aria-label="閉じる" className="absolute inset-0 z-10 bg-black/45" />
           <section
             role="dialog"
             aria-labelledby="logout-title"
@@ -71,12 +75,13 @@ async function Account({ searchParams }: Pick<PageProps<"/account">, "searchPara
               </p>
             </div>
             <form action={signOut} className="flex">
+              <input type="hidden" name="lang" value={lang} />
               <button type="submit" className="h-[52px] flex-1 rounded-[26px] border-0 bg-[#a1361f] text-[15px] font-medium text-white">
                 ログアウト
               </button>
             </form>
             <Link
-              href="/account"
+              href={to("/account")}
               className="flex h-[52px] items-center justify-center rounded-[26px] border border-[#d6d3cb] text-[15px] font-medium text-[#171717] no-underline"
             >
               キャンセル

@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState, type CSSProperties } from "react";
+import { withLocale } from "../lib/i18n/locale";
 import { createClient } from "../lib/supabase/client";
+import type { Locale } from "../lib/types";
 
 // ログイン状態は client で取る（トップをサーバーで動的にしないため）。next は今の URL
-export function AccountButton({ next, className, style }: { next: string; className?: string; style?: CSSProperties }) {
+export function AccountButton({ locale, next, className, style }: { locale: Locale; next: string; className?: string; style?: CSSProperties }) {
   const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
@@ -15,7 +17,7 @@ export function AccountButton({ next, className, style }: { next: string; classN
     return () => data.subscription.unsubscribe();
   }, []);
 
-  const href = signedIn ? "/account" : `/login?next=${encodeURIComponent(next)}`;
+  const href = signedIn ? withLocale(locale, "/account") : withLocale(locale, `/login?next=${encodeURIComponent(next)}`);
   return (
     <Link href={href} aria-label={signedIn ? "アカウント" : "ログイン"} data-testid="account-button" className={className} style={style}>
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">

@@ -2,15 +2,18 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { safeNextPath } from "../../lib/auth/next";
-import { createClient } from "../../lib/supabase/server";
+import { localizedNextPath } from "@/lib/auth/next";
+import { DEFAULT_LOCALE, isLocale, withLocale } from "@/lib/i18n/locale";
+import { createClient } from "@/lib/supabase/server";
 
 export type EmailLoginState = { error: string | null };
 
-// メールのリンクを送る。成功したら /login/sent へ、失敗は画面に短く出す
+// メールのリンクを送る。成功したら /<lang>/login/sent へ、失敗は画面に短く出す
 export async function sendMagicLink(_prev: EmailLoginState, formData: FormData): Promise<EmailLoginState> {
   const email = String(formData.get("email") ?? "").trim();
-  const next = safeNextPath(String(formData.get("next") ?? ""));
+  const rawLang = String(formData.get("lang") ?? "");
+  const lang = isLocale(rawLang) ? rawLang : DEFAULT_LOCALE;
+  const next = localizedNextPath(String(formData.get("next") ?? ""), lang);
   if (!email) return { error: "メールアドレスを入力してください" };
 
   const h = await headers();
@@ -24,5 +27,5 @@ export async function sendMagicLink(_prev: EmailLoginState, formData: FormData):
     options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
   });
   if (error) return { error: "リンクを送れませんでした。時間をおいてもう一度お試しください" };
-  redirect(`/login/sent?email=${encodeURIComponent(email)}`);
+  redirect(withLocale(lang, `/login/sent?email=${encodeURIComponent(email)}`));
 }

@@ -4,22 +4,26 @@ import { getCatalog, listAreas, listCategories } from "@/lib/data";
 import { parseDiscoverQuery } from "@/lib/discover-query";
 import { buildFeed } from "@/lib/feed";
 import { loadFeedStrategies } from "@/lib/feed-config";
+import { isLocale } from "@/lib/i18n/locale";
+import { notFound } from "next/navigation";
 
-export default function Home(props: PageProps<"/">) {
+export default function Home(props: PageProps<"/[lang]">) {
   return (
     <Suspense fallback={<HomeFallback />}>
-      <Discover searchParams={props.searchParams} />
+      <Discover params={props.params} searchParams={props.searchParams} />
     </Suspense>
   );
 }
 
-async function Discover({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
+async function Discover({ params, searchParams }: Pick<PageProps<"/[lang]">, "params" | "searchParams">) {
+  const { lang: locale } = await params;
+  if (!isLocale(locale)) notFound();
   const query = parseDiscoverQuery(await searchParams);
-  const locale = "ja" as const;
   const catalog = await getCatalog();
   const feed = buildFeed({ catalog, query, locale }, loadFeedStrategies());
   return (
     <HomeScreen
+      locale={locale}
       query={query}
       feed={feed}
       categories={listCategories(catalog, query.mode, locale)}

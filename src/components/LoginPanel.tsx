@@ -2,14 +2,16 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { sendMagicLink, type EmailLoginState } from "../app/login/actions";
+import { sendMagicLink, type EmailLoginState } from "../app/[lang]/login/actions";
+import { withLocale } from "../lib/i18n/locale";
 import { createClient } from "../lib/supabase/client";
+import type { Locale } from "../lib/types";
 
 // 当面はメールのリンクだけ。Google は NEXT_PUBLIC_AUTH_GOOGLE=1 のときだけ出す
 const GOOGLE = process.env.NEXT_PUBLIC_AUTH_GOOGLE === "1";
 const initial: EmailLoginState = { error: null };
 
-export function LoginPanel({ next }: { next: string }) {
+export function LoginPanel({ locale, next }: { locale: Locale; next: string }) {
   const [state, action, pending] = useActionState(sendMagicLink, initial);
 
   async function google() {
@@ -52,6 +54,7 @@ export function LoginPanel({ next }: { next: string }) {
         )}
         <form action={action} className="flex flex-col gap-5">
           <input type="hidden" name="next" value={next} data-testid="login-next" />
+          <input type="hidden" name="lang" value={locale} />
           <div className="flex flex-col gap-2">
             <label htmlFor="email" className="text-[13px] font-medium">メールアドレス</label>
             <input
@@ -74,7 +77,7 @@ export function LoginPanel({ next }: { next: string }) {
           </button>
         </form>
         <div className="mt-auto flex flex-col items-center gap-2.5">
-          <Link href="/" className="text-sm font-medium">ゲストのまま見る</Link>
+          <Link href={withLocale(locale, "/")} className="text-sm font-medium">ゲストのまま見る</Link>
           <p className="text-center text-[11px] leading-relaxed text-[#6b675e]">
             続けると、利用規約とプライバシーポリシーに同意したことになります。
           </p>

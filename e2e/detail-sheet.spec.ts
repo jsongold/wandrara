@@ -3,14 +3,14 @@ import { expect, test, type Page } from "@playwright/test";
 // トップ → 詳細はシートで出し、閉じても・戻っても条件が残ることを確かめる。
 // seed のデモ（lakeside-stay）を使う（DB のデータに依存する）
 const SLUG = process.env.E2E_SLUG ?? "lakeside-stay";
-const QUERY = "/?area=hakone&sort=fresh";
+const QUERY = "/ja?area=hakone&sort=fresh";
 
 const sheet = (page: Page) => page.getByRole("dialog", { name: "スポットの詳細" });
 
 async function openSheet(page: Page) {
-  await page.locator(`a[href="/d/${SLUG}"]`).first().click();
+  await page.locator(`a[href="/ja/d/${SLUG}"]`).first().click();
   await expect(sheet(page).getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(page).toHaveURL(new RegExp(`/d/${SLUG}$`));
+  await expect(page).toHaveURL(new RegExp(`/ja/d/${SLUG}$`));
   // せり上がるアニメーションが終わってから操作する（途中だとハンドルの位置がずれる）
   await sheet(page).locator(":scope > div").evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
 }
@@ -18,12 +18,12 @@ async function openSheet(page: Page) {
 async function expectHomeWithQuery(page: Page) {
   await expect(page).toHaveURL(QUERY);
   await expect(sheet(page)).toBeHidden();
-  await expect(page.locator(`a[href="/d/${SLUG}"]`).first()).toBeVisible();
+  await expect(page.locator(`a[href="/ja/d/${SLUG}"]`).first()).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
   await page.goto(QUERY);
-  await expect(page.locator(`a[href="/d/${SLUG}"]`).first()).toBeVisible();
+  await expect(page.locator(`a[href="/ja/d/${SLUG}"]`).first()).toBeVisible();
 });
 
 test("カードを押すと、トップの上に下からシートが出る", async ({ page }) => {
@@ -80,7 +80,7 @@ test("閉じるときは下へ滑ってから戻り、裏のトップも元の�
   await sheet(page).getByRole("button", { name: "閉じる" }).last().click();
   // 滑っている間はまだ詳細の URL のまま
   await expect(sheet(page).locator(".sheet-panel")).toHaveAttribute("style", /translateY\(100%\)/);
-  await expect(page).toHaveURL(new RegExp(`/d/${SLUG}$`));
+  await expect(page).toHaveURL(new RegExp(`/ja/d/${SLUG}$`));
   await expectHomeWithQuery(page);
   await expect(page.locator("[data-home]")).toHaveCSS("transform", "none");
 });
@@ -111,7 +111,7 @@ test("?debug=1 の診断表示は出ても操作を邪魔しない", async ({ pa
   await expect(page.getByText(/^beat \d+/)).toBeVisible();
   await openSheet(page);
   await page.keyboard.press("Escape");
-  await expect(page).toHaveURL(new RegExp("/\\?area=hakone"));
+  await expect(page).toHaveURL(new RegExp("/ja\\?area=hakone"));
   await page.getByRole("button", { name: /エリアを選ぶ/ }).click();
   await expect(page.getByText("すべてのエリア")).toBeVisible();
 });

@@ -86,7 +86,7 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
       kindLabel: kindLabelOf(d.coreType),
       relLabel: query.mode === "stay" ? "関連する体験" : "近くの宿",
       photos: d.photos,
-      href: `/d/${d.slug}`,
+      href: `/${locale}/d/${d.slug}`,
       anchor: d,
     }));
 };
@@ -117,7 +117,7 @@ function tileOf(d: DestCard, ctx: Ctx): Tile {
     label: t(d.name, ctx.locale),
     sub: areaLabel(d.regionId, ctx.catalog.regions, ctx.locale),
     photo: d.photos[0] ?? null,
-    href: `/d/${d.slug}`,
+    href: `/${ctx.locale}/d/${d.slug}`,
   };
 }
 

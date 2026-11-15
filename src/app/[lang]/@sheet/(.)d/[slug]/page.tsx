@@ -1,12 +1,13 @@
 // トップから詳細へ移るときは、トップを残したまま下からシートで出す（intercepting route）。
-// 共有リンク・再読み込みでは app/d/[slug]/page.tsx が全画面で出る。
+// 共有リンク・再読み込みでは app/[lang]/d/[slug]/page.tsx が全画面で出る。
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { DestDetail } from "@/components/DestDetail";
 import { DetailSheet } from "@/components/DetailSheet";
 import { getDestDetail } from "@/lib/detail";
+import { isLocale } from "@/lib/i18n/locale";
 
-export default function DestSheet(props: PageProps<"/d/[slug]">) {
+export default function DestSheet(props: PageProps<"/[lang]/d/[slug]">) {
   return (
     <DetailSheet>
       <Suspense fallback={<SheetSkeleton />}>
@@ -16,9 +17,10 @@ export default function DestSheet(props: PageProps<"/d/[slug]">) {
   );
 }
 
-async function Dest({ params }: Pick<PageProps<"/d/[slug]">, "params">) {
-  const { slug } = await params;
-  const dest = await getDestDetail(slug, "ja");
+async function Dest({ params }: Pick<PageProps<"/[lang]/d/[slug]">, "params">) {
+  const { lang, slug } = await params;
+  if (!isLocale(lang)) notFound();
+  const dest = await getDestDetail(slug, lang);
   if (!dest) notFound();
   return <DestDetail dest={dest} variant="sheet" />;
 }

@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BfcacheGuard } from "@/components/BfcacheGuard";
 import { DebugOverlay } from "@/components/DebugOverlay";
-import "./globals.css";
+import { notFound } from "next/navigation";
+import { isLocale, LOCALES } from "@/lib/i18n/locale";
+import "../globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,11 +21,17 @@ export const metadata: Metadata = {
   description: "箱根・伊豆の場所と体験を、写真から見つける。",
 };
 
-// sheet：トップから開いた詳細を重ねるスロット（app/@sheet）
-export default function RootLayout({ children, sheet }: LayoutProps<"/">) {
+export function generateStaticParams() {
+  return LOCALES.map((lang) => ({ lang }));
+}
+
+// sheet：トップから開いた詳細を重ねるスロット（app/[lang]/@sheet）。lang は URL の先頭の言語
+export default async function RootLayout({ children, sheet, params }: LayoutProps<"/[lang]">) {
+  const { lang } = await params;
+  if (!isLocale(lang)) notFound();
   return (
     <html
-      lang="ja"
+      lang={lang}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
