@@ -13,6 +13,7 @@ import { AccountButton } from "./AccountButton";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { Icon } from "./icons";
 import { PhotoCarousel } from "./PhotoCarousel";
+import { SaveButton } from "./SaveButton";
 
 type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPage; categories: CategoryView[]; areas: AreaGroupView[] };
 type Sheet = null | "area" | "filter";
@@ -297,6 +298,8 @@ function FeedCardView({ card, first }: { card: FeedCard; first: boolean }) {
         {(card.photos[0]?.isDemo ?? true) && (
           <span className="pointer-events-none absolute left-4 top-[76px] rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold tracking-[0.06em]">{m.home.photoDemo}</span>
         )}
+        {/* 写真の枚数表示（right-4 top-[76px]）の下。ボタンだけ押せる */}
+        <SaveButton destId={card.destId} variant="card" className="absolute right-3 top-[104px]" />
         <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[200px] bg-gradient-to-b from-transparent to-black/60" />
         <span className="pointer-events-none absolute inset-x-4 bottom-5 flex flex-col gap-1.5">
           <span className="self-start rounded-md border border-white/50 px-2 py-[3px] text-[11px] font-semibold">{card.kindLabel}</span>
