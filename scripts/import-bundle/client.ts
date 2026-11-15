@@ -2,6 +2,9 @@
 
 export type Upload = { sha256: string; storage_key: string; signed_url: string | null };
 
+/** unchanged: 中身が前回と同じで何も書かなかった（status は今の公開状態のまま） */
+export type RegisterResponse = { dest_id: string; slug: string; status: string; unchanged?: boolean };
+
 export class ApiError extends Error {}
 
 export function createClient(baseUrl: string, apiKey: string, fetchFn: typeof fetch = fetch) {
@@ -34,8 +37,8 @@ export function createClient(baseUrl: string, apiKey: string, fetchFn: typeof fe
       const res = await fetchFn(signedUrl, { method: "PUT", headers: { "content-type": contentType }, body: bytes as BodyInit });
       if (!res.ok) throw new ApiError(`写真の PUT が HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
     },
-    async registerDest(path: string, dest: unknown): Promise<{ dest_id: string; slug: string; status: string }> {
-      return (await post(`/api/${path}`, dest)) as { dest_id: string; slug: string; status: string };
+    async registerDest(path: string, dest: unknown): Promise<RegisterResponse> {
+      return (await post(`/api/${path}`, dest)) as RegisterResponse;
     },
   };
 }

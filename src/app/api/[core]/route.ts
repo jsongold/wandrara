@@ -23,7 +23,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ core: s
   try {
     const r = await registerDest(db, core, json, auth.principal);
     if (!r.ok) return NextResponse.json({ errors: r.errors }, { status: r.status });
-    return NextResponse.json({ dest_id: r.dest_id, slug: r.slug, status: r.status });
+    return NextResponse.json({ dest_id: r.dest_id, slug: r.slug, status: r.status, unchanged: r.unchanged });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ errors: ["書き込みに失敗した"] }, { status: 500 });

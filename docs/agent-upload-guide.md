@@ -25,8 +25,9 @@ Each dest is sent on its own, so read the result per `ref`:
 | Case | What you see | What to do next |
 | --- | --- | --- |
 | New registration | `draft: <ref> → /d/<slug>` for a ref never sent before | Publish it yourself with `pnpm dest:publish <ref>`; it then appears at https://wandrara.vercel.app/d/<slug> |
-| Full replace | `draft: <ref> → /d/<slug>` for a ref you sent before | The dest now holds exactly what you sent this time (see "Updates replace everything" below). A published dest is back in draft |
-| Partial success | Some `draft:` lines and some `error:` lines; exit code 1 | Remove the refs that printed `draft:` from the bundle, fix the rest, and run again. Do not resend the whole bundle: every resent dest goes back to draft, including ones already published |
+| Unchanged | `unchanged: <ref> → /d/<slug>（<status> のまま）` | The content is the same as the last upload, so nothing was written. A published dest stays published |
+| Full replace | `draft: <ref> → /d/<slug>` for a ref you sent before | The content changed, so the dest now holds exactly what you sent this time (see "Updates replace everything" below). A published dest is back in draft |
+| Partial success | Some `draft:` / `unchanged:` lines and some `error:` lines; exit code 1 | Fix the refs that printed `error:` and run the same bundle again. Dests whose content did not change print `unchanged:` and are not touched |
 | Not registered | `error: <ref>: <reason>` where the reason is a photo error or an API answer (400 invalid data, 401 bad key, 403 not allowed, 409 ref conflict) | Nothing was saved for that ref. Fix the cause and send it again |
 | Result unknown | `error: <ref>: <reason>` where the reason is a network error, a timeout or HTTP 5xx | The dest may or may not have been saved. Ask the WANDRARA team to check that ref. If you resend, use the same ref and the complete data |
 
@@ -45,7 +46,9 @@ pnpm dest:publish <ref>... --draft     # take it back to draft
 
 ### Updates replace everything
 
-There is no partial update. Sending a `ref` that already exists deletes everything stored for that dest — core columns, details, texts, photos and categories — and stores only what you sent. Anything you leave out is not kept. For example, resending a dest with only new prices removes its photos and amenities.
+If the content is exactly the same as the last upload of that `ref`, nothing is written (`unchanged:`). `sources` and `verification_status` are not compared, so a new `retrieved_at` alone does not count as a change.
+
+There is no partial update. Sending a `ref` that already exists with changed content deletes everything stored for that dest — core columns, details, texts, photos and categories — and stores only what you sent. Anything you leave out is not kept. For example, resending a dest with only new prices removes its photos and amenities.
 
 Always resend one dest with its complete data.
 

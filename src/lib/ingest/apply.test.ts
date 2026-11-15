@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { registerDest } from "./apply.ts";
 import { coreByType } from "./cores.ts";
+import { parseDestInput } from "./bundle.ts";
+import { contentHash } from "./hash.ts";
 
 const acc = coreByType("accommodation")!;
 const principal = { keyId: "k1", userId: "u1" };
@@ -13,15 +15,20 @@ const body = () => ({
 });
 
 // from(table) の問い合わせ結果を表ごとに返す最小のモック。rpc の引数を記録する
-function mockDb(existing?: { dest_id: string; slug: string; core_type?: string; created_by?: string | null }) {
+function mockDb(
+  existing?: { dest_id: string; slug: string; core_type?: string; created_by?: string | null },
+  last?: { content_hash: string | null; status: string },
+) {
   const rpcCalls: { fn: string; args: { p: Record<string, unknown> } }[] = [];
   const chain = (table: string) => {
     const q: Record<string, unknown> = {};
     const result = () => {
       if (table === "destinations") return { data: existing ?? null, error: null };
+      if (table === "dest_imports") return { data: last ? { content_hash: last.content_hash } : null, error: null };
+      if (table === "publications") return { data: last ? { status: last.status } : null, error: null };
       return { data: [], error: null };
     };
-    for (const m of ["select", "eq", "like", "in", "limit"]) q[m] = () => q;
+    for (const m of ["select", "eq", "like", "in", "limit", "order"]) q[m] = () => q;
     q.maybeSingle = async () => result();
     q.then = (res: (v: unknown) => unknown) => res(table === "destinations" ? { data: existing ? [existing] : [], error: null } : result());
     return q;
@@ -91,5 +98,43 @@ describe("registerDest", () => {
     const r = await registerDest(db, acc, body(), principal);
     expect(r.ok).toBe(true);
     expect(rpcCalls).toHaveLength(1);
+  });
+
+  const hashOf = (b: unknown) => {
+    const p = parseDestInput(acc, b);
+    if (!p.ok) throw new Error(p.errors.join());
+    return contentHash(p.value);
+  };
+
+  it("dest_imports に content_hash を渡す", async () => {
+    const { db, rpcCalls } = mockDb();
+    await registerDest(db, acc, body(), principal);
+    expect((rpcCalls[0].args.p.import as { content_hash: string }).content_hash).toBe(hashOf(body()));
+  });
+
+  it("中身が前回と同じなら dest_apply を呼ばず、公開状態のまま unchanged を返す", async () => {
+    const { db, rpcCalls } = mockDb(ex, { content_hash: hashOf(body()), status: "published" });
+    const r = await registerDest(db, acc, { ...body(), sources: [{ retrieved_at: "2026-11-16" }] }, principal);
+    expect(r).toMatchObject({ ok: true, unchanged: true, status: "published", slug: "keep-me", dest_id: ex.dest_id });
+    expect(rpcCalls).toHaveLength(0);
+  });
+
+  it("中身が変われば書き込み、draft に戻す", async () => {
+    const { db, rpcCalls } = mockDb(ex, { content_hash: hashOf(body()), status: "published" });
+    const r = await registerDest(db, acc, { ...body(), texts: [{ lang: "ja", name: "別の名前" }] }, principal);
+    expect(r).toMatchObject({ ok: true, unchanged: false, status: "draft" });
+    expect(rpcCalls).toHaveLength(1);
+  });
+
+  it("前回のハッシュが無い（古い投入）なら書き込む", async () => {
+    const { db, rpcCalls } = mockDb(ex, { content_hash: null, status: "published" });
+    await registerDest(db, acc, body(), principal);
+    expect(rpcCalls).toHaveLength(1);
+  });
+
+  it("別の登録者なら、中身が同じでも 409", async () => {
+    const { db } = mockDb({ ...ex, created_by: "u2" }, { content_hash: hashOf(body()), status: "published" });
+    const r = await registerDest(db, acc, body(), principal);
+    expect(r).toMatchObject({ ok: false, status: 409 });
   });
 });
