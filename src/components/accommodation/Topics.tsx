@@ -105,6 +105,7 @@ function internetPairs(n: InternetView): Pair[] {
     .filter(Boolean)
     .join("・");
   return [
+    ["Wi-Fi", n.wifi === null ? null : n.wifi ? "あり" : "なし"],
     ["速さ（実測）", speed || null],
     ["測った日", n.measuredAt],
     ["仕事用の机", n.deskLabel],

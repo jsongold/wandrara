@@ -44,9 +44,29 @@ test("トピックは決まった順に並び、アクセスの見出しは 1 �
   const headings = await page.locator("main").last().locator("h2").allInnerTexts();
   const shown = headings.filter((h) => order.includes(h));
   expect(shown).toEqual(order.filter((h) => shown.includes(h)));
+  // wr-ito-033 にあるトピックは必ず出る
+  for (const h of ["料金（参考）", "部屋", "風呂", "設備", "ペット", "駐車場", "アクセス", "注意点", "予約", "出典"]) {
+    expect(headings).toContain(h);
+  }
   expect(headings.filter((h) => h === "アクセス")).toHaveLength(1);
   // 古い「設備・条件」は出さない
   expect(headings).not.toContain("設備・条件");
+});
+
+test("部屋の行はキーボードで開閉でき、寝室の名前が見える", async ({ page }) => {
+  const card = page.locator("section", { has: page.getByRole("heading", { name: "部屋" }) });
+  const button = card.getByRole("button").first();
+  await button.focus();
+  await page.keyboard.press("Enter");
+  await expect(button).toHaveAttribute("aria-expanded", "true");
+  await expect(card).toContainText("1F");
+  await page.keyboard.press("Space");
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+});
+
+test("区分ごとの料金（平日・土曜の値）を出さない", async ({ page }) => {
+  const main = page.locator("main").last();
+  for (const v of ["75,000", "105,000", "147,000", "平日"]) await expect(main.getByText(v)).toHaveCount(0);
 });
 
 test("未検証のラベルを出さない", async ({ page }) => {
