@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
 import { MODE_LABEL, otherMode } from "@/lib/modes";
@@ -27,15 +27,16 @@ const SORTS: { id: SortKey; label: string }[] = [
   { id: "fresh", label: "新着順" },
 ];
 
-// 写真があれば写真、無ければデモ用の色面（空と地面）
-function photoStyle(photo: Photo | null): CSSProperties {
-  if (photo?.url && !photo.isDemo) {
-    return { backgroundImage: `url(${photo.url})`, backgroundSize: "cover", backgroundPosition: "center" };
-  }
+// 写真が無いときのデモ用の色面（空と地面）
+function placeholderStyle(photo: Photo | null): CSSProperties {
   const sky = photo?.placeholderSky ?? "#8f9692";
   const land = photo?.placeholderLand ?? "#2e322f";
   return { background: `linear-gradient(180deg, ${sky} 0%, ${sky} 56%, ${land} 56%, ${land} 100%)` };
 }
+
+// 一度に描くカードの数。全部を一度に描くと、写真の展開で iOS がメモリ不足になりページを閉じる
+const FIRST_CARDS = 6;
+const MORE_CARDS = 6;
 
 function areaName(areas: AreaGroupView[], id: string): string {
   if (id === "all") return "全エリア";
@@ -78,13 +79,12 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
     <div data-home className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
       {/* Feed */}
       <div
+        data-feed
         className="absolute inset-0 overflow-y-auto pb-[190px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
       >
-        {feed.cards.map((card) => (
-          <FeedCardView key={card.key} card={card} />
-        ))}
+        <FeedList key={serializeDiscoverQuery(query)} cards={feed.cards} />
         {feed.cards.length === 0 && (
           <div className="flex flex-col items-center gap-3.5 px-8 pt-[180px] text-center">
             <Icon name="search" size={40} />
@@ -247,11 +247,42 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
   );
 }
 
-function FeedCardView({ card }: { card: FeedCard }) {
+// 最初は FIRST_CARDS 枚だけ描き、終わりに近づいたら MORE_CARDS 枚ずつ足す。条件が変わると key で最初に戻る
+function FeedList({ cards }: { cards: FeedCard[] }) {
+  const [shown, setShown] = useState(FIRST_CARDS);
+  const sentinel = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || shown >= cards.length) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setShown((n) => Math.min(cards.length, n + MORE_CARDS));
+      },
+      { root: el.closest("[data-feed]"), rootMargin: "0px 0px 1500px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [shown, cards.length]);
+
   return (
-    <article className="flex flex-col">
+    <>
+      {cards.slice(0, shown).map((card, i) => (
+        <FeedCardView key={card.key} card={card} first={i === 0} />
+      ))}
+      {shown < cards.length && <div ref={sentinel} aria-hidden="true" className="h-px" />}
+    </>
+  );
+}
+
+// 画面の外のカードは描画を省く（content-visibility）。最初のカードだけ写真を先に読む
+const OFFSCREEN: CSSProperties = { contentVisibility: "auto", containIntrinsicSize: "auto 760px" };
+
+function FeedCardView({ card, first }: { card: FeedCard; first: boolean }) {
+  return (
+    <article className="flex flex-col" style={first ? undefined : OFFSCREEN}>
       {/* 写真は横にスワイプで切り替え、タップで詳細を開く */}
-      <PhotoCarousel photos={card.photos} href={card.href} label={card.title} className="h-[520px] text-white" counterClassName="right-4 top-[76px]">
+      <PhotoCarousel photos={card.photos} href={card.href} label={card.title} className="h-[520px] text-white" counterClassName="right-4 top-[76px]" priority={first}>
         {(card.photos[0]?.isDemo ?? true) && (
           <span className="pointer-events-none absolute left-4 top-[76px] rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold tracking-[0.06em]">写真（デモ）</span>
         )}
@@ -268,7 +299,12 @@ function FeedCardView({ card }: { card: FeedCard }) {
           <div className="grid grid-cols-3 gap-1.5">
             {card.tiles.map((t) => (
               <Link key={t.destId} href={t.href} className="flex flex-col gap-1.5 text-white no-underline">
-                <span className="block h-28 rounded-[10px]" style={photoStyle(t.photo)} />
+                {t.photo?.url && !t.photo.isDemo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={t.photo.url} alt="" loading="lazy" decoding="async" className="block h-28 w-full rounded-[10px] object-cover" />
+                ) : (
+                  <span className="block h-28 rounded-[10px]" style={placeholderStyle(t.photo)} />
+                )}
                 <span className="flex flex-col gap-0.5">
                   <span className="text-xs leading-[1.4]">{t.label}</span>
                   {t.sub && <span className="text-[11px] text-white/70">{t.sub}</span>}
