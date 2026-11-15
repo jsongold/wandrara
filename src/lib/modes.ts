@@ -6,8 +6,6 @@ export const MODES = {
 
 export type Mode = keyof typeof MODES;
 
-export const MODE_LABEL: Record<Mode, string> = { stay: "宿", do: "体験" };
-
 export const MODE_IDS = Object.keys(MODES) as Mode[];
 
 export function otherMode(mode: Mode): Mode {

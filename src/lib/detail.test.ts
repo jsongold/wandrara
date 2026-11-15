@@ -6,6 +6,7 @@ describe("formatValue", () => {
   it("null は null、boolean は あり / なし、時刻は秒を落とす", () => {
     expect(formatValue(null, "ja")).toBeNull();
     expect(formatValue(true, "ja")).toBe("あり");
+    expect(formatValue(true, "en")).toBe("Yes");
     expect(formatValue(false, "ja")).toBe("なし");
     expect(formatValue("15:00:00", "ja")).toBe("15:00");
     expect(formatValue(0, "ja")).toBe("0");

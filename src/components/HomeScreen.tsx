@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
-import { MODE_LABEL, otherMode } from "@/lib/modes";
+import { messages, type Messages } from "@/lib/i18n/messages";
+import { useMessages } from "@/lib/i18n/use-locale";
+import { otherMode } from "@/lib/modes";
 import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Locale, Photo, SortKey } from "@/lib/types";
 import { AccountButton } from "./AccountButton";
 import { LanguageSwitch } from "./LanguageSwitch";
@@ -23,9 +25,9 @@ const GLASS: CSSProperties = {
 };
 const CHIP_ON: CSSProperties = { background: "#f4f1ea", color: "#141413", border: "1px solid #f4f1ea" };
 const CHIP_OFF: CSSProperties = { background: "transparent", color: "#ffffff", border: "1px solid rgba(255,255,255,0.28)" };
-const SORTS: { id: SortKey; label: string }[] = [
-  { id: "editorial", label: "編集部のおすすめ" },
-  { id: "fresh", label: "新着順" },
+const sorts = (m: Messages): { id: SortKey; label: string }[] => [
+  { id: "editorial", label: m.home.sortEditorial },
+  { id: "fresh", label: m.home.sortFresh },
 ];
 
 // 写真が無いときのデモ用の色面（空と地面）
@@ -39,20 +41,21 @@ function placeholderStyle(photo: Photo | null): CSSProperties {
 const FIRST_CARDS = 6;
 const MORE_CARDS = 6;
 
-function areaName(areas: AreaGroupView[], id: string): string {
-  if (id === "all") return "全エリア";
+function areaName(areas: AreaGroupView[], id: string, all: string): string {
+  if (id === "all") return all;
   for (const g of areas) {
     if (g.id === id) return g.label;
     const sub = g.subs.find((s) => s.id === id);
     if (sub) return sub.label;
   }
-  return "全エリア";
+  return all;
 }
 
 export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [sheet, setSheet] = useState<Sheet>(null);
+  const m = messages(locale);
 
   // 全画面の詳細から戻るときのために、今の条件を控えておく
   useEffect(() => {
@@ -73,8 +76,8 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
   }
 
   const isStay = query.mode === "stay";
-  const allCats: CategoryView[] = [{ id: "all", label: "すべて", icon: "grid" }, ...categories];
-  const currentArea = areaName(areas, query.area);
+  const allCats: CategoryView[] = [{ id: "all", label: m.home.allCats, icon: "grid" }, ...categories];
+  const currentArea = areaName(areas, query.area, m.home.allAreas);
 
   return (
     <div data-home className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
@@ -85,18 +88,18 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
       >
-        <FeedList key={serializeDiscoverQuery(query)} cards={feed.cards} />
+        <FeedList key={serializeDiscoverQuery(query, locale)} cards={feed.cards} />
         {feed.cards.length === 0 && (
           <div className="flex flex-col items-center gap-3.5 px-8 pt-[180px] text-center">
             <Icon name="search" size={40} />
-            <p className="m-0 text-[17px] font-bold">条件に合うものがありません</p>
-            <p className="m-0 text-[13px] leading-[1.7] text-white/80">エリアやカテゴリを変えるか、条件をリセットしてください。</p>
+            <p className="m-0 text-[17px] font-bold">{m.home.empty}</p>
+            <p className="m-0 text-[13px] leading-[1.7] text-white/80">{m.home.emptyHint}</p>
             <button
               type="button"
               onClick={() => go({ ...DEFAULT_QUERY, mode: query.mode })}
               className="mt-2 h-11 cursor-pointer rounded-xl border border-white/40 bg-transparent px-[18px] text-sm text-white"
             >
-              条件をリセット
+              {m.home.reset}
             </button>
           </div>
         )}
@@ -106,7 +109,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
       <header className="absolute inset-x-0 top-0 z-[5] flex items-center justify-between px-4 py-3.5">
         <div className="flex flex-col gap-0.5">
           <span className="text-[15px] font-semibold tracking-[0.24em] [text-shadow:0_1px_6px_rgba(0,0,0,0.55)]">WANDRARA</span>
-          <span className="text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{feed.orderLabel} · デモ表示</span>
+          <span className="text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{feed.orderLabel} · {m.home.demo}</span>
         </div>
         <div className="flex gap-2">
           <LanguageSwitch
@@ -125,11 +128,11 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
 
       {/* Floating two-row overlay */}
       <div className="absolute inset-x-3 bottom-[22px] z-[6] flex flex-col gap-2">
-        <nav aria-label="エリアとカテゴリ" className="flex items-center gap-1.5 rounded-[18px] p-1.5" style={GLASS}>
+        <nav aria-label={m.home.navLabel} className="flex items-center gap-1.5 rounded-[18px] p-1.5" style={GLASS}>
           <button
             type="button"
             onClick={() => setSheet("area")}
-            aria-label={`エリアを選ぶ（現在：${currentArea}）`}
+            aria-label={m.home.chooseAreaNow(currentArea)}
             className="flex h-11 max-w-[128px] flex-none cursor-pointer items-center gap-[5px] rounded-xl pl-[9px] pr-2.5 text-[13px] font-semibold"
             style={query.area === "all" ? { background: "rgba(255,255,255,0.10)", color: "#ffffff" } : { background: "#f4f1ea", color: "#141413" }}
           >
@@ -163,13 +166,13 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
           <button
             type="button"
             onClick={() => go({ mode: otherMode(query.mode), cat: "all" })}
-            aria-label={`${MODE_LABEL[query.mode]}から探す（タップで${MODE_LABEL[otherMode(query.mode)]}から探すに切り替え）`}
-            title={`${MODE_LABEL[query.mode]}から探す`}
+            aria-label={m.home.searchBySwitch(m.mode[query.mode], m.mode[otherMode(query.mode)])}
+            title={m.home.searchBy(m.mode[query.mode])}
             className="flex h-[52px] w-[52px] flex-none cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[14px] text-white"
             style={GLASS}
           >
             <Icon name={isStay ? "pin" : "sparkle"} />
-            <span className="text-[10px] font-semibold">{MODE_LABEL[query.mode]}</span>
+            <span className="text-[10px] font-semibold">{m.mode[query.mode]}</span>
           </button>
           <form
             role="search"
@@ -178,14 +181,14 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
             style={GLASS}
           >
             <Icon name="search" size={18} className="flex-none" />
-            <label className="sr-only" htmlFor="discover-q">検索</label>
+            <label className="sr-only" htmlFor="discover-q">{m.home.search}</label>
             <input
               key={query.q}
               id="discover-q"
               name="q"
               type="search"
               defaultValue={query.q}
-              placeholder="どんな場所や体験を探す？"
+              placeholder={m.home.searchPlaceholder}
               enterKeyHint="search"
               className="min-w-0 flex-auto border-0 bg-transparent text-base text-white outline-none placeholder:text-white/80"
             />
@@ -193,7 +196,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
           <button
             type="button"
             onClick={() => setSheet("filter")}
-            aria-label={query.sort !== "editorial" ? "絞り込み（1件適用中）" : "絞り込み"}
+            aria-label={query.sort !== "editorial" ? m.home.filterActive : m.home.filter}
             className="relative flex h-[52px] w-[52px] flex-none cursor-pointer items-center justify-center rounded-[14px] text-white"
             style={GLASS}
           >
@@ -205,16 +208,16 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
 
       {/* Area sheet */}
       {sheet === "area" && (
-        <BottomSheet label="エリアを選ぶ" onClose={() => setSheet(null)}>
-          <SheetHeader title="エリアを選ぶ" onClose={() => setSheet(null)} />
+        <BottomSheet label={m.home.chooseArea} onClose={() => setSheet(null)}>
+          <SheetHeader title={m.home.chooseArea} onClose={() => setSheet(null)} />
           <div className="flex flex-wrap gap-2">
-            <Chip on={query.area === "all"} onClick={() => { go({ area: "all" }); setSheet(null); }}>すべてのエリア</Chip>
+            <Chip on={query.area === "all"} onClick={() => { go({ area: "all" }); setSheet(null); }}>{m.home.allAreasChip}</Chip>
           </div>
           {areas.map((g) => (
             <div key={g.id} className="flex flex-col gap-2.5">
               <h3 className="m-0 text-[13px] font-semibold text-white/85">{g.label}</h3>
               <div className="flex flex-wrap gap-2">
-                <Chip on={query.area === g.id} onClick={() => { go({ area: g.id }); setSheet(null); }}>{g.label}全体</Chip>
+                <Chip on={query.area === g.id} onClick={() => { go({ area: g.id }); setSheet(null); }}>{m.home.areaWhole(g.label)}</Chip>
                 {g.subs.map((s) => (
                   <Chip key={s.id} on={query.area === s.id} onClick={() => { go({ area: s.id }); setSheet(null); }}>{s.label}</Chip>
                 ))}
@@ -226,25 +229,25 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
 
       {/* Filter sheet */}
       {sheet === "filter" && (
-        <BottomSheet label="絞り込み" onClose={() => setSheet(null)}>
-          <SheetHeader title="絞り込み" onClose={() => setSheet(null)} />
+        <BottomSheet label={m.home.filter} onClose={() => setSheet(null)}>
+          <SheetHeader title={m.home.filter} onClose={() => setSheet(null)} />
           <div className="flex flex-col gap-2.5">
-            <h3 className="m-0 text-[13px] font-semibold text-white/85">並び順</h3>
+            <h3 className="m-0 text-[13px] font-semibold text-white/85">{m.home.sortHeading}</h3>
             <div className="flex flex-wrap gap-2">
-              {SORTS.map((s) => (
+              {sorts(m).map((s) => (
                 <Chip key={s.id} on={query.sort === s.id} onClick={() => go({ sort: s.id })}>{s.label}</Chip>
               ))}
             </div>
-            <p className="m-0 text-[11px] text-white/70">料金・所要時間の絞り込みは次の版で追加します。</p>
+            <p className="m-0 text-[11px] text-white/70">{m.home.filterLater}</p>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span role="status" className="text-[13px] text-white/85">該当 {feed.cards.length}件</span>
+            <span role="status" className="text-[13px] text-white/85">{m.home.hits(feed.cards.length)}</span>
             <button
               type="button"
               onClick={() => go({ sort: "editorial" })}
               className="h-11 cursor-pointer rounded-[14px] border border-white/30 bg-transparent px-4 text-sm text-white"
             >
-              クリア
+              {m.home.clear}
             </button>
           </div>
         </BottomSheet>
@@ -286,12 +289,13 @@ function FeedList({ cards }: { cards: FeedCard[] }) {
 const OFFSCREEN: CSSProperties = { contentVisibility: "auto", containIntrinsicSize: "auto 760px" };
 
 function FeedCardView({ card, first }: { card: FeedCard; first: boolean }) {
+  const m = useMessages();
   return (
     <article className="flex flex-col" style={first ? undefined : OFFSCREEN}>
       {/* 写真は横にスワイプで切り替え、タップで詳細を開く */}
       <PhotoCarousel photos={card.photos} href={card.href} label={card.title} className="h-[520px] text-white" counterClassName="right-4 top-[76px]" priority={first}>
         {(card.photos[0]?.isDemo ?? true) && (
-          <span className="pointer-events-none absolute left-4 top-[76px] rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold tracking-[0.06em]">写真（デモ）</span>
+          <span className="pointer-events-none absolute left-4 top-[76px] rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold tracking-[0.06em]">{m.home.photoDemo}</span>
         )}
         <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[200px] bg-gradient-to-b from-transparent to-black/60" />
         <span className="pointer-events-none absolute inset-x-4 bottom-5 flex flex-col gap-1.5">
@@ -326,9 +330,10 @@ function FeedCardView({ card, first }: { card: FeedCard; first: boolean }) {
 }
 
 function BottomSheet({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
+  const m = useMessages();
   return (
     <>
-      <button type="button" aria-label={`${label}を閉じる`} onClick={onClose} className="absolute inset-0 z-[19] cursor-pointer border-0 bg-transparent" />
+      <button type="button" aria-label={m.home.closeSheet(label)} onClick={onClose} className="absolute inset-0 z-[19] cursor-pointer border-0 bg-transparent" />
       <section
         role="dialog"
         aria-label={label}
@@ -341,13 +346,14 @@ function BottomSheet({ label, onClose, children }: { label: string; onClose: () 
 }
 
 function SheetHeader({ title, onClose }: { title: string; onClose: () => void }) {
+  const m = useMessages();
   return (
     <div className="flex items-center justify-between">
       <h2 className="m-0 text-lg font-bold">{title}</h2>
       <button
         type="button"
         onClick={onClose}
-        aria-label="閉じる"
+        aria-label={m.common.close}
         className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-0 bg-white/10 text-white"
       >
         <Icon name="close" size={18} />

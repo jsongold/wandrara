@@ -1,4 +1,5 @@
 // フィードの組み立て。並べ方・メインの選び方・関連タイルの選び方の 3 戦略を独立に差し替えられる。
+import { messages } from "./i18n/messages";
 import { CORES } from "./ingest/cores";
 import { MODES, otherMode } from "./modes";
 import type { Category, DestCard, DiscoverQuery, FeedCard, FeedPage, Locale, LocalizedText, Region, Tile } from "./types";
@@ -84,7 +85,7 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
       title: t(d.name, locale),
       areaLabel: areaLabel(d.regionId, catalog.regions, locale),
       kindLabel: kindLabelOf(d.coreType),
-      relLabel: query.mode === "stay" ? "関連する体験" : "近くの宿",
+      relLabel: query.mode === "stay" ? messages(locale).home.relStay : messages(locale).home.relDo,
       photos: d.photos,
       href: `/${locale}/d/${d.slug}`,
       anchor: d,
@@ -98,12 +99,12 @@ export const orderEditorial: OrderStrategy = (cards, ctx) => {
   if (ctx.query.sort === "fresh") {
     return {
       cards: [...cards].sort((a, b) => b.anchor.createdAt.localeCompare(a.anchor.createdAt)),
-      label: "新着順",
+      label: messages(ctx.locale).home.orderFresh,
     };
   }
   return {
     cards: [...cards].sort((a, b) => (b.anchor.publishedAt ?? "").localeCompare(a.anchor.publishedAt ?? "")),
-    label: "編集部のおすすめ順",
+    label: messages(ctx.locale).home.orderEditorial,
   };
 };
 
