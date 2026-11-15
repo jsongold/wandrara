@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>出力データモデル 提案</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d1c1a;--mute:#6b6862;--line:#e3e0d8;--accent:#2f6f5e;--warn:#a5552a;--chip:#eef3f1}
+@media (prefers-color-scheme:dark){:root{--bg:#161614;--card:#1f1e1b;--ink:#ecebe6;--mute:#a19e96;--line:#34322d;--accent:#7cc3ad;--warn:#e39a6b;--chip:#26302c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}
+main{max-width:1080px;margin:0 auto;padding:32px 16px 80px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:40px 0 12px;padding-top:8px;border-top:1px solid var(--line)}h3{font-size:15px;margin:20px 0 8px}
+.lead{color:var(--mute);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px}
+.box{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--card)}
+.box b{display:block}.box span{color:var(--mute);font-size:12px}
+.arrow{color:var(--mute)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{color:var(--mute);font-weight:600}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.matrix td,.matrix th{text-align:right}.matrix th:first-child,.matrix td:first-child{text-align:left}
+.merged{background:var(--chip)}
+.chip{display:inline-block;background:var(--chip);border-radius:99px;padding:1px 9px;margin:2px 4px 2px 0;font-size:13px}
+.flag{color:var(--warn);font-size:13px}
+.mute{color:var(--mute);font-size:13px}
+pre{background:var(--chip);border-radius:8px;padding:12px;overflow:auto;font-size:12.5px;line-height:1.5}
+.before li{color:var(--mute);font-size:13px}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--mute);margin-left:6px}
+/* 画面の見本（実際の詳細画面と同じ色・幅） */
+.phones{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.phone-wrap>p{margin:0;font-weight:700}
+.phone{position:relative;width:375px;max-width:100%;height:780px;overflow:hidden;border:10px solid #111;border-radius:36px;background:#000;color:#141413;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+/* 今の DetailSheet と同じ形：裏のトップが縮み、背景が暗くなり、下から 94% のシートが上がる */
+.p-home{position:absolute;inset:0;background:#f7f6f2;border-radius:14px;transform:scale(.92) translateY(-14px);transform-origin:top center;padding:44px 16px 0;animation:p-shrink 420ms cubic-bezier(.32,.72,0,1)}
+.p-home .tg{display:flex;gap:6px;margin-bottom:14px}.p-home .tg span{background:#e8e5dc;border-radius:99px;padding:5px 14px;font-size:12px;font-weight:600}.p-home .tg span:first-child{background:#141413;color:#fff}
+.p-home .cd{height:210px;border-radius:18px;background:#cfd3cc center/cover;margin-bottom:12px}
+.p-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);animation:p-fade 420ms ease-out}
+.p-sheet{position:absolute;left:0;right:0;bottom:0;height:94%;background:#f7f6f2;border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 -8px 30px rgba(0,0,0,.25);animation:p-up 420ms cubic-bezier(.32,.72,0,1)}
+.p-handle{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:44px;height:6px;border-radius:99px;background:rgba(255,255,255,.85);box-shadow:0 1px 3px rgba(0,0,0,.3);z-index:2}
+.p-back{position:absolute;left:14px;top:22px;z-index:2;background:rgba(18,18,16,.46);color:#fff!important;border-radius:99px;font-size:12px;padding:5px 11px;backdrop-filter:blur(14px)}
+.p-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain}
+@keyframes p-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes p-fade{from{opacity:0}to{opacity:1}}
+@keyframes p-shrink{from{transform:none;border-radius:0}to{transform:scale(.92) translateY(-14px);border-radius:14px}}
+.replay{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:4px 12px;cursor:pointer}
+.phone *{color:inherit}
+.p-hero{height:300px;background:#cfd3cc center/cover no-repeat;position:relative}
+.p-hero .cnt{position:absolute;right:12px;bottom:12px;background:rgba(15,15,14,.6);color:#fff;font-size:11px;font-weight:600;border-radius:6px;padding:2px 8px}
+.p-body{padding:18px 20px 36px;display:flex;flex-direction:column;gap:24px}
+.p-badges{display:flex;flex-wrap:wrap;gap:6px}
+.p-badge{background:#e8e5dc;color:#3d3b35;font-size:11px;font-weight:600;border-radius:6px;padding:3px 8px}
+.p-title{font-size:22px;font-weight:700;line-height:1.35;margin:6px 0 2px}
+.p-area{font-size:13px;color:#55524a;margin:0}
+.p-sum{font-size:13.5px;line-height:1.8;color:#2b2a26;margin:6px 0 0}
+.p-h{font-size:17px;font-weight:700;margin:0 0 10px}
+.p-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.p-key{background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:8px 4px;text-align:center}
+.p-key b{display:block;font-size:15px}.p-key span{font-size:10.5px;color:#55524a}
+.p-rates{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border-radius:12px;overflow:hidden}
+.p-rates th,.p-rates td{padding:6px 5px;border-bottom:1px solid #eeebe4;text-align:right;font-variant-numeric:tabular-nums}
+.p-rates th{background:#efece5;color:#3d3b35;font-weight:600;font-size:11.5px}
+.p-rates td:first-child,.p-rates th:first-child{text-align:left;padding-left:10px}
+.p-rates td.m{background:#f3f6f4;color:#2f6f5e;text-align:center}
+.p-legend{font-size:11.5px;color:#55524a;line-height:1.7;margin:8px 0 0;padding:0;list-style:none}
+.p-extra{background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-top:10px}
+.p-extra div{display:flex;justify-content:space-between;padding:2px 0}
+.p-calc{margin-top:8px;font-size:12px;color:#2f6f5e;background:#eef3f1;border-radius:10px;padding:8px 10px}
+.p-list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.p-list li{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:10px 12px;font-size:13px}
+.p-list li i{font-style:normal;font-size:16px;width:22px;text-align:center}
+.p-list li small{display:block;color:#55524a;font-size:11.5px}
+.p-chips{display:flex;flex-wrap:wrap;gap:6px}
+.p-chip{background:#fff;border:1px solid #e3e0d8;border-radius:99px;padding:4px 10px;font-size:12px}
+.p-map{height:160px;border:0;border-radius:16px;width:100%;background:#dfe3de}
+.p-btn{display:block;text-align:center;background:#141413;color:#fff!important;border-radius:12px;padding:11px;font-size:13.5px;font-weight:600;text-decoration:none;margin-top:8px}
+.p-btn.sub{background:#fff;color:#141413!important;border:1px solid #d6d2c8}
+.p-note{font-size:11.5px;color:#55524a;line-height:1.7;margin:0}
+.p-missing{font-size:11.5px;color:#a5552a}
+/* 今の画面 */
+.p-fact{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #e6e3db;padding:7px 0;font-size:12.5px}
+.p-fact span:first-child{color:#55524a;white-space:nowrap}
+.p-fact em{font-style:normal;font-size:10px;background:#e8e5dc;border-radius:4px;padding:0 4px;color:#6b6862;margin-left:6px;white-space:nowrap}
+.p-fact .v{text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.p-body.new .p-fact .v{white-space:normal;max-width:230px}
+.p-fact.tap{cursor:pointer}
+.p-fact.tap .v::after{content:"›";display:inline-block;margin-left:8px;color:#8a867c;font-size:15px;line-height:1;transition:transform .2s}
+.p-fact.tap[aria-expanded="true"] .v::after{transform:rotate(90deg)}
+.p-fact.tap[aria-expanded="true"]{border-bottom-color:transparent}
+.p-drop{background:#efece4;border-radius:12px;padding:4px 12px 8px;margin:2px 0 6px;animation:p-open .2s ease-out}
+.p-drop[hidden]{display:none}
+.p-drop .p-fact{font-size:12px;padding:6px 0}
+.p-drop .p-fact:last-child{border-bottom:none}
+.p-drop .p-subph{height:120px;margin:8px 0 4px}
+/* 提案の画面：見出しは小さなラベル、行は白いカードの中に詰めて並べる */
+.p-body.new{gap:10px;padding-top:16px}
+.p-body.new>section:first-child{margin-bottom:6px}
+.p-body.new>section:not(:first-child){background:#fff;border-radius:14px;padding:10px 14px 4px;box-shadow:0 1px 2px rgba(20,20,19,.04)}
+.p-body.new .p-h{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:#8a867c;margin:0 0 2px;padding:0;border:0}
+.p-body.new .p-fact{font-size:13px;padding:8px 0;border-bottom:1px solid rgba(20,20,19,.06);align-items:baseline}
+.p-body.new .p-fact:last-of-type{border-bottom:0}
+.p-body.new .p-fact span:first-child{color:#8a867c;font-size:12px}
+.p-body.new .p-fact .v{font-weight:500;color:#141413}
+.p-body.new .p-fact.tap .v::after{font-size:13px;margin-left:6px;color:#b5b0a5}
+.p-body.new .p-note{font-size:11px;color:#8a867c;margin:4px 0 8px!important}
+.p-body.new section .p-btn{padding:9px;font-size:12.5px;border-radius:10px;margin:0 0 10px}
+.p-body.new section .p-btn+.p-btn{margin-top:-4px}
+.p-body.new .p-drop{background:#f6f4ef;border-radius:10px;padding:2px 10px 4px;margin:0 0 8px}
+.p-body.new .p-drop .p-fact{font-size:12px;padding:6px 0}
+.p-body.new .vocab td{vertical-align:top}.vocab td code{font-size:11px;color:var(--mute)}
+.p-mapph{height:110px;border-radius:10px;margin:2px 0 10px!important;border:0}
+.p-body.new>.p-note{text-align:center;margin-top:6px!important}
+.p-mini{width:100%;border-collapse:collapse;font-size:11px;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.p-mini th,.p-mini td{padding:4px 3px;border-bottom:1px solid rgba(20,20,19,.06);text-align:right;font-weight:500;color:#141413;white-space:nowrap}
+.p-mini tr:first-child th{color:#8a867c;font-weight:600;font-size:10px}
+.p-mini th:first-child{text-align:left;color:#8a867c;font-weight:500}
+.p-unit{font-size:10.5px;color:#8a867c;margin:2px 0 4px}
+.p-price{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.p-price th,.p-price td{padding:7px 2px;border-bottom:1px solid rgba(20,20,19,.06);text-align:right;white-space:nowrap;font-weight:500;color:#141413}
+.p-price tr:first-child th{font-size:10px;font-weight:600;color:#8a867c;padding-top:2px}
+.p-price th:first-child{text-align:left}
+.p-price td.nt{font-size:10.5px;color:#8a867c}
+.p-price tr.tap{cursor:pointer}
+.p-price tr.tap td.nt::after{content:"›";display:inline-block;margin-left:4px;color:#b5b0a5;transition:transform .2s}
+.p-price tr.tap[aria-expanded="true"] td.nt::after{transform:rotate(90deg)}
+.p-price tr.p-droprow td{padding:0;border:0;text-align:left;white-space:normal}
+.p-price tr.p-droprow .p-drop{margin:4px 0 6px}
+@keyframes p-open{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.p-fact.tap:active{background:#efece4}
+.p-subph{height:150px;border-radius:16px;background:#cfd3cc;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
+.p-stay{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:10px;padding:5px 11px;border-radius:99px;background:#efece4;line-height:1}
+.p-stay .k{font-size:9.5px;font-weight:700;letter-spacing:.08em;color:#8a867c}
+.p-stay b{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.p-stay.miss b{color:#b5b0a5}
+.p-stay .ln{width:14px;height:1px;background:#b9b4a8;margin:0 2px}
+.p-mapph{height:160px;border-radius:16px;border:1px solid #d0d5cf;background:#dfe3de;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
+</style>
+</head>
+<body><main>
+<h1>Web に出すデータモデル（提案）</h1>
+<p class="lead">core_type ごとに出力の形を決める。形の正本は main にマージされたコード。DB の表は正規化したまま、画面は出力の形だけを読む。下の見本は wr-ito-033（ポッケまほろ伊豆）の投入の原本から作った。</p>
+
+<h2>1. 全体の形</h2>
+<div class="card">
+<div class="flow">
+<div class="box"><b>DB の表</b><span>accommodations と詳細の表（正規化）</span></div><span class="arrow">→</span>
+<div class="box"><b>組み立て</b><span>toAccommodationView(rows)</span></div><span class="arrow">→</span>
+<div class="box"><b>出力の形</b><span>AccommodationView（zod で確かめる）</span></div><span class="arrow">→</span>
+<div class="box"><b>Web</b><span>詳細 /d/[slug]・admin・カード</span></div>
+</div>
+<ul>
+<li>出力の形は core_type ごとに 1 つ（AccommodationView …）。kind では出し分けない。共通の部分は DestCommon に置く</li>
+<li>画面は出力の形だけを読み、DB の表の形を知らない。表を直しても、組み立てを直せば画面は変わらない</li>
+<li>version の欄は持たない。main の最新が正。形を変えるときは、組み立て・型・画面を同じ PR で直す</li>
+<li>語彙（設備・風呂・注意点の種類）は出力の時点でラベルに変える。画面に open_air などの値が出ない</li>
+<li>似ているジャンルはまとめる。サウナは風呂の種類の 1 つにする（表も型も分けない）</li>
+</ul>
+</div>
+
+<h2>2. 型は core_type ごとに 1 つ</h2>
+<div class="card">
+<p>出力の型は 2 段。<b>DestCommon</b>（全コア共通）→ <b>AccommodationView</b>（core_type ごと）。<b>kind では出し分けない</b>。kind はバッジに出すだけで、画面はどの kind でも同じ並びで出し、データの無いトピックは出さない。</p>
+<p>画面の見出しは、トピックごとに独立させる。チェックイン・アウトは宿に必須で、どの宿でも必ず出す。見出しにせず、紹介文のすぐ下に時刻だけを並べる。そのあとの並びは 料金 → 部屋 → 食事 → 風呂 → 設備 → ペット → 条件 → 駐車場 → アクセス → 周辺 → 注意点 → 予約。<b>設備</b>と<b>条件</b>だけは、小さな項目をまとめる見出しにする。</p>
+</div>
+<div class="grid">
+<div class="card"><pre>type DestCommon = {
+  slug: string; name: string; summary?: string
+  region: string; address?: string
+  location?: { lat: number; lng: number; precision: Label }
+  photos: Photo[]; categories: Label[]
+}
+
+type AccommodationView = DestCommon &amp; {
+  coreType: "accommodation"
+  kind: Label            // バッジに出すだけ。出し分けには使わない
+  stay: { checkIn: string; checkOut: string }  // 必須。紹介文の下に必ず出す
+  priceHint?: PriceHint  // 料金（参考）：部屋ごとの 人数・最小・最大・備考
+  rooms: Room[]          // 部屋（一棟貸しは 1 棟で 1 件）
+  meals: Meal[]          // 食事
+  baths: Bath[]          // 風呂（サウナを含む）
+  amenities: AmenityGroup[]  // 設備：中カテゴリ → 小カテゴリ
+  internet?: Internet        // 設備の Wi-Fi の行の下に開く
+  pets?: Pets
+  conditions: Conditions     // 条件
+  parking?: Parking
+  access: Access
+  surroundings?: Surroundings
+  cautions: { kind: Label; note: LocalizedText }[]
+  bookingLinks: BookingLink[]
+  sources: Source[]          // 出典（どの項目の出典か）
+  license?: { kind: Label; number?: string }
+}
+
+type Money = { amount: number; currency: string; taxIncluded?: boolean }
+type Label = { value: string; label: string }</pre></div>
+<div class="card"><pre>type Room = {
+  key: string            // dest の中の名前。料金・写真はこれで指す
+  name?: string          // 一棟貸しは無し（「1 棟」と出す）
+  capacity?: number      // 泊まれる最大人数（料金がかかる人数とは別）
+  areaSqm?: number; tatami?: number; style?: Label  // 和・洋・和洋
+  view?: Label; smoking?: Label                     // 禁煙・喫煙
+  bedrooms: { name?: string; beds: { type: Label; count: number }[] }[]
+  photos: Photo[]        // subject がこの部屋の写真
+}
+
+type Bath = {
+  kind: Label            // 大浴場・露天・内風呂・貸切・客室露天・客室内・サウナ
+  saunaStyle?: Label     // バレル・ドライ・スチーム（サウナのとき）
+  hotSpring?: boolean; spring?: string; source?: Label  // 泉質・源泉の扱い
+  capacity?: number
+  coldBath?: boolean; outdoorRest?: boolean
+  hours?: { from: string; to: string }
+  gender?: Label         // 男女別・混浴・貸切・男女入替
+  reservation?: { required: boolean; when?: Label; slotMinutes?: number }
+  fee?: Money            // 無料は 0
+}
+
+type Meal = {
+  meal: Label            // 朝食・夕食
+  offered: boolean       // false＝出ない（「夕食なし」）
+  style?: Label          // ビュッフェ・会席・定食
+  place?: Label; hours?: { from: string; to: string }
+  slots?: string[]       // 選べる開始時刻（18:00・19:00）
+  fee?: Money            // 素泊まりに足す 1 名の料金
+  allergyConsult?: boolean; selfCook?: boolean
+}
+
+// 設備は 2 段の語彙。小カテゴリ（bbq・wifi …）が 1 つの中カテゴリ（屋外・通信 …）に属する
+type AmenityGroup = { group: Label; items: Amenity[] }
+type Amenity = { code: Label; paid?: boolean; count?: number; options?: Label[] }
+type Internet = { wifi?: boolean; downMbps?: number; upMbps?: number;
+  measuredAt?: string; desk?: Label }   // 机：全室・一部・共用部
+type Pets = { allowed: boolean; size?: Label; fee?: Money }
+type Conditions = { smoking?: Label   // なし・指定の場所・可
+  parties?: boolean; fireworks?: boolean; quiet?: TimeRange
+  bbqUntil?: string; minNights?: number }
+type Parking = { place?: Label; spaces?: number; maxHeightM?: number; fee?: Money }
+type Access = { station?: string; mode?: Label   // 徒歩・バス・車・送迎
+  minutes?: number; shuttle?: boolean; slopeOrStairs?: boolean
+  needsCar?: boolean; route?: LocalizedText }
+type Source = { name: string; url: string; type: Label; retrievedAt: string; fields: Label[] }
+
+// 料金（参考）：部屋ごとに 1 行の表。細かいことは行の下に開く（全部の表は出さない）
+type PriceHint = {
+  per: Label; currency: string; taxIncluded?: boolean   // 1 棟 1 泊・1 室 1 泊・1 名 1 泊
+  rows: { room: string; guestsMin?: number; guestsMax?: number   // 料金がかかる人数
+          min: number; max: number; note: Label[] }[]          // 素泊まり・2 食つき
+  fees: Price[]; children: Price[]   // 開いたとき（諸経費・入湯税・子ども）
+  detailsUrl?: string
+}</pre></div>
+</div>
+<div class="card">
+<h3>画面のトピック（どの kind でも同じ並び）</h3>
+<table>
+<tr><th>見出し</th><th>出力の欄</th><th>元の表</th></tr>
+<tr><td>チェックイン・アウト（必須。紹介文の下。見出しなし）</td><td>stay</td><td>accommodations の check_in・check_out</td></tr>
+<tr><td>料金（参考）</td><td>priceHint</td><td>prices・price_seasons から作る</td></tr>
+<tr><td>部屋</td><td>rooms</td><td>units・bedrooms・beds</td></tr>
+<tr><td>食事</td><td>meals</td><td>meals</td></tr>
+<tr><td>風呂</td><td>baths</td><td>baths（サウナを含む）</td></tr>
+<tr><td>設備（まとめる見出し）</td><td>amenities</td><td>amenities・internet</td></tr>
+<tr><td>ペット</td><td>pets</td><td>rules の pets_allowed（と大きさ・料金）</td></tr>
+<tr><td>条件（まとめる見出し）</td><td>conditions</td><td>rules（喫煙・パーティー・花火・静かな時間・最短泊数）</td></tr>
+<tr><td>駐車場</td><td>parking</td><td>parkings</td></tr>
+<tr><td>アクセス</td><td>access</td><td>access</td></tr>
+<tr><td>周辺</td><td>surroundings</td><td>surroundings</td></tr>
+<tr><td>注意点</td><td>cautions</td><td>cautions</td></tr>
+<tr><td>予約</td><td>bookingLinks</td><td>booking_links</td></tr>
+</table>
+<p class="mute">データの無いトピックは見出しごと出さない。kind による違いは、データがあるかどうかで自然に出る（一棟貸しは食事が無い、旅館は設備が少ない など）。kind ごとに「あるべき項目」を言うのは advice の役目にする（例：旅館で食事が空なら指摘）。</p>
+</div>
+
+<div class="card">
+<h3>タップで詳細（行と、その下に開く詳細の分け方）</h3>
+<table>
+<tr><th>トピック</th><th>行に出す</th><th>タップで、行の下に開く</th></tr>
+<tr><td>部屋</td><td>名前・定員・広さ</td><td>寝室ごとの名前と寝具・眺望・喫煙・その部屋の写真</td></tr>
+<tr><td>風呂</td><td>種類・温泉か</td><td>サウナの種類・泉質・時間・男女別・予約（いつ・何分）・料金・水風呂・外気浴</td></tr>
+<tr><td>食事</td><td>時間・場所（出ないときは「なし」）</td><td>形式・選べる時刻・料金・アレルギー・自炊</td></tr>
+<tr><td>設備</td><td>中カテゴリと小カテゴリの名前</td><td>数・有料か・付いているもの（電気グリル・屋根の下 など）</td></tr>
+<tr><td>駐車場</td><td>台数・有料か</td><td>場所・車高の制限・料金</td></tr>
+<tr><td>アクセス</td><td>最寄り駅・手段（徒歩・バス）と時間</td><td>住所・道順・送迎・坂や階段・車が要るか</td></tr>
+<tr><td>料金</td><td>部屋ごとに 1 行（部屋・人数・最小・最大・備考）</td><td>追加の料金（諸経費・入湯税）・食事や子どもの料金。平日・祝日などの区分ごとの値は出さない</td></tr>
+<tr><td>設備の通信</td><td>Wi-Fi</td><td>下り・上りの速さ・測った日・仕事用の机（全室・一部・共用部）</td></tr>
+<tr><td>出典</td><td>出典の名前と、どの項目の出典か</td><td>URL・種類・取得日</td></tr>
+</table>
+<p><b>持っている情報は全部見られるようにする。</b>型に持つ欄は、行か、行の下に開く詳細のどちらかに必ず出る（どこにも出ない欄は作らない）。詳しいほど品質が高い。ただし料金は、区分 × 人数の表をそのまま出さない。部屋ごとに 1 行の表（部屋・人数・最小・最大・備考）にし、開くと追加の料金などが見える。平日・祝日などの区分ごとの値は、不正確だとクレームの元になるので画面に出さない（DB には型で持つ）。出典も最後に出す。</p>
+<p class="mute">「タップで出す」の欄に値が 1 つでもあれば、その行に › を付けてタップできるようにする。無ければタップできない（例：wr-ito-033 のサウナは種類と定員しか無いので行だけ）。決めるのは画面で、型の欄が埋まっているかだけを見る。詳細は別のページやシートにせず、その行のすぐ下に開く（もう一度タップで閉じる。› が下向きになる）。</p>
+</div>
+
+<h2>2.5 料金は言葉を使わず型に収める</h2>
+<div class="card">
+<p>料金と料金区分には、文（note・name・rule の文字列）の列を持たせない。「どの日に・何人で・何に・いくら」をすべて型で持つので、日付と人数を入れれば合計を計算でき、カレンダーにも出せる。画面の言葉（「土曜と指定日」など）は型から作る。</p>
+<div class="grid">
+<div><pre>type SeasonRule = {
+  validFrom: string; validTo: string  // この料金表の期間（YYYY-MM-DD）
+  isDefault: boolean   // どの区分にも当てはまらない日（「②③④以外」）
+  priority: number     // 重なったら大きい方が勝つ
+  weekdays?: (1|2|3|4|5|6|7)[]        // 1=月 … 7=日（体験の weekdays と同じ）
+  holidays?: boolean; dayBeforeHoliday?: boolean
+  dates?: { from: string; to: string }[]  // 当てはまる日（年つき）
+}
+
+type Price = {
+  kind: "room" | "meal" | "service_fee" | "bath_tax" | "lodging_tax" | "cleaning"
+  per: "house_night" | "room_night" | "person_night" | "stay"
+  room?: string        // 部屋の key（kind=room）
+  season?: string      // 区分の key。空なら全部の日
+  amount?: number; amountMax?: number; currency: string; taxIncluded?: boolean
+  ratePercent?: number // 大人の料金に対する割合（子ども 70% など）。amount とどちらか
+  guestsMin?: number; guestsMax?: number   // この料金がかかる人数（部屋の定員とは別）
+  audience?: "all" | "adult" | "child"
+  ageMin?: number; ageMax?: number
+  meals?: "none" | "breakfast" | "dinner" | "both"
+  includes?: ("service_fee" | "bath_tax" | "lodging_tax" | "cleaning")[]
+                       // この料金に含まれるもの。合計で二重に足さない
+}</pre></div>
+<div><pre>// 日付から区分を決める（言葉を読まずに決まる）
+function seasonFor(date, seasons) {
+  const live = seasons.filter(s =&gt; inRange(date, s.validFrom, s.validTo))
+  const hits = live.filter(s =&gt; !s.isDefault
+    &amp;&amp; (s.weekdays?.includes(isoWeekday(date))
+     || s.dates?.some(d =&gt; inRange(date, d.from, d.to))
+     || (s.holidays &amp;&amp; isHoliday(date))
+     || (s.dayBeforeHoliday &amp;&amp; isHoliday(next(date)))))
+  return maxBy(hits, "priority") ?? live.find(s =&gt; s.isDefault)
+  // 期間の外なら undefined（料金なし）。期限切れの料金は返さない
+}
+
+// 1 泊の合計
+r = room(room, season, guests)
+total = r.amount
+      + Σ fees（r.includes に入っている kind は足さない）:
+          per=person_night → amount × audience と年齢に当たる人数
+          per=room_night / house_night → amount
+          per=stay → amount ÷ 泊数</pre>
+<p class="mute">祝日・祝前日は祝日の暦（辞書）が要る。今は列だけ用意し、暦は後で足す。</p></div>
+</div>
+<h3>wr-ito-033 を型で書くと（入力の bundle）</h3>
+<pre>"price_seasons": [
+  { "key": "s1", "is_default": true,  "priority": 0, "valid_from": "2026-04-01", "valid_to": "2027-03-31" },
+  { "key": "s2", "priority": 1, "valid_from": "2026-04-01", "valid_to": "2027-03-31", "weekdays": [6],
+    "dates": [{ "from": "2026-04-26", "to": "2026-04-30" }, { "from": "2026-08-23", "to": "2026-08-28" },
+              { "from": "2026-10-11", "to": "2026-10-11" }, { "from": "2026-11-22", "to": "2026-11-22" },
+              { "from": "2027-01-10", "to": "2027-01-10" }, { "from": "2027-03-21", "to": "2027-03-21" }] },
+  { "key": "s3", "priority": 2, "valid_from": "2026-04-01", "valid_to": "2027-03-31",
+    "dates": [{ "from": "2026-05-05", "to": "2026-05-05" }, { "from": "2026-07-11", "to": "2026-08-07" },
+              { "from": "2026-08-16", "to": "2026-08-22" }, { "from": "2026-09-19", "to": "2026-09-22" },
+              { "from": "2026-12-12", "to": "2026-12-25" }, { "from": "2027-01-03", "to": "2027-01-03" }] },
+  { "key": "s4", "priority": 3, "valid_from": "2026-04-01", "valid_to": "2027-03-31", "dates": [] }
+],
+"prices": [
+  { "kind": "room", "per": "house_night", "room": "house", "season": "s1", "guests_min": 2, "guests_max": 2, "amount": 45000, "currency": "JPY", "tax_included": true },
+  …（s1〜s4 × 人数。s3 の 2〜5 名・s4 の 2〜8 名は 1 行）
+  { "kind": "service_fee", "per": "person_night", "audience": "all",   "amount": 550, "currency": "JPY", "tax_included": true },
+  { "kind": "bath_tax",    "per": "person_night", "audience": "adult", "amount": 300, "currency": "JPY" }
+]</pre>
+<ul>
+<li>注意点の price_condition 19 行は、すべて型の中に入って消える</li>
+<li>s4 は日付が空。advice が「区分に当てはまる日が無い」と出す（言葉で補わない）</li>
+<li>型に入らない条件（例：連泊割・直前割）が出てきたら、文に逃がさず、advice で報告して型を足す</li>
+</ul>
+</div>
+
+<h2>3. 画面</h2>
+<div class="card"><p>画面は <a href="web-output-model.html">web-output-model.html</a> にある（一棟貸し wr-ito-033・ホテルと旅館の架空の見本）。</p></div>
+<div class="card">
+<h3>画面で変わること</h3>
+<ul>
+<li>デザイン（バッジ・タイトル・紹介文・行・アクセス）は今のまま。行の並べ方と中身だけを変える</li>
+<li>「未検証」のラベルは画面に出さない（確認の状態はデータには残す）</li>
+<li>詳細のある行（›）をタップすると、その行のすぐ下に詳細が開く（ページやシートは出さない）</li>
+<li>トピックはそれぞれ独立した見出しにし、チェックイン・アウトは必須で、紹介文のすぐ下に時刻だけを必ず出す（wr-ito-033 は元データに無いので、見本では --:--。本来は upload の validation で落ちる）。そのあと 料金 → 部屋 → 食事 … の順に出す。ペットも独立。設備と条件だけは、小さな項目をまとめる見出し</li>
+<li>設備は中カテゴリ（風呂・キッチン・屋外・通信・駐車場 …）を行の名前にし、小カテゴリ（個々の設備）を値に並べる</li>
+<li>同じ種類の行は 1 行にまとめる（風呂 1〜3 → 風呂）。値はラベルで出す（open_air → 露天風呂）</li>
+<li>料金は部屋ごとに 1 行の表（部屋・人数・最小・最大・備考）。行を開くと追加の料金など。平日・祝日などの区分ごとの値は出さず（不正確だとクレームの元）、公式サイトへのリンクを残す。注意点の 19 行（同じ文の繰り返し）は出さない</li>
+<li>持っている情報は全部、行か行の下の詳細で見られる。最後に出典を出す</li>
+<li>DB には料金を全部、型で持つ（2.5）。画面の表はそこから作る</li>
+<li>kind では出し分けない。どの kind も同じトピックの並びで、データの無いトピックは出さない</li>
+<li>紹介文は公式の文の丸写しではなく、短く書き直したものを出す想定</li>
+</ul>
+</div>
+
+<h2>4. 見本：wr-ito-033 のデータ</h2>
+<div class="card">
+<h3>料金 <span class="tag">rates</span></h3>
+<p class="mute">1 棟 1 泊・税込。期間 2026-04-01〜2027-03-31</p>
+<table class="matrix">
+<tr><th>区分</th><th>2 名</th><th>3 名</th><th>4 名</th><th>5 名</th><th>6 名</th><th>7 名</th><th>8 名</th></tr>
+<tr><td>①平日（②③④以外）</td><td>45,000</td><td>55,000</td><td>65,000</td><td>75,000</td><td>85,000</td><td>95,000</td><td>105,000</td></tr>
+<tr><td>②土曜と指定日<br><span class="mute">4/26〜4/30, 8/23〜8/28, 10/11, 11/22, 1/10, 3/21</span></td><td>75,000</td><td>87,000</td><td>99,000</td><td>111,000</td><td>123,000</td><td>135,000</td><td>147,000</td></tr>
+<tr><td>③指定日<br><span class="mute">5/5, 7/11〜8/7, 8/16〜8/22, 9/19〜9/22, 12/12〜12/25, 1/3</span></td><td class="merged" colspan="4" style="text-align:center">99,000（2〜5 名）</td><td>140,000</td><td>155,000</td><td>170,000</td></tr>
+<tr><td>④<br><span class="flag">日付が原本に無い</span></td><td class="merged" colspan="7" style="text-align:center">170,000（2〜8 名）</td></tr>
+</table>
+<h3>追加の料金 <span class="tag">fees</span></h3>
+<table><tr><th>種類</th><th class="num">金額</th><th>単位</th><th>対象</th></tr>
+<tr><td>諸経費</td><td class="num">550</td><td>1 名 1 泊（税込）</td><td>全員</td></tr>
+<tr><td>入湯税</td><td class="num">300</td><td>1 名 1 泊</td><td>大人</td></tr></table>
+</div>
+
+<div class="grid">
+<div class="card">
+<h3>泊まる <span class="tag">stay・units</span></h3>
+<table>
+<tr><th>種類</th><td>一棟貸し</td></tr>
+<tr><th>チェックイン/アウト</th><td><span class="flag">原本に無い</span></td></tr>
+<tr><th>定員</th><td>12 名 <span class="mute">料金は 8 名までしか載っていない（9〜12 名の料金は不明）。定員と料金の人数は別に持つ</span></td></tr>
+<tr><th>寝室</th><td>1F：ダブル 1・シングル 1<br>2F：セミダブル 2<br>2F：セミダブル 2<br><span class="mute">原本では出典の文にだけあり、beds は空だった</span></td></tr>
+</table>
+</div>
+<div class="card">
+<h3>風呂・サウナ <span class="tag">baths</span></h3>
+<table>
+<tr><th>露天</th><td>温泉</td></tr>
+<tr><th>内風呂</th><td>温泉 <span class="mute">新しい種類 indoor</span></td></tr>
+<tr><th>貸切</th><td><span class="flag">一棟貸しで露天と同じものの可能性</span></td></tr>
+<tr><th>サウナ</th><td>バレル・8 名程度 <span class="mute">baths の種類 sauna</span></td></tr>
+</table>
+</div>
+<div class="card">
+<h3>設備・ルール <span class="tag">amenities・rules</span></h3>
+<p><span class="chip">キッチン</span><span class="chip">BBQ（電気グリル・雨天は屋根下）</span><span class="chip">アメニティ（オーガニック）</span><span class="chip">ドライヤー 2</span><span class="chip">洗濯機</span><span class="chip">Wi-Fi</span><span class="chip">駐車場 2 台</span></p>
+<table><tr><th>ペット</th><td>不可 <span class="mute">新しい列 pets_allowed</span></td></tr></table>
+</div>
+<div class="card">
+<h3>アクセス <span class="tag">access</span></h3>
+<table><tr><th>最寄り駅</th><td>伊豆高原駅</td></tr><tr><th>徒歩</th><td>8 分（桜並木方面）</td></tr>
+<tr><th>住所</th><td>静岡県伊東市八幡野 1208-68</td></tr><tr><th>位置</th><td>34.88252, 139.106043（exact）</td></tr></table>
+</div>
+</div>
+
+<div class="card before">
+<h3>今の画面（比較）</h3>
+<ul><li>料金 1〜19 が金額だけで並ぶ（どの区分かは注意点を読まないと分からない）</li>
+<li>注意点 1〜19 がすべて price_condition で、同じ諸経費・入湯税の文を 19 回繰り返す</li>
+<li>風呂・設備が open_air・private・kitchen の値のまま出る</li>
+<li>位置があるのに「地図（準備中）」</li></ul>
+</div>
+
+<h2>5. この形を出すために DB で要るもの</h2>
+<div class="card">
+<table>
+<tr><th>変更</th><th>中身</th><th>入力（bundle）での書き方</th></tr>
+<tr><td>参照（dest の中の key）</td><td>accommodation_units と accommodation_price_seasons に key（dest の中で一意）を足す。料金→部屋・料金→区分・写真→部屋は key で指し、structure の段で id に結ぶ（handoff ingest-pipeline）。入口が詳細どうしの参照を受けない決まりはそのまま</td><td>prices[].room・prices[].season・photos[].subject に key</td></tr>
+<tr><td>accommodation_price_seasons（新）</td><td>料金区分。key・valid_from/to・is_default・priority・weekdays（integer[]、1=月）・holidays・day_before_holiday。名前や文の列は持たない。「料金の条件は全部型で持つ」ので必要</td><td>details.price_seasons[]</td></tr>
+<tr><td>accommodation_price_season_dates（新）</td><td>区分に当てはまる日付（開始・終了）</td><td>price_seasons[].dates[]（入れ子）</td></tr>
+<tr><td>accommodation_prices（直す）</td><td>kind（room・meal・service_fee・bath_tax・lodging_tax・cleaning）・per（house_night・room_night・person_night・stay）・room と season（key）・audience・age_min/max・rate_percent・guests_min/max・includes（text[]）。guests・valid_from/to と、込み別の 4 列（tax 以外）は includes に置き換える</td><td>details.prices[]</td></tr>
+<tr><td>accommodation_units（直す）</td><td>key・smoking（禁煙・喫煙）。capacity は泊まれる最大人数のまま（料金の人数とは別）</td><td>今どおり＋key</td></tr>
+<tr><td>accommodation_baths（直す）</td><td>kind に indoor・sauna を足す。sauna_style・hot_spring・capacity・has_cold_bath・has_outdoor_rest・gender（男女別・混浴・貸切・男女入替。swaps_by_gender をやめる）・reservation_timing・slot_minutes</td><td>今どおり</td></tr>
+<tr><td>accommodation_meals（直す）</td><td>offered（出ないことも持つ）・style（ビュッフェ・会席・定食）・slots（time[]）・amount・currency</td><td>今どおり</td></tr>
+<tr><td>accommodation_access（直す）</td><td>mode（walk・bus・car・shuttle）。station_minutes は mode の分数として読む</td><td>今どおり</td></tr>
+<tr><td>accommodation_rules（直す）</td><td>pets_allowed・pet_size・pet_amount・pet_currency。smoking は今の 3 値のまま出力も Label で出す</td><td>今どおり</td></tr>
+<tr><td>accommodation_internet（直す）</td><td>measured_mbps を down_mbps・up_mbps に分け、measured_at を足す。has_desk を desk（all_rooms・some_rooms・common）に</td><td>今どおり</td></tr>
+<tr><td>accommodation_amenities（直す）</td><td>kind は語彙の code（6 章）。options（text[]、code ごとに決めた値だけ）・count を足す</td><td>決まった値だけ受け付ける</td></tr>
+<tr><td>dest_sources（新・全コア共通）</td><td>dest_id・name・url・type・retrieved_at・fields（text[]）。今は dest_imports の原本にしか無い</td><td>sources[]（今と同じ形）</td></tr>
+<tr><td>語彙（コードの一覧）</td><td>一覧はコードに 1 つ。DB の check・bundle の zod・出力のラベルが同じ一覧を見る。今の bundle は core.kind しか一覧で確かめていないので、詳細の語彙も zod に出す。新しい表は CoreDef.details にも登録する</td><td>一覧に無い値は受け付けない</td></tr>
+</table>
+<p class="mute">新しい表には created_at・updated_at を付ける。宿のチェックイン・アウトの必須は、取り込みの検証（PR #30 の quality.ts と validation）で拒む。</p></div>
+<h2>6. 設備の語彙（案）</h2>
+<div class="card">
+<p>設備は 2 段の一覧で決める。中カテゴリ 11・小カテゴリ 47。画面では中カテゴリを行の名前、小カテゴリを値に並べ、付いているもの（options）は行の下に開く詳細に出す。</p>
+<table class="vocab">
+<tr><th>中カテゴリ</th><th>小カテゴリ</th><th>付いているもの（options）</th><th>今のデータ</th></tr>
+<tr><td rowspan="9"><b>キッチン</b><br><code>kitchen</code></td><td>キッチン <code>kitchen</code></td><td></td><td>ito-033・atami-008</td></tr>
+<tr><td>コンロ <code>stove</code></td><td>ih・gas</td><td></td></tr>
+<tr><td>電子レンジ <code>microwave</code></td><td></td><td></td></tr>
+<tr><td>冷蔵庫 <code>refrigerator</code></td><td></td><td></td></tr>
+<tr><td>炊飯器 <code>rice_cooker</code></td><td></td><td></td></tr>
+<tr><td>調理器具 <code>cookware</code></td><td></td><td></td></tr>
+<tr><td>食器 <code>tableware</code></td><td></td><td></td></tr>
+<tr><td>食洗機 <code>dishwasher</code></td><td></td><td></td></tr>
+<tr><td>コーヒーメーカー <code>coffee_maker</code></td><td></td><td></td></tr>
+<tr><td rowspan="5"><b>屋外</b><br><code>outdoor</code></td><td>BBQ <code>bbq</code></td><td>electric_grill・charcoal・gas・covered（屋根の下）</td><td>ito-033・atami-008</td></tr>
+<tr><td>焚き火 <code>fire_pit</code></td><td></td><td></td></tr>
+<tr><td>テラス・デッキ <code>terrace</code></td><td></td><td></td></tr>
+<tr><td>庭 <code>garden</code></td><td></td><td></td></tr>
+<tr><td>プール <code>pool</code></td><td>heated・private</td><td></td></tr>
+<tr><td rowspan="3"><b>通信・仕事</b><br><code>internet</code></td><td>Wi-Fi <code>wifi</code></td><td></td><td>ito-033</td></tr>
+<tr><td>有線 LAN <code>wired_lan</code></td><td></td><td></td></tr>
+<tr><td>仕事用の机 <code>workspace</code></td><td></td><td></td></tr>
+<tr><td rowspan="5"><b>洗面</b><br><code>toiletries</code></td><td>タオル <code>towel</code></td><td>bath_towel</td><td></td></tr>
+<tr><td>シャンプー・ボディソープ <code>shampoo</code></td><td>organic</td><td>ito-033</td></tr>
+<tr><td>歯ブラシ <code>toothbrush</code></td><td></td><td></td></tr>
+<tr><td>ドライヤー <code>hair_dryer</code></td><td></td><td>ito-033</td></tr>
+<tr><td>部屋着 <code>pajamas</code></td><td></td><td></td></tr>
+<tr><td rowspan="4"><b>洗濯</b><br><code>laundry</code></td><td>洗濯機 <code>washing_machine</code></td><td></td><td>ito-033</td></tr>
+<tr><td>乾燥機 <code>dryer</code></td><td></td><td></td></tr>
+<tr><td>コインランドリー <code>coin_laundry</code></td><td></td><td></td></tr>
+<tr><td>アイロン <code>iron</code></td><td></td><td></td></tr>
+<tr><td rowspan="5"><b>室内</b><br><code>room</code></td><td>エアコン <code>air_conditioner</code></td><td></td><td></td></tr>
+<tr><td>床暖房 <code>floor_heating</code></td><td></td><td></td></tr>
+<tr><td>テレビ <code>tv</code></td><td>large</td><td>atami-008</td></tr>
+<tr><td>プロジェクター <code>projector</code></td><td></td><td></td></tr>
+<tr><td>金庫 <code>safe</code></td><td></td><td></td></tr>
+<tr><td rowspan="4"><b>娯楽</b><br><code>entertainment</code></td><td>カラオケ <code>karaoke</code></td><td></td><td>atami-008</td></tr>
+<tr><td>麻雀卓 <code>mahjong</code></td><td>automatic</td><td>atami-008</td></tr>
+<tr><td>ゲーム機 <code>game_console</code></td><td></td><td>atami-008</td></tr>
+<tr><td>ボードゲーム <code>board_games</code></td><td></td><td></td></tr>
+<tr><td rowspan="3"><b>子ども</b><br><code>kids</code></td><td>ベビーベッド <code>crib</code></td><td></td><td></td></tr>
+<tr><td>子ども用のいす <code>high_chair</code></td><td></td><td></td></tr>
+<tr><td>子ども用のアメニティ <code>kids_amenities</code></td><td></td><td></td></tr>
+<tr><td rowspan="4"><b>館内</b><br><code>facility</code></td><td>売店 <code>shop</code></td><td></td><td></td></tr>
+<tr><td>ラウンジ <code>lounge</code></td><td></td><td></td></tr>
+<tr><td>ジム <code>gym</code></td><td></td><td></td></tr>
+<tr><td>自動販売機 <code>vending_machine</code></td><td></td><td></td></tr>
+<tr><td rowspan="3"><b>サービス</b><br><code>service</code></td><td>24 時間フロント <code>front_24h</code></td><td></td><td></td></tr>
+<tr><td>荷物の預かり <code>luggage_storage</code></td><td></td><td></td></tr>
+<tr><td>非対面のチェックイン <code>self_checkin</code></td><td></td><td></td></tr>
+<tr><td rowspan="2"><b>バリアフリー</b><br><code>accessibility</code></td><td>段差なし <code>step_free</code></td><td></td><td></td></tr>
+<tr><td>エレベーター <code>elevator</code></td><td></td><td></td></tr>
+</table>
+<p class="mute">「今のデータ」は wr-ito-033 の投入の原本と、手元の wr-atami-008 の bundle に出てくるもの。今は kind が自由な文字（kitchen・bbq・sauna）で、カラオケ・麻雀などは note の文の中にしか無い。</p>
+</div>
+<div class="grid">
+<div class="card">
+<h3>決まり（案）</h3>
+<ul>
+<li>小カテゴリの code は、1 つの中カテゴリにだけ属する</li>
+<li>一覧はコードに 1 つだけ置き、DB の check・bundle の zod・出力のラベルが同じ一覧を見る</li>
+<li>accommodation_amenities.kind は小カテゴリの code。options（text[]、一覧で決めた値だけ）と count（数）を足す</li>
+<li>一覧に無い code は upload で受け付けない。足りなければ一覧を直す PR を出す</li>
+<li>中カテゴリの並び順は一覧の順。画面もその順に出す</li>
+<li>Wi-Fi の速さ・測った日・机は accommodation_internet に残す（詳しいほど良い）。画面では通信の Wi-Fi の行の下に開く</li>
+</ul>
+</div>
+<div class="card">
+<h3>設備に入れないもの</h3>
+<ul>
+<li>風呂・サウナ → 風呂（baths）</li>
+<li>駐車場 → 駐車場（parkings）</li>
+<li>ペット → ペット</li>
+<li>朝食・夕食・自炊の可否 → 食事（meals）</li>
+<li>送迎 → アクセス（access）</li>
+</ul>
+<h3>未決</h3>
+<ul>
+<li>note の文を残すか（残しても画面には出さない案）</li>
+<li>OTA・Google の設備コードとの対応表を今作るか</li>
+</ul>
+</div>
+</div>
+<h2>7. Codex のレビューと対応</h2>
+<div class="card">
+<p>PR #32 を Codex が今の DB・取り込みの処理と照らし合わせた指摘と、このページで直したところ。</p>
+<table>
+<tr><th>重さ</th><th>指摘</th><th>対応</th><th>直した章</th></tr>
+<tr><td>P1</td><td>部屋ごとの料金・部屋の写真を今は取り込めない（料金→部屋の参照を入口が受けない）</td><td>部屋と区分に key を持たせ、料金・写真は key で指す。structure の段で id に結ぶ</td><td>2 Room.key・2.5 Price.room・5 参照</td></tr>
+<tr><td>P1</td><td>食事の形式・朝食だけの料金・夕食が無いこと・時刻の選択、アクセスの徒歩とバスの区別に入れ場所が無い</td><td>Meal に offered・style・slots・fee、Access に mode を足す</td><td>2 Meal・Access・5 meals・access</td></tr>
+<tr><td>P1</td><td>料金の型が足りない（1 室 1 泊・誰にかかるか・年齢・子どもの割合）</td><td>per に room_night、audience・age_min/max・rate_percent を足す</td><td>2.5 Price・5 prices</td></tr>
+<tr><td>P2</td><td>客室の喫煙・サウナの種類・予約のタイミングと時間・男女別・ペットの大きさと料金・Wi-Fi の上り下りと測った日と机の範囲が無い</td><td>Room.smoking、Bath の saunaStyle・gender・reservation、Pets、Internet を足す。Wi-Fi は「あると良い」から「要る」に</td><td>2・5</td></tr>
+<tr><td>P2</td><td>画面用の型が DB に追いついていない（風呂の時間・泉質、駐車場の場所・車高 など）。Internet の型がどこからも使われていない</td><td>型を DB の列に合わせて全部書き直し、AccommodationView に internet を入れた</td><td>2</td></tr>
+<tr><td>P2</td><td>bundle は語彙の制約に自動では付いてこない</td><td>語彙の一覧を bundle の zod にも出す、新しい表は CoreDef に登録する、と書いた</td><td>5 語彙</td></tr>
+<tr><td>P2</td><td>料金→区分の参照が未決で、「料金の条件は全部型で持つ」と矛盾</td><td>key で指し structure の段で結ぶ、と決めた。区分の表は「要る」にした</td><td>5 参照・price_seasons</td></tr>
+<tr><td>P2</td><td>込み別の列を消すと入湯税を二重に足すおそれ。区分の判定が期限切れの料金を返す</td><td>includes を足し、合計で含まれるものは足さない。seasonFor は期間の中だけを見る</td><td>2.5</td></tr>
+<tr><td>P2</td><td>料金が 8 名までなのを定員 12 名との食い違いとしていたが、矛盾とは言えない</td><td>部屋の定員と料金がかかる人数を分けて持つ。4 章の印を直した</td><td>2 Room.capacity・4</td></tr>
+</table>
+<p class="mute">投入の流れ（raw → validate → staging → structure → validate → DB → view → web）の実装は別の作業（handoff ingest-pipeline）。</p>
+</div>
+</main>
+<script>
+// 詳細のある行（›）をタップすると、その行のすぐ下に詳細が開く（もう一度で閉じる）
+document.querySelectorAll('.tap[data-sub]').forEach(function (r) {
+  r.addEventListener('click', function () {
+    var d = document.getElementById(r.dataset.sub);
+    var open = d.hidden;
+    d.hidden = !open;
+    r.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+});
+// 「もう一度開く」：シートが上がる動きをやり直す
+document.querySelectorAll('.replay').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var phone = b.parentElement.querySelector('.phone');
+    phone.querySelectorAll('.p-home,.p-backdrop,.p-sheet').forEach(function (el) {
+      el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+    });
+    phone.querySelector('.p-scroll').scrollTop = 0;
+    phone.querySelectorAll('.p-drop').forEach(function (x) { x.hidden = true; });
+    phone.querySelectorAll('.tap[data-sub]').forEach(function (x) { x.setAttribute('aria-expanded', 'false'); });
+  });
+});
+</script>
+</body></html>
