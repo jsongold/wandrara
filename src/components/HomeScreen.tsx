@@ -10,12 +10,15 @@ import { useMessages } from "@/lib/i18n/use-locale";
 import { otherMode } from "@/lib/modes";
 import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Locale, Photo, SortKey } from "@/lib/types";
 import { AccountButton } from "./AccountButton";
+import { AreaMap } from "./AreaMap";
+import { Chip } from "./Chip";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { Icon } from "./icons";
 import { PhotoCarousel } from "./PhotoCarousel";
 
 type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPage; categories: CategoryView[]; areas: AreaGroupView[] };
 type Sheet = null | "area" | "filter";
+type AreaView = "list" | "map";
 
 const GLASS: CSSProperties = {
   background: "rgba(18,18,16,0.46)",
@@ -23,8 +26,6 @@ const GLASS: CSSProperties = {
   WebkitBackdropFilter: "blur(16px) saturate(1.2)",
   border: "1px solid rgba(255,255,255,0.14)",
 };
-const CHIP_ON: CSSProperties = { background: "#f4f1ea", color: "#141413", border: "1px solid #f4f1ea" };
-const CHIP_OFF: CSSProperties = { background: "transparent", color: "#ffffff", border: "1px solid rgba(255,255,255,0.28)" };
 const sorts = (m: Messages): { id: SortKey; label: string }[] => [
   { id: "editorial", label: m.home.sortEditorial },
   { id: "fresh", label: m.home.sortFresh },
@@ -55,6 +56,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [sheet, setSheet] = useState<Sheet>(null);
+  const [areaView, setAreaView] = useState<AreaView>("list");
   const m = messages(locale);
 
   // 全画面の詳細から戻るときのために、今の条件を控えておく
@@ -210,10 +212,31 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
       {sheet === "area" && (
         <BottomSheet label={m.home.chooseArea} onClose={() => setSheet(null)}>
           <SheetHeader title={m.home.chooseArea} onClose={() => setSheet(null)} />
+          <div role="group" aria-label={m.home.areaView} className="grid grid-cols-2 rounded-xl bg-white/[0.08] p-[3px]">
+            {(["list", "map"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={areaView === v}
+                onClick={() => setAreaView(v)}
+                className="h-9 cursor-pointer rounded-[10px] border-0 text-[13px] font-semibold"
+                style={areaView === v ? { background: "#f4f1ea", color: "#141413" } : { background: "transparent", color: "rgba(255,255,255,0.7)" }}
+              >
+                {v === "list" ? m.home.areaViewList : m.home.areaViewMap}
+              </button>
+            ))}
+          </div>
           <div className="flex flex-wrap gap-2">
             <Chip on={query.area === "all"} onClick={() => { go({ area: "all" }); setSheet(null); }}>{m.home.allAreasChip}</Chip>
           </div>
-          {areas.map((g) => (
+          {areaView === "map" && (
+            <AreaMap
+              current={query.area}
+              labelOf={(id) => areaName(areas, id, id)}
+              onSelect={(id) => { go({ area: id }); setSheet(null); }}
+            />
+          )}
+          {areaView === "list" && areas.map((g) => (
             <div key={g.id} className="flex flex-col gap-2.5">
               <h3 className="m-0 text-[13px] font-semibold text-white/85">{g.label}</h3>
               <div className="flex flex-wrap gap-2">
@@ -363,16 +386,3 @@ function SheetHeader({ title, onClose }: { title: string; onClose: () => void })
   );
 }
 
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={on}
-      className="h-10 cursor-pointer rounded-full px-3.5 text-[13px]"
-      style={on ? CHIP_ON : CHIP_OFF}
-    >
-      {children}
-    </button>
-  );
-}

@@ -14,7 +14,8 @@
     "dest:publish": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/dest-publish.ts",
     "dest:status": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/dest-status.ts",
     "bundle:schema": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bundle-schema.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "area-map:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/area-map/build.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
@@ -37,6 +38,7 @@
     "drizzle-kit": "0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
+    "mapshaper": "0.7.101",
     "tailwindcss": "4.3.3",
     "typescript": "^5",
     "vitest": "^5.1.0"

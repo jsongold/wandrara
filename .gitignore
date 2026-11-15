@@ -43,3 +43,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# エリア地図の元データ（pnpm area-map:build が落とす）
+/.cache/
