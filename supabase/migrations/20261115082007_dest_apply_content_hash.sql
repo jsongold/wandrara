@@ -13,7 +13,9 @@ as $$
 --      dest_categories: [{dest_id, category_id}],  import: {ref, collector_key_id, payload, content_hash} }
 -- rows の列は DB の列名（行に無い列は default、表に無いキーは無視）。親を指す列は TS（planDestWrite）が入れる。dest_id は関数が入れ直す
 -- allowed の表の行はこの dest の分を全部消してから入れ直す。publications は draft に戻す
--- 戻り値: {dest_id, slug}
+-- ただし既存の dest で、行ロックを取った後に見た最新の投入の content_hash が import.content_hash と同じなら、何も書かずに返す
+--   （ロックの外で比べると、同じ中身の投入が 2 つ同時に来たとき両方が書き、間に公開されたものを draft に戻してしまう）
+-- 戻り値: {dest_id, slug, unchanged, status}。unchanged=true のとき status は今の公開状態、false のとき 'draft'
 declare
   -- 親が先の順。消すときは逆順（子から）
   allowed constant text[] := array[
@@ -42,6 +44,17 @@ declare
   v_cols text[];
   v_list text;
 begin
+  -- 既存の dest：先に行ロックを取り（トランザクションの終わりまで持つ）、中身が前回と同じなら何も書かない
+  select x.slug into v_slug from public.destinations x where x.dest_id = v_dest_id for update;
+  if found and (p->'import'->>'content_hash') is not null and (p->'import'->>'content_hash') is not distinct from (
+    select i.content_hash from public.dest_imports i where i.dest_id = v_dest_id order by i.imported_at desc limit 1
+  ) then
+    return jsonb_build_object(
+      'dest_id', v_dest_id, 'slug', v_slug, 'unchanged', true,
+      'status', (select pb.status from public.publications pb where pb.dest_id = v_dest_id)
+    );
+  end if;
+
   insert into public.regions (id, parent_id, name, municipality_code, sort)
   select x.id, x.parent_id, x.name, x.municipality_code, x.sort
   from jsonb_populate_recordset(null::public.regions, coalesce(p->'regions', '[]')) x
@@ -93,7 +106,7 @@ begin
   insert into public.dest_imports (dest_id, ref, collector_key_id, payload, content_hash, imported_at)
   values (v_dest_id, p->'import'->>'ref', (p->'import'->>'collector_key_id')::uuid, p->'import'->'payload', p->'import'->>'content_hash', clock_timestamp());
 
-  return jsonb_build_object('dest_id', v_dest_id, 'slug', v_slug);
+  return jsonb_build_object('dest_id', v_dest_id, 'slug', v_slug, 'unchanged', false, 'status', 'draft');
 end;
 $$;
 

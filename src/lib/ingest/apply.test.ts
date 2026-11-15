@@ -14,7 +14,8 @@ const body = () => ({
   categories: ["onsen"],
 });
 
-// from(table) の問い合わせ結果を表ごとに返す最小のモック。rpc の引数を記録する
+// from(table) の問い合わせ結果を表ごとに返す最小のモック。rpc の引数を記録する。
+// last を渡すと、rpc は dest_apply と同じく「既存の dest で content_hash が前回と同じなら unchanged」を返す（本物の判定は SQL。supabase/tests で確かめる）
 function mockDb(
   existing?: { dest_id: string; slug: string; core_type?: string; created_by?: string | null },
   last?: { content_hash: string | null; status: string },
@@ -24,11 +25,9 @@ function mockDb(
     const q: Record<string, unknown> = {};
     const result = () => {
       if (table === "destinations") return { data: existing ?? null, error: null };
-      if (table === "dest_imports") return { data: last ? { content_hash: last.content_hash } : null, error: null };
-      if (table === "publications") return { data: last ? { status: last.status } : null, error: null };
       return { data: [], error: null };
     };
-    for (const m of ["select", "eq", "like", "in", "limit", "order"]) q[m] = () => q;
+    for (const m of ["select", "eq", "like", "in", "limit"]) q[m] = () => q;
     q.maybeSingle = async () => result();
     q.then = (res: (v: unknown) => unknown) => res(table === "destinations" ? { data: existing ? [existing] : [], error: null } : result());
     return q;
@@ -38,7 +37,11 @@ function mockDb(
     rpc: async (fn: string, args: { p: Record<string, unknown> }) => {
       rpcCalls.push({ fn, args });
       const d = args.p.destination as { dest_id: string; slug: string };
-      return { data: { dest_id: d.dest_id, slug: d.slug }, error: null };
+      const hash = (args.p.import as { content_hash: string }).content_hash;
+      if (existing && last?.content_hash && last.content_hash === hash) {
+        return { data: { dest_id: d.dest_id, slug: existing.slug, unchanged: true, status: last.status }, error: null };
+      }
+      return { data: { dest_id: d.dest_id, slug: d.slug, unchanged: false, status: "draft" }, error: null };
     },
   };
   return { db: db as unknown as SupabaseClient, rpcCalls };
@@ -112,24 +115,23 @@ describe("registerDest", () => {
     expect((rpcCalls[0].args.p.import as { content_hash: string }).content_hash).toBe(hashOf(body()));
   });
 
-  it("中身が前回と同じなら dest_apply を呼ばず、公開状態のまま unchanged を返す", async () => {
-    const { db, rpcCalls } = mockDb(ex, { content_hash: hashOf(body()), status: "published" });
+  it("dest_apply が unchanged を返したら、公開状態のまま unchanged を返す（sources だけの違いは同じ中身）", async () => {
+    const { db } = mockDb(ex, { content_hash: hashOf(body()), status: "published" });
     const r = await registerDest(db, acc, { ...body(), sources: [{ retrieved_at: "2026-11-16" }] }, principal);
     expect(r).toMatchObject({ ok: true, unchanged: true, status: "published", slug: "keep-me", dest_id: ex.dest_id });
-    expect(rpcCalls).toHaveLength(0);
   });
 
-  it("中身が変われば書き込み、draft に戻す", async () => {
-    const { db, rpcCalls } = mockDb(ex, { content_hash: hashOf(body()), status: "published" });
+  it("中身が変われば draft", async () => {
+    const { db } = mockDb(ex, { content_hash: hashOf(body()), status: "published" });
     const r = await registerDest(db, acc, { ...body(), texts: [{ lang: "ja", name: "別の名前" }] }, principal);
     expect(r).toMatchObject({ ok: true, unchanged: false, status: "draft" });
-    expect(rpcCalls).toHaveLength(1);
   });
 
-  it("前回のハッシュが無い（古い投入）なら書き込む", async () => {
-    const { db, rpcCalls } = mockDb(ex, { content_hash: null, status: "published" });
-    await registerDest(db, acc, body(), principal);
-    expect(rpcCalls).toHaveLength(1);
+  it("古いサーバー（unchanged を返さない dest_apply）でも draft として扱う", async () => {
+    const { db } = mockDb(ex);
+    (db as unknown as { rpc: unknown }).rpc = async () => ({ data: { dest_id: ex.dest_id, slug: "keep-me" }, error: null });
+    const r = await registerDest(db, acc, body(), principal);
+    expect(r).toMatchObject({ ok: true, unchanged: false, status: "draft" });
   });
 
   it("別の登録者なら、中身が同じでも 409", async () => {
