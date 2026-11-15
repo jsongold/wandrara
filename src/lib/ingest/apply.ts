@@ -7,7 +7,7 @@ import { planDestWrite, type DestRefs, type DestWritePlan } from "./plan.ts";
 
 export type RegisterResult =
   | { ok: true; dest_id: string; slug: string; status: "draft" }
-  | { ok: false; status: 400; errors: string[] };
+  | { ok: false; status: 400 | 409; errors: string[] };
 
 function fail(error: { message: string } | null, what: string) {
   if (error) throw new Error(`${what}: ${error.message}`);
@@ -19,11 +19,11 @@ function slugPrefix(input: DestInput): string {
 }
 
 export async function loadRefs(db: SupabaseClient, input: DestInput): Promise<DestRefs> {
-  const destByRef = new Map<string, { destId: string; slug: string }>();
+  const destByRef: DestRefs["destByRef"] = new Map();
   if (input.ref) {
-    const { data, error } = await db.from("destinations").select("dest_id, slug").eq("ref", input.ref).maybeSingle();
+    const { data, error } = await db.from("destinations").select("dest_id, slug, core_type, created_by").eq("ref", input.ref).maybeSingle();
     fail(error, "destinations(ref)");
-    if (data) destByRef.set(input.ref, { destId: data.dest_id, slug: data.slug });
+    if (data) destByRef.set(input.ref, { destId: data.dest_id, slug: data.slug, coreType: data.core_type, createdBy: data.created_by });
   }
 
   // slug の重なり確認：同じ接頭辞のものだけ引く
@@ -68,6 +68,16 @@ export async function registerDest(
   const parsed = parseDestInput(core, json);
   if (!parsed.ok) return { ok: false, status: 400, errors: parsed.errors };
   const refs = await loadRefs(db, parsed.value);
+  const existing = parsed.value.ref ? refs.destByRef.get(parsed.value.ref) : undefined;
+  if (existing) {
+    const ref = parsed.value.ref;
+    if (existing.coreType !== core.coreType) {
+      return { ok: false, status: 409, errors: [`ref ${ref} は別の種類（${existing.coreType}）で登録済み`] };
+    }
+    if (existing.createdBy !== principal.userId) {
+      return { ok: false, status: 409, errors: [`ref ${ref} は別の登録者のもの。運営に引き継ぎを依頼する`] };
+    }
+  }
   const plan = planDestWrite(core, parsed.value, refs, { userId: principal.userId, keyId: principal.keyId, uuid: randomUUID });
   const res = await applyDestWrite(db, plan);
   return { ok: true, dest_id: res.dest_id, slug: res.slug, status: "draft" };
