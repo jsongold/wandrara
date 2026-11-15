@@ -1,36 +1,43 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getCurrentUser } from "../../lib/auth/next";
+import { getCurrentUser } from "@/lib/auth/next";
+import { isLocale, withLocale } from "@/lib/i18n/locale";
+import { messages } from "@/lib/i18n/messages";
 import { signOut } from "./actions";
 
-export default function AccountPage(props: PageProps<"/account">) {
+export default function AccountPage(props: PageProps<"/[lang]/account">) {
   return (
     <Suspense fallback={<div className="min-h-dvh bg-[#faf9f6]" />}>
-      <Account searchParams={props.searchParams} />
+      <Account params={props.params} searchParams={props.searchParams} />
     </Suspense>
   );
 }
 
-async function Account({ searchParams }: Pick<PageProps<"/account">, "searchParams">) {
+async function Account({ params, searchParams }: Pick<PageProps<"/[lang]/account">, "params" | "searchParams">) {
+  const { lang } = await params;
+  if (!isLocale(lang)) notFound();
+  const to = (path: string) => withLocale(lang, path);
+  const m = messages(lang).account;
+  const c = messages(lang).common;
   const confirming = (await searchParams).logout === "1";
   const user = await getCurrentUser();
-  if (!user) redirect("/login?next=/account");
+  if (!user) redirect(to(`/login?next=${encodeURIComponent(to("/account"))}`));
 
   const email = user.email ?? "";
   const meta = user.user_metadata as { full_name?: string; name?: string } | null;
-  const name = meta?.full_name ?? meta?.name ?? (email.split("@")[0] || "ユーザー");
-  const how = user.app_metadata?.provider === "google" ? "Google でログイン中" : "メールでログイン中";
+  const name = meta?.full_name ?? meta?.name ?? (email.split("@")[0] || m.fallbackName);
+  const how = user.app_metadata?.provider === "google" ? m.viaGoogle : m.viaEmail;
 
   return (
     <div className="relative mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-[#faf9f6] text-[#171717]">
       <div className="flex h-14 items-center gap-1 px-2">
-        <Link href="/" aria-label="戻る" className="flex size-11 items-center justify-center">
+        <Link href={to("/")} aria-label={c.back} className="flex size-11 items-center justify-center">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#171717" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 5l-7 7 7 7" />
           </svg>
         </Link>
-        <h1 className="m-0 text-base font-semibold">アカウント</h1>
+        <h1 className="m-0 text-base font-semibold">{m.title}</h1>
       </div>
       <div className="flex flex-1 flex-col gap-5 px-4 pb-7 pt-2">
         <div className="flex items-center gap-3.5 rounded-2xl bg-white p-4">
@@ -46,16 +53,16 @@ async function Account({ searchParams }: Pick<PageProps<"/account">, "searchPara
           </div>
         </div>
         <Link
-          href="/account?logout=1"
+          href={to("/account?logout=1")}
           className="mt-auto flex h-[52px] items-center justify-center rounded-[26px] border border-[#d6d3cb] bg-white text-[15px] font-medium text-[#a1361f] no-underline"
         >
-          ログアウト
+          {m.logout}
         </Link>
       </div>
 
       {confirming && (
         <>
-          <Link href="/account" aria-label="閉じる" className="absolute inset-0 z-10 bg-black/45" />
+          <Link href={to("/account")} aria-label={c.close} className="absolute inset-0 z-10 bg-black/45" />
           <section
             role="dialog"
             aria-labelledby="logout-title"
@@ -65,21 +72,22 @@ async function Account({ searchParams }: Pick<PageProps<"/account">, "searchPara
               <span className="h-[5px] w-10 rounded-[3px] bg-[#d6d3cb]" />
             </div>
             <div className="flex flex-col gap-2">
-              <h2 id="logout-title" className="m-0 text-lg font-bold leading-snug">ログアウトしますか</h2>
+              <h2 id="logout-title" className="m-0 text-lg font-bold leading-snug">{m.logoutConfirm}</h2>
               <p className="m-0 text-[13px] leading-[1.7] text-[#55524a]">
-                保存したスポットと My Tour はアカウントに残ります。共有したリンクはログアウトしても見られます。
+                {m.logoutNote}
               </p>
             </div>
             <form action={signOut} className="flex">
+              <input type="hidden" name="lang" value={lang} />
               <button type="submit" className="h-[52px] flex-1 rounded-[26px] border-0 bg-[#a1361f] text-[15px] font-medium text-white">
-                ログアウト
+                {m.logout}
               </button>
             </form>
             <Link
-              href="/account"
+              href={to("/account")}
               className="flex h-[52px] items-center justify-center rounded-[26px] border border-[#d6d3cb] text-[15px] font-medium text-[#171717] no-underline"
             >
-              キャンセル
+              {m.cancel}
             </Link>
           </section>
         </>

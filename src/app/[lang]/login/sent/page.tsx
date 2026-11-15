@@ -1,15 +1,21 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { isLocale, withLocale } from "@/lib/i18n/locale";
+import { messages } from "@/lib/i18n/messages";
 
-export default function SentPage(props: PageProps<"/login/sent">) {
+export default function SentPage(props: PageProps<"/[lang]/login/sent">) {
   return (
     <Suspense fallback={<div className="min-h-dvh bg-[#24231f]" />}>
-      <Sent searchParams={props.searchParams} />
+      <Sent params={props.params} searchParams={props.searchParams} />
     </Suspense>
   );
 }
 
-async function Sent({ searchParams }: Pick<PageProps<"/login/sent">, "searchParams">) {
+async function Sent({ params, searchParams }: Pick<PageProps<"/[lang]/login/sent">, "params" | "searchParams">) {
+  const { lang } = await params;
+  if (!isLocale(lang)) notFound();
+  const m = messages(lang).login;
   const raw = (await searchParams).email;
   const email = (Array.isArray(raw) ? raw[0] : raw) ?? "";
   return (
@@ -25,15 +31,15 @@ async function Sent({ searchParams }: Pick<PageProps<"/login/sent">, "searchPara
           </svg>
         </span>
         <div className="flex flex-col items-center gap-2">
-          <h1 className="text-[22px] font-bold leading-snug">メールを送りました</h1>
+          <h1 className="text-[22px] font-bold leading-snug">{m.sentTitle}</h1>
           <p className="text-center text-[13px] leading-[1.7] text-[#55524a]">
-            {email || "ご入力のメールアドレス"} に届いたリンクを開くと、ログインできます。この画面は閉じてかまいません。
+            {m.sentBody(email || m.sentYourEmail)}
           </p>
         </div>
         <div className="w-full rounded-xl bg-[#faf9f6] px-4 py-3.5 text-xs leading-[1.7] text-[#55524a]">
-          届かないときは、迷惑メールのフォルダも見てください。
+          {m.sentSpam}
         </div>
-        <Link href="/login" className="mt-auto px-3 py-2.5 text-sm font-medium">別のメールアドレスにする</Link>
+        <Link href={withLocale(lang, "/login")} className="mt-auto px-3 py-2.5 text-sm font-medium">{m.sentOther}</Link>
       </div>
     </div>
   );

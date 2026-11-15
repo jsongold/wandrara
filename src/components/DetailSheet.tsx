@@ -5,6 +5,7 @@
 // ブラウザの戻る（iOS の戻るスワイプなど）で閉じたときは、ブラウザ側の動きに任せる。
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { useMessages } from "@/lib/i18n/use-locale";
 import { SheetCloseContext } from "./sheet-context";
 
 const CLOSE_DISTANCE = 120; // これ以上引き下げたら閉じる（px）
@@ -12,6 +13,7 @@ const CLOSE_MS = 320; // globals.css の --sheet-close-ms と合わせる
 
 export function DetailSheet({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const m = useMessages();
   const [dragY, setDragY] = useState(0);
   const [closing, setClosing] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -63,10 +65,10 @@ export function DetailSheet({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div data-sheet={closing ? "closing" : "open"} className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label="スポットの詳細">
+    <div data-sheet={closing ? "closing" : "open"} className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={m.detail.sheetLabel}>
       <button
         type="button"
-        aria-label="閉じる"
+        aria-label={m.common.close}
         onClick={close}
         className={`sheet-backdrop absolute inset-0 touch-none bg-black/50 transition-opacity duration-300 ${closing ? "opacity-0" : ""}`}
       />

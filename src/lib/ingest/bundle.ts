@@ -14,7 +14,8 @@ export type DestInput = Record<string, unknown> & {
   slug?: string | null;
   core: Record<string, unknown>;
   texts: Record<string, unknown>[];
-  details?: Record<string, Record<string, unknown>[]>;
+  /** 詳細の表の行の配列（key → 行）か、detailsSchema を持つコアなら JSON 1 つ */
+  details?: Record<string, unknown>;
   categories?: string[];
   photos?: Record<string, unknown>[];
   region?: { id: string; name: Record<string, string>; parent_id?: string | null };
@@ -78,6 +79,8 @@ const photoBase = {
   original_url: z.string().nullish(),
   subject: z.enum(["exterior", "room", "bath", "view", "food", "activity", "landscape", "other"]).nullish(),
   alt: localizedSchema.nullish(),
+  /** 部屋などの key（details の中のもの）。dest_photos.subject_key に入る */
+  room: z.string().regex(/^[a-z0-9_-]{1,40}$/).nullish(),
 };
 
 const regionSchema = z.strictObject({
@@ -87,7 +90,8 @@ const regionSchema = z.strictObject({
 });
 
 function destShape(core: CoreDef, photos: z.ZodType): Record<string, z.ZodType> {
-  const coreShape = columnShape(core.table, (c) => c.name === "dest_id" || c.name === "operator_id");
+  // details 列はコアの列としては受けない（details を持つコアは、いちばん上の details で受ける）
+  const coreShape = columnShape(core.table, (c) => c.name === "dest_id" || c.name === "operator_id" || c.name === "details");
   const kinds = Object.keys(core.kindLabels);
   if (coreShape.kind && kinds.length) coreShape.kind = z.enum(kinds as [string, ...string[]]).nullish();
   const textsShape = columnShape(core.texts, (c) => c.name === "dest_id");
@@ -102,7 +106,7 @@ function destShape(core: CoreDef, photos: z.ZodType): Record<string, z.ZodType> 
     verification_status: z.string().nullish(),
     core: z.strictObject(coreShape),
     texts: z.array(z.strictObject(textsShape)).min(1),
-    details: z.strictObject(details).optional(),
+    details: core.detailsSchema ? core.detailsSchema.optional() : z.strictObject(details).optional(),
     categories: z.array(z.string().min(1)).optional(),
     photos: z.array(photos).optional(),
     region: regionSchema.optional(),

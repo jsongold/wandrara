@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>宿の詳細画面 提案</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d1c1a;--mute:#6b6862;--line:#e3e0d8;--accent:#2f6f5e;--warn:#a5552a;--chip:#eef3f1}
+@media (prefers-color-scheme:dark){:root{--bg:#161614;--card:#1f1e1b;--ink:#ecebe6;--mute:#a19e96;--line:#34322d;--accent:#7cc3ad;--warn:#e39a6b;--chip:#26302c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}
+main{max-width:1280px;margin:0 auto;padding:32px 16px 80px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:40px 0 12px;padding-top:8px;border-top:1px solid var(--line)}h3{font-size:15px;margin:20px 0 8px}
+.lead{color:var(--mute);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px}
+.box{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--card)}
+.box b{display:block}.box span{color:var(--mute);font-size:12px}
+.arrow{color:var(--mute)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{color:var(--mute);font-weight:600}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.matrix td,.matrix th{text-align:right}.matrix th:first-child,.matrix td:first-child{text-align:left}
+.merged{background:var(--chip)}
+.chip{display:inline-block;background:var(--chip);border-radius:99px;padding:1px 9px;margin:2px 4px 2px 0;font-size:13px}
+.flag{color:var(--warn);font-size:13px}
+.mute{color:var(--mute);font-size:13px}
+pre{background:var(--chip);border-radius:8px;padding:12px;overflow:auto;font-size:12.5px;line-height:1.5}
+.before li{color:var(--mute);font-size:13px}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--mute);margin-left:6px}
+/* 画面の見本（実際の詳細画面と同じ色・幅） */
+.phones{display:flex;gap:28px;flex-wrap:nowrap;overflow-x:auto;align-items:flex-start;padding-bottom:12px}
+.phones>:first-child{margin-left:auto}.phones>:last-child{margin-right:auto}
+.phone-wrap{flex:0 0 auto}
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.phone-wrap>p{margin:0;font-weight:700}
+.phone{position:relative;width:375px;max-width:100%;height:780px;overflow:hidden;border:10px solid #111;border-radius:36px;background:#000;color:#141413;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+/* 今の DetailSheet と同じ形：裏のトップが縮み、背景が暗くなり、下から 94% のシートが上がる */
+.p-home{position:absolute;inset:0;background:#f7f6f2;border-radius:14px;transform:scale(.92) translateY(-14px);transform-origin:top center;padding:44px 16px 0;animation:p-shrink 420ms cubic-bezier(.32,.72,0,1)}
+.p-home .tg{display:flex;gap:6px;margin-bottom:14px}.p-home .tg span{background:#e8e5dc;border-radius:99px;padding:5px 14px;font-size:12px;font-weight:600}.p-home .tg span:first-child{background:#141413;color:#fff}
+.p-home .cd{height:210px;border-radius:18px;background:#cfd3cc center/cover;margin-bottom:12px}
+.p-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);animation:p-fade 420ms ease-out}
+.p-sheet{position:absolute;left:0;right:0;bottom:0;height:94%;background:#f7f6f2;border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 -8px 30px rgba(0,0,0,.25);animation:p-up 420ms cubic-bezier(.32,.72,0,1)}
+.p-handle{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:44px;height:6px;border-radius:99px;background:rgba(255,255,255,.85);box-shadow:0 1px 3px rgba(0,0,0,.3);z-index:2}
+.p-back{position:absolute;left:14px;top:22px;z-index:2;background:rgba(18,18,16,.46);color:#fff!important;border-radius:99px;font-size:12px;padding:5px 11px;backdrop-filter:blur(14px)}
+.p-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain}
+@keyframes p-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes p-fade{from{opacity:0}to{opacity:1}}
+@keyframes p-shrink{from{transform:none;border-radius:0}to{transform:scale(.92) translateY(-14px);border-radius:14px}}
+.replay{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:4px 12px;cursor:pointer}
+.phone *{color:inherit}
+.p-hero{height:300px;background:#cfd3cc center/cover no-repeat;position:relative}
+.p-hero .cnt{position:absolute;right:12px;bottom:12px;background:rgba(15,15,14,.6);color:#fff;font-size:11px;font-weight:600;border-radius:6px;padding:2px 8px}
+.p-body{padding:18px 20px 36px;display:flex;flex-direction:column;gap:24px}
+.p-badges{display:flex;flex-wrap:wrap;gap:6px}
+.p-badge{background:#e8e5dc;color:#3d3b35;font-size:11px;font-weight:600;border-radius:6px;padding:3px 8px}
+.p-title{font-size:22px;font-weight:700;line-height:1.35;margin:6px 0 2px}
+.p-area{font-size:13px;color:#55524a;margin:0}
+.p-sum{font-size:13.5px;line-height:1.8;color:#2b2a26;margin:6px 0 0}
+.p-h{font-size:17px;font-weight:700;margin:0 0 10px}
+.p-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.p-key{background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:8px 4px;text-align:center}
+.p-key b{display:block;font-size:15px}.p-key span{font-size:10.5px;color:#55524a}
+.p-rates{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border-radius:12px;overflow:hidden}
+.p-rates th,.p-rates td{padding:6px 5px;border-bottom:1px solid #eeebe4;text-align:right;font-variant-numeric:tabular-nums}
+.p-rates th{background:#efece5;color:#3d3b35;font-weight:600;font-size:11.5px}
+.p-rates td:first-child,.p-rates th:first-child{text-align:left;padding-left:10px}
+.p-rates td.m{background:#f3f6f4;color:#2f6f5e;text-align:center}
+.p-legend{font-size:11.5px;color:#55524a;line-height:1.7;margin:8px 0 0;padding:0;list-style:none}
+.p-extra{background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-top:10px}
+.p-extra div{display:flex;justify-content:space-between;padding:2px 0}
+.p-calc{margin-top:8px;font-size:12px;color:#2f6f5e;background:#eef3f1;border-radius:10px;padding:8px 10px}
+.p-list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.p-list li{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:10px 12px;font-size:13px}
+.p-list li i{font-style:normal;font-size:16px;width:22px;text-align:center}
+.p-list li small{display:block;color:#55524a;font-size:11.5px}
+.p-chips{display:flex;flex-wrap:wrap;gap:6px}
+.p-chip{background:#fff;border:1px solid #e3e0d8;border-radius:99px;padding:4px 10px;font-size:12px}
+.p-map{height:160px;border:0;border-radius:16px;width:100%;background:#dfe3de}
+.p-btn{display:block;text-align:center;background:#141413;color:#fff!important;border-radius:12px;padding:11px;font-size:13.5px;font-weight:600;text-decoration:none;margin-top:8px}
+.p-btn.sub{background:#fff;color:#141413!important;border:1px solid #d6d2c8}
+.p-note{font-size:11.5px;color:#55524a;line-height:1.7;margin:0}
+.p-missing{font-size:11.5px;color:#a5552a}
+/* 今の画面 */
+.p-fact{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #e6e3db;padding:7px 0;font-size:12.5px}
+.p-fact span:first-child{color:#55524a;white-space:nowrap}
+.p-fact em{font-style:normal;font-size:10px;background:#e8e5dc;border-radius:4px;padding:0 4px;color:#6b6862;margin-left:6px;white-space:nowrap}
+.p-fact .v{text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.p-body.new .p-fact .v{white-space:normal;max-width:230px}
+.p-fact.tap{cursor:pointer}
+.p-fact.tap .v::after{content:"›";display:inline-block;margin-left:8px;color:#8a867c;font-size:15px;line-height:1;transition:transform .2s}
+.p-fact.tap[aria-expanded="true"] .v::after{transform:rotate(90deg)}
+.p-fact.tap[aria-expanded="true"]{border-bottom-color:transparent}
+.p-drop{background:#efece4;border-radius:12px;padding:4px 12px 8px;margin:2px 0 6px;animation:p-open .2s ease-out}
+.p-drop[hidden]{display:none}
+.p-drop .p-fact{font-size:12px;padding:6px 0}
+.p-drop .p-fact:last-child{border-bottom:none}
+.p-drop .p-subph{height:120px;margin:8px 0 4px}
+/* 提案の画面：見出しは小さなラベル、行は白いカードの中に詰めて並べる */
+.p-body.new{gap:10px;padding-top:16px}
+.p-body.new>section:first-child{margin-bottom:6px}
+.p-body.new>section:not(:first-child){background:#fff;border-radius:14px;padding:10px 14px 4px;box-shadow:0 1px 2px rgba(20,20,19,.04)}
+.p-body.new .p-h{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:#8a867c;margin:0 0 2px;padding:0;border:0}
+.p-body.new .p-fact{font-size:13px;padding:8px 0;border-bottom:1px solid rgba(20,20,19,.06);align-items:baseline}
+.p-body.new .p-fact:last-of-type{border-bottom:0}
+.p-body.new .p-fact span:first-child{color:#8a867c;font-size:12px}
+.p-body.new .p-fact .v{font-weight:500;color:#141413}
+.p-body.new .p-fact.tap .v::after{font-size:13px;margin-left:6px;color:#b5b0a5}
+.p-body.new .p-note{font-size:11px;color:#8a867c;margin:4px 0 8px!important}
+.p-body.new section .p-btn{padding:9px;font-size:12.5px;border-radius:10px;margin:0 0 10px}
+.p-body.new section .p-btn+.p-btn{margin-top:-4px}
+.p-body.new .p-drop{background:#f6f4ef;border-radius:10px;padding:2px 10px 4px;margin:0 0 8px}
+.p-body.new .p-drop .p-fact{font-size:12px;padding:6px 0}
+.p-body.new .vocab td{vertical-align:top}.vocab td code{font-size:11px;color:var(--mute)}
+.p-mapph{height:110px;border-radius:10px;margin:2px 0 10px!important;border:0}
+.p-body.new>.p-note{text-align:center;margin-top:6px!important}
+.p-mini{width:100%;border-collapse:collapse;font-size:11px;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.p-mini th,.p-mini td{padding:4px 3px;border-bottom:1px solid rgba(20,20,19,.06);text-align:right;font-weight:500;color:#141413;white-space:nowrap}
+.p-mini tr:first-child th{color:#8a867c;font-weight:600;font-size:10px}
+.p-mini th:first-child{text-align:left;color:#8a867c;font-weight:500}
+.p-unit{font-size:10.5px;color:#8a867c;margin:2px 0 4px}
+.p-price{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.p-price th,.p-price td{padding:7px 2px;border-bottom:1px solid rgba(20,20,19,.06);text-align:right;white-space:nowrap;font-weight:500;color:#141413}
+.p-price tr:first-child th{font-size:10px;font-weight:600;color:#8a867c;padding-top:2px}
+.p-price th:first-child{text-align:left}
+.p-price td.nt{font-size:10.5px;color:#8a867c}
+.p-price tr.tap{cursor:pointer}
+.p-price tr.tap td.nt::after{content:"›";display:inline-block;margin-left:4px;color:#b5b0a5;transition:transform .2s}
+.p-price tr.tap[aria-expanded="true"] td.nt::after{transform:rotate(90deg)}
+.p-price tr.p-droprow td{padding:0;border:0;text-align:left;white-space:normal}
+.p-price tr.p-droprow .p-drop{margin:4px 0 6px}
+@keyframes p-open{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.p-fact.tap:active{background:#efece4}
+.p-subph{height:150px;border-radius:16px;background:#cfd3cc;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
+.p-stay{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:10px;padding:5px 11px;border-radius:99px;background:#efece4;line-height:1}
+.p-stay .k{font-size:9.5px;font-weight:700;letter-spacing:.08em;color:#8a867c}
+.p-stay b{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.p-stay.miss b{color:#b5b0a5}
+.p-stay .ln{width:14px;height:1px;background:#b9b4a8;margin:0 2px}
+.p-mapph{height:160px;border-radius:16px;border:1px solid #d0d5cf;background:#dfe3de;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
+</style>
+</head>
+<body><main>
+<h1>宿の詳細画面（提案）</h1>
+<p class="lead">› の行をタップすると、その下に詳細が開く。型・DB・語彙は <a href="web-output-model-spec.html">web-output-model-spec.html</a>。</p>
+<div class="phones">
+<div class="phone-wrap"><p>一棟貸し（wr-ito-033）</p>
+<div class="phone">
+<div class="p-home"><div class="tg"><span>宿</span><span>体験</span></div><div class="cd" style="background-image:url('https://ifozgrjshxwjeogtgctp.supabase.co/storage/v1/object/public/dest-photos/2cda9b1932ba83d60ea5d16e73cde18f6b8c315cf7ae4c2d9f76ae7ea013f3a9.jpg')"></div><div class="cd"></div></div>
+<div class="p-backdrop"></div>
+<div class="p-sheet"><span class="p-handle"></span><span class="p-back">‹ 戻る</span><div class="p-scroll">
+<div class="p-hero" style="background-image:url('https://ifozgrjshxwjeogtgctp.supabase.co/storage/v1/object/public/dest-photos/2cda9b1932ba83d60ea5d16e73cde18f6b8c315cf7ae4c2d9f76ae7ea013f3a9.jpg')"><span class="cnt">1 / 10</span></div>
+<div class="p-body new">
+<section>
+<div class="p-badges"><span class="p-badge">一棟貸し</span></div>
+<h1 class="p-title">ポッケまほろ伊豆</h1>
+<p class="p-area">伊豆・伊東</p>
+<p class="p-sum">温泉とサウナを所有する、という滞在。伊豆高原の一日一組限定のプライベートヴィラ。敷地内に 8 名程度のバレルサウナ、温泉の内風呂と露天風呂、海を望む BBQ 場。</p>
+<div class="p-stay miss"><span class="k">IN</span><b>--:--</b><span class="ln"></span><span class="k">OUT</span><b>--:--</b></div>
+</section>
+<section>
+<h2 class="p-h">料金（参考）</h2>
+<p class="p-unit">1 棟 1 泊・税込（円）</p>
+<table class="p-price"><tr><th>部屋</th><th>人数</th><th>最小</th><th>最大</th><th>備考</th></tr>
+<tr class="p-trow tap" aria-expanded="false" data-sub="r-p-0"><th>1 棟</th><td>2〜8</td><td>45,000</td><td>170,000</td><td class="nt">素泊まり</td></tr>
+<tr class="p-droprow"><td colspan="5"><div class="p-drop" id="r-p-0" hidden>
+<div class="p-fact sub"><span>諸経費</span><span class="v">1 名 1 泊 550 円（税込）</span></div>
+<div class="p-fact sub"><span>入湯税</span><span class="v">大人 1 名 1 泊 300 円</span></div>
+</div></td></tr>
+</table>
+<p class="p-note">人数と日によって変わります。別途、諸経費と入湯税がかかります。</p>
+<a class="p-btn sub" href="https://pokke-mahoro.jimdofree.com/">料金の詳細は公式サイトへ</a>
+</section>
+<section>
+<h2 class="p-h">部屋</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-room"><span>1 棟</span><span class="v">12 名まで</span></div>
+<div class="p-drop" id="r-room" hidden>
+<div class="p-fact sub"><span>定員</span><span class="v">12 名</span></div>
+<div class="p-fact sub"><span>寝室 1（1F）</span><span class="v">ダブル 1・シングル 1</span></div>
+<div class="p-fact sub"><span>寝室 2（2F）</span><span class="v">セミダブル 2</span></div>
+<div class="p-fact sub"><span>寝室 3（2F）</span><span class="v">セミダブル 2</span></div>
+</div>
+<div class="p-fact"><span>寝室</span><span class="v">3 室</span></div>
+</section>
+<section>
+<h2 class="p-h">風呂</h2>
+<div class="p-fact"><span>露天風呂</span><span class="v">温泉</span></div>
+<div class="p-fact"><span>内風呂</span><span class="v">温泉</span></div>
+<div class="p-fact"><span>サウナ</span><span class="v">バレルサウナ（8 名程度）</span></div>
+</section>
+<section>
+<h2 class="p-h">設備</h2>
+<div class="p-fact"><span>キッチン</span><span class="v">キッチン</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-bbq"><span>屋外</span><span class="v">BBQ</span></div>
+<div class="p-drop" id="r-bbq" hidden>
+<div class="p-fact sub"><span>グリル</span><span class="v">電気グリル</span></div>
+<div class="p-fact sub"><span>雨の日</span><span class="v">屋根の下で使える</span></div>
+</div>
+<div class="p-fact"><span>通信</span><span class="v">Wi-Fi</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-wash"><span>洗面</span><span class="v">アメニティ・ドライヤー</span></div>
+<div class="p-drop" id="r-wash" hidden>
+<div class="p-fact sub"><span>アメニティ</span><span class="v">オーガニック</span></div>
+<div class="p-fact sub"><span>ドライヤー</span><span class="v">2 台</span></div>
+</div>
+<div class="p-fact"><span>洗濯</span><span class="v">洗濯機</span></div>
+</section>
+<section>
+<h2 class="p-h">ペット</h2>
+<div class="p-fact"><span>同伴</span><span class="v">不可</span></div>
+</section>
+<section>
+<h2 class="p-h">駐車場</h2>
+<div class="p-fact"><span>台数</span><span class="v">2 台</span></div>
+</section>
+<section>
+<h2 class="p-h">アクセス</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-access"><span>最寄り駅</span><span class="v">伊豆高原駅 徒歩 8 分</span></div>
+<div class="p-drop" id="r-access" hidden>
+<div class="p-fact sub"><span>最寄り駅</span><span class="v">伊豆高原駅</span></div>
+<div class="p-fact sub"><span>徒歩</span><span class="v">8 分（桜並木方面）</span></div>
+<div class="p-fact sub"><span>住所</span><span class="v">静岡県伊東市八幡野 1208-68</span></div>
+</div>
+<div class="p-mapph" style="margin-top:10px">地図（準備中）</div>
+</section>
+<section>
+<h2 class="p-h">予約</h2>
+<a class="p-btn" href="https://www.stagevilla.co.jp/villa/12974">ステージヴィラで予約</a>
+<a class="p-btn sub" href="https://www.aco.co.jp/id/67671.html">ACO で予約</a>
+</section>
+<section>
+<h2 class="p-h">出典</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-src1"><span>公式サイト</span><span class="v">定員・寝室・料金</span></div>
+<div class="p-drop" id="r-src1" hidden>
+<div class="p-fact sub"><span>URL</span><span class="v">pokke-mahoro.jimdofree.com</span></div>
+<div class="p-fact sub"><span>料金のページ</span><span class="v">料金とお問い合わせ</span></div>
+<div class="p-fact sub"><span>取得日</span><span class="v">2026-11-14</span></div>
+</div>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-src2"><span>ステージヴィラ</span><span class="v">名前・位置・設備・駐車場・ペット・最寄り駅</span></div>
+<div class="p-drop" id="r-src2" hidden>
+<div class="p-fact sub"><span>種類</span><span class="v">予約サイト</span></div>
+<div class="p-fact sub"><span>URL</span><span class="v">stagevilla.co.jp/villa/12974</span></div>
+<div class="p-fact sub"><span>取得日</span><span class="v">2026-11-14</span></div>
+</div>
+</section>
+<p class="p-note" style="margin-top:8px">載っていない項目は、情報が無いことを示し、「無い」という意味ではありません。</p>
+</div></div></div></div>
+
+<button class="replay" type="button">もう一度開く</button></div>
+
+<div class="phone-wrap"><p>ホテル（架空の見本）</p>
+<div class="phone">
+<div class="p-home"><div class="tg"><span>宿</span><span>体験</span></div><div class="cd"></div><div class="cd"></div></div>
+<div class="p-backdrop"></div>
+<div class="p-sheet"><span class="p-handle"></span><span class="p-back">‹ 戻る</span><div class="p-scroll">
+<div class="p-hero"><span class="cnt">1 / 8</span></div>
+<div class="p-body new">
+<section>
+<div class="p-badges"><span class="p-badge">ホテル</span></div>
+<h1 class="p-title">（見本）海辺のホテル</h1>
+<p class="p-area">伊豆・熱海</p>
+<p class="p-sum">駅から歩いて行ける、海の見えるホテル。全室オーシャンビュー、最上階に温泉の大浴場。</p>
+<div class="p-stay"><span class="k">IN</span><b>15:00</b><span class="ln"></span><span class="k">OUT</span><b>11:00</b></div>
+</section>
+<section>
+<h2 class="p-h">料金（参考）</h2>
+<p class="p-unit">1 室 1 泊・税込（円）</p>
+<table class="p-price"><tr><th>部屋</th><th>人数</th><th>最小</th><th>最大</th><th>備考</th></tr>
+<tr class="p-trow tap" aria-expanded="false" data-sub="h-p-0"><th>ダブル</th><td>2</td><td>12,000</td><td>20,000</td><td class="nt">素泊まり</td></tr>
+<tr class="p-droprow"><td colspan="5"><div class="p-drop" id="h-p-0" hidden>
+<div class="p-fact sub"><span>朝食</span><span class="v">1 名 2,500 円</span></div>
+</div></td></tr>
+<tr class="p-trow tap" aria-expanded="false" data-sub="h-p-1"><th>ツイン</th><td>2</td><td>14,000</td><td>24,000</td><td class="nt">素泊まり</td></tr>
+<tr class="p-droprow"><td colspan="5"><div class="p-drop" id="h-p-1" hidden>
+<div class="p-fact sub"><span>朝食</span><span class="v">1 名 2,500 円</span></div>
+</div></td></tr>
+<tr class="p-trow tap" aria-expanded="false" data-sub="h-p-2"><th>和洋室</th><td>4</td><td>30,000</td><td>48,000</td><td class="nt">素泊まり</td></tr>
+<tr class="p-droprow"><td colspan="5"><div class="p-drop" id="h-p-2" hidden>
+<div class="p-fact sub"><span>朝食</span><span class="v">1 名 2,500 円</span></div>
+</div></td></tr>
+</table>
+<p class="p-note">日によって変わります。別途、入湯税がかかります。</p>
+<a class="p-btn sub" href="#">料金の詳細は公式サイトへ</a>
+</section>
+<section>
+<h2 class="p-h">部屋</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-twin"><span>ツイン</span><span class="v">2 名・24㎡・シングル 2</span></div>
+<div class="p-drop" id="h-twin" hidden>
+<div class="p-subph">写真（この部屋を写したもの）</div>
+<div class="p-fact sub"><span>定員</span><span class="v">2 名</span></div>
+<div class="p-fact sub"><span>広さ</span><span class="v">24㎡</span></div>
+<div class="p-fact sub"><span>ベッド</span><span class="v">シングル 2</span></div>
+<div class="p-fact sub"><span>眺望</span><span class="v">海</span></div>
+<div class="p-fact sub"><span>喫煙</span><span class="v">禁煙</span></div>
+</div>
+<div class="p-fact"><span>ダブル</span><span class="v">2 名・18㎡・ダブル 1</span></div>
+<div class="p-fact"><span>和洋室</span><span class="v">4 名・40㎡・シングル 2＋布団</span></div>
+</section>
+<section>
+<h2 class="p-h">食事</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-breakfast"><span>朝食</span><span class="v">7:00〜10:00・レストラン</span></div>
+<div class="p-drop" id="h-breakfast" hidden>
+<div class="p-fact sub"><span>形式</span><span class="v">ビュッフェ</span></div>
+<div class="p-fact sub"><span>場所</span><span class="v">レストラン</span></div>
+<div class="p-fact sub"><span>時間</span><span class="v">7:00〜10:00</span></div>
+<div class="p-fact sub"><span>料金</span><span class="v">1 名 2,500 円</span></div>
+</div>
+<div class="p-fact"><span>夕食</span><span class="v">なし</span></div>
+</section>
+<section>
+<h2 class="p-h">風呂</h2>
+<div class="p-fact"><span>大浴場</span><span class="v">温泉</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-sauna"><span>サウナ</span><span class="v">あり</span></div>
+<div class="p-drop" id="h-sauna" hidden>
+<div class="p-fact sub"><span>水風呂</span><span class="v">あり</span></div>
+<div class="p-fact sub"><span>外気浴</span><span class="v">あり</span></div>
+<div class="p-fact sub"><span>時間</span><span class="v">15:00〜24:00</span></div>
+<div class="p-fact sub"><span>男女</span><span class="v">別</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">設備</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-wifi"><span>通信</span><span class="v">Wi-Fi</span></div>
+<div class="p-drop" id="h-wifi" hidden>
+<div class="p-fact sub"><span>速さ（実測）</span><span class="v">下り 85 Mbps・上り 40 Mbps</span></div>
+<div class="p-fact sub"><span>測った日</span><span class="v">2026-10-02</span></div>
+<div class="p-fact sub"><span>仕事用の机</span><span class="v">全室</span></div>
+</div>
+<div class="p-fact"><span>洗濯</span><span class="v">コインランドリー</span></div>
+</section>
+<section>
+<h2 class="p-h">ペット</h2>
+<div class="p-fact"><span>同伴</span><span class="v">不可</span></div>
+</section>
+<section>
+<h2 class="p-h">駐車場</h2>
+<div class="p-fact"><span>台数</span><span class="v">30 台（有料）</span></div>
+</section>
+<section>
+<h2 class="p-h">アクセス</h2>
+<div class="p-fact"><span>最寄り駅</span><span class="v">熱海駅 徒歩 10 分</span></div>
+<div class="p-mapph" style="margin-top:10px">地図（準備中）</div>
+</section>
+<section>
+<h2 class="p-h">予約</h2>
+<a class="p-btn" href="#">公式サイトで予約</a>
+</section>
+<p class="p-note" style="margin-top:8px">載っていない項目は、情報が無いことを示し、「無い」という意味ではありません。</p>
+</div></div></div></div>
+<button class="replay" type="button">もう一度開く</button></div>
+
+<div class="phone-wrap"><p>旅館（架空の見本）</p>
+<div class="phone">
+<div class="p-home"><div class="tg"><span>宿</span><span>体験</span></div><div class="cd"></div><div class="cd"></div></div>
+<div class="p-backdrop"></div>
+<div class="p-sheet"><span class="p-handle"></span><span class="p-back">‹ 戻る</span><div class="p-scroll">
+<div class="p-hero"><span class="cnt">1 / 12</span></div>
+<div class="p-body new">
+<section>
+<div class="p-badges"><span class="p-badge">旅館</span></div>
+<h1 class="p-title">（見本）川沿いの湯の宿</h1>
+<p class="p-area">伊豆・修善寺</p>
+<p class="p-sum">桂川沿いの 12 室の宿。源泉かけ流しの露天風呂と、部屋で食べる夕食。</p>
+<div class="p-stay"><span class="k">IN</span><b>15:00</b><span class="ln"></span><span class="k">OUT</span><b>10:00</b></div>
+</section>
+<section>
+<h2 class="p-h">料金（参考）</h2>
+<p class="p-unit">1 名 1 泊・税込（円）</p>
+<table class="p-price"><tr><th>部屋</th><th>人数</th><th>最小</th><th>最大</th><th>備考</th></tr>
+<tr class="p-trow tap" aria-expanded="false" data-sub="y-p-0"><th>和室</th><td>2〜4</td><td>18,000</td><td>30,000</td><td class="nt">2 食つき</td></tr>
+<tr class="p-droprow"><td colspan="5"><div class="p-drop" id="y-p-0" hidden>
+<div class="p-fact sub"><span>子ども</span><span class="v">小学生 70%・幼児 50%</span></div>
+</div></td></tr>
+<tr class="p-trow tap" aria-expanded="false" data-sub="y-p-1"><th>露天風呂付き</th><td>2〜4</td><td>28,000</td><td>45,000</td><td class="nt">2 食つき</td></tr>
+<tr class="p-droprow"><td colspan="5"><div class="p-drop" id="y-p-1" hidden>
+<div class="p-fact sub"><span>子ども</span><span class="v">小学生 70%・幼児 50%</span></div>
+</div></td></tr>
+</table>
+<p class="p-note">1 室の人数と日によって変わります。別途、入湯税がかかります。</p>
+<a class="p-btn sub" href="#">料金の詳細は公式サイトへ</a>
+</section>
+<section>
+<h2 class="p-h">部屋</h2>
+<div class="p-fact"><span>和室</span><span class="v">10 畳・2〜4 名</span></div>
+<div class="p-fact"><span>露天風呂付き</span><span class="v">和室 12 畳・2〜4 名</span></div>
+</section>
+<section>
+<h2 class="p-h">食事</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="y-dinner"><span>夕食</span><span class="v">部屋食・18:00 か 19:00</span></div>
+<div class="p-drop" id="y-dinner" hidden>
+<div class="p-fact sub"><span>場所</span><span class="v">部屋食</span></div>
+<div class="p-fact sub"><span>時間</span><span class="v">18:00 か 19:00</span></div>
+<div class="p-fact sub"><span>形式</span><span class="v">会席</span></div>
+<div class="p-fact sub"><span>アレルギー</span><span class="v">事前に相談できる</span></div>
+</div>
+<div class="p-fact"><span>朝食</span><span class="v">食事処・7:30〜9:00</span></div>
+<div class="p-fact"><span>アレルギー</span><span class="v">事前に相談できる</span></div>
+</section>
+<section>
+<h2 class="p-h">風呂</h2>
+<div class="p-fact"><span>大浴場</span><span class="v">温泉</span></div>
+<div class="p-fact"><span>露天風呂</span><span class="v">温泉</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="y-private"><span>貸切風呂</span><span class="v">1 つ</span></div>
+<div class="p-drop" id="y-private" hidden>
+<div class="p-fact sub"><span>温泉</span><span class="v">あり</span></div>
+<div class="p-fact sub"><span>予約</span><span class="v">チェックインのとき</span></div>
+<div class="p-fact sub"><span>時間</span><span class="v">1 回 45 分</span></div>
+<div class="p-fact sub"><span>料金</span><span class="v">無料</span></div>
+</div>
+<div class="p-fact"><span>泉質</span><span class="v">アルカリ性単純温泉</span></div>
+</section>
+<section>
+<h2 class="p-h">駐車場</h2>
+<div class="p-fact"><span>台数</span><span class="v">12 台（無料）</span></div>
+</section>
+<section>
+<h2 class="p-h">アクセス</h2>
+<div class="p-fact"><span>最寄り駅</span><span class="v">修善寺駅 バス 8 分</span></div>
+<div class="p-mapph" style="margin-top:10px">地図（準備中）</div>
+</section>
+<section>
+<h2 class="p-h">予約</h2>
+<a class="p-btn" href="#">公式サイトで予約</a>
+</section>
+<p class="p-note" style="margin-top:8px">載っていない項目は、情報が無いことを示し、「無い」という意味ではありません。</p>
+</div></div></div></div>
+<button class="replay" type="button">もう一度開く</button></div>
+</div>
+</main>
+<script>
+// 詳細のある行（›）をタップすると、その行のすぐ下に詳細が開く（もう一度で閉じる）
+document.querySelectorAll('.tap[data-sub]').forEach(function (r) {
+  r.addEventListener('click', function () {
+    var d = document.getElementById(r.dataset.sub);
+    var open = d.hidden;
+    d.hidden = !open;
+    r.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+});
+// 「もう一度開く」：シートが上がる動きをやり直す
+document.querySelectorAll('.replay').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var phone = b.parentElement.querySelector('.phone');
+    phone.querySelectorAll('.p-home,.p-backdrop,.p-sheet').forEach(function (el) {
+      el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+    });
+    phone.querySelector('.p-scroll').scrollTop = 0;
+    phone.querySelectorAll('.p-drop').forEach(function (x) { x.hidden = true; });
+    phone.querySelectorAll('.tap[data-sub]').forEach(function (x) { x.setAttribute('aria-expanded', 'false'); });
+  });
+});
+</script>
+</body></html>
