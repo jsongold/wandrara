@@ -372,10 +372,19 @@ export function toAccommodationView(input: AccommodationViewInput): Accommodatio
       url: s.url,
       typeLabel: labelOf(SOURCE_TYPE_LIST, s.type),
       retrievedAt: s.retrieved_at,
-      fields: s.fields ?? [],
+      fields: (s.fields ?? []).map((f) => SOURCE_FIELD_LABELS[f] ?? f),
     })),
   };
 }
+
+// 出典の fields（details や core の欄の名前）を画面の言葉にする。知らない名前はそのまま出す
+const SOURCE_FIELD_LABELS: Record<string, string> = {
+  name: "名前", summary: "紹介", address: "住所", location: "位置", kind: "種類",
+  check_in: "チェックイン", check_out: "チェックアウト", official_url: "公式サイト",
+  rooms: "部屋", bedrooms: "寝室", baths: "風呂", meals: "食事", prices: "料金", amenities: "設備",
+  internet: "Wi-Fi", pets: "ペット", rules: "条件", parking: "駐車場", access: "アクセス",
+  surroundings: "周辺", cautions: "注意点", licenses: "許可・届出", booking_links: "予約", photos: "写真",
+};
 
 /** 料金（参考）の表。部屋ごとの最小〜最大だけ。区分ごとの値は出さない */
 function priceTable(d: AccommodationDetails, roomLabel: (key: string | null) => string, officialUrl: string | null): PriceTable | null {

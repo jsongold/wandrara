@@ -140,7 +140,8 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
     id,
     title: resolveLocalizedText(pick("name"), locale).text,
     areaLabel: areaLabel((coreRow?.region_id as string | null) ?? null, catalog.regions, locale),
-    kindLabel: coreLabels(core, locale).label,
+    // 新しい宿の画面は種類（一棟貸し・ホテル…）を出す。ほかは今どおりコアの名前
+    kindLabel: (accommodation && coreLabels(core, locale).kindLabels[str("kind") ?? ""]) || coreLabels(core, locale).label,
     summary: resolveLocalizedText(pick("summary"), locale).text || null,
     isDemo: dest.is_demo,
     photos: photos.map((p) => p.photo),
