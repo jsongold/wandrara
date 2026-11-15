@@ -307,14 +307,15 @@ function FeedCardView({ card, first }: { card: FeedCard; first: boolean }) {
       {card.tiles.length > 0 && (
         <section className="flex flex-col gap-2.5 px-3 pb-7 pt-3.5">
           <h2 className="m-0 text-xs font-semibold tracking-[0.04em] text-white/75">{card.relLabel}</h2>
-          <div className="grid grid-cols-3 gap-1.5">
+          {/* 横にスワイプして送る。3 枚目が少し覗く幅にして続きがあると分かるようにする */}
+          <div className="-mx-3 flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-3 px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {card.tiles.map((t) => (
-              <Link key={t.destId} href={t.href} className="flex flex-col gap-1.5 text-white no-underline">
+              <Link key={t.destId} href={t.href} className="flex w-[38%] shrink-0 snap-start flex-col gap-1.5 text-white no-underline">
                 {t.photo?.url && !t.photo.isDemo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.photo.url} alt="" loading="lazy" decoding="async" className="block h-28 w-full rounded-[10px] object-cover" />
+                  <img src={t.photo.url} alt="" loading="lazy" decoding="async" className="block aspect-square w-full rounded-[10px] object-cover" />
                 ) : (
-                  <span className="block h-28 rounded-[10px]" style={placeholderStyle(t.photo)} />
+                  <span className="block aspect-square w-full rounded-[10px]" style={placeholderStyle(t.photo)} />
                 )}
                 <span className="flex flex-col gap-0.5">
                   <span className="text-xs leading-[1.4]">{t.label}</span>
