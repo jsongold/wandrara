@@ -55,7 +55,10 @@ export function planDestWrite(core: CoreDef, input: DestInput, refs: DestRefs, c
     if (rows.length) tables.push({ table, rows });
   };
 
-  push(getTableName(core.table), [{ dest_id: destId, ...input.core }]);
+  // details を JSON 1 つで持つコアは、コアの行の details 列に書く（詳細の表は作らない）
+  const coreRow: Row = { dest_id: destId, ...input.core };
+  if (core.detailsSchema) coreRow.details = input.details ?? null;
+  push(getTableName(core.table), [coreRow]);
   push(
     getTableName(core.texts),
     input.texts.map((t) => ({ dest_id: destId, ...t })),
@@ -78,12 +81,21 @@ export function planDestWrite(core: CoreDef, input: DestInput, refs: DestRefs, c
     const col = (getTableColumns(d.table) as Record<string, PgColumn>)[d.parent!.column];
     return col.name;
   };
-  for (const d of core.details.filter((x) => !x.parent)) {
-    add(d.key, (input.details?.[d.key] as Row[] | undefined) ?? []);
+  if (!core.detailsSchema) {
+    for (const d of core.details.filter((x) => !x.parent)) {
+      add(d.key, (input.details?.[d.key] as Row[] | undefined) ?? []);
+    }
+    for (const d of core.details) push(getTableName(d.table), detailRows.get(d.key)!);
   }
-  for (const d of core.details) push(getTableName(d.table), detailRows.get(d.key)!);
 
-  const photoRows = (input.photos ?? []).map((p, sort) => ({ id: ctx.uuid(), dest_id: destId, ...p, sort }));
+  // 写真の room は subject_key の列に入れる
+  const photoRows = (input.photos ?? []).map(({ room, ...p }, sort) => ({
+    id: ctx.uuid(),
+    dest_id: destId,
+    ...p,
+    ...(room !== undefined ? { subject_key: room } : {}),
+    sort,
+  }));
   push("dest_photos", photoRows);
 
   // 足す region：input.region か、無い region_id なら id を名前にした行

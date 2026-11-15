@@ -17,6 +17,9 @@ const inArea = (lat: unknown, lng: unknown) => {
   return a >= AREA.latMin && a <= AREA.latMax && o >= AREA.lngMin && o <= AREA.lngMax;
 };
 const anyText = (d: DestInput, f: string) => d.texts.some((t) => present(t[f]));
+// details を JSON 1 つで持つコア（宿）の details
+const json = (d: DestInput) => (d.details ?? {}) as { rooms?: Row[]; prices?: { items?: Row[] }; sources?: Row[] };
+const hasUrl = (rows: unknown) => ((rows ?? []) as Row[]).some((s) => present(s.url));
 
 // 共通
 const common: Check[] = [
@@ -25,8 +28,8 @@ const common: Check[] = [
   { path: "/core/region_id", message: "region_id が要る", ok: (d) => present(d.core.region_id) },
   {
     path: "/core/official_url",
-    message: "出どころが要る（core.official_url か sources[].url）",
-    ok: (d) => present(d.core.official_url) || ((d.sources ?? []) as Row[]).some((s) => present(s.url)),
+    message: "出どころが要る（core.official_url か sources[].url。宿は details.sources[].url も可）",
+    ok: (d) => present(d.core.official_url) || hasUrl(d.sources) || hasUrl(json(d).sources),
   },
 ];
 const address: Check = { path: "/texts", message: "住所（texts[].address）が要る", ok: (d) => anyText(d, "address") };
@@ -48,8 +51,20 @@ export const QUALITY_RULES: Record<string, Check[]> = {
     address,
     coords,
     { path: "/core/check_in", message: "check_in と check_out が要る", ok: (d) => present(d.core.check_in) && present(d.core.check_out) },
-    atLeast("units", "定員（capacity）のある部屋（units）", (r) => num(r.capacity) > 0),
-    atLeast("prices", "料金（amount > 0・currency・guests）", (r) => num(r.amount) > 0 && present(r.currency) && num(r.guests) > 0),
+    { path: "/details/rooms", message: "定員（capacity > 0）のある部屋（rooms）が 1 つ以上要る", ok: (d) => (json(d).rooms ?? []).some((r) => num(r.capacity) > 0) },
+    {
+      path: "/details/prices/items",
+      message: "宿泊料（kind: room・amount > 0・currency）が 1 つ以上要る",
+      ok: (d) => (json(d).prices?.items ?? []).some((r) => r.kind === "room" && num(r.amount) > 0 && present(r.currency)),
+    },
+    {
+      path: "/photos",
+      message: "写真の room は details.rooms の key のどれか",
+      ok: (d) => {
+        const keys = new Set((json(d).rooms ?? []).map((r) => r.key));
+        return (d.photos ?? []).every((p) => !present(p.room) || keys.has(p.room));
+      },
+    },
   ],
   experience: [
     ...common,

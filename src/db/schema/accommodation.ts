@@ -1,5 +1,5 @@
 // コア accommodation（宿）の表と詳細。units → bedrooms → beds が入れ子。baths・prices・amenities の unit_id は部屋のものを指す（null は宿全体）
-import { boolean, date, index, integer, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, jsonb, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
 import {
   currencyCheck,
   destChildColumns,
@@ -12,6 +12,7 @@ import {
   textsColumns,
   type CoreDef,
 } from "./_shared.ts";
+import { accommodationDetailsSchema } from "../../lib/accommodation/schema.ts";
 import { destinations } from "./common.ts";
 import { operators } from "./people.ts";
 
@@ -39,6 +40,8 @@ export const accommodations = pgTable(
     checkIn: time("check_in"),
     checkOut: time("check_out"),
     officialUrl: text("official_url"),
+    /** 宿の詳細（部屋・風呂・食事・料金・設備 など）。型つき JSON（docs/data-model.md 2 章）。null は新しい形でまだ入っていない宿 */
+    details: jsonb("details").$type<Record<string, unknown>>(),
   },
   (t) => [oneOf("accommodations_kind_check", t.kind, Object.keys(KIND_LABELS)), geoPrecisionCheck("accommodations", t), publishedRead(t.destId)],
 );
@@ -302,6 +305,8 @@ export const accommodationCore: CoreDef = {
   texts: accommodationTexts,
   columns: { kind: "種類", checkIn: "チェックイン", checkOut: "チェックアウト", officialUrl: "公式 URL" },
   kindLabels: KIND_LABELS,
+  // 投入は details の JSON 1 つ（accommodations.details）。下の表は、まだ集め直していない宿を詳細の画面で読むためだけに残す
+  detailsSchema: accommodationDetailsSchema,
   details: [
     { key: "units", table: accommodationUnits, label: "部屋", columns: { name: "名前", capacity: "定員", areaSqm: "広さ(㎡)", tatami: "畳", style: "和洋", view: "眺望" } },
     { key: "bedrooms", table: accommodationBedrooms, label: "寝室", columns: { name: "名前" }, parent: { key: "units", column: "unitId" } },

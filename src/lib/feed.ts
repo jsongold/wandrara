@@ -1,4 +1,6 @@
 // フィードの組み立て。並べ方・メインの選び方・関連タイルの選び方の 3 戦略を独立に差し替えられる。
+import { coreLabels } from "./i18n/core-labels";
+import { messages } from "./i18n/messages";
 import { CORES } from "./ingest/cores";
 import { MODES, otherMode } from "./modes";
 import type { Category, DestCard, DiscoverQuery, FeedCard, FeedPage, Locale, LocalizedText, Region, Tile } from "./types";
@@ -27,8 +29,9 @@ export function resolveLocalizedText(text: LocalizedText | null | undefined, loc
 
 const t = (x: LocalizedText | null | undefined, locale: Locale) => resolveLocalizedText(x, locale).text;
 
-export function kindLabelOf(coreType: string): string {
-  return CORES.find((c) => c.coreType === coreType)?.label ?? "";
+export function kindLabelOf(coreType: string, locale: Locale): string {
+  const core = CORES.find((c) => c.coreType === coreType);
+  return core ? coreLabels(core, locale).label : "";
 }
 
 function regionIndex(regions: Region[]) {
@@ -83,10 +86,10 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
       key: d.id,
       title: t(d.name, locale),
       areaLabel: areaLabel(d.regionId, catalog.regions, locale),
-      kindLabel: kindLabelOf(d.coreType),
-      relLabel: query.mode === "stay" ? "関連する体験" : "近くの宿",
+      kindLabel: kindLabelOf(d.coreType, locale),
+      relLabel: query.mode === "stay" ? messages(locale).home.relStay : messages(locale).home.relDo,
       photos: d.photos,
-      href: `/d/${d.slug}`,
+      href: `/${locale}/d/${d.slug}`,
       anchor: d,
     }));
 };
@@ -98,12 +101,12 @@ export const orderEditorial: OrderStrategy = (cards, ctx) => {
   if (ctx.query.sort === "fresh") {
     return {
       cards: [...cards].sort((a, b) => b.anchor.createdAt.localeCompare(a.anchor.createdAt)),
-      label: "新着順",
+      label: messages(ctx.locale).home.orderFresh,
     };
   }
   return {
     cards: [...cards].sort((a, b) => (b.anchor.publishedAt ?? "").localeCompare(a.anchor.publishedAt ?? "")),
-    label: "編集部のおすすめ順",
+    label: messages(ctx.locale).home.orderEditorial,
   };
 };
 
@@ -117,7 +120,7 @@ function tileOf(d: DestCard, ctx: Ctx): Tile {
     label: t(d.name, ctx.locale),
     sub: areaLabel(d.regionId, ctx.catalog.regions, ctx.locale),
     photo: d.photos[0] ?? null,
-    href: `/d/${d.slug}`,
+    href: `/${ctx.locale}/d/${d.slug}`,
   };
 }
 
@@ -156,13 +159,17 @@ export function dedupeRelatedTiles(tilesPerCard: Tile[][], show = 3, minKeep = 1
 
 // ---- 組み立て ----
 
+// トップのカードに載せる写真の上限。全部の写真は詳細で見る（ページに埋め込むデータと画像の数を抑える）
+export const MAX_CARD_PHOTOS = 6;
+
 export function buildFeed(ctx: Ctx, strategies: Strategies): FeedPage {
   const candidates = findCandidates(ctx);
   const primary = strategies.primary(candidates, ctx);
   const ordered = strategies.order(primary, ctx);
-  const tiles = dedupeRelatedTiles(strategies.secondary(ordered.cards, ctx));
+  const tiles = dedupeRelatedTiles(strategies.secondary(ordered.cards, ctx), MAX_TILES);
   const cards: FeedCard[] = ordered.cards.map((c, i) => ({
-    key: c.key, title: c.title, areaLabel: c.areaLabel, kindLabel: c.kindLabel, relLabel: c.relLabel, photos: c.photos, href: c.href, tiles: tiles[i],
+    key: c.key, title: c.title, areaLabel: c.areaLabel, kindLabel: c.kindLabel, relLabel: c.relLabel,
+    photos: c.photos.slice(0, MAX_CARD_PHOTOS), href: c.href, tiles: tiles[i],
   }));
   return { cards, orderLabel: ordered.label, emptyReason: cards.length === 0 ? "no-match" : null };
 }

@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import { parseDestInput } from "./bundle.ts";
 import { coreByType } from "./cores.ts";
 import { planDestWrite, type DestRefs } from "./plan.ts";
-import { withAccommodationQuality } from "./test-fixtures.ts";
+import { jsonDetailsCore, tableDetailsCore, withAccommodationQuality } from "./test-fixtures.ts";
 
 const acc = coreByType("accommodation")!;
+// 詳細の表で受けるコア（入れ子の書き込みを確かめる）
+const tab = tableDetailsCore;
 const input = () => {
-  const r = parseDestInput(acc, withAccommodationQuality({
+  const r = parseDestInput(tab, {
     ref: "WR-atami-008",
     core: { kind: "private_rental", region_id: "atami" },
     texts: [{ lang: "ja", name: "ヴィラ" }],
@@ -19,7 +21,7 @@ const input = () => {
     },
     categories: ["onsen", "bbq"],
     photos: [{ storage_key: "a.jpg" }, { storage_key: "b.jpg" }],
-  }));
+  });
   if (!r.ok) throw new Error(r.errors.join("\n"));
   return r.value;
 };
@@ -36,7 +38,7 @@ const refs = (over: Partial<DestRefs> = {}): DestRefs => ({
 describe("planDestWrite", () => {
   it("表の順・親の id・sort・dest_id", () => {
     n = 0;
-    const p = planDestWrite(acc, input(), refs(), ctx());
+    const p = planDestWrite(tab, input(), refs(), ctx());
     const names = p.tables.map((t) => t.table);
     expect(names).toEqual([
       "accommodations",
@@ -45,7 +47,6 @@ describe("planDestWrite", () => {
       "accommodation_bedrooms",
       "accommodation_beds",
       "accommodation_baths",
-      "accommodation_prices",
       "dest_photos",
     ]);
     const t = (name: string) => p.tables.find((x) => x.table === name)!.rows;
@@ -67,18 +68,58 @@ describe("planDestWrite", () => {
   });
 
   it("slug が重なると -2 -3", () => {
-    const p = planDestWrite(acc, input(), refs({ slugs: new Set(["wr-atami-008", "wr-atami-008-2"]) }), ctx());
+    const p = planDestWrite(tab, input(), refs({ slugs: new Set(["wr-atami-008", "wr-atami-008-2"]) }), ctx());
     expect(p.destination.slug).toBe("wr-atami-008-3");
   });
 
   it("既存の ref は dest_id と slug を使い回す", () => {
     const p = planDestWrite(
-      acc,
+      tab,
       input(),
       refs({ destByRef: new Map([["WR-atami-008", { destId: "old", slug: "keep-me" }]]), slugs: new Set(["keep-me"]) }),
       ctx(),
     );
     expect(p.destination).toMatchObject({ dest_id: "old", slug: "keep-me" });
     expect(p.tables[0].rows[0].dest_id).toBe("old");
+  });
+
+  it("写真の room は subject_key に入る（room の列は渡さない）", () => {
+    const i = input();
+    i.photos = [{ storage_key: "a.jpg", room: "r1" }, { storage_key: "b.jpg" }];
+    const rows = planDestWrite(tab, i, refs(), ctx()).tables.find((x) => x.table === "dest_photos")!.rows;
+    expect(rows[0]).toMatchObject({ subject_key: "r1", storage_key: "a.jpg" });
+    expect(rows[0]).not.toHaveProperty("room");
+    expect(rows[1]).not.toHaveProperty("subject_key");
+  });
+
+  it("detailsSchema を持つコアは details をコアの行に入れ、詳細の表を作らない", () => {
+    const r = parseDestInput(jsonDetailsCore, {
+      ref: "WR-json-001",
+      core: { kind: "hotel" },
+      texts: [{ lang: "ja", name: "宿" }],
+      details: { rooms: [{ key: "r1" }] },
+      photos: [{ storage_key: "a.jpg", room: "r1" }],
+    });
+    if (!r.ok) throw new Error(r.errors.join("\n"));
+    const p = planDestWrite(jsonDetailsCore, r.value, refs(), ctx());
+    expect(p.tables.map((t) => t.table)).toEqual(["accommodations", "accommodation_texts", "dest_photos"]);
+    expect(p.tables[0].rows[0]).toMatchObject({ kind: "hotel", details: { rooms: [{ key: "r1" }] } });
+    expect(p.tables[2].rows[0]).toMatchObject({ subject_key: "r1" });
+    const none = planDestWrite(jsonDetailsCore, { ...r.value, details: undefined }, refs(), ctx());
+    expect(none.tables[0].rows[0].details).toBeNull();
+  });
+
+  it("detailsSchema の無いコアの行に details の列は出ない", () => {
+    expect(planDestWrite(tab, input(), refs(), ctx()).tables[0].rows[0]).not.toHaveProperty("details");
+  });
+
+  it("宿は details を accommodations の行に入れ、accommodation_* の詳細の表を作らない", () => {
+    const r = parseDestInput(acc, withAccommodationQuality({ ref: "WR-atami-009", core: { kind: "hotel", region_id: "atami" }, photos: [{ storage_key: "a.jpg", room: "main" }] }));
+    if (!r.ok) throw new Error(r.errors.join("\n"));
+    const p = planDestWrite(acc, r.value, refs(), ctx());
+    expect(p.tables.map((t) => t.table)).toEqual(["accommodations", "accommodation_texts", "dest_photos"]);
+    expect(p.tables[0].rows[0].details).toEqual(r.value.details);
+    expect(p.tables[0].rows[0]).toMatchObject({ details: { rooms: [{ key: "main", capacity: 2 }] } });
+    expect(p.tables[2].rows[0]).toMatchObject({ subject_key: "main" });
   });
 });

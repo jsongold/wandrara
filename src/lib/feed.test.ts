@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseDiscoverQuery, serializeDiscoverQuery, DEFAULT_QUERY } from "./discover-query";
-import { buildFeed, dedupeRelatedTiles, resolveLocalizedText, type Catalog } from "./feed";
+import { buildFeed, dedupeRelatedTiles, MAX_CARD_PHOTOS, resolveLocalizedText, type Catalog } from "./feed";
 import { loadFeedStrategies } from "./feed-config";
 import { MODES } from "./modes";
 import type { DestCard, DiscoverQuery, Tile } from "./types";
@@ -46,20 +46,29 @@ describe("parseDiscoverQuery / serializeDiscoverQuery", () => {
   });
   it("往復で同じ条件になる", () => {
     const q: DiscoverQuery = { mode: "do", area: "gora", cat: "onsen", sort: "fresh", q: "湯" };
-    const url = serializeDiscoverQuery(q);
-    expect(parseDiscoverQuery(Object.fromEntries(new URLSearchParams(url.slice(2))))).toEqual(q);
+    const url = serializeDiscoverQuery(q, "en");
+    expect(url.startsWith("/en?")).toBe(true);
+    expect(parseDiscoverQuery(Object.fromEntries(new URLSearchParams(url.slice(4))))).toEqual(q);
   });
   it("既定値は URL から省く", () => {
-    expect(serializeDiscoverQuery(DEFAULT_QUERY)).toBe("/");
+    expect(serializeDiscoverQuery(DEFAULT_QUERY, "ja")).toBe("/ja");
   });
 });
 
 describe("buildFeed", () => {
+  it("カードの写真は MAX_CARD_PHOTOS 枚まで（詳細の写真は減らさない）", () => {
+    const photo = (i: number) => ({ url: `https://x/${i}.jpg`, license: null, credit: null, isDemo: false, placeholderSky: null, placeholderLand: null });
+    const many = { ...dest("many", "accommodation", "gora", [], 7), photos: Array.from({ length: 12 }, (_, i) => photo(i)) };
+    const feed = buildFeed({ catalog: { ...catalog, dests: [many] }, query: DEFAULT_QUERY, locale: "ja" }, loadFeedStrategies({}));
+    expect(feed.cards[0].photos).toHaveLength(MAX_CARD_PHOTOS);
+    expect(feed.cards[0].photos[0].url).toBe("https://x/0.jpg");
+    expect(many.photos).toHaveLength(12);
+  });
   it("stay は accommodation だけを公開日の新しい順で並べる", () => {
     const feed = run({});
     expect(feed.cards.map((c) => c.key)).toEqual(["gora-inn", "lake-inn", "shimoda-inn"]);
     expect(feed.cards[0].kindLabel).toBe("宿");
-    expect(feed.cards[0].href).toBe("/d/gora-inn");
+    expect(feed.cards[0].href).toBe("/ja/d/gora-inn");
     expect(feed.orderLabel).toBe("編集部のおすすめ順");
   });
   it("do は stay 以外の core_type を dest 単位で出す", () => {

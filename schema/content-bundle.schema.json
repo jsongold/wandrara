@@ -185,87 +185,60 @@
               "details": {
                 "type": "object",
                 "properties": {
-                  "units": {
+                  "rooms": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
+                        "key": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
                         "name": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         },
                         "capacity": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
                         },
                         "area_sqm": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "tatami": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "style": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "japanese",
+                            "western",
+                            "japanese_western"
                           ]
                         },
                         "view": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "smoking": {
+                          "type": "string",
+                          "enum": [
+                            "none",
+                            "designated",
+                            "allowed"
                           ]
                         },
                         "bedrooms": {
@@ -274,60 +247,56 @@
                             "type": "object",
                             "properties": {
                               "name": {
-                                "anyOf": [
-                                  {
-                                    "anyOf": [
-                                      {
-                                        "type": "object",
-                                        "propertyNames": {
-                                          "type": "string"
-                                        },
-                                        "additionalProperties": {
-                                          "type": "string"
-                                        }
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ]
-                                  },
-                                  {
-                                    "type": "null"
-                                  }
-                                ]
+                                "type": "object",
+                                "propertyNames": {
+                                  "type": "string"
+                                },
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
                               },
                               "beds": {
                                 "type": "array",
                                 "items": {
                                   "type": "object",
                                   "properties": {
-                                    "bed_type": {
-                                      "type": [
-                                        "string",
-                                        "null"
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "single",
+                                        "semi_double",
+                                        "double",
+                                        "queen",
+                                        "king",
+                                        "bunk",
+                                        "futon",
+                                        "sofa_bed"
                                       ]
                                     },
                                     "count": {
-                                      "anyOf": [
-                                        {
-                                          "type": "integer",
-                                          "minimum": -2147483648,
-                                          "maximum": 2147483647
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
+                                      "type": "integer",
+                                      "exclusiveMinimum": 0,
+                                      "maximum": 9007199254740991
                                     }
                                   },
+                                  "required": [
+                                    "type",
+                                    "count"
+                                  ],
                                   "additionalProperties": false
                                 }
                               }
                             },
+                            "required": [
+                              "beds"
+                            ],
                             "additionalProperties": false
                           }
                         }
                       },
+                      "required": [
+                        "key"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -337,84 +306,129 @@
                       "type": "object",
                       "properties": {
                         "kind": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "public",
+                            "open_air",
+                            "indoor",
+                            "private",
+                            "room_open_air",
+                            "room",
+                            "sauna"
                           ]
                         },
-                        "source_type": {
-                          "type": [
-                            "string",
-                            "null"
+                        "sauna_style": {
+                          "type": "string",
+                          "enum": [
+                            "barrel",
+                            "dry",
+                            "steam",
+                            "tent"
                           ]
+                        },
+                        "hot_spring": {
+                          "type": "boolean"
                         },
                         "spring": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "natural_flow",
+                            "circulated",
+                            "heated",
+                            "diluted",
+                            "none"
                           ]
+                        },
+                        "capacity": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "cold_bath": {
+                          "type": "boolean"
+                        },
+                        "outdoor_rest": {
+                          "type": "boolean"
                         },
                         "open_from": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                         },
                         "open_to": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "gender": {
+                          "type": "string",
+                          "enum": [
+                            "separate",
+                            "mixed",
+                            "private",
+                            "swaps"
                           ]
                         },
-                        "needs_reservation": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "amount": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "swaps_by_gender": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
+                        "reservation": {
+                          "type": "object",
+                          "properties": {
+                            "required": {
+                              "type": "boolean"
+                            },
+                            "when": {
+                              "type": "string",
+                              "enum": [
+                                "at_checkin",
+                                "in_advance",
+                                "on_site"
                               ]
                             },
-                            {
-                              "type": "null"
+                            "slot_minutes": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
                             }
-                          ]
+                          },
+                          "required": [
+                            "required"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "fee": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            },
+                            "tax_included": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "note": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "kind"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -424,171 +438,90 @@
                       "type": "object",
                       "properties": {
                         "meal": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "breakfast",
+                            "dinner"
+                          ]
+                        },
+                        "offered": {
+                          "type": "boolean"
+                        },
+                        "style": {
+                          "type": "string",
+                          "enum": [
+                            "buffet",
+                            "kaiseki",
+                            "set",
+                            "bbq_set",
+                            "course"
                           ]
                         },
                         "place": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "dining_room",
+                            "room",
+                            "private_room",
+                            "outdoor",
+                            "kitchen"
                           ]
                         },
                         "served_from": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                         },
                         "served_to": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                         },
-                        "allergy_ok": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
+                        "slots": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                          }
+                        },
+                        "fee": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            },
+                            "tax_included": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "allergy_consult": {
+                          "type": "boolean"
                         },
                         "self_cook": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
+                          "type": "boolean"
                         },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "booking_links": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "url": {
-                          "type": "string"
-                        },
-                        "is_official": {
-                          "type": "boolean"
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
                       "required": [
-                        "url"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "prices": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "amount": {
-                          "type": [
-                            "number",
-                            "string"
-                          ]
-                        },
-                        "amount_max": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "currency": {
-                          "type": "string"
-                        },
-                        "guests": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "meals": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "valid_from": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "valid_to": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "tax_included": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "bath_tax_included": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "lodging_tax_included": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "cleaning_fee_included": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "amount",
-                        "currency"
+                        "meal",
+                        "offered"
                       ],
                       "additionalProperties": false
                     }
@@ -598,492 +531,399 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "kind": {
-                          "type": "string"
-                        },
-                        "is_paid": {
-                          "type": [
-                            "boolean",
-                            "null"
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "kitchen",
+                            "stove",
+                            "microwave",
+                            "refrigerator",
+                            "rice_cooker",
+                            "cookware",
+                            "tableware",
+                            "dishwasher",
+                            "coffee_maker",
+                            "bbq",
+                            "fire_pit",
+                            "terrace",
+                            "garden",
+                            "pool",
+                            "wifi",
+                            "wired_lan",
+                            "workspace",
+                            "towel",
+                            "shampoo",
+                            "toothbrush",
+                            "hair_dryer",
+                            "pajamas",
+                            "washing_machine",
+                            "dryer",
+                            "coin_laundry",
+                            "iron",
+                            "air_conditioner",
+                            "floor_heating",
+                            "tv",
+                            "projector",
+                            "safe",
+                            "karaoke",
+                            "mahjong",
+                            "game_console",
+                            "board_games",
+                            "crib",
+                            "high_chair",
+                            "kids_amenities",
+                            "shop",
+                            "lounge",
+                            "gym",
+                            "vending_machine",
+                            "front_24h",
+                            "luggage_storage",
+                            "self_checkin",
+                            "step_free",
+                            "elevator"
                           ]
+                        },
+                        "options": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "count": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "paid": {
+                          "type": "boolean"
                         },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
                       "required": [
-                        "kind"
+                        "code"
                       ],
                       "additionalProperties": false
                     }
                   },
-                  "parkings": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "place": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "spaces": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "max_height_m": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "amount": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
                   "internet": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "has_wifi": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "measured_mbps": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "has_desk": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
+                    "type": "object",
+                    "properties": {
+                      "wifi": {
+                        "type": "boolean"
                       },
-                      "additionalProperties": false
-                    }
+                      "down_mbps": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "up_mbps": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "measured_at": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      "desk": {
+                        "type": "string",
+                        "enum": [
+                          "all_rooms",
+                          "some_rooms",
+                          "common"
+                        ]
+                      },
+                      "note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "pets": {
+                    "type": "object",
+                    "properties": {
+                      "allowed": {
+                        "type": "boolean"
+                      },
+                      "size": {
+                        "type": "string",
+                        "enum": [
+                          "small",
+                          "medium",
+                          "large"
+                        ]
+                      },
+                      "fee": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                          },
+                          "tax_included": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "amount",
+                          "currency"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "allowed"
+                    ],
+                    "additionalProperties": false
                   },
                   "rules": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "quiet_from": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                    "type": "object",
+                    "properties": {
+                      "smoking": {
+                        "type": "string",
+                        "enum": [
+                          "none",
+                          "designated",
+                          "allowed"
+                        ]
+                      },
+                      "parties": {
+                        "type": "boolean"
+                      },
+                      "fireworks": {
+                        "type": "boolean"
+                      },
+                      "quiet_from": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "quiet_to": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "bbq_until": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "min_nights": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "garbage": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
                         },
-                        "quiet_to": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "bbq_until": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "min_nights": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "smoking": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "parties_allowed": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "fireworks_allowed": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "garbage": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "additionalProperties": {
+                          "type": "string"
                         }
                       },
-                      "additionalProperties": false
-                    }
+                      "note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "parking": {
+                    "type": "object",
+                    "properties": {
+                      "place": {
+                        "type": "string",
+                        "enum": [
+                          "on_site",
+                          "nearby",
+                          "none"
+                        ]
+                      },
+                      "spaces": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "max_height_m": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "fee": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                          },
+                          "tax_included": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "amount",
+                          "currency"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "access": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "nearest_station": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                    "type": "object",
+                    "properties": {
+                      "station": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
                         },
-                        "station_minutes": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "has_shuttle": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "has_slope_or_stairs": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "needs_car": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "winter_restriction": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "additionalProperties": {
+                          "type": "string"
                         }
                       },
-                      "additionalProperties": false
-                    }
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "walk",
+                          "bus",
+                          "car",
+                          "shuttle"
+                        ]
+                      },
+                      "minutes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "shuttle": {
+                        "type": "boolean"
+                      },
+                      "slope_or_stairs": {
+                        "type": "boolean"
+                      },
+                      "needs_car": {
+                        "type": "boolean"
+                      },
+                      "winter_restriction": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "route": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "surroundings": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "neighbor_distance_m": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                    "type": "object",
+                    "properties": {
+                      "neighbor_distance_m": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "sightlines": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
                         },
-                        "sightlines": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "noise_sources": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "view": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "elevation_m": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
+                        "additionalProperties": {
+                          "type": "string"
                         }
                       },
-                      "additionalProperties": false
-                    }
+                      "noise_sources": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "view": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "elevation_m": {
+                        "type": "number"
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "cautions": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
-                        "kind": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "note"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -1093,20 +933,283 @@
                       "type": "object",
                       "properties": {
                         "kind": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "ryokan_business",
+                            "minpaku",
+                            "special_zone_minpaku",
+                            "simple_lodging"
                           ]
                         },
                         "number": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string"
                         }
                       },
+                      "required": [
+                        "kind"
+                      ],
                       "additionalProperties": false
                     }
+                  },
+                  "booking_links": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "is_official": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "url"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "official",
+                            "ota",
+                            "map",
+                            "other"
+                          ]
+                        },
+                        "retrieved_at": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "url",
+                        "type",
+                        "retrieved_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prices": {
+                    "type": "object",
+                    "properties": {
+                      "seasons": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {
+                              "type": "string",
+                              "pattern": "^[a-z0-9_-]{1,40}$"
+                            },
+                            "valid_from": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "valid_to": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "is_default": {
+                              "type": "boolean"
+                            },
+                            "priority": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "weekdays": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 7
+                              }
+                            },
+                            "holidays": {
+                              "type": "boolean"
+                            },
+                            "day_before_holiday": {
+                              "type": "boolean"
+                            },
+                            "dates": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "from": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                  },
+                                  "to": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                  }
+                                },
+                                "required": [
+                                  "from",
+                                  "to"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "valid_from",
+                            "valid_to"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "room",
+                                "meal",
+                                "service_fee",
+                                "bath_tax",
+                                "lodging_tax",
+                                "cleaning"
+                              ]
+                            },
+                            "per": {
+                              "type": "string",
+                              "enum": [
+                                "house_night",
+                                "room_night",
+                                "person_night",
+                                "stay"
+                              ]
+                            },
+                            "room": {
+                              "type": "string",
+                              "pattern": "^[a-z0-9_-]{1,40}$"
+                            },
+                            "season": {
+                              "type": "string",
+                              "pattern": "^[a-z0-9_-]{1,40}$"
+                            },
+                            "amount": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "amount_max": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "rate_percent": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 100
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            },
+                            "tax_included": {
+                              "type": "boolean"
+                            },
+                            "guests_min": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            },
+                            "guests_max": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            },
+                            "audience": {
+                              "type": "string",
+                              "enum": [
+                                "all",
+                                "adult",
+                                "child"
+                              ]
+                            },
+                            "age_min": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "age_max": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "meals": {
+                              "type": "string",
+                              "enum": [
+                                "none",
+                                "breakfast",
+                                "dinner",
+                                "both"
+                              ]
+                            },
+                            "includes": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "service_fee",
+                                  "bath_tax",
+                                  "lodging_tax",
+                                  "cleaning"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "per",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "items"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "additionalProperties": false
@@ -1183,6 +1286,17 @@
                           "additionalProperties": {
                             "type": "string"
                           }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
                         },
                         {
                           "type": "null"
@@ -1878,6 +1992,17 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -2499,6 +2624,17 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -2998,6 +3134,17 @@
                           "additionalProperties": {
                             "type": "string"
                           }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
                         },
                         {
                           "type": "null"
@@ -3632,6 +3779,17 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -4229,6 +4387,17 @@
                           "additionalProperties": {
                             "type": "string"
                           }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
                         },
                         {
                           "type": "null"
