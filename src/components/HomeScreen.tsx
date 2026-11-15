@@ -313,9 +313,9 @@ function FeedCardView({ card, first }: { card: FeedCard; first: boolean }) {
               <Link key={t.destId} href={t.href} className="flex w-[38%] shrink-0 snap-start flex-col gap-1.5 text-white no-underline">
                 {t.photo?.url && !t.photo.isDemo ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.photo.url} alt="" loading="lazy" decoding="async" className="block h-28 w-full rounded-[10px] object-cover" />
+                  <img src={t.photo.url} alt="" loading="lazy" decoding="async" className="block aspect-square w-full rounded-[10px] object-cover" />
                 ) : (
-                  <span className="block h-28 rounded-[10px]" style={placeholderStyle(t.photo)} />
+                  <span className="block aspect-square w-full rounded-[10px]" style={placeholderStyle(t.photo)} />
                 )}
                 <span className="flex flex-col gap-0.5">
                   <span className="text-xs leading-[1.4]">{t.label}</span>
