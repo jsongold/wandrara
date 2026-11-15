@@ -166,7 +166,7 @@ export function buildFeed(ctx: Ctx, strategies: Strategies): FeedPage {
   const candidates = findCandidates(ctx);
   const primary = strategies.primary(candidates, ctx);
   const ordered = strategies.order(primary, ctx);
-  const tiles = dedupeRelatedTiles(strategies.secondary(ordered.cards, ctx));
+  const tiles = dedupeRelatedTiles(strategies.secondary(ordered.cards, ctx), MAX_TILES);
   const cards: FeedCard[] = ordered.cards.map((c, i) => ({
     key: c.key, title: c.title, areaLabel: c.areaLabel, kindLabel: c.kindLabel, relLabel: c.relLabel,
     photos: c.photos.slice(0, MAX_CARD_PHOTOS), href: c.href, tiles: tiles[i],
