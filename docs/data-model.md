@@ -13,18 +13,21 @@ flowchart TB
     Accommodation --- Experience --- Nature --- Village
   end
 
-  User -- 作る --> Tour
-  User -- 運営する（運営者） --> same
+  User -- 登録する（運営者も、運営者でない User も） --> Tour
+  User -- 登録する（運営者だけ） --> same
   Tour -- 含む --> same
 ```
+
+- Accommodation・Experience・Nature・Village を登録するのは運営者
+- Tour は、運営者も運営者でない User も登録できる
 
 - Accommodation・Experience・Nature・Village は同じ段に並び、どれかが他を含んだり、他に属したりしない
 - 同じ段どうしは、距離（近さ）でつながる
 
 | モデル | 意味 |
 |---|---|
-| User | 使う人。旅行者として Tour を作る。運営者なら宿・体験などを運営する |
-| Tour | User が作る旅の計画。宿・体験・自然・村を順に含む |
+| User | 使う人。運営者（operator = true）と、運営者でない User（operator = false）がいる |
+| Tour | 旅の計画。宿・体験・自然・村を順に含む。運営者も運営者でない User も登録する |
 | Accommodation | 宿 |
 | Experience | 体験 |
 | Nature | 自然。海岸・山・湖・高原・渓谷など（城ヶ崎海岸、芦ノ湖、仙石原高原） |
