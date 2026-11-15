@@ -2,9 +2,10 @@
 import { describe, expect, it } from "vitest";
 import { bundleJsonSchema, parseBundle, parseDestInput } from "./bundle.ts";
 import { coreByType } from "./cores.ts";
+import { withAccommodationQuality } from "./test-fixtures.ts";
 
 const acc = coreByType("accommodation")!;
-const dest = () => ({
+const dest = () => withAccommodationQuality({
   core_type: "accommodation",
   ref: "WR-atami-008",
   core: { kind: "private_rental", region_id: "atami", lat: 35.03 },
@@ -15,7 +16,7 @@ const dest = () => ({
   },
   categories: ["onsen"],
   photos: [{ file: "images/001.jpg", subject: "exterior" }],
-});
+}, "file");
 const bundle = (d: unknown) => ({ bundle_version: "2", collector: "c", collected_at: "2026-11-15T10:00:00+09:00", dests: [d] });
 
 describe("parseBundle", () => {

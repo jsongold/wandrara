@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { parseDestInput } from "./bundle.ts";
 import { coreByType } from "./cores.ts";
 import { planDestWrite, type DestRefs } from "./plan.ts";
+import { withAccommodationQuality } from "./test-fixtures.ts";
 
 const acc = coreByType("accommodation")!;
 const input = () => {
-  const r = parseDestInput(acc, {
+  const r = parseDestInput(acc, withAccommodationQuality({
     ref: "WR-atami-008",
     core: { kind: "private_rental", region_id: "atami" },
     texts: [{ lang: "ja", name: "ヴィラ" }],
@@ -18,7 +19,7 @@ const input = () => {
     },
     categories: ["onsen", "bbq"],
     photos: [{ storage_key: "a.jpg" }, { storage_key: "b.jpg" }],
-  });
+  }));
   if (!r.ok) throw new Error(r.errors.join("\n"));
   return r.value;
 };
@@ -44,6 +45,7 @@ describe("planDestWrite", () => {
       "accommodation_bedrooms",
       "accommodation_beds",
       "accommodation_baths",
+      "accommodation_prices",
       "dest_photos",
     ]);
     const t = (name: string) => p.tables.find((x) => x.table === name)!.rows;

@@ -126,6 +126,22 @@ Each `core_type` has its own `core` columns and `details` keys. Core types with 
 
 Write nested children inside the parent row as an array under the child's key (e.g. `units[].bedrooms[].beds[]`). Free text (cautions, notes) is `{"ja": "...", "en": "..."}`, times are `HH:MM`, dates are `YYYY-MM-DD`, and amounts are numbers.
 
+## Required fields (v1)
+
+Every dest must meet these before it is sent. The check runs in `pnpm import:bundle` (including `--dry-run`) and again in the API. If any dest fails, the whole bundle is rejected with `bundle が正しくない:` and one line per missing field (e.g. `/dests/3/details/prices 料金（amount > 0・currency・guests）が 1 つ以上要る`). Nothing is sent. Text may be in any language.
+
+| core_type | Required |
+| --- | --- |
+| all | a text with `name` and `summary`; at least 1 photo; `core.region_id`; a source (`core.official_url` or `sources[].url`) |
+| accommodation | `texts[].address`; `lat`/`lng` inside Hakone and Izu; `check_in` and `check_out`; at least 1 `units` with `capacity`; at least 1 `prices` with `amount` > 0, `currency` and `guests` |
+| experience | at least 1 `prices` with `amount` > 0 and `currency`; `duration_minutes`; `core.official_url` or a `booking_links` URL; at least 1 `locations` with `lat`/`lng` inside Hakone and Izu |
+| building | `texts[].address`; `lat`/`lng` inside Hakone and Izu; at least 1 `hours`; at least 1 `fees` with `amount` (free entry is `0`) |
+| hotspring | `texts[].address`; `lat`/`lng` inside Hakone and Izu; at least 1 `hours`; a `fees` row with `fee_kind: "adult"` and `amount`; at least 1 `baths` with `spring_quality` |
+| nature | `lat`/`lng` inside Hakone and Izu; at least 1 `access` |
+| village | `lat`/`lng` inside Hakone and Izu; at least 1 `access` |
+
+"Inside Hakone and Izu" means latitude 34.55–35.35 and longitude 138.65–139.25.
+
 ## Photo upload
 
 List each photo in `photos`. `pnpm import:bundle` does the upload, so you do not need to host the images anywhere.
@@ -159,7 +175,7 @@ With `data/atami-01/bundle.json` and `data/atami-01/images/001.jpg` in place:
     "ref": "EX-atami-001",
     "slug": "example-villa-atami",
     "verification_status": "verified",
-    "core": { "kind": "private_rental", "region_id": "atami", "prefecture": "静岡県", "municipality": "熱海市", "lat": 35.03, "lng": 139.08, "geo_precision": "street", "official_url": "https://example.com/" },
+    "core": { "kind": "private_rental", "region_id": "atami", "prefecture": "静岡県", "municipality": "熱海市", "lat": 35.03, "lng": 139.08, "geo_precision": "street", "check_in": "15:00", "check_out": "10:00", "official_url": "https://example.com/" },
     "texts": [{ "lang": "ja", "name": "例のヴィラ 熱海", "summary": "海を望む一棟貸し", "address": "静岡県熱海市..." }],
     "details": {
       "units": [{ "capacity": 10, "bedrooms": [{ "beds": [{ "bed_type": "double", "count": 2 }] }] }],
