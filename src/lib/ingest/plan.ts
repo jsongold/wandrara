@@ -8,7 +8,7 @@ import type { DestInput } from "./bundle.ts";
 type Row = Record<string, unknown>;
 
 export type DestRefs = {
-  destByRef: Map<string, { destId: string; slug: string }>;
+  destByRef: Map<string, { destId: string; slug: string; coreType?: string; createdBy?: string | null }>;
   slugs: Set<string>;
   regions: Set<string>;
   categories: Set<string>;

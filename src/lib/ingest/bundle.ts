@@ -92,7 +92,7 @@ function destShape(core: CoreDef, photos: z.ZodType): Record<string, z.ZodType> 
   const details: Record<string, z.ZodType> = {};
   for (const d of core.details.filter((x) => !x.parent)) details[d.key] = z.array(detailSchema(core, d.key)).optional();
   return {
-    ref: z.string().min(1).nullish(),
+    ref: z.string().regex(/^[A-Za-z0-9_-]{1,80}$/, "ref は英数字・_・- の 1〜80 文字").nullish(),
     slug: z
       .string()
       .regex(/^[a-z0-9-]{3,60}$/)

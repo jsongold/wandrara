@@ -66,6 +66,15 @@ describe("parseDestInput", () => {
   });
 });
 
+it("ref は英数字・_・- の 1〜80 文字", () => {
+  const d = () => {
+    const { core_type: _t, ...x } = dest() as any;
+    return { ...x, photos: [{ storage_key: "abc.jpg" }] };
+  };
+  expect(parseDestInput(acc, { ...d(), ref: "WR-atami_008" }).ok).toBe(true);
+  for (const ref of ["a b", "宿", "a/b", "x".repeat(81)]) expect(parseDestInput(acc, { ...d(), ref }).ok).toBe(false);
+});
+
 it("bundleJsonSchema を出せる", () => {
   expect(JSON.stringify(bundleJsonSchema()).length).toBeGreaterThan(1000);
 });
