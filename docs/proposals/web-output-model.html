@@ -99,12 +99,10 @@ pre{background:var(--chip);border-radius:8px;padding:12px;overflow:auto;font-siz
 @keyframes p-open{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .p-fact.tap:active{background:#efece4}
 .p-subph{height:150px;border-radius:16px;background:#cfd3cc;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
-.p-stay{display:flex;align-items:center;gap:14px;margin-top:14px;background:#fff;border:1px solid #e3e0d8;border-radius:14px;padding:10px 14px;position:relative}
-.p-stay div{display:flex;flex-direction:column;gap:1px}
-.p-stay span{font-size:10.5px;color:#6b6862;letter-spacing:.02em}
-.p-stay b{font-size:19px;font-weight:700;letter-spacing:.01em;font-variant-numeric:tabular-nums}
-.p-stay i{width:1px;align-self:stretch;background:#e3e0d8}
-.p-stay em{position:absolute;right:10px;top:8px;font-style:normal;font-size:10px;background:#e8e5dc;border-radius:4px;padding:0 4px;color:#6b6862}
+.p-stay{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:10px;padding:5px 11px;border-radius:99px;background:#efece4;line-height:1}
+.p-stay .k{font-size:9.5px;font-weight:700;letter-spacing:.08em;color:#8a867c}
+.p-stay b{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.p-stay .ln{width:14px;height:1px;background:#b9b4a8;margin:0 2px}
 .p-mapph{height:160px;border-radius:16px;border:1px solid #d0d5cf;background:#dfe3de;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
 </style>
 </head>
@@ -364,59 +362,59 @@ total = room(season, guests).amount
 </section>
 <section>
 <h2 class="p-h">料金（参考）</h2>
-<div class="p-fact"><span>最小</span><span class="v">45,000 円（2 名・平日）<em>未検証</em></span></div>
-<div class="p-fact"><span>最大</span><span class="v">170,000 円（8 名・指定日）<em>未検証</em></span></div>
+<div class="p-fact"><span>最小</span><span class="v">45,000 円（2 名・平日）</span></div>
+<div class="p-fact"><span>最大</span><span class="v">170,000 円（8 名・指定日）</span></div>
 <p class="p-note" style="margin-top:6px">1 棟 1 泊・税込。人数と日によって変わります。別途、諸経費と入湯税がかかります。</p>
 <a class="p-btn sub" href="https://pokke-mahoro.jimdofree.com/">料金の詳細は公式サイトへ</a>
 </section>
 <section>
 <h2 class="p-h">部屋</h2>
-<div class="p-fact tap" aria-expanded="false" data-sub="r-room"><span>1 棟</span><span class="v">12 名まで<em>未検証</em></span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-room"><span>1 棟</span><span class="v">12 名まで</span></div>
 <div class="p-drop" id="r-room" hidden>
-<div class="p-fact sub"><span>定員</span><span class="v">12 名<em>未検証</em></span></div>
-<div class="p-fact sub"><span>寝室 1（1F）</span><span class="v">ダブル 1・シングル 1<em>未検証</em></span></div>
-<div class="p-fact sub"><span>寝室 2（2F）</span><span class="v">セミダブル 2<em>未検証</em></span></div>
-<div class="p-fact sub"><span>寝室 3（2F）</span><span class="v">セミダブル 2<em>未検証</em></span></div>
+<div class="p-fact sub"><span>定員</span><span class="v">12 名</span></div>
+<div class="p-fact sub"><span>寝室 1（1F）</span><span class="v">ダブル 1・シングル 1</span></div>
+<div class="p-fact sub"><span>寝室 2（2F）</span><span class="v">セミダブル 2</span></div>
+<div class="p-fact sub"><span>寝室 3（2F）</span><span class="v">セミダブル 2</span></div>
 </div>
-<div class="p-fact"><span>寝室</span><span class="v">3 室（ダブル・シングル・セミダブル）<em>未検証</em></span></div>
+<div class="p-fact"><span>寝室</span><span class="v">3 室（ダブル・シングル・セミダブル）</span></div>
 </section>
 <section>
 <h2 class="p-h">風呂</h2>
-<div class="p-fact"><span>露天風呂</span><span class="v">温泉<em>未検証</em></span></div>
-<div class="p-fact"><span>内風呂</span><span class="v">温泉<em>未検証</em></span></div>
-<div class="p-fact"><span>サウナ</span><span class="v">バレルサウナ（8 名程度）<em>未検証</em></span></div>
+<div class="p-fact"><span>露天風呂</span><span class="v">温泉</span></div>
+<div class="p-fact"><span>内風呂</span><span class="v">温泉</span></div>
+<div class="p-fact"><span>サウナ</span><span class="v">バレルサウナ（8 名程度）</span></div>
 </section>
 <section>
 <h2 class="p-h">設備</h2>
-<div class="p-fact"><span>キッチン</span><span class="v">キッチン<em>未検証</em></span></div>
-<div class="p-fact tap" aria-expanded="false" data-sub="r-bbq"><span>屋外</span><span class="v">BBQ<em>未検証</em></span></div>
+<div class="p-fact"><span>キッチン</span><span class="v">キッチン</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-bbq"><span>屋外</span><span class="v">BBQ</span></div>
 <div class="p-drop" id="r-bbq" hidden>
-<div class="p-fact sub"><span>グリル</span><span class="v">電気グリル<em>未検証</em></span></div>
-<div class="p-fact sub"><span>雨の日</span><span class="v">屋根の下で使える<em>未検証</em></span></div>
+<div class="p-fact sub"><span>グリル</span><span class="v">電気グリル</span></div>
+<div class="p-fact sub"><span>雨の日</span><span class="v">屋根の下で使える</span></div>
 </div>
-<div class="p-fact"><span>通信</span><span class="v">Wi-Fi<em>未検証</em></span></div>
-<div class="p-fact tap" aria-expanded="false" data-sub="r-wash"><span>洗面</span><span class="v">アメニティ・ドライヤー<em>未検証</em></span></div>
+<div class="p-fact"><span>通信</span><span class="v">Wi-Fi</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-wash"><span>洗面</span><span class="v">アメニティ・ドライヤー</span></div>
 <div class="p-drop" id="r-wash" hidden>
-<div class="p-fact sub"><span>アメニティ</span><span class="v">オーガニック<em>未検証</em></span></div>
-<div class="p-fact sub"><span>ドライヤー</span><span class="v">2 台<em>未検証</em></span></div>
+<div class="p-fact sub"><span>アメニティ</span><span class="v">オーガニック</span></div>
+<div class="p-fact sub"><span>ドライヤー</span><span class="v">2 台</span></div>
 </div>
-<div class="p-fact"><span>洗濯</span><span class="v">洗濯機<em>未検証</em></span></div>
+<div class="p-fact"><span>洗濯</span><span class="v">洗濯機</span></div>
 </section>
 <section>
 <h2 class="p-h">ペット</h2>
-<div class="p-fact"><span>同伴</span><span class="v">不可<em>未検証</em></span></div>
+<div class="p-fact"><span>同伴</span><span class="v">不可</span></div>
 </section>
 <section>
 <h2 class="p-h">駐車場</h2>
-<div class="p-fact"><span>台数</span><span class="v">2 台<em>未検証</em></span></div>
+<div class="p-fact"><span>台数</span><span class="v">2 台</span></div>
 </section>
 <section>
 <h2 class="p-h">アクセス</h2>
-<div class="p-fact tap" aria-expanded="false" data-sub="r-access"><span>最寄り駅</span><span class="v">伊豆高原駅 徒歩 8 分<em>未検証</em></span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-access"><span>最寄り駅</span><span class="v">伊豆高原駅 徒歩 8 分</span></div>
 <div class="p-drop" id="r-access" hidden>
-<div class="p-fact sub"><span>最寄り駅</span><span class="v">伊豆高原駅<em>未検証</em></span></div>
-<div class="p-fact sub"><span>徒歩</span><span class="v">8 分（桜並木方面）<em>未検証</em></span></div>
-<div class="p-fact sub"><span>住所</span><span class="v">静岡県伊東市八幡野 1208-68<em>未検証</em></span></div>
+<div class="p-fact sub"><span>最寄り駅</span><span class="v">伊豆高原駅</span></div>
+<div class="p-fact sub"><span>徒歩</span><span class="v">8 分（桜並木方面）</span></div>
+<div class="p-fact sub"><span>住所</span><span class="v">静岡県伊東市八幡野 1208-68</span></div>
 </div>
 <div class="p-mapph" style="margin-top:10px">地図（準備中）</div>
 </section>
@@ -434,7 +432,8 @@ total = room(season, guests).amount
 <div class="card">
 <h3>画面で変わること</h3>
 <ul>
-<li>デザイン（バッジ・タイトル・紹介文・「設備・条件」の行・未検証・アクセス）は今のまま。行の並べ方と中身だけを変える</li>
+<li>デザイン（バッジ・タイトル・紹介文・行・アクセス）は今のまま。行の並べ方と中身だけを変える</li>
+<li>「未検証」のラベルは画面に出さない（確認の状態はデータには残す）</li>
 <li>詳細のある行（›）をタップすると、その行のすぐ下に詳細が開く（ページやシートは出さない）</li>
 <li>トピックはそれぞれ独立した見出しにし、チェックイン・アウトは紹介文のすぐ下に時刻だけ。そのあと 料金 → 部屋 → 食事 … の順に出す。ペットも独立。設備と条件だけは、小さな項目をまとめる見出し</li>
 <li>設備は中カテゴリ（風呂・キッチン・屋外・通信・駐車場 …）を行の名前にし、小カテゴリ（個々の設備）を値に並べる</li>
@@ -462,67 +461,67 @@ total = room(season, guests).amount
 <h1 class="p-title">（見本）海辺のホテル</h1>
 <p class="p-area">伊豆・熱海</p>
 <p class="p-sum">駅から歩いて行ける、海の見えるホテル。全室オーシャンビュー、最上階に温泉の大浴場。</p>
-<div class="p-stay"><div><span>チェックイン</span><b>15:00</b></div><i></i><div><span>チェックアウト</span><b>11:00</b></div><em>未検証</em></div>
+<div class="p-stay"><span class="k">IN</span><b>15:00</b><span class="ln"></span><span class="k">OUT</span><b>11:00</b></div>
 </section>
 <section>
 <h2 class="p-h">料金（参考）</h2>
-<div class="p-fact"><span>最小</span><span class="v">12,000 円（ダブル・2 名・平日）<em>未検証</em></span></div>
-<div class="p-fact"><span>最大</span><span class="v">48,000 円（和洋室・4 名・指定日）<em>未検証</em></span></div>
+<div class="p-fact"><span>最小</span><span class="v">12,000 円（ダブル・2 名・平日）</span></div>
+<div class="p-fact"><span>最大</span><span class="v">48,000 円（和洋室・4 名・指定日）</span></div>
 <p class="p-note" style="margin-top:6px">1 室 1 泊・素泊まり・税込。部屋・人数・日によって変わります。別途、入湯税がかかります。</p>
 <a class="p-btn sub" href="#">料金の詳細は公式サイトへ</a>
 </section>
 <section>
 <h2 class="p-h">部屋</h2>
-<div class="p-fact tap" aria-expanded="false" data-sub="h-twin"><span>ツイン</span><span class="v">2 名・24㎡・シングル 2<em>未検証</em></span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-twin"><span>ツイン</span><span class="v">2 名・24㎡・シングル 2</span></div>
 <div class="p-drop" id="h-twin" hidden>
 <div class="p-subph">写真（この部屋を写したもの）</div>
-<div class="p-fact sub"><span>定員</span><span class="v">2 名<em>未検証</em></span></div>
-<div class="p-fact sub"><span>広さ</span><span class="v">24㎡<em>未検証</em></span></div>
-<div class="p-fact sub"><span>ベッド</span><span class="v">シングル 2<em>未検証</em></span></div>
-<div class="p-fact sub"><span>眺望</span><span class="v">海<em>未検証</em></span></div>
-<div class="p-fact sub"><span>喫煙</span><span class="v">禁煙<em>未検証</em></span></div>
+<div class="p-fact sub"><span>定員</span><span class="v">2 名</span></div>
+<div class="p-fact sub"><span>広さ</span><span class="v">24㎡</span></div>
+<div class="p-fact sub"><span>ベッド</span><span class="v">シングル 2</span></div>
+<div class="p-fact sub"><span>眺望</span><span class="v">海</span></div>
+<div class="p-fact sub"><span>喫煙</span><span class="v">禁煙</span></div>
 </div>
-<div class="p-fact"><span>ダブル</span><span class="v">2 名・18㎡・ダブル 1<em>未検証</em></span></div>
-<div class="p-fact"><span>和洋室</span><span class="v">4 名・40㎡・シングル 2＋布団<em>未検証</em></span></div>
+<div class="p-fact"><span>ダブル</span><span class="v">2 名・18㎡・ダブル 1</span></div>
+<div class="p-fact"><span>和洋室</span><span class="v">4 名・40㎡・シングル 2＋布団</span></div>
 </section>
 <section>
 <h2 class="p-h">食事</h2>
-<div class="p-fact tap" aria-expanded="false" data-sub="h-breakfast"><span>朝食</span><span class="v">7:00〜10:00・レストラン<em>未検証</em></span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-breakfast"><span>朝食</span><span class="v">7:00〜10:00・レストラン</span></div>
 <div class="p-drop" id="h-breakfast" hidden>
-<div class="p-fact sub"><span>形式</span><span class="v">ビュッフェ<em>未検証</em></span></div>
-<div class="p-fact sub"><span>場所</span><span class="v">レストラン<em>未検証</em></span></div>
-<div class="p-fact sub"><span>時間</span><span class="v">7:00〜10:00<em>未検証</em></span></div>
-<div class="p-fact sub"><span>料金</span><span class="v">1 名 2,500 円<em>未検証</em></span></div>
+<div class="p-fact sub"><span>形式</span><span class="v">ビュッフェ</span></div>
+<div class="p-fact sub"><span>場所</span><span class="v">レストラン</span></div>
+<div class="p-fact sub"><span>時間</span><span class="v">7:00〜10:00</span></div>
+<div class="p-fact sub"><span>料金</span><span class="v">1 名 2,500 円</span></div>
 </div>
-<div class="p-fact"><span>夕食</span><span class="v">なし<em>未検証</em></span></div>
+<div class="p-fact"><span>夕食</span><span class="v">なし</span></div>
 </section>
 <section>
 <h2 class="p-h">風呂</h2>
-<div class="p-fact"><span>大浴場</span><span class="v">温泉<em>未検証</em></span></div>
-<div class="p-fact tap" aria-expanded="false" data-sub="h-sauna"><span>サウナ</span><span class="v">あり<em>未検証</em></span></div>
+<div class="p-fact"><span>大浴場</span><span class="v">温泉</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-sauna"><span>サウナ</span><span class="v">あり</span></div>
 <div class="p-drop" id="h-sauna" hidden>
-<div class="p-fact sub"><span>水風呂</span><span class="v">あり<em>未検証</em></span></div>
-<div class="p-fact sub"><span>外気浴</span><span class="v">あり<em>未検証</em></span></div>
-<div class="p-fact sub"><span>時間</span><span class="v">15:00〜24:00<em>未検証</em></span></div>
-<div class="p-fact sub"><span>男女</span><span class="v">別<em>未検証</em></span></div>
+<div class="p-fact sub"><span>水風呂</span><span class="v">あり</span></div>
+<div class="p-fact sub"><span>外気浴</span><span class="v">あり</span></div>
+<div class="p-fact sub"><span>時間</span><span class="v">15:00〜24:00</span></div>
+<div class="p-fact sub"><span>男女</span><span class="v">別</span></div>
 </div>
 </section>
 <section>
 <h2 class="p-h">設備</h2>
-<div class="p-fact"><span>通信</span><span class="v">Wi-Fi<em>未検証</em></span></div>
-<div class="p-fact"><span>洗濯</span><span class="v">コインランドリー<em>未検証</em></span></div>
+<div class="p-fact"><span>通信</span><span class="v">Wi-Fi</span></div>
+<div class="p-fact"><span>洗濯</span><span class="v">コインランドリー</span></div>
 </section>
 <section>
 <h2 class="p-h">ペット</h2>
-<div class="p-fact"><span>同伴</span><span class="v">不可<em>未検証</em></span></div>
+<div class="p-fact"><span>同伴</span><span class="v">不可</span></div>
 </section>
 <section>
 <h2 class="p-h">駐車場</h2>
-<div class="p-fact"><span>台数</span><span class="v">30 台（有料）<em>未検証</em></span></div>
+<div class="p-fact"><span>台数</span><span class="v">30 台（有料）</span></div>
 </section>
 <section>
 <h2 class="p-h">アクセス</h2>
-<div class="p-fact"><span>最寄り駅</span><span class="v">熱海駅 徒歩 10 分<em>未検証</em></span></div>
+<div class="p-fact"><span>最寄り駅</span><span class="v">熱海駅 徒歩 10 分</span></div>
 <div class="p-mapph" style="margin-top:10px">地図（準備中）</div>
 </section>
 <section>
@@ -545,52 +544,52 @@ total = room(season, guests).amount
 <h1 class="p-title">（見本）川沿いの湯の宿</h1>
 <p class="p-area">伊豆・修善寺</p>
 <p class="p-sum">桂川沿いの 12 室の宿。源泉かけ流しの露天風呂と、部屋で食べる夕食。</p>
-<div class="p-stay"><div><span>チェックイン</span><b>15:00</b></div><i></i><div><span>チェックアウト</span><b>10:00</b></div><em>未検証</em></div>
+<div class="p-stay"><span class="k">IN</span><b>15:00</b><span class="ln"></span><span class="k">OUT</span><b>10:00</b></div>
 </section>
 <section>
 <h2 class="p-h">料金（参考）</h2>
-<div class="p-fact"><span>最小</span><span class="v">18,000 円（和室・4 名 1 室・平日）<em>未検証</em></span></div>
-<div class="p-fact"><span>最大</span><span class="v">45,000 円（露天風呂付き・2 名 1 室・指定日）<em>未検証</em></span></div>
+<div class="p-fact"><span>最小</span><span class="v">18,000 円（和室・4 名 1 室・平日）</span></div>
+<div class="p-fact"><span>最大</span><span class="v">45,000 円（露天風呂付き・2 名 1 室・指定日）</span></div>
 <p class="p-note" style="margin-top:6px">1 名 1 泊・2 食つき・税込。部屋・人数・日によって変わります。別途、入湯税がかかります。</p>
 <a class="p-btn sub" href="#">料金の詳細は公式サイトへ</a>
 </section>
 <section>
 <h2 class="p-h">部屋</h2>
-<div class="p-fact"><span>和室</span><span class="v">10 畳・2〜4 名<em>未検証</em></span></div>
-<div class="p-fact"><span>露天風呂付き</span><span class="v">和室 12 畳・2〜4 名<em>未検証</em></span></div>
+<div class="p-fact"><span>和室</span><span class="v">10 畳・2〜4 名</span></div>
+<div class="p-fact"><span>露天風呂付き</span><span class="v">和室 12 畳・2〜4 名</span></div>
 </section>
 <section>
 <h2 class="p-h">食事</h2>
-<div class="p-fact tap" aria-expanded="false" data-sub="y-dinner"><span>夕食</span><span class="v">部屋食・18:00 か 19:00<em>未検証</em></span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="y-dinner"><span>夕食</span><span class="v">部屋食・18:00 か 19:00</span></div>
 <div class="p-drop" id="y-dinner" hidden>
-<div class="p-fact sub"><span>場所</span><span class="v">部屋食<em>未検証</em></span></div>
-<div class="p-fact sub"><span>時間</span><span class="v">18:00 か 19:00<em>未検証</em></span></div>
-<div class="p-fact sub"><span>形式</span><span class="v">会席<em>未検証</em></span></div>
-<div class="p-fact sub"><span>アレルギー</span><span class="v">事前に相談できる<em>未検証</em></span></div>
+<div class="p-fact sub"><span>場所</span><span class="v">部屋食</span></div>
+<div class="p-fact sub"><span>時間</span><span class="v">18:00 か 19:00</span></div>
+<div class="p-fact sub"><span>形式</span><span class="v">会席</span></div>
+<div class="p-fact sub"><span>アレルギー</span><span class="v">事前に相談できる</span></div>
 </div>
-<div class="p-fact"><span>朝食</span><span class="v">食事処・7:30〜9:00<em>未検証</em></span></div>
-<div class="p-fact"><span>アレルギー</span><span class="v">事前に相談できる<em>未検証</em></span></div>
+<div class="p-fact"><span>朝食</span><span class="v">食事処・7:30〜9:00</span></div>
+<div class="p-fact"><span>アレルギー</span><span class="v">事前に相談できる</span></div>
 </section>
 <section>
 <h2 class="p-h">風呂</h2>
-<div class="p-fact"><span>大浴場</span><span class="v">温泉<em>未検証</em></span></div>
-<div class="p-fact"><span>露天風呂</span><span class="v">温泉<em>未検証</em></span></div>
-<div class="p-fact tap" aria-expanded="false" data-sub="y-private"><span>貸切風呂</span><span class="v">1 つ<em>未検証</em></span></div>
+<div class="p-fact"><span>大浴場</span><span class="v">温泉</span></div>
+<div class="p-fact"><span>露天風呂</span><span class="v">温泉</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="y-private"><span>貸切風呂</span><span class="v">1 つ</span></div>
 <div class="p-drop" id="y-private" hidden>
-<div class="p-fact sub"><span>温泉</span><span class="v">あり<em>未検証</em></span></div>
-<div class="p-fact sub"><span>予約</span><span class="v">チェックインのとき<em>未検証</em></span></div>
-<div class="p-fact sub"><span>時間</span><span class="v">1 回 45 分<em>未検証</em></span></div>
-<div class="p-fact sub"><span>料金</span><span class="v">無料<em>未検証</em></span></div>
+<div class="p-fact sub"><span>温泉</span><span class="v">あり</span></div>
+<div class="p-fact sub"><span>予約</span><span class="v">チェックインのとき</span></div>
+<div class="p-fact sub"><span>時間</span><span class="v">1 回 45 分</span></div>
+<div class="p-fact sub"><span>料金</span><span class="v">無料</span></div>
 </div>
-<div class="p-fact"><span>泉質</span><span class="v">アルカリ性単純温泉<em>未検証</em></span></div>
+<div class="p-fact"><span>泉質</span><span class="v">アルカリ性単純温泉</span></div>
 </section>
 <section>
 <h2 class="p-h">駐車場</h2>
-<div class="p-fact"><span>台数</span><span class="v">12 台（無料）<em>未検証</em></span></div>
+<div class="p-fact"><span>台数</span><span class="v">12 台（無料）</span></div>
 </section>
 <section>
 <h2 class="p-h">アクセス</h2>
-<div class="p-fact"><span>最寄り駅</span><span class="v">修善寺駅 バス 8 分<em>未検証</em></span></div>
+<div class="p-fact"><span>最寄り駅</span><span class="v">修善寺駅 バス 8 分</span></div>
 <div class="p-mapph" style="margin-top:10px">地図（準備中）</div>
 </section>
 <section>
