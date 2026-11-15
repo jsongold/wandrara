@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getTableColumns, getTableName } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import { cacheLife } from "next/cache";
+import { toAccommodationView, type AccommodationView } from "./accommodation/view";
 import { getCatalog, photoUrl } from "./data";
 import { areaLabel, resolveLocalizedText } from "./feed";
 import { coreLabels } from "./i18n/core-labels";
@@ -20,6 +21,8 @@ export type DestDetailView = {
   isDemo: boolean;
   photos: Photo[];
   facts: FactView[];
+  /** 宿の新しい画面の形。details が無いか形が違う宿と、宿でない dest は null（facts を出す） */
+  accommodation: AccommodationView | null;
 };
 
 type Row = Record<string, unknown>;
@@ -102,11 +105,14 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
   const core = coreByType(dest.core_type);
   if (!core) return null;
   const id: string = dest.dest_id;
+  const isAcc = core.coreType === "accommodation";
+  // 宿は details と、stay・料金のリンクに使う列も読む
+  const coreCols = [...new Set(["region_id", ...names(core.table, core.columns), ...(isAcc ? ["details", "check_in", "check_out", "official_url"] : [])])];
 
   const [coreRes, textsRes, photosRes, catalog, ...detailRes] = await Promise.all([
-    db.from(getTableName(core.table)).select(["region_id", ...names(core.table, core.columns)].join(", ")).eq("dest_id", id).maybeSingle(),
+    db.from(getTableName(core.table)).select(coreCols.join(", ")).eq("dest_id", id).maybeSingle(),
     db.from(getTableName(core.texts)).select("lang, name, summary").eq("dest_id", id),
-    db.from("dest_photos").select("storage_key, license, credit").eq("dest_id", id).order("sort"),
+    db.from("dest_photos").select("storage_key, license, credit, subject_key").eq("dest_id", id).order("sort"),
     getCatalog(),
     ...core.details.map((d) =>
       db.from(getTableName(d.table)).select(["id", ...names(d.table, d.columns)].join(", ")).eq("dest_id", id).order("sort"),
@@ -120,7 +126,15 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
   const pick = (f: "name" | "summary") => Object.fromEntries(texts.filter((x) => x[f]).map((x) => [x.lang, x[f] as string]));
   const coreRow = (coreRes.data ?? null) as unknown as Row | null;
   const details = core.details.map((d, i) => ({ key: d.key, rows: (detailRes[i].data ?? []) as unknown as Row[] }));
-  const photoRows = (photosRes.data ?? []) as unknown as { storage_key: string; license: string | null; credit: string | null }[];
+  const photoRows = (photosRes.data ?? []) as unknown as { storage_key: string; license: string | null; credit: string | null; subject_key: string | null }[];
+  const photos = photoRows.map((p) => ({
+    subjectKey: p.subject_key,
+    photo: { url: photoUrl(url, p.storage_key), license: p.license, credit: p.credit, isDemo: false, placeholderSky: null, placeholderLand: null } satisfies Photo,
+  }));
+  const str = (k: string) => (typeof coreRow?.[k] === "string" ? (coreRow[k] as string) : null);
+  const accommodation = isAcc
+    ? toAccommodationView({ details: coreRow?.details ?? null, checkIn: str("check_in"), checkOut: str("check_out"), officialUrl: str("official_url"), photos, locale })
+    : null;
 
   return {
     id,
@@ -129,7 +143,8 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
     kindLabel: coreLabels(core, locale).label,
     summary: resolveLocalizedText(pick("summary"), locale).text || null,
     isDemo: dest.is_demo,
-    photos: photoRows.map((p): Photo => ({ url: photoUrl(url, p.storage_key), license: p.license, credit: p.credit, isDemo: false, placeholderSky: null, placeholderLand: null })),
+    photos: photos.map((p) => p.photo),
     facts: buildFacts(core, coreRow, details, locale),
+    accommodation,
   };
 }
