@@ -5,6 +5,7 @@ import type { PgTable } from "drizzle-orm/pg-core";
 import { cacheLife } from "next/cache";
 import { getCatalog, photoUrl } from "./data";
 import { areaLabel, resolveLocalizedText } from "./feed";
+import { coreLabels } from "./i18n/core-labels";
 import { messages } from "./i18n/messages";
 import { coreByType } from "./ingest/cores";
 import type { CoreDef } from "../db/schema/_shared";
@@ -60,19 +61,22 @@ const fact = (key: string, label: string, value: string, detail: string | null):
 /** コアの列は 1 列 1 行。詳細の表は 1 件 1 行（先頭の値が見出し、全部は開くと出る） */
 export function buildFacts(core: CoreDef, coreRow: Row | null, details: { key: string; rows: Row[] }[], locale: Locale): FactView[] {
   const facts: FactView[] = [];
+  const L = coreLabels(core, locale);
+  const sep = messages(locale).detail;
   if (coreRow) {
-    for (const p of rowPairs(columnMap(core.table, core.columns), coreRow, locale, core.kindLabels)) {
+    for (const p of rowPairs(columnMap(core.table, L.columns), coreRow, locale, L.kindLabels)) {
       facts.push(fact(`core:${p.label}`, p.label, p.value, null));
     }
   }
   for (const def of core.details) {
     const rows = details.find((d) => d.key === def.key)?.rows ?? [];
-    const map = columnMap(def.table, def.columns);
+    const labels = L.details[def.key];
+    const map = columnMap(def.table, labels.columns);
     rows.forEach((row, i) => {
       const pairs = rowPairs(map, row, locale);
       if (pairs.length === 0) return;
-      const label = rows.length > 1 ? `${def.label} ${i + 1}` : def.label;
-      const detail = pairs.length > 1 ? pairs.map((p) => `${p.label}：${p.value}`).join(" ／ ") : null;
+      const label = rows.length > 1 ? `${labels.label} ${i + 1}` : labels.label;
+      const detail = pairs.length > 1 ? pairs.map((p) => `${p.label}${sep.pairSep}${p.value}`).join(sep.rowSep) : null;
       facts.push(fact(`${def.key}:${String(row.id ?? i)}`, label, pairs[0].value, detail));
     });
   }
@@ -122,7 +126,7 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
     id,
     title: resolveLocalizedText(pick("name"), locale).text,
     areaLabel: areaLabel((coreRow?.region_id as string | null) ?? null, catalog.regions, locale),
-    kindLabel: core.label,
+    kindLabel: coreLabels(core, locale).label,
     summary: resolveLocalizedText(pick("summary"), locale).text || null,
     isDemo: dest.is_demo,
     photos: photoRows.map((p): Photo => ({ url: photoUrl(url, p.storage_key), license: p.license, credit: p.credit, isDemo: false, placeholderSky: null, placeholderLand: null })),

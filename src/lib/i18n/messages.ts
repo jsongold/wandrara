@@ -55,6 +55,8 @@ const ja = {
     sourceChecked: (name: string, date: string) => `出典：${name} · 確認日 ${date}`,
     unknownDetail: "公式情報に記載がありません。直接確認してください。",
     noDetail: "詳細はまだありません。",
+    pairSep: "：",
+    rowSep: " ／ ",
   },
   account: {
     title: "アカウント",
@@ -145,6 +147,8 @@ const en: Messages = {
     sourceChecked: (name: string, date: string) => `Source: ${name} · checked ${date}`,
     unknownDetail: "The official information doesn't mention this. Please check directly.",
     noDetail: "No details yet.",
+    pairSep: ": ",
+    rowSep: " / ",
   },
   account: {
     title: "Account",
