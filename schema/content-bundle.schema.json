@@ -29,7 +29,7 @@
                 "anyOf": [
                   {
                     "type": "string",
-                    "minLength": 1
+                    "pattern": "^[A-Za-z0-9_-]{1,80}$"
                   },
                   {
                     "type": "null"
@@ -1251,7 +1251,7 @@
                 "anyOf": [
                   {
                     "type": "string",
-                    "minLength": 1
+                    "pattern": "^[A-Za-z0-9_-]{1,80}$"
                   },
                   {
                     "type": "null"
@@ -1941,7 +1941,7 @@
                 "anyOf": [
                   {
                     "type": "string",
-                    "minLength": 1
+                    "pattern": "^[A-Za-z0-9_-]{1,80}$"
                   },
                   {
                     "type": "null"
@@ -2562,7 +2562,7 @@
                 "anyOf": [
                   {
                     "type": "string",
-                    "minLength": 1
+                    "pattern": "^[A-Za-z0-9_-]{1,80}$"
                   },
                   {
                     "type": "null"
@@ -3066,7 +3066,7 @@
                 "anyOf": [
                   {
                     "type": "string",
-                    "minLength": 1
+                    "pattern": "^[A-Za-z0-9_-]{1,80}$"
                   },
                   {
                     "type": "null"
@@ -3695,7 +3695,7 @@
                 "anyOf": [
                   {
                     "type": "string",
-                    "minLength": 1
+                    "pattern": "^[A-Za-z0-9_-]{1,80}$"
                   },
                   {
                     "type": "null"

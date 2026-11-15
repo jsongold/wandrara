@@ -13,7 +13,7 @@ const body = () => ({
 });
 
 // from(table) の問い合わせ結果を表ごとに返す最小のモック。rpc の引数を記録する
-function mockDb(existing?: { dest_id: string; slug: string }) {
+function mockDb(existing?: { dest_id: string; slug: string; core_type?: string; created_by?: string | null }) {
   const rpcCalls: { fn: string; args: { p: Record<string, unknown> } }[] = [];
   const chain = (table: string) => {
     const q: Record<string, unknown> = {};
@@ -61,9 +61,35 @@ describe("registerDest", () => {
   });
 
   it("既存の ref は同じ dest_id と slug", async () => {
-    const { db, rpcCalls } = mockDb({ dest_id: "00000000-0000-0000-0000-000000000001", slug: "keep-me" });
+    const { db, rpcCalls } = mockDb({ dest_id: "00000000-0000-0000-0000-000000000001", slug: "keep-me", core_type: "accommodation", created_by: "u1" });
     const r = await registerDest(db, acc, body(), principal);
     expect(r).toMatchObject({ ok: true, dest_id: "00000000-0000-0000-0000-000000000001", slug: "keep-me" });
     expect((rpcCalls[0].args.p.destination as { dest_id: string }).dest_id).toBe("00000000-0000-0000-0000-000000000001");
+  });
+
+  const ex = { dest_id: "00000000-0000-0000-0000-000000000001", slug: "keep-me", core_type: "accommodation", created_by: "u1" };
+
+  it("別の core_type の ref は 409 で dest_apply を呼ばない", async () => {
+    const { db, rpcCalls } = mockDb({ ...ex, core_type: "experience" });
+    const r = await registerDest(db, acc, body(), principal);
+    expect(r).toMatchObject({ ok: false, status: 409 });
+    if (!r.ok) expect(r.errors[0]).toContain("experience");
+    expect(rpcCalls).toHaveLength(0);
+  });
+
+  it("別の created_by（null 含む）の ref は 409 で dest_apply を呼ばない", async () => {
+    for (const created_by of ["u2", null]) {
+      const { db, rpcCalls } = mockDb({ ...ex, created_by });
+      const r = await registerDest(db, acc, body(), principal);
+      expect(r).toMatchObject({ ok: false, status: 409 });
+      expect(rpcCalls).toHaveLength(0);
+    }
+  });
+
+  it("同じ登録者・同じ種類なら通る", async () => {
+    const { db, rpcCalls } = mockDb(ex);
+    const r = await registerDest(db, acc, body(), principal);
+    expect(r.ok).toBe(true);
+    expect(rpcCalls).toHaveLength(1);
   });
 });
