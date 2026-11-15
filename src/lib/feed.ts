@@ -1,14 +1,16 @@
 // フィードの組み立て。並べ方・メインの選び方・関連タイルの選び方の 3 戦略を独立に差し替えられる。
-import type { Area, Category, DiscoverQuery, FeedCard, FeedPage, Locale, LocalizedText, Spot, Tile } from "./types";
+import { CORES } from "./ingest/cores";
+import { MODES, otherMode } from "./modes";
+import type { Category, DestCard, DiscoverQuery, FeedCard, FeedPage, Locale, LocalizedText, Region, Tile } from "./types";
 
-export type Catalog = { areas: Area[]; categories: Category[]; spots: Spot[] };
+export type Catalog = { regions: Region[]; categories: Category[]; dests: DestCard[] };
 export type Ctx = { catalog: Catalog; query: DiscoverQuery; locale: Locale };
 
-// メインカード（並べる前）。sortKey 系の値は並べ方の戦略が使う
-export type PrimaryCard = Omit<FeedCard, "tiles"> & { anchor: Spot; members: Spot[] };
+// メインカード（並べる前）。並べ方の戦略は anchor を見る
+export type PrimaryCard = Omit<FeedCard, "tiles"> & { anchor: DestCard };
 
 export type OrderStrategy = (cards: PrimaryCard[], ctx: Ctx) => { cards: PrimaryCard[]; label: string };
-export type PrimaryStrategy = (candidates: Spot[], ctx: Ctx) => PrimaryCard[];
+export type PrimaryStrategy = (candidates: DestCard[], ctx: Ctx) => PrimaryCard[];
 export type SecondaryStrategy = (cards: PrimaryCard[], ctx: Ctx) => Tile[][];
 
 export type Strategies = { order: OrderStrategy; primary: PrimaryStrategy; secondary: SecondaryStrategy };
@@ -25,98 +27,73 @@ export function resolveLocalizedText(text: LocalizedText | null | undefined, loc
 
 const t = (x: LocalizedText | null | undefined, locale: Locale) => resolveLocalizedText(x, locale).text;
 
-const KIND_LABEL: Record<Spot["kind"], string> = { stay: "宿", place: "スポット", experience: "体験" };
-
-function areaIndex(areas: Area[]) {
-  return new Map(areas.map((a) => [a.id, a]));
+export function kindLabelOf(coreType: string): string {
+  return CORES.find((c) => c.coreType === coreType)?.label ?? "";
 }
 
-export function areaLabel(areaId: string | null, areas: Area[], locale: Locale): string {
-  const idx = areaIndex(areas);
-  const a = areaId ? idx.get(areaId) : undefined;
-  if (!a) return "";
-  const parent = a.parentId ? idx.get(a.parentId) : undefined;
-  return parent ? `${t(parent.name, locale)}・${t(a.name, locale)}` : t(a.name, locale);
+function regionIndex(regions: Region[]) {
+  return new Map(regions.map((r) => [r.id, r]));
 }
 
-// 指定エリア（地域でも地区でも）に入るか
-export function inArea(spot: Spot, area: string, areas: Area[]): boolean {
+export function areaLabel(regionId: string | null, regions: Region[], locale: Locale): string {
+  const idx = regionIndex(regions);
+  const r = regionId ? idx.get(regionId) : undefined;
+  if (!r) return "";
+  const parent = r.parentId ? idx.get(r.parentId) : undefined;
+  return parent ? `${t(parent.name, locale)}・${t(r.name, locale)}` : t(r.name, locale);
+}
+
+// 指定の地域（地域でも地区でも）に入るか
+export function inArea(dest: DestCard, area: string, regions: Region[]): boolean {
   if (area === "all") return true;
-  if (!spot.areaId) return false;
-  if (spot.areaId === area) return true;
-  return areaIndex(areas).get(spot.areaId)?.parentId === area;
+  if (!dest.regionId) return false;
+  if (dest.regionId === area) return true;
+  return regionIndex(regions).get(dest.regionId)?.parentId === area;
 }
 
-// エリアの無いスポットは地域も無い（null）
-function regionOf(areaId: string | null, areas: Area[]): string | null {
-  if (!areaId) return null;
-  const a = areaIndex(areas).get(areaId);
-  return a?.parentId ?? areaId;
+// 地域を持たない dest は地域も無い（null）
+function topRegionOf(regionId: string | null, regions: Region[]): string | null {
+  if (!regionId) return null;
+  return regionIndex(regions).get(regionId)?.parentId ?? regionId;
 }
 
 // ---- 候補の絞り込み ----
 
-export function findCandidates(ctx: Ctx): Spot[] {
+export function findCandidates(ctx: Ctx): DestCard[] {
   const { catalog, query } = ctx;
   const q = query.q.toLowerCase();
-  return catalog.spots.filter((s) => {
-    if (!inArea(s, query.area, catalog.areas)) return false;
+  return catalog.dests.filter((d) => {
+    if (!inArea(d, query.area, catalog.regions)) return false;
     if (!q) return true;
-    const hay = [s.name.ja, s.name.en, s.summary?.ja, s.summary?.en].filter(Boolean).join(" ").toLowerCase();
+    const hay = [d.name.ja, d.name.en, d.summary?.ja, d.summary?.en].filter(Boolean).join(" ").toLowerCase();
     return hay.includes(q);
   });
 }
 
 // ---- メインの選び方 ----
 
-// Place はスポット単位、Experience は体験の種類ごとにまとめる
+// mode の core_type に入る dest を 1 件 1 カードにする
 export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
   const { catalog, query, locale } = ctx;
-  const cats = catalog.categories.filter((c) => c.mode === query.mode);
-  const catIds = new Set(cats.map((c) => c.id));
-
-  if (query.mode === "place") {
-    return candidates
-      .filter((s) => s.kind !== "experience")
-      .filter((s) => (query.cat === "all" ? s.categoryIds.some((id) => catIds.has(id)) : s.categoryIds.includes(query.cat)))
-      .map((s) => ({
-        key: s.id,
-        title: t(s.name, locale),
-        areaLabel: areaLabel(s.areaId, catalog.areas, locale),
-        kindLabel: KIND_LABEL[s.kind],
-        relLabel: "関連する体験",
-        photos: s.photos,
-        href: `/spots/${s.id}`,
-        anchor: s,
-        members: [s],
-      }));
-  }
-
-  return [...cats]
-    .sort((a, b) => a.sort - b.sort)
-    .filter((c) => query.cat === "all" || c.id === query.cat)
-    .flatMap((c) => {
-      const members = candidates.filter((s) => s.categoryIds.includes(c.id));
-      if (members.length === 0) return [];
-      const anchor = [...members].sort((a, b) => a.editorialRank - b.editorialRank)[0];
-      const scope = query.area === "all" ? "" : `（${areaLabel(query.area, catalog.areas, locale)}）`;
-      return [{
-        key: `exp-${c.id}`,
-        title: t(c.name, locale),
-        areaLabel: `${members.length}か所で体験できる${scope}`,
-        kindLabel: "体験",
-        relLabel: "体験できる場所",
-        photos: anchor.photos,
-        href: `/spots/${anchor.id}`,
-        anchor,
-        members,
-      }];
-    });
+  const coreTypes: readonly string[] = MODES[query.mode];
+  return candidates
+    .filter((d) => coreTypes.includes(d.coreType))
+    .filter((d) => query.cat === "all" || d.categoryIds.includes(query.cat))
+    .map((d) => ({
+      key: d.id,
+      title: t(d.name, locale),
+      areaLabel: areaLabel(d.regionId, catalog.regions, locale),
+      kindLabel: kindLabelOf(d.coreType),
+      relLabel: query.mode === "stay" ? "関連する体験" : "近くの宿",
+      photos: d.photos,
+      href: `/d/${d.slug}`,
+      anchor: d,
+    }));
 };
 
 // ---- 並べ方 ----
 
-// 人気データが無い間は編集部の順。ラベルで計測値ではないことを示す
+// 人気データが無い間は編集部の順（公開日の新しい順）。ラベルで計測値ではないことを示す
 export const orderEditorial: OrderStrategy = (cards, ctx) => {
   if (ctx.query.sort === "fresh") {
     return {
@@ -125,7 +102,7 @@ export const orderEditorial: OrderStrategy = (cards, ctx) => {
     };
   }
   return {
-    cards: [...cards].sort((a, b) => a.anchor.editorialRank - b.anchor.editorialRank),
+    cards: [...cards].sort((a, b) => (b.anchor.publishedAt ?? "").localeCompare(a.anchor.publishedAt ?? "")),
     label: "編集部のおすすめ順",
   };
 };
@@ -134,31 +111,33 @@ export const orderEditorial: OrderStrategy = (cards, ctx) => {
 
 const MAX_TILES = 6;
 
-function tileOf(s: Spot, ctx: Ctx): Tile {
+function tileOf(d: DestCard, ctx: Ctx): Tile {
   return {
-    spotId: s.id,
-    label: t(s.name, ctx.locale),
-    sub: areaLabel(s.areaId, ctx.catalog.areas, ctx.locale),
-    photo: s.photos[0] ?? null,
-    href: `/spots/${s.id}`,
+    destId: d.id,
+    label: t(d.name, ctx.locale),
+    sub: areaLabel(d.regionId, ctx.catalog.regions, ctx.locale),
+    photo: d.photos[0] ?? null,
+    href: `/d/${d.slug}`,
   };
 }
 
-// 場所カード：同じ地区 → 同じ地域の体験。体験カード：その体験ができる場所
-export const relatedExperiences: SecondaryStrategy = (cards, ctx) => {
+// もう片方の mode の dest で同じ地域のもの。同じ地区を先に出す
+export const relatedOtherMode: SecondaryStrategy = (cards, ctx) => {
   const { catalog, query } = ctx;
+  const coreTypes: readonly string[] = MODES[otherMode(query.mode)];
   return cards.map((card) => {
-    if (query.mode === "experience") {
-      return card.members.filter((s) => s.id !== card.anchor.id).concat(card.anchor).slice(0, MAX_TILES).map((s) => tileOf(s, ctx));
-    }
     const a = card.anchor;
-    const region = regionOf(a.areaId, catalog.areas);
-    return catalog.spots
-      .filter((s) => s.kind === "experience" && s.id !== a.id && inArea(s, query.area, catalog.areas))
-      .filter((s) => region !== null && regionOf(s.areaId, catalog.areas) === region)
-      .sort((x, y) => Number(y.areaId === a.areaId) - Number(x.areaId === a.areaId) || x.editorialRank - y.editorialRank)
+    const region = topRegionOf(a.regionId, catalog.regions);
+    return catalog.dests
+      .filter((d) => coreTypes.includes(d.coreType) && d.id !== a.id && inArea(d, query.area, catalog.regions))
+      .filter((d) => region !== null && topRegionOf(d.regionId, catalog.regions) === region)
+      .sort(
+        (x, y) =>
+          Number(y.regionId === a.regionId) - Number(x.regionId === a.regionId) ||
+          (y.publishedAt ?? "").localeCompare(x.publishedAt ?? ""),
+      )
       .slice(0, MAX_TILES)
-      .map((s) => tileOf(s, ctx));
+      .map((d) => tileOf(d, ctx));
   });
 };
 
@@ -168,9 +147,9 @@ export const relatedExperiences: SecondaryStrategy = (cards, ctx) => {
 export function dedupeRelatedTiles(tilesPerCard: Tile[][], show = 3, minKeep = 1): Tile[][] {
   let prev = new Set<string>();
   return tilesPerCard.map((tiles) => {
-    const fresh = tiles.filter((x) => !prev.has(x.spotId));
+    const fresh = tiles.filter((x) => !prev.has(x.destId));
     const picked = (fresh.length >= minKeep ? fresh : tiles).slice(0, show);
-    prev = new Set(picked.map((x) => x.spotId));
+    prev = new Set(picked.map((x) => x.destId));
     return picked;
   });
 }

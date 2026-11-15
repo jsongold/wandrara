@@ -1,101 +1,65 @@
+目的：エージェント（コレクター）が bundle v2 を作って投入するための、集め方のルールと書き方。出力は `schema/content-bundle.schema.json` に従う JSON。
+
 # WANDRARA コレクター向け収集ガイド
 
-目的：カタログを完成させるために集める項目と、守るルールを定める。出力は `schema/content-bundle.schema.json` に従う JSON。
-
 ## 守ること
-- **推測しない**。見つからない項目は `status: "unknown"` にして値を入れない。「不明」と「無い」は別物。
-- **事実には出典**。`verified` / `unverified` / `conflict` には `sources`（種類・URL・見た日・根拠の抜き出し）が必須。
-  - `verified`：公式サイト・自治体など一次情報で確認できた
-  - `unverified`：OTA・メディア・過去の調査など二次情報だけ
-  - `conflict`：出典同士で食い違う（出典を 2 つ以上付ける）
-- **写真**は `url`（取り込み時にダウンロード）か `file`（bundle の JSON から見た相対パス）で渡す。利用条件は `license` に書き、分からなければ `none`。spot が 1 件の bundle で写真に `url` / `file` が無ければ、同じ場所の `images/` の画像を名前順に全部使う。
-- **レビュー本文は転載しない**。出典リンクと、具体的な観察の要約だけ。評価点・件数は入れない。
-- **料金は条件ごと**。金額・通貨・単位（1泊1棟 / 1泊1名 / 1名 など）・前提人数・時期・税込か・清掃料などを含むかを必ず書く。為替換算はしない。
-- **対象地域はまず箱根・伊豆**。それ以外は `verification_status: "candidate"` のまま記録だけでよい。
-- **エリアとカテゴリは自由に足してよい**。DB に無い `area_id` は市町村名で、無いカテゴリは ID を名前にして取り込み側が作る。名前・親の地域・アイコンを決めたいときは bundle の `areas` / `categories` に書く。
-- 同じ施設を集め直すときは `external_ref` を変えない（`hotels.tsv` の `catalog_id` をそのまま使う）。
+- **推測しない**。見つからない項目は書かない（NULL＝不明）。分かっている値はその型で書く（無い＝`false`・`0`）。「不明」と「無い」は別物。
+- **出典は `sources` に**。事実の出典（type・url・retrieved_at・evidence）を dest ごとに書く。一次情報（公式・自治体）を優先。`verification_status` は `verified`（一次で確認）/ `unverified`（二次のみ）/ `conflict`（食い違い。出典 2 つ以上）。`sources` と `verification_status` は DB の列にならず、投入の原本に残る。
+- **レビュー本文は転載しない**。評価点・件数も入れない。
+- **料金は条件ごと**。金額・通貨・人数・食事・時期・税込か・清掃料などを含むかを書く。為替換算はしない。
+- 同じ場所を集め直すときは `ref` を変えない（同じ dest の更新になる。slug も変わらない）。
+- `operator_id` は書かない。`dest_id`・`id`・親を指す列・`sort` も書かない（`sort` は配列の順）。
+- 列のキーは DB の列名（snake_case）。`region` / `categories` は無ければ作られる（category は id が名前になる）。
+
+## コアごとの書く場所
+`core_type` を選び、`core`（コアの列）と `details`（key の配列）を書く。名前・紹介・住所は `texts`（lang ごと、`name` 必須）。位置を持つコアは `core` に `region_id`・`prefecture`・`municipality`・`district`・`lat`・`lng`・`geo_precision`（exact / street / district / municipality）も書ける。入れ子の子は親の行の中に子の key の配列で書く（例：`units[].bedrooms[].beds[]`）。
+
+| core_type | kind の値 | core の主な列 | details の key（主な列） |
+|---|---|---|---|
+| accommodation（宿） | hotel ryokan private_rental minshuku pension glamping campsite | kind check_in check_out official_url | units(name capacity area_sqm style) > bedrooms > beds(bed_type count) / baths(kind spring open_from open_to amount) / meals / booking_links / prices(amount currency guests meals valid_from valid_to tax_included cleaning_fee_included) / amenities / parkings / internet / rules / access / surroundings / cautions / licenses |
+| experience（体験） | tour workshop tasting activity facility_use event | kind region_id duration_minutes reservation_required official_url | courses(name duration_minutes min_people max_people) / prices(unit audience amount currency) / schedules(start_month end_month weekdays start_time end_time) / locations / inclusions / cautions / booking_links |
+| nature（自然） | coast mountain lake highland gorge waterfall forest volcano | kind protection | seasons(subject month_from month_to) / hours_fees(open_time close_time amount currency) / access / trails(name distance_km difficulty) / restrictions / cautions |
+| village（村） | onsen_town post_town fishing_village temple_town castle_town | kind region_id municipality | walks(area duration_min) / shop_hours / access / events / cautions |
+| building（建物） | museum shrine temple castle observatory historic_building | kind official_url | hours(open_time close_time closed_days) / fees(label amount currency) / access(how_to_get has_parking) / events / cautions |
+| hotspring（温泉） | day_use public_bath foot_bath | kind official_url | baths(bath_type spring_handling spring_quality) / hours / fees(fee_kind amount currency) / amenities / access / cautions |
+
+列の全部と型は `schema/content-bundle.schema.json` を見る。文（注意点・メモ）は `{"ja": "...", "en": "..."}`。時刻は `HH:MM`、期間は `YYYY-MM-DD`。
+
+## 写真
+`photos` に `file`（bundle から見た相対パス）か `url` と、`license`（分からなければ `none`）・`source_page_url`・`credit`・`subject`（exterior / room / bath / view / food / activity / landscape / other）を書く。jpeg / png / webp / avif、10MB まで。アップロードは投入のスクリプトがやる。
 
 ## 投入のしかた
 ```
-pnpm import:bundle data/<フォルダ>/<bundle>.json --dry-run   # 検証して DB で試し、取り消す
-pnpm import:bundle data/<フォルダ>/<bundle>.json             # 写真をバケットに置き、下書き（draft）として投入する
-pnpm spot:status --list draft                               # 下書きの一覧
-pnpm spot:status <external_ref> published                   # 公開する（draft に戻すこともできる）
+export WANDRARA_API_URL=https://<本番のURL>
+export WANDRARA_API_KEY=wdr_...
+pnpm import:bundle <bundle.json> --dry-run   # 検証と写真の読み込みまで。API は呼ばない
+pnpm import:bundle <bundle.json>             # 写真を上げて、下書き（draft）として登録する
 ```
-- 投入したスポットは下書きで、公開するまで画面に出ない。公開中のスポットを入れ直すと下書きに戻る。
-- 同じ `external_ref` を入れ直すと更新になる（事実・写真・料金・カテゴリは入れ替え）。
-- `verification_status: "candidate"` は投入せず、原本（`import_records`）だけに残す。
-- 前提：環境変数か `.env.local` に `NEXT_PUBLIC_SUPABASE_URL` と `SUPABASE_SECRET_KEY`（Supabase の Settings → API Keys のシークレットキー）。
+- 登録した dest は draft で、管理者が公開するまで画面に出ない。公開中のものを入れ直すと draft に戻る。
+- キーは管理者が `pnpm collector:key create <名前> --email <メール>` で発行して渡す。失くしたら再発行する。
+- 公開は管理者が `pnpm dest:status <ref|slug> published`（一覧は `--list draft`）。
 
-## 優先順位
-1. 名前・所在地（市町村・地区・緯度経度）・公式 URL・カテゴリ
-2. 宿の基本事実（下表の ★）と料金 1 件以上
-3. 写真
-4. それ以外の事実・関連スポット・レビューの観察
-
-## 事実キー一覧
-値の型は表のとおり。合うキーが無ければ英小文字のスネークケースで新しく作ってよい。
-
-### 宿（kind: stay）
-| key | 意味 | 型 |
-|---|---|---|
-| max_guests ★ | 最大宿泊人数 | 数値（person） |
-| private_rental ★ | 一棟貸しか | 真偽 |
-| bedrooms ★ | 寝室数 | 数値 |
-| beds | 寝具の構成（ベッド・布団の種類と数） | localized |
-| bathrooms | 浴室・トイレの数 | 数値 |
-| bath_types ★ | 内風呂・露天・温泉・貸切・サウナ | 配列（indoor / open_air / onsen / private / sauna） |
-| kitchen ★ | キッチンの有無と設備 | localized |
-| bbq | BBQ の可否と場所 | localized |
-| parking_spaces ★ | 駐車台数 | 数値（car） |
-| wifi | Wi-Fi の有無 | 真偽 |
-| pets_allowed | ペット可否と条件 | localized |
-| check_in / check_out | チェックイン・アウト時刻 | 文字列（HH:MM） |
-| min_nights | 最低泊数 | 数値 |
-| quiet_hours | 騒音の決まり・静粛時間 | localized |
-| privacy | 周囲の建物との距離・目隠しなど | localized |
-| connectivity | 携帯の電波 | localized |
-| nearest_station | 最寄り駅とそこからの手段・時間 | localized |
-| access_by_car | 主要 IC からの車の所要時間 | 数値（minute） |
-| season_access | 冬季の道路・季節の制限 | localized |
-
-### 体験（kind: experience）
-| key | 意味 | 型 |
-|---|---|---|
-| duration_minutes ★ | 所要時間 | 数値（minute） |
-| season_months ★ | できる月 | 配列（1〜12） |
-| reservation_required ★ | 予約が要るか | 真偽 |
-| meeting_point | 集合場所 | localized |
-| operating_hours | 営業時間 | localized |
-| closed_days | 定休日 | localized |
-| min_age | 年齢制限 | 数値 |
-| difficulty | 難易度 | easy / moderate / hard |
-| weather_dependency | 雨天時の扱い | localized |
-
-### 場所（kind: place）
-| key | 意味 | 型 |
-|---|---|---|
-| opening_hours | 開いている時間 | localized |
-| entry_fee | 入場料（料金は prices にも入れる） | localized |
-| best_season | 見頃 | localized |
-| parking_spaces | 駐車台数 | 数値（car） |
-
-## 1 件の例
+## 1 件の例（宿）
 ```json
 {
-  "external_ref": "CHAT-002",
-  "kind": "stay",
-  "name": { "ja": "COCO VILLA Hakone Sengokuhara" },
-  "location": { "prefecture": "神奈川県", "municipality": "箱根町", "district": "仙石原", "area_id": "sengokuhara" },
-  "categories": ["stay", "plateau"],
-  "official_url": "https://example.com/",
-  "facts": [
-    { "key": "max_guests", "value": 10, "unit": "person", "status": "unverified",
-      "sources": [{ "type": "prior_research", "name": "hotels.tsv", "retrieved_at": "2026-11-13" }] },
-    { "key": "wifi", "status": "unknown" }
-  ],
-  "prices": [],
-  "photos": [{ "source_page_url": "https://example.com/gallery", "license": "none" }],
-  "verification_status": "collected"
+  "bundle_version": "2",
+  "collector": "hotel-collector",
+  "collected_at": "2026-11-15T10:00:00+09:00",
+  "dests": [{
+    "core_type": "accommodation",
+    "ref": "WR-atami-008",
+    "slug": "villa-king-atami",
+    "verification_status": "verified",
+    "core": { "kind": "private_rental", "region_id": "atami", "prefecture": "静岡県", "municipality": "熱海市", "lat": 35.03, "lng": 139.08, "official_url": "https://example.com/" },
+    "texts": [{ "lang": "ja", "name": "ヴィラ キング 熱海", "summary": "海を望む一棟貸し", "address": "静岡県熱海市..." }],
+    "details": {
+      "units": [{ "capacity": 10, "bedrooms": [{ "beds": [{ "bed_type": "double", "count": 2 }] }] }],
+      "prices": [{ "amount": 80000, "currency": "JPY", "guests": 10, "meals": "none", "tax_included": true, "cleaning_fee_included": false }]
+    },
+    "categories": ["onsen", "bbq"],
+    "photos": [{ "file": "images/001.jpg", "license": "none", "source_page_url": "https://example.com/", "subject": "exterior" }],
+    "region": { "id": "atami", "name": { "ja": "熱海" }, "parent_id": "izu" },
+    "sources": [{ "type": "official", "url": "https://example.com/", "retrieved_at": "2026-11-14", "evidence": "公式の料金表" }]
+  }]
 }
 ```

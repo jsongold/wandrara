@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
+import { MODE_LABEL, otherMode } from "@/lib/modes";
 import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Photo, SortKey } from "@/lib/types";
+import { AccountButton } from "./AccountButton";
 import { Icon } from "./icons";
 import { PhotoCarousel } from "./PhotoCarousel";
 
 type Props = { query: DiscoverQuery; feed: FeedPage; categories: CategoryView[]; areas: AreaGroupView[] };
-type Sheet = null | "area" | "filter" | "login";
+type Sheet = null | "area" | "filter";
 
 const GLASS: CSSProperties = {
   background: "rgba(18,18,16,0.46)",
@@ -68,7 +70,7 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
     go({ q });
   }
 
-  const isPlace = query.mode === "place";
+  const isStay = query.mode === "stay";
   const allCats: CategoryView[] = [{ id: "all", label: "すべて", icon: "grid" }, ...categories];
   const currentArea = areaName(areas, query.area);
 
@@ -86,7 +88,7 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
         {feed.cards.length === 0 && (
           <div className="flex flex-col items-center gap-3.5 px-8 pt-[180px] text-center">
             <Icon name="search" size={40} />
-            <p className="m-0 text-[17px] font-bold">条件に合うスポットがありません</p>
+            <p className="m-0 text-[17px] font-bold">条件に合うものがありません</p>
             <p className="m-0 text-[13px] leading-[1.7] text-white/80">エリアやカテゴリを変えるか、条件をリセットしてください。</p>
             <button
               type="button"
@@ -106,15 +108,11 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
           <span className="text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{feed.orderLabel} · デモ表示</span>
         </div>
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setSheet("login")}
-            aria-label="保存したスポットだけを表示"
+          <AccountButton
+            next={serializeDiscoverQuery(query)}
             className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-white"
             style={GLASS}
-          >
-            <Icon name="heart" />
-          </button>
+          />
         </div>
       </header>
 
@@ -157,14 +155,14 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => go({ mode: isPlace ? "experience" : "place", cat: "all" })}
-            aria-label={isPlace ? "場所から探す（タップで体験から探すに切り替え）" : "体験から探す（タップで場所から探すに切り替え）"}
-            title={isPlace ? "場所から探す" : "体験から探す"}
+            onClick={() => go({ mode: otherMode(query.mode), cat: "all" })}
+            aria-label={`${MODE_LABEL[query.mode]}から探す（タップで${MODE_LABEL[otherMode(query.mode)]}から探すに切り替え）`}
+            title={`${MODE_LABEL[query.mode]}から探す`}
             className="flex h-[52px] w-[52px] flex-none cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[14px] text-white"
             style={GLASS}
           >
-            <Icon name={isPlace ? "pin" : "sparkle"} />
-            <span className="text-[10px] font-semibold">{isPlace ? "場所" : "体験"}</span>
+            <Icon name={isStay ? "pin" : "sparkle"} />
+            <span className="text-[10px] font-semibold">{MODE_LABEL[query.mode]}</span>
           </button>
           <form
             role="search"
@@ -245,23 +243,6 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
         </BottomSheet>
       )}
 
-      {/* Login placeholder */}
-      {sheet === "login" && (
-        <BottomSheet label="ログインが必要です" onClose={() => setSheet(null)}>
-          <div className="flex flex-col items-center gap-3 text-center">
-            <Icon name="heart" size={32} />
-            <h2 className="m-0 text-lg font-bold">保存するにはログインしてください</h2>
-            <p className="m-0 text-[13px] leading-[1.7] text-white/80">ログインと保存は次の版で対応します。</p>
-            <button
-              type="button"
-              onClick={() => setSheet(null)}
-              className="mt-2 h-12 w-full cursor-pointer rounded-[14px] border-0 bg-[#f4f1ea] text-[15px] font-bold text-[#141413]"
-            >
-              閉じる
-            </button>
-          </div>
-        </BottomSheet>
-      )}
     </div>
   );
 }
@@ -286,7 +267,7 @@ function FeedCardView({ card }: { card: FeedCard }) {
           <h2 className="m-0 text-xs font-semibold tracking-[0.04em] text-white/75">{card.relLabel}</h2>
           <div className="grid grid-cols-3 gap-1.5">
             {card.tiles.map((t) => (
-              <Link key={t.spotId} href={t.href} className="flex flex-col gap-1.5 text-white no-underline">
+              <Link key={t.destId} href={t.href} className="flex flex-col gap-1.5 text-white no-underline">
                 <span className="block h-28 rounded-[10px]" style={photoStyle(t.photo)} />
                 <span className="flex flex-col gap-0.5">
                   <span className="text-xs leading-[1.4]">{t.label}</span>
