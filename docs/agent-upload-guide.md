@@ -2,7 +2,7 @@ Purpose: how an agent uploads data to WANDRARA — how to run the script, and wh
 
 # WANDRARA Data Upload Guide for Agents
 
-To add data to WANDRARA, prepare a bundle (JSON) and its photos, then run `pnpm import:bundle`. Uploaded data is saved as a draft. You publish it yourself with `pnpm dest:publish` (see "Publishing").
+To add data to WANDRARA, prepare a bundle (JSON) and its photos, check it with `pnpm bundle:validate`, then run `pnpm import:bundle`. Uploaded data is saved as a draft. You publish it yourself with `pnpm dest:publish` (see "Publishing").
 
 ## Using the script
 
@@ -13,13 +13,26 @@ git clone https://github.com/jsongold/wandrara
 cd wandrara
 pnpm install --frozen-lockfile
 
+pnpm bundle:validate <bundle.json>           # 1. check every dest; needs no API key, sends nothing
+
 export WANDRARA_API_URL=https://wandrara.vercel.app
 export WANDRARA_API_KEY=wdr_...
 
-pnpm import:bundle <bundle.json> --dry-run   # check the shape and photos only; nothing is sent
-pnpm import:bundle <bundle.json>             # upload photos and register each dest as a draft
+pnpm import:bundle <bundle.json>             # 2. upload photos and register each dest as a draft
 pnpm import:bundle <bundle.json> --parallel  # same, but 6 photos / dests at a time (--parallel=N for 1–16)
 ```
+
+Always run `pnpm bundle:validate` first and fix every `NG` line. It checks the shape, the required fields for each core type (see "Required fields (v1)"), repeated refs and whether each photo can be read, and lists all problems per dest in one run:
+
+```
+OK  WR-atami-001 (accommodation)
+NG  WR-atami-002 (accommodation)
+      /core/lat lat / lng が要り、箱根・伊豆の範囲…に入ること
+      /details/prices 料金（amount > 0・currency・guests）が 1 つ以上要る
+2 件中 1 件 OK
+```
+
+Exit code 0 means every dest is OK, 1 means at least one `NG`, 2 means a usage error or a file that is not JSON. Add `--json` for a machine-readable result (`{ ok, bundle, dests: [{ index, label, core_type, errors }] }`). `import:bundle` applies the same checks and refuses the whole bundle if any dest fails.
 
 Use `--parallel` for bundles with many photos. With it, the result lines come out in the order each dest finishes, not in bundle order.
 

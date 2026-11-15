@@ -12,12 +12,7 @@ import { limiter } from "../src/lib/limit.ts";
 import { parseArgs } from "./import-bundle/args.ts";
 import { collectPhoto, type BundlePhoto, type Collected } from "./import-bundle/collect.ts";
 import { createClient } from "./import-bundle/client.ts";
-
-async function download(url: string): Promise<Uint8Array> {
-  const res = await fetch(url, { headers: { "user-agent": "wandrara-import" }, signal: AbortSignal.timeout(30_000) });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return new Uint8Array(await res.arrayBuffer());
-}
+import { download } from "./import-bundle/download.ts";
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
