@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BfcacheGuard } from "@/components/BfcacheGuard";
 import { DebugOverlay } from "@/components/DebugOverlay";
+import { SavesProvider } from "@/components/saves-context";
 import { notFound } from "next/navigation";
 import { isLocale, LOCALES } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
@@ -38,8 +39,10 @@ export default async function RootLayout({ children, sheet, params }: LayoutProp
     >
       <body className="min-h-full flex flex-col">
         <LocaleProvider locale={lang}>
-          {children}
-          {sheet}
+          <SavesProvider>
+            {children}
+            {sheet}
+          </SavesProvider>
           <BfcacheGuard />
           <DebugOverlay />
         </LocaleProvider>
