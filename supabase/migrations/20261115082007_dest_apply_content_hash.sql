@@ -87,8 +87,11 @@ begin
   values (v_dest_id, 'draft', null, null, now())
   on conflict (dest_id) do update set status = 'draft', published_at = null, approved_by = null, updated_at = now();
 
-  insert into public.dest_imports (dest_id, ref, collector_key_id, payload, content_hash)
-  values (v_dest_id, p->'import'->>'ref', (p->'import'->>'collector_key_id')::uuid, p->'import'->'payload', p->'import'->>'content_hash');
+  -- imported_at は clock_timestamp()（今の時刻）。default の now() はトランザクションの開始時刻なので、
+  -- 重なった投入 A（先に開始）・B（後に開始）が B → A の順に書くと、表の中身は A なのに最新の行が B になる。
+  -- ここは destinations の行ロック（上の upsert）を取った後なので、書いた順と imported_at の順が一致する
+  insert into public.dest_imports (dest_id, ref, collector_key_id, payload, content_hash, imported_at)
+  values (v_dest_id, p->'import'->>'ref', (p->'import'->>'collector_key_id')::uuid, p->'import'->'payload', p->'import'->>'content_hash', clock_timestamp());
 
   return jsonb_build_object('dest_id', v_dest_id, 'slug', v_slug);
 end;
