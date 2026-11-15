@@ -1,0 +1,130 @@
+// dest の詳細を読む。公開中のものだけ RLS で見える。誰にでも同じ内容なので 'use cache'。
+import { createClient } from "@supabase/supabase-js";
+import { getTableColumns, getTableName } from "drizzle-orm";
+import type { PgTable } from "drizzle-orm/pg-core";
+import { cacheLife } from "next/cache";
+import { getCatalog, photoUrl } from "./data";
+import { areaLabel, resolveLocalizedText } from "./feed";
+import { coreByType } from "./ingest/cores";
+import type { CoreDef } from "../db/schema/_shared";
+import type { FactView, Locale, Photo } from "./types";
+
+export type DestDetailView = {
+  id: string;
+  title: string;
+  areaLabel: string;
+  kindLabel: string;
+  summary: string | null;
+  isDemo: boolean;
+  photos: Photo[];
+  facts: FactView[];
+};
+
+type Row = Record<string, unknown>;
+
+/** 画面に出す値の文字列。null は null のまま返す（呼び出し側で捨てる） */
+export function formatValue(v: unknown, locale: Locale, kindLabels: Record<string, string> = {}): string | null {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "boolean") return v ? "あり" : "なし";
+  if (typeof v === "number") return String(v);
+  if (typeof v === "string") {
+    if (kindLabels[v]) return kindLabels[v];
+    return /^\d{2}:\d{2}:\d{2}$/.test(v) ? v.slice(0, 5) : v;
+  }
+  if (Array.isArray(v)) return v.length ? v.map((x) => formatValue(x, locale)).filter(Boolean).join("、") : null;
+  if (typeof v === "object") return resolveLocalizedText(v as Record<string, string>, locale).text || null;
+  return String(v);
+}
+
+export type ColumnMap = { prop: string; name: string; label: string }[];
+
+/** columns（プロパティ名 → ラベル）を、表の実際の列名（snake_case）に引き当てる */
+export function columnMap(table: PgTable, columns: Record<string, string>): ColumnMap {
+  const cols = getTableColumns(table);
+  return Object.entries(columns).flatMap(([prop, label]) => (cols[prop] ? [{ prop, name: cols[prop].name, label }] : []));
+}
+
+/** 1 行を「ラベル：値」の並びにする（null の列は出さない） */
+export function rowPairs(map: ColumnMap, row: Row, locale: Locale, kindLabels: Record<string, string> = {}): { label: string; value: string }[] {
+  return map.flatMap((c) => {
+    const value = formatValue(row[c.name], locale, c.prop === "kind" ? kindLabels : {});
+    return value === null ? [] : [{ label: c.label, value }];
+  });
+}
+
+const fact = (key: string, label: string, value: string, detail: string | null): FactView => ({
+  key, label, value, status: "unverified", sourceName: null, sourceUrl: null, checkedAt: null, detail,
+});
+
+/** コアの列は 1 列 1 行。詳細の表は 1 件 1 行（先頭の値が見出し、全部は開くと出る） */
+export function buildFacts(core: CoreDef, coreRow: Row | null, details: { key: string; rows: Row[] }[], locale: Locale): FactView[] {
+  const facts: FactView[] = [];
+  if (coreRow) {
+    for (const p of rowPairs(columnMap(core.table, core.columns), coreRow, locale, core.kindLabels)) {
+      facts.push(fact(`core:${p.label}`, p.label, p.value, null));
+    }
+  }
+  for (const def of core.details) {
+    const rows = details.find((d) => d.key === def.key)?.rows ?? [];
+    const map = columnMap(def.table, def.columns);
+    rows.forEach((row, i) => {
+      const pairs = rowPairs(map, row, locale);
+      if (pairs.length === 0) return;
+      const label = rows.length > 1 ? `${def.label} ${i + 1}` : def.label;
+      const detail = pairs.length > 1 ? pairs.map((p) => `${p.label}：${p.value}`).join(" ／ ") : null;
+      facts.push(fact(`${def.key}:${String(row.id ?? i)}`, label, pairs[0].value, detail));
+    });
+  }
+  return facts;
+}
+
+function supabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) throw new Error("NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY が未設定です");
+  return { url, db: createClient(url, key, { auth: { persistSession: false } }) };
+}
+
+const names = (table: PgTable, columns: Record<string, string>) => columnMap(table, columns).map((c) => c.name);
+
+export async function getDestDetail(slug: string, locale: Locale): Promise<DestDetailView | null> {
+  "use cache";
+  cacheLife("minutes");
+  const { url, db } = supabase();
+  const { data: dest, error } = await db.from("destinations").select("dest_id, core_type, is_demo").eq("slug", slug).maybeSingle();
+  if (error) throw new Error(`Supabase の読み込みに失敗しました: ${error.message}`);
+  if (!dest) return null;
+  const core = coreByType(dest.core_type);
+  if (!core) return null;
+  const id: string = dest.dest_id;
+
+  const [coreRes, textsRes, photosRes, catalog, ...detailRes] = await Promise.all([
+    db.from(getTableName(core.table)).select(["region_id", ...names(core.table, core.columns)].join(", ")).eq("dest_id", id).maybeSingle(),
+    db.from(getTableName(core.texts)).select("lang, name, summary").eq("dest_id", id),
+    db.from("dest_photos").select("storage_key, license, credit").eq("dest_id", id).order("sort"),
+    getCatalog(),
+    ...core.details.map((d) =>
+      db.from(getTableName(d.table)).select(["id", ...names(d.table, d.columns)].join(", ")).eq("dest_id", id).order("sort"),
+    ),
+  ]);
+  for (const r of [coreRes, textsRes, photosRes, ...detailRes]) {
+    if (r.error) throw new Error(`Supabase の読み込みに失敗しました: ${r.error.message}`);
+  }
+
+  const texts = (textsRes.data ?? []) as unknown as { lang: string; name: string; summary: string | null }[];
+  const pick = (f: "name" | "summary") => Object.fromEntries(texts.filter((x) => x[f]).map((x) => [x.lang, x[f] as string]));
+  const coreRow = (coreRes.data ?? null) as unknown as Row | null;
+  const details = core.details.map((d, i) => ({ key: d.key, rows: (detailRes[i].data ?? []) as unknown as Row[] }));
+  const photoRows = (photosRes.data ?? []) as unknown as { storage_key: string; license: string | null; credit: string | null }[];
+
+  return {
+    id,
+    title: resolveLocalizedText(pick("name"), locale).text,
+    areaLabel: areaLabel((coreRow?.region_id as string | null) ?? null, catalog.regions, locale),
+    kindLabel: core.label,
+    summary: resolveLocalizedText(pick("summary"), locale).text || null,
+    isDemo: dest.is_demo,
+    photos: photoRows.map((p): Photo => ({ url: photoUrl(url, p.storage_key), license: p.license, credit: p.credit, isDemo: false, placeholderSky: null, placeholderLand: null })),
+    facts: buildFacts(core, coreRow, details, locale),
+  };
+}
