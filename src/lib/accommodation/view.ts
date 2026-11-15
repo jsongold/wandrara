@@ -30,8 +30,7 @@ import {
   type Term,
 } from "../vocab/accommodation.ts";
 import type { LocalizedText, Money } from "./details.ts";
-import { priceHint } from "./price-hint.ts";
-import type { PriceItem } from "./prices.ts";
+import { priceHint, type PriceLine, type PriceWho } from "./price-hint.ts";
 import { accommodationDetailsSchema, type AccommodationDetails } from "./schema.ts";
 
 // ---- 出力の形（値の無い欄は null）----
@@ -45,14 +44,16 @@ export type PriceTableRow = {
   min: number;
   max: number;
   mealsLabels: string[]; // 素泊まり・2 食つき
+  unitLabel?: string; // 表の単位と違う行だけ（「1 名 1 泊・税込（円）」）。min・max はこの単位
+  note?: string; // 行を開いたときの文（「大人・入湯税込み」）
 };
 
 export type PriceTable = {
-  unitLabel: string; // 「1 棟 1 泊・税込（円）」
-  perLabel: string; // 「1 棟 1 泊」
-  currency: string; // JPY など
+  unitLabel: string | null; // 「1 棟 1 泊・税込（円）」。rows が空なら null
+  perLabel: string | null; // 「1 棟 1 泊」。rows が空なら null
+  currency: string | null; // JPY など。rows が空なら null
   taxIncluded: boolean | null; // 混ざっているか分からないときは null
-  rows: PriceTableRow[];
+  rows: PriceTableRow[]; // 大人の宿泊料が無ければ空（fees・children だけ出す）
   fees: LabeledText[]; // 別にかかる料金（諸経費・入湯税）
   children: LabeledText[]; // 子どもの料金
   officialUrl: string | null; // 「料金の詳細は公式サイトへ」
@@ -196,11 +197,12 @@ export function toHHMM(v: string | null): string | null {
 
 const num = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 
-/** 「550 円」「12.5 USD」。税込なら「（税込）」を足す */
+/** 「550 円」「12.5 USD」。税込なら「（税込）」、税別なら「（税別）」を足す */
 export function formatMoney(m: { amount: number; amountMax?: number; currency: string; taxIncluded?: boolean }): string {
   const amount = m.amountMax !== undefined && m.amountMax !== m.amount ? `${num(m.amount)}〜${num(m.amountMax)}` : num(m.amount);
   const unit = m.currency === "JPY" ? "円" : m.currency;
-  return `${amount} ${unit}${m.taxIncluded ? "（税込）" : ""}`;
+  const tax = m.taxIncluded === true ? "（税込）" : m.taxIncluded === false ? "（税別）" : "";
+  return `${amount} ${unit}${tax}`;
 }
 
 const money = (m: Money | undefined) => (m ? formatMoney({ amount: m.amount, currency: m.currency, taxIncluded: m.tax_included }) : null);
@@ -375,37 +377,63 @@ export function toAccommodationView(input: AccommodationViewInput): Accommodatio
 function priceTable(d: AccommodationDetails, roomLabel: (key: string | null) => string, officialUrl: string | null): PriceTable | null {
   const hint = priceHint({ rooms: d.rooms, prices: d.prices });
   if (!hint) return null;
-  const perLabel = labelOf(PRICE_PER_LIST, hint.per);
-  const unit = hint.currency === "JPY" ? "円" : hint.currency;
-  const tax = hint.taxIncluded === true ? "・税込" : hint.taxIncluded === false ? "・税別" : "";
   return {
-    unitLabel: `${perLabel}${tax}（${unit}）`,
-    perLabel,
+    unitLabel: hint.per && hint.currency ? unitText(hint.per, hint.currency, hint.taxIncluded) : null,
+    perLabel: hint.per ? labelOf(PRICE_PER_LIST, hint.per) : null,
     currency: hint.currency,
     taxIncluded: hint.taxIncluded,
-    rows: hint.rows.map((r) => ({
-      roomLabel: roomLabel(r.room),
-      guests: guestsText(r.guestsMin, r.guestsMax),
-      min: r.min,
-      max: r.max,
-      mealsLabels: r.meals.map((m) => labelOf(PRICE_MEALS_LIST, m)),
-    })),
-    fees: hint.fees.map((it) => ({ label: labelOf(PRICE_KIND_LIST, it.kind), text: priceText(it) })),
-    children: hint.children.map((it) => ({ label: labelOf(PRICE_AUDIENCE_LIST, "child"), text: priceText(it) })),
+    rows: hint.rows.map((r) => {
+      const row: PriceTableRow = {
+        roomLabel: roomLabel(r.room),
+        guests: guestsText(r.guestsMin, r.guestsMax),
+        min: r.min,
+        max: r.max,
+        mealsLabels: r.meals.map((m) => labelOf(PRICE_MEALS_LIST, m)),
+      };
+      if (r.per !== hint.per || r.currency !== hint.currency) row.unitLabel = unitText(r.per, r.currency, r.taxIncluded);
+      const note = [
+        ...r.who.map(whoText),
+        ...r.includes.map((k) => `${labelOf(PRICE_KIND_LIST, k)}込み`),
+        ...r.includesSome.map((k) => `${labelOf(PRICE_KIND_LIST, k)}込み（一部）`),
+      ].join("・");
+      if (note) row.note = note;
+      return row;
+    }),
+    fees: hint.fees.map((it) => ({ label: labelOf(PRICE_KIND_LIST, it.kind), text: priceText(it, roomLabel) })),
+    children: hint.children.map((it) => ({ label: labelOf(PRICE_AUDIENCE_LIST, "child"), text: priceText(it, roomLabel) })),
     officialUrl,
   };
 }
 
-/** 料金 1 件の文。「大人 1 名 1 泊 300 円」「6〜12 歳 70%」 */
-function priceText(it: PriceItem): string {
-  const who = it.audience && it.audience !== "all" && it.kind !== "room" ? labelOf(PRICE_AUDIENCE_LIST, it.audience) : null;
-  const age = ageText(it.age_min, it.age_max);
+/** 「1 棟 1 泊・税込（円）」 */
+function unitText(per: string, currency: string, taxIncluded: boolean | null): string {
+  const unit = currency === "JPY" ? "円" : currency;
+  const tax = taxIncluded === true ? "・税込" : taxIncluded === false ? "・税別" : "";
+  return `${labelOf(PRICE_PER_LIST, per)}${tax}（${unit}）`;
+}
+
+/** 「大人」「6〜12 歳」「大人 13 歳以上」 */
+function whoText(w: PriceWho): string {
+  const who = w.audience !== undefined && w.audience !== "all" ? labelOf(PRICE_AUDIENCE_LIST, w.audience) : null;
+  return [who, ageText(w.age_min, w.age_max)].filter(Boolean).join(" ");
+}
+
+/** 料金 1 件の文。「ツイン 3〜4 名のとき 1 回の滞在 1,000〜2,000 円」「6〜12 歳 50〜70%」「大人 1 名 1 泊 150 円（税込）・入湯税込み」 */
+function priceText(it: PriceLine, roomLabel: (key: string | null) => string): string {
+  const room = it.room !== undefined ? roomLabel(it.room) : null;
+  const guests = guestsText(it.guests_min, it.guests_max);
+  // 子どもの料金は見出しが「子ども」なので、年齢だけ出す
+  const who = it.kind === "room" ? ageText(it.age_min, it.age_max) : whoText(it);
   const meals = it.meals ? labelOf(PRICE_MEALS_LIST, it.meals) : null;
   const value =
     it.amount !== undefined
       ? `${labelOf(PRICE_PER_LIST, it.per)} ${formatMoney({ amount: it.amount, amountMax: it.amount_max, currency: it.currency, taxIncluded: it.tax_included })}`
-      : `${it.rate_percent}%`;
-  return [who, age, meals, value].filter(Boolean).join(" ");
+      : it.rate_percent_max !== undefined
+        ? `${it.rate_percent}〜${it.rate_percent_max}%`
+        : `${it.rate_percent}%`;
+  const text = [room, guests ? `${guests} 名のとき` : null, who || null, meals, value].filter(Boolean).join(" ");
+  const includes = (it.includes ?? []).map((k) => `${labelOf(PRICE_KIND_LIST, k)}込み`);
+  return [text, ...includes].join("・");
 }
 
 /** 設備を中カテゴリにまとめる。中カテゴリも中身も語彙の順 */

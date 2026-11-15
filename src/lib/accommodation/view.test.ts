@@ -209,8 +209,85 @@ describe("toAccommodationView", () => {
   });
 });
 
+describe("料金（参考）の表（Codex の指摘）", () => {
+  const rooms = [
+    { key: "double", name: { ja: "ダブル" } },
+    { key: "twin", name: { ja: "ツイン" } },
+  ];
+  const room = (key: string, amount: number, extra: Record<string, unknown> = {}) => ({
+    kind: "room",
+    per: "room_night",
+    room: key,
+    amount,
+    currency: "JPY",
+    tax_included: true,
+    ...extra,
+  });
+  const seasons = [
+    { key: "s1", is_default: true, ...range },
+    { key: "s2", priority: 1, ...range },
+  ];
+  const table = (items: Record<string, unknown>[]) => toAccommodationView(input({ details: { rooms, prices: { seasons, items } } }))!.priceTable!;
+
+  it("[P1] 区分ごとの清掃料・子どもの料金は幅 1 行。区分ごとの行は出さない", () => {
+    const t = table([
+      room("double", 15000),
+      { kind: "cleaning", per: "stay", season: "s1", amount: 1000, currency: "JPY" },
+      { kind: "cleaning", per: "stay", season: "s2", amount: 2000, currency: "JPY" },
+      { kind: "room", per: "person_night", season: "s1", audience: "child", age_min: 6, age_max: 12, amount: 3000, currency: "JPY" },
+      { kind: "room", per: "person_night", season: "s2", audience: "child", age_min: 6, age_max: 12, amount: 5000, currency: "JPY" },
+    ]);
+    expect(t.fees).toEqual([{ label: "清掃料", text: "1 回の滞在 1,000〜2,000 円" }]);
+    expect(t.children).toEqual([{ label: "子ども", text: "6〜12 歳 1 名 1 泊 3,000〜5,000 円" }]);
+  });
+
+  it("[P2] 料金の部屋・人数・大人・込みの種類を文に残す", () => {
+    const t = table([
+      room("double", 15000, { audience: "adult", age_min: 13, includes: ["bath_tax"] }),
+      { kind: "cleaning", per: "stay", room: "twin", guests_min: 3, guests_max: 4, amount: 3000, currency: "JPY" },
+      { kind: "service_fee", per: "person_night", audience: "adult", amount: 550, currency: "JPY", tax_included: true, includes: ["lodging_tax"] },
+    ]);
+    expect(t.fees).toEqual([
+      { label: "清掃料", text: "ツイン 3〜4 名のとき 1 回の滞在 3,000 円" },
+      { label: "諸経費", text: "大人 1 名 1 泊 550 円（税込）・宿泊税込み" },
+    ]);
+    expect(t.rows[0].note).toBe("大人 13 歳以上・入湯税込み");
+  });
+
+  it("[P2] 単位の違う宿泊料は、その単位を持つ別の行にする", () => {
+    const t = table([room("double", 15000), room("twin", 9000, { per: "person_night" })]);
+    expect(t.unitLabel).toBe("1 室 1 泊・税込（円）");
+    expect(t.rows).toEqual([
+      { roomLabel: "ダブル", guests: null, min: 15000, max: 15000, mealsLabels: [] },
+      { roomLabel: "ツイン", guests: null, min: 9000, max: 9000, mealsLabels: [], unitLabel: "1 名 1 泊・税込（円）" },
+    ]);
+  });
+
+  it("[P2] 大人の宿泊料が無くても、食事の料金だけの表を返す", () => {
+    expect(table([{ kind: "meal", per: "person_night", meals: "breakfast", amount: 2500, currency: "JPY" }])).toEqual({
+      unitLabel: null,
+      perLabel: null,
+      currency: null,
+      taxIncluded: null,
+      rows: [],
+      fees: [{ label: "食事", text: "朝食つき 1 名 1 泊 2,500 円" }],
+      children: [],
+      officialUrl: "https://example.com/official",
+    });
+  });
+
+  it("[P2] 税別の金額には（税別）を出す（食事・料金）", () => {
+    const items = [room("double", 15000), { kind: "bath_tax", per: "person_night", amount: 150, currency: "JPY", tax_included: false }];
+    const meals = [{ meal: "dinner", offered: true, fee: { amount: 5000, currency: "JPY", tax_included: false } }];
+    const w = toAccommodationView(input({ details: { rooms, prices: { items }, meals } }))!;
+    expect(w.priceTable!.fees).toEqual([{ label: "入湯税", text: "1 名 1 泊 150 円（税別）" }]);
+    expect(w.meals[0].fee).toBe("5,000 円（税別）");
+  });
+});
+
 describe("formatMoney / toHHMM", () => {
-  it("円は「円」、ほかは通貨コード。税込なら（税込）", () => {
+  it("円は「円」、ほかは通貨コード。税込なら（税込）、税別なら（税別）", () => {
+    expect(formatMoney({ amount: 550, currency: "JPY", taxIncluded: false })).toBe("550 円（税別）");
     expect(formatMoney({ amount: 550, currency: "JPY", taxIncluded: true })).toBe("550 円（税込）");
     expect(formatMoney({ amount: 12.5, currency: "USD" })).toBe("12.5 USD");
     expect(formatMoney({ amount: 1000, amountMax: 2000, currency: "JPY" })).toBe("1,000〜2,000 円");
