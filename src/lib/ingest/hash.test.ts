@@ -21,6 +21,13 @@ describe("contentHash", () => {
     expect(contentHash(b)).toBe(contentHash(base()));
   });
 
+  it("details.sources は details 列に入るので見る（いちばん上の sources とは別）", () => {
+    const src = (retrieved_at: string) => ({ details: { sources: [{ name: "公式", url: "https://example.com/", type: "official", retrieved_at }] } });
+    const a = { ...base(), ...src("2026-11-15") };
+    expect(contentHash({ ...base(), ...src("2026-11-16") })).not.toBe(contentHash(a));
+    expect(contentHash({ ...a, sources: [{ url: "https://example.com/" }] })).toBe(contentHash(a));
+  });
+
   it("中身が変わると変わる", () => {
     const b = base();
     b.texts = [{ lang: "ja", name: "ヴィラ2" }];
