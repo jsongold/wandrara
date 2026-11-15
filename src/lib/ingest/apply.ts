@@ -1,30 +1,14 @@
-// 1 件の dest を登録する：検証 → 既存の引き当て → 中身が前回と同じなら飛ばす → 行に平たくする → dest_apply
+// 1 件の dest を登録する：検証 → 既存の引き当て → 行に平たくする → dest_apply（中身が前回と同じなら dest_apply が行ロックの中で飛ばす）
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CoreDef } from "../../db/schema/_shared.ts";
 import { parseDestInput, type DestInput } from "./bundle.ts";
-import { contentHash } from "./hash.ts";
 import { planDestWrite, type DestRefs, type DestWritePlan } from "./plan.ts";
 
 export type RegisterResult =
   | { ok: true; dest_id: string; slug: string; status: "draft"; unchanged: false }
   | { ok: true; dest_id: string; slug: string; status: string; unchanged: true }
   | { ok: false; status: 400 | 409; errors: string[] };
-
-/** 最後に書き込んだ投入のハッシュと、今の公開状態。dest_apply が同じトランザクションで dest_imports に残すので、最新の行が表の中身と一致する */
-async function loadLast(db: SupabaseClient, destId: string): Promise<{ hash: string | null; status: string | null }> {
-  const { data: imp, error: e1 } = await db
-    .from("dest_imports")
-    .select("content_hash")
-    .eq("dest_id", destId)
-    .order("imported_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  fail(e1, "dest_imports");
-  const { data: pub, error: e2 } = await db.from("publications").select("status").eq("dest_id", destId).maybeSingle();
-  fail(e2, "publications");
-  return { hash: (imp?.content_hash as string | null) ?? null, status: (pub?.status as string | null) ?? null };
-}
 
 function fail(error: { message: string } | null, what: string) {
   if (error) throw new Error(`${what}: ${error.message}`);
@@ -70,10 +54,13 @@ export async function loadRefs(db: SupabaseClient, input: DestInput): Promise<De
   return { destByRef, slugs, regions, categories };
 }
 
-export async function applyDestWrite(db: SupabaseClient, plan: DestWritePlan): Promise<{ dest_id: string; slug: string }> {
+export type ApplyResult = { dest_id: string; slug: string; unchanged: boolean; status: string };
+
+export async function applyDestWrite(db: SupabaseClient, plan: DestWritePlan): Promise<ApplyResult> {
   const { data, error } = await db.rpc("dest_apply", { p: plan });
   if (error) throw new Error(`dest_apply: ${error.message}`);
-  return data as { dest_id: string; slug: string };
+  const r = data as Partial<ApplyResult> & { dest_id: string; slug: string };
+  return { dest_id: r.dest_id, slug: r.slug, unchanged: r.unchanged === true, status: r.status ?? "draft" };
 }
 
 export async function registerDest(
@@ -94,13 +81,10 @@ export async function registerDest(
     if (existing.createdBy !== principal.userId) {
       return { ok: false, status: 409, errors: [`ref ${ref} は別の登録者のもの。運営に引き継ぎを依頼する`] };
     }
-    const last = await loadLast(db, existing.destId);
-    if (last.hash && last.hash === contentHash(parsed.value)) {
-      // 中身が同じ：何も書かない（公開中ならそのまま）
-      return { ok: true, dest_id: existing.destId, slug: existing.slug, status: last.status ?? "draft", unchanged: true };
-    }
   }
   const plan = planDestWrite(core, parsed.value, refs, { userId: principal.userId, keyId: principal.keyId, uuid: randomUUID });
   const res = await applyDestWrite(db, plan);
+  // unchanged: 中身が前回と同じで何も書かなかった（公開中ならそのまま）
+  if (res.unchanged) return { ok: true, dest_id: res.dest_id, slug: res.slug, status: res.status, unchanged: true };
   return { ok: true, dest_id: res.dest_id, slug: res.slug, status: "draft", unchanged: false };
 }
