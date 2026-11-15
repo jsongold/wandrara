@@ -161,13 +161,18 @@ export type Bundle = {
   dests: (DestInput & { core_type: string })[];
 };
 
+/** bundle の形だけを確かめる（中身の決まりは見ない）。bundle:validate が写真を読めるかの判断に使う */
+export function parseBundleShape(json: unknown): ParseResult<Bundle> {
+  const r = bundleSchema().safeParse(json);
+  return r.success ? { ok: true, value: r.data as unknown as Bundle } : { ok: false, errors: formatIssues(r.error) };
+}
+
 /** bundle ファイル用（photos は file / url）。1 件でも中身の決まりに合わなければ bundle 全体を通さない */
 export function parseBundle(json: unknown): ParseResult<Bundle> {
-  const r = bundleSchema().safeParse(json);
-  if (!r.success) return { ok: false, errors: formatIssues(r.error) };
-  const value = r.data as unknown as Bundle;
-  const errors = value.dests.flatMap((d, i) => checkQuality(d.core_type, d, `/dests/${i}`));
-  return errors.length ? { ok: false, errors } : { ok: true, value };
+  const r = parseBundleShape(json);
+  if (!r.ok) return r;
+  const errors = r.value.dests.flatMap((d, i) => checkQuality(d.core_type, d, `/dests/${i}`));
+  return errors.length ? { ok: false, errors } : r;
 }
 
 /** API 用（photos は storage_key 必須）。中身の決まりも同じものを確かめる（スクリプトを通さずに API を呼んでも同じ） */
