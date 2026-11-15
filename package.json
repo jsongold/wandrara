@@ -14,6 +14,7 @@
     "collector:key": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/collector-key.ts",
     "dest:publish": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/dest-publish.ts",
     "dest:status": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/dest-status.ts",
+    "dest:quality-check": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/dest-quality-check.ts",
     "bundle:schema": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bundle-schema.ts",
     "test:e2e": "playwright test"
   },

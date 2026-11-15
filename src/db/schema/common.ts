@@ -4,6 +4,7 @@ import {
   boolean,
   check,
   index,
+  integer,
   jsonb,
   pgPolicy,
   pgTable,
@@ -112,4 +113,25 @@ export const destImports = pgTable(
     importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("dest_imports_dest_id_idx").on(t.destId)],
+).enableRLS();
+
+// 中身の決まり（src/lib/ingest/quality.ts）を今の dest に当てた結果。dest ごとに 1 行。pnpm dest:quality-check が全部入れ直す。
+// ポリシー無し（service_role だけ）
+export const destQualityCheck = pgTable(
+  "dest_quality_check",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    destId: uuid("dest_id")
+      .notNull()
+      .unique()
+      .references(() => destinations.destId, { onDelete: "cascade" }),
+    /** 満たした決まりの割合（0〜100。100 = 全部満たす） */
+    quality: integer("quality").notNull(),
+    /** { version, issues: [{ path, message }] }。issues が空なら全部満たす */
+    reason: jsonb("reason").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    /** 結果を入れ直したとき now にする */
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check("dest_quality_check_quality_check", sql`${t.quality} between 0 and 100`)],
 ).enableRLS();

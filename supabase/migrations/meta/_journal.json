@@ -50,6 +50,27 @@
       "when": 1794730807341,
       "tag": "20261115082007_dest_apply_content_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794737103852,
+      "tag": "20261115100503_dest_quality_check",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794737111477,
+      "tag": "20261115100511_dest_quality_check_grant",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794737796947,
+      "tag": "20261115101636_dest_quality_check_revoke",
+      "breakpoints": true
     }
   ]
 }
