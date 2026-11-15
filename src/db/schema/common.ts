@@ -75,6 +75,8 @@ export const destPhotos = pgTable(
     subject: text("subject"),
     /** 部屋やコースの id（その dest に属するもの） */
     subjectRef: uuid("subject_ref"),
+    /** 部屋などを dest の中の key で指す（details を持つコア。例：宿の rooms[].key） */
+    subjectKey: text("subject_key"),
     alt: localized("alt"),
   },
   (t) => [

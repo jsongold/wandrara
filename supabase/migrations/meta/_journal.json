@@ -50,6 +50,13 @@
       "when": 1794730807341,
       "tag": "20261115082007_dest_apply_content_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794750769828,
+      "tag": "20261115135249_accommodation_details",
+      "breakpoints": true
     }
   ]
 }

@@ -87,7 +87,8 @@ const regionSchema = z.strictObject({
 });
 
 function destShape(core: CoreDef, photos: z.ZodType): Record<string, z.ZodType> {
-  const coreShape = columnShape(core.table, (c) => c.name === "dest_id" || c.name === "operator_id");
+  // details 列はコアの列としては受けない（details を持つコアは、いちばん上の details で受ける）
+  const coreShape = columnShape(core.table, (c) => c.name === "dest_id" || c.name === "operator_id" || c.name === "details");
   const kinds = Object.keys(core.kindLabels);
   if (coreShape.kind && kinds.length) coreShape.kind = z.enum(kinds as [string, ...string[]]).nullish();
   const textsShape = columnShape(core.texts, (c) => c.name === "dest_id");
