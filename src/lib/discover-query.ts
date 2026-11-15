@@ -1,8 +1,8 @@
+import { MODE_IDS } from "./modes";
 import type { DiscoverQuery, Mode, SortKey } from "./types";
 
-export const DEFAULT_QUERY: DiscoverQuery = { mode: "place", area: "all", cat: "all", sort: "editorial", q: "" };
+export const DEFAULT_QUERY: DiscoverQuery = { mode: "stay", area: "all", cat: "all", sort: "editorial", q: "" };
 
-const MODES: Mode[] = ["place", "experience"];
 const SORTS: SortKey[] = ["editorial", "fresh"];
 const ID = /^[a-z0-9-]{1,40}$/;
 
@@ -20,7 +20,7 @@ export function parseDiscoverQuery(params: RawParams): DiscoverQuery {
   const cat = first(params.cat);
   const q = first(params.q);
   return {
-    mode: MODES.includes(mode as Mode) ? (mode as Mode) : DEFAULT_QUERY.mode,
+    mode: MODE_IDS.includes(mode as Mode) ? (mode as Mode) : DEFAULT_QUERY.mode,
     sort: SORTS.includes(sort as SortKey) ? (sort as SortKey) : DEFAULT_QUERY.sort,
     area: area && ID.test(area) ? area : "all",
     cat: cat && ID.test(cat) ? cat : "all",

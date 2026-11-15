@@ -1,97 +1,87 @@
 // Supabase からコンテンツを読む。誰にでも同じ内容なので 'use cache' でまとめて持つ。
 import { createClient } from "@supabase/supabase-js";
 import { cacheLife } from "next/cache";
-import { areaLabel, resolveLocalizedText, type Catalog } from "./feed";
-import type { AreaGroupView, CategoryView, Fact, Locale, Mode, Photo, Spot, SpotDetailView } from "./types";
+import { resolveLocalizedText, type Catalog } from "./feed";
+import { MODES } from "./modes";
+import type { AreaGroupView, CategoryView, DestCard, Locale, LocalizedText, Mode, Photo } from "./types";
 
-function supabase() {
+function env() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) throw new Error("NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY が未設定です");
+  return { url, key };
+}
+
+function supabase() {
+  const { url, key } = env();
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
-type PhotoRow = { url: string | null; license: string | null; credit: string | null; is_demo: boolean; placeholder_sky: string | null; placeholder_land: string | null; sort: number };
+type PhotoRow = { storage_key: string; license: string | null; credit: string | null };
 
-const toPhoto = (p: PhotoRow): Photo => ({
-  url: p.url, license: p.license, credit: p.credit, isDemo: p.is_demo, placeholderSky: p.placeholder_sky, placeholderLand: p.placeholder_land,
-});
+type DestCardRow = {
+  dest_id: string;
+  core_type: string;
+  slug: string;
+  is_demo: boolean;
+  created_at: string;
+  published_at: string | null;
+  region_id: string | null;
+  name: LocalizedText | null;
+  summary: LocalizedText | null;
+  category_ids: string[];
+  photos: PhotoRow[];
+};
+
+export function photoUrl(baseUrl: string, storageKey: string): string {
+  return `${baseUrl}/storage/v1/object/public/dest-photos/${storageKey}`;
+}
 
 export async function getCatalog(): Promise<Catalog> {
   "use cache";
   cacheLife("minutes");
+  const { url } = env();
   const db = supabase();
-  const [areas, categories, spots] = await Promise.all([
-    db.from("areas").select("id, parent_id, name, sort").order("sort"),
-    db.from("categories").select("id, mode, parent_id, name, icon, sort").order("sort"),
-    db.from("spots").select("id, kind, area_id, name, summary, editorial_rank, is_demo, created_at, spot_categories(category_id), spot_photos(url, license, credit, is_demo, placeholder_sky, placeholder_land, sort)"),
+  const [regions, categories, dests] = await Promise.all([
+    db.from("regions").select("id, parent_id, name, sort").order("sort"),
+    db.from("categories").select("id, parent_id, name, icon, sort").order("sort"),
+    db.from("dest_cards").select("dest_id, core_type, slug, is_demo, created_at, published_at, region_id, name, summary, category_ids, photos"),
   ]);
-  if (areas.error || categories.error || spots.error) {
-    const err = areas.error ?? categories.error ?? spots.error;
+  if (regions.error || categories.error || dests.error) {
+    const err = regions.error ?? categories.error ?? dests.error;
     throw new Error(`Supabase の読み込みに失敗しました: ${err?.message}`);
   }
+  const toPhoto = (p: PhotoRow): Photo => ({
+    url: photoUrl(url, p.storage_key), license: p.license, credit: p.credit, isDemo: false, placeholderSky: null, placeholderLand: null,
+  });
   return {
-    areas: areas.data.map((a) => ({ id: a.id, parentId: a.parent_id, name: a.name, sort: a.sort })),
-    categories: categories.data.map((c) => ({ id: c.id, mode: c.mode, parentId: c.parent_id, name: c.name, icon: c.icon, sort: c.sort })),
-    spots: spots.data.map((s): Spot => ({
-      id: s.id, kind: s.kind, areaId: s.area_id, name: s.name, summary: s.summary, editorialRank: s.editorial_rank, isDemo: s.is_demo, createdAt: s.created_at,
-      categoryIds: (s.spot_categories as { category_id: string }[]).map((x) => x.category_id),
-      photos: [...(s.spot_photos as PhotoRow[])].sort((a, b) => a.sort - b.sort).map(toPhoto),
+    regions: regions.data.map((r) => ({ id: r.id, parentId: r.parent_id, name: r.name, sort: r.sort ?? 0 })),
+    categories: categories.data.map((c) => ({ id: c.id, parentId: c.parent_id, name: c.name, icon: c.icon, sort: c.sort ?? 0 })),
+    dests: (dests.data as DestCardRow[]).map((d): DestCard => ({
+      id: d.dest_id, coreType: d.core_type, slug: d.slug, regionId: d.region_id, name: d.name ?? {}, summary: d.summary,
+      isDemo: d.is_demo, createdAt: d.created_at, publishedAt: d.published_at, categoryIds: d.category_ids,
+      photos: d.photos.map(toPhoto),
     })),
   };
 }
 
 const t = (x: Parameters<typeof resolveLocalizedText>[0], locale: Locale) => resolveLocalizedText(x, locale).text;
 
+// その mode の dest が使っているカテゴリだけ（親なし）
 export function listCategories(catalog: Catalog, mode: Mode, locale: Locale): CategoryView[] {
-  return catalog.categories.filter((c) => c.mode === mode && !c.parentId).map((c) => ({ id: c.id, label: t(c.name, locale), icon: c.icon }));
+  const coreTypes: readonly string[] = MODES[mode];
+  const used = new Set(catalog.dests.filter((d) => coreTypes.includes(d.coreType)).flatMap((d) => d.categoryIds));
+  return catalog.categories
+    .filter((c) => used.has(c.id) && !c.parentId)
+    .map((c) => ({ id: c.id, label: t(c.name, locale), icon: c.icon }));
 }
 
 export function listAreas(catalog: Catalog, locale: Locale): AreaGroupView[] {
-  return catalog.areas
-    .filter((a) => !a.parentId)
+  return catalog.regions
+    .filter((r) => !r.parentId)
     .map((r) => ({
       id: r.id,
       label: t(r.name, locale),
-      subs: catalog.areas.filter((a) => a.parentId === r.id).map((a) => ({ id: a.id, label: t(a.name, locale) })),
+      subs: catalog.regions.filter((x) => x.parentId === r.id).map((x) => ({ id: x.id, label: t(x.name, locale) })),
     }));
-}
-
-const KIND_LABEL: Record<Spot["kind"], string> = { stay: "宿", place: "スポット", experience: "体験" };
-
-export async function getSpotDetail(id: string, locale: Locale): Promise<SpotDetailView | null> {
-  "use cache";
-  cacheLife("minutes");
-  const catalog = await getCatalog();
-  const spot = catalog.spots.find((s) => s.id === id);
-  if (!spot) return null;
-  const { data, error } = await supabase()
-    .from("spot_facts")
-    .select("key, label, value, status, source_name, source_url, checked_at, detail, sort")
-    .eq("spot_id", id)
-    .order("sort");
-  if (error) throw new Error(`Supabase の読み込みに失敗しました: ${error.message}`);
-  const facts: Fact[] = data.map((f) => ({
-    key: f.key, label: f.label, value: f.value, status: f.status, sourceName: f.source_name, sourceUrl: f.source_url, checkedAt: f.checked_at, detail: f.detail, sort: f.sort,
-  }));
-  const cats = catalog.categories.filter((c) => spot.categoryIds.includes(c.id));
-  return {
-    id: spot.id,
-    title: t(spot.name, locale),
-    areaLabel: areaLabel(spot.areaId, catalog.areas, locale),
-    kindLabel: cats.find((c) => c.mode === "place")?.name ? t(cats.find((c) => c.mode === "place")!.name, locale) : KIND_LABEL[spot.kind],
-    summary: spot.summary ? t(spot.summary, locale) : null,
-    isDemo: spot.isDemo,
-    photos: spot.photos,
-    facts: facts.map((f) => ({
-      key: f.key,
-      label: t(f.label, locale),
-      value: f.value ? t(f.value, locale) : null,
-      status: f.status,
-      sourceName: f.sourceName,
-      sourceUrl: f.sourceUrl,
-      checkedAt: f.checkedAt,
-      detail: f.detail ? t(f.detail, locale) : null,
-    })),
-  };
 }
