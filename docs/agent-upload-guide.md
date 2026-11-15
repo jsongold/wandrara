@@ -18,7 +18,10 @@ export WANDRARA_API_KEY=wdr_...
 
 pnpm import:bundle <bundle.json> --dry-run   # check the shape and photos only; nothing is sent
 pnpm import:bundle <bundle.json>             # upload photos and register each dest as a draft
+pnpm import:bundle <bundle.json> --parallel  # same, but 6 photos / dests at a time (--parallel=N for 1–16)
 ```
+
+Use `--parallel` for bundles with many photos. With it, the result lines come out in the order each dest finishes, not in bundle order.
 
 Each dest is sent on its own, so read the result per `ref`:
 
