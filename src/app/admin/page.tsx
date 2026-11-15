@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CopyIdButton } from "../../components/CopyIdButton";
-import { formatJst, isAdmin, listItems } from "../../lib/admin/items";
-import { getCurrentUser } from "../../lib/auth/next";
+import { requireAdmin } from "../../lib/admin/guard";
+import { formatJst, listItems } from "../../lib/admin/items";
 import { adminClient } from "../../lib/supabase/admin";
 
 export default function AdminPage() {
@@ -15,9 +14,7 @@ export default function AdminPage() {
 }
 
 async function Admin() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login?next=/admin");
-  if (!isAdmin(user.id, process.env.ADMIN_USER_IDS)) notFound();
+  await requireAdmin("/admin");
 
   const items = await listItems(adminClient());
   const published = items.filter((i) => i.status === "published").length;
@@ -47,7 +44,11 @@ async function Admin() {
                 <td className="whitespace-nowrap px-3 py-2">{formatJst(i.updatedAt)}</td>
                 <td className="px-3 py-2">{i.keyName}</td>
                 <td className="px-3 py-2">
-                  {i.status === "published" ? <Link href={`/d/${i.slug}`} className="text-[#171717] underline">/d/{i.slug}</Link> : "-"}
+                  {i.status === "published" ? (
+                    <Link href={`/d/${i.slug}`} className="text-[#171717] underline">/d/{i.slug}</Link>
+                  ) : (
+                    <Link href={`/admin/d/${i.slug}`} className="text-[#171717] underline">プレビュー</Link>
+                  )}
                 </td>
                 <td className="px-3 py-2"><CopyIdButton value={i.ref ?? i.slug} /></td>
               </tr>

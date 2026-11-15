@@ -1,5 +1,5 @@
 // dest の詳細を読む。公開中のものだけ RLS で見える。誰にでも同じ内容なので 'use cache'。
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getTableColumns, getTableName } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import { cacheLife } from "next/cache";
@@ -87,10 +87,16 @@ function supabase() {
 
 const names = (table: PgTable, columns: Record<string, string>) => columnMap(table, columns).map((c) => c.name);
 
+/** 公開ページ用。公開キーで読む（RLS で公開中のものだけ見える） */
 export async function getDestDetail(slug: string, locale: Locale): Promise<DestDetailView | null> {
   "use cache";
   cacheLife("minutes");
   const { url, db } = supabase();
+  return loadDestDetail(db, url, slug, locale);
+}
+
+/** 渡した client で読む。管理のプレビューはシークレットキーの client を渡し、下書きも読む（キャッシュしない） */
+export async function loadDestDetail(db: SupabaseClient, url: string, slug: string, locale: Locale): Promise<DestDetailView | null> {
   const { data: dest, error } = await db.from("destinations").select("dest_id, core_type, is_demo").eq("slug", slug).maybeSingle();
   if (error) throw new Error(`Supabase の読み込みに失敗しました: ${error.message}`);
   if (!dest) return null;
