@@ -23,12 +23,26 @@ export function PriceRows({ rows, fees, childFees }: { rows: PriceTableRow[]; fe
     <tbody>
       {rows.map((r, i) => {
         const manyMeals = r.mealsLabels.length > 1;
-        const extra = [...fees, ...childFees, ...(manyMeals ? [{ label: "食事", text: r.mealsLabels.join("・") }] : [])];
+        // 行だけの単位・条件を先に、そのあと別料金・子ども・食事
+        const extra: LabeledText[] = [
+          ...(r.unitLabel ? [{ label: "単位", text: r.unitLabel }] : []),
+          ...(r.note ? [{ label: "条件", text: r.note }] : []),
+          ...fees,
+          ...childFees,
+          ...(manyMeals ? [{ label: "食事", text: r.mealsLabels.join("・") }] : []),
+        ];
         const note = manyMeals ? `${r.mealsLabels[0]}ほか` : (r.mealsLabels[0] ?? "");
         const tappable = extra.length > 0;
         const isOpen = tappable && !!open[i];
         const panelId = `${baseId}-${i}`;
-                return (
+        // 表の単位と違う行は、部屋名の下に単位を小さく出す（min・max はその単位）
+        const head = (
+          <>
+            {r.roomLabel}
+            {r.unitLabel && <span className="block text-[10px] font-normal text-[#8a867c]">{r.unitLabel}</span>}
+          </>
+        );
+        return (
           <Fragment key={i}>
             <tr
               onClick={tappable ? () => setOpen((o) => ({ ...o, [i]: !o[i] })) : undefined}
@@ -43,10 +57,10 @@ export function PriceRows({ rows, fees, childFees }: { rows: PriceTableRow[]; fe
                     aria-controls={panelId}
                     className="cursor-pointer border-0 bg-transparent p-0 text-left font-medium text-inherit"
                   >
-                    {r.roomLabel}
+                    {head}
                   </button>
                 ) : (
-                  r.roomLabel
+                  head
                 )}
               </th>
               <td className={cell(isOpen, "num")}>{r.guests ?? "—"}</td>

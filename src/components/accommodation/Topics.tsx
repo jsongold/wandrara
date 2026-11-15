@@ -14,18 +14,9 @@ import type {
 } from "@/lib/accommodation/view";
 import { AMENITY_LIST, labelOf } from "@/lib/vocab/accommodation";
 import { ExpandRow, SubRow } from "../ExpandRow";
+import { Card } from "./Card";
 
 // 宿の詳細のトピック。どれも出すものが無ければ null を返す（見出しごと出さない）
-
-// 白いカードと小さな見出し（c12 で Card にまとめるまでの手元の写し。Sources でも使う）
-export function TopicCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="rounded-[14px] bg-white px-3.5 pb-1 pt-2.5 shadow-[0_1px_2px_rgba(20,20,19,.04)]">
-      <h2 className="m-0 mb-0.5 text-[10.5px] font-bold tracking-[.08em] text-[#8a867c]">{title}</h2>
-      {children}
-    </section>
-  );
-}
 
 // ---- 小道具 ----
 
@@ -56,7 +47,7 @@ function mealValue(m: MealView): string {
 export function Meals({ meals }: { meals: MealView[] }) {
   if (!meals.length) return null;
   return (
-    <TopicCard title="食事">
+    <Card title="食事">
       {meals.map((m, i) => (
         <ExpandRow key={`${m.label}-${i}`} label={m.label} value={mealValue(m)}>
           {subRows([
@@ -69,7 +60,7 @@ export function Meals({ meals }: { meals: MealView[] }) {
           ])}
         </ExpandRow>
       ))}
-    </TopicCard>
+    </Card>
   );
 }
 
@@ -82,7 +73,7 @@ function bathValue(b: BathView): string {
 export function Baths({ baths }: { baths: BathView[] }) {
   if (!baths.length) return null;
   return (
-    <TopicCard title="風呂">
+    <Card title="風呂">
       {baths.map((b, i) => (
         <ExpandRow key={`${b.label}-${i}`} label={b.label} value={bathValue(b)}>
           {subRows([
@@ -101,7 +92,7 @@ export function Baths({ baths }: { baths: BathView[] }) {
           ])}
         </ExpandRow>
       ))}
-    </TopicCard>
+    </Card>
   );
 }
 
@@ -139,7 +130,7 @@ export function Amenities({ groups, internet }: { groups: AmenityGroupView[]; in
   const netRow = !hasWifiItem && internet && (net.length || internet.wifi !== null);
   if (!groups.length && !netRow) return null;
   return (
-    <TopicCard title="設備">
+    <Card title="設備">
       {groups.map((g) => (
         <ExpandRow key={g.label} label={g.label} value={g.items.map((a) => a.label).join("・")}>
           {g.items.flatMap((a) => {
@@ -153,7 +144,7 @@ export function Amenities({ groups, internet }: { groups: AmenityGroupView[]; in
           {net}
         </ExpandRow>
       ) : null}
-    </TopicCard>
+    </Card>
   );
 }
 
@@ -162,7 +153,7 @@ export function Amenities({ groups, internet }: { groups: AmenityGroupView[]; in
 export function Pets({ pets }: { pets: PetsView | null }) {
   if (!pets) return null;
   return (
-    <TopicCard title="ペット">
+    <Card title="ペット">
       <ExpandRow label="同伴" value={ka(pets.allowed)}>
         {subRows([
           ["大きさ", pets.sizeLabel],
@@ -170,7 +161,7 @@ export function Pets({ pets }: { pets: PetsView | null }) {
           ["メモ", pets.note],
         ])}
       </ExpandRow>
-    </TopicCard>
+    </Card>
   );
 }
 
@@ -190,7 +181,7 @@ export function Conditions({ conditions }: { conditions: ConditionsView | null }
     ["メモ", c.note],
   ]);
   if (!rows.length) return null;
-  return <TopicCard title="条件">{rows}</TopicCard>;
+  return <Card title="条件">{rows}</Card>;
 }
 
 // ---- 駐車場 ----
@@ -199,7 +190,7 @@ export function Parking({ parking }: { parking: ParkingView | null }) {
   if (!parking) return null;
   const p = parking;
   return (
-    <TopicCard title="駐車場">
+    <Card title="駐車場">
       <ExpandRow label={p.spaces !== null ? "台数" : "駐車場"} value={p.spaces !== null ? `${p.spaces} 台` : "あり"}>
         {subRows([
           ["場所", p.placeLabel],
@@ -208,7 +199,7 @@ export function Parking({ parking }: { parking: ParkingView | null }) {
           ["メモ", p.note],
         ])}
       </ExpandRow>
-    </TopicCard>
+    </Card>
   );
 }
 
@@ -219,22 +210,26 @@ function howLong(a: AccessView): string | null {
   return [a.modeLabel, a.minutes !== null ? `${a.minutes} 分` : null].filter(Boolean).join(" ") || null;
 }
 
-export function Access({ access }: { access: AccessView | null }) {
-  if (!access) return null;
+// map は行の下に置く地図（今は準備中の枠）。地図があれば access が無くても出す
+export function Access({ access, map }: { access: AccessView | null; map?: ReactNode }) {
+  if (!access && !map) return null;
   const a = access;
-  const value = [a.station, howLong(a)].filter(Boolean).join(" ");
+  const value = a ? [a.station, howLong(a)].filter(Boolean).join(" ") : "";
   return (
-    <TopicCard title="アクセス">
-      <ExpandRow label={a.station ? "最寄り駅" : "行き方"} value={value || "詳細"}>
-        {subRows([
-          ["道順", a.route],
-          ["送迎", aru(a.shuttle)],
-          ["坂や階段", aru(a.slopeOrStairs)],
-          ["車", a.needsCar === null ? null : a.needsCar ? "必要" : "なくても行ける"],
-          ["冬の制限", a.winterRestriction],
-        ])}
-      </ExpandRow>
-    </TopicCard>
+    <Card title="アクセス">
+      {a && (
+        <ExpandRow label={a.station ? "最寄り駅" : "行き方"} value={value || "詳細"}>
+          {subRows([
+            ["道順", a.route],
+            ["送迎", aru(a.shuttle)],
+            ["坂や階段", aru(a.slopeOrStairs)],
+            ["車", a.needsCar === null ? null : a.needsCar ? "必要" : "なくても行ける"],
+            ["冬の制限", a.winterRestriction],
+          ])}
+        </ExpandRow>
+      )}
+      {map && <div className="mb-2.5 mt-1">{map}</div>}
+    </Card>
   );
 }
 
@@ -251,7 +246,7 @@ export function Surroundings({ surroundings }: { surroundings: SurroundingsView 
     ["標高", withUnit(s.elevationM, "m")],
   ]);
   if (!rows.length) return null;
-  return <TopicCard title="周辺">{rows}</TopicCard>;
+  return <Card title="周辺">{rows}</Card>;
 }
 
 // ---- 注意点 ----
@@ -259,7 +254,7 @@ export function Surroundings({ surroundings }: { surroundings: SurroundingsView 
 export function Cautions({ cautions }: { cautions: string[] }) {
   if (!cautions.length) return null;
   return (
-    <TopicCard title="注意点">
+    <Card title="注意点">
       <ul className="m-0 list-none p-0">
         {cautions.map((c, i) => (
           <li key={i} className="border-b border-[rgba(20,20,19,.06)] py-2 text-[13px] leading-relaxed text-[#141413] last:border-b-0">
@@ -267,7 +262,7 @@ export function Cautions({ cautions }: { cautions: string[] }) {
           </li>
         ))}
       </ul>
-    </TopicCard>
+    </Card>
   );
 }
 
@@ -276,11 +271,11 @@ export function Cautions({ cautions }: { cautions: string[] }) {
 export function Licenses({ licenses }: { licenses: AccommodationView["licenses"] }) {
   if (!licenses.length) return null;
   return (
-    <TopicCard title="許可・届出">
+    <Card title="許可・届出">
       {licenses.map((l, i) => (
         <ExpandRow key={`${l.label}-${i}`} label={l.label} value={l.number ?? "—"} />
       ))}
-    </TopicCard>
+    </Card>
   );
 }
 
@@ -291,7 +286,7 @@ const BUTTON = "block rounded-[10px] p-[9px] text-center text-[12.5px] font-semi
 export function Booking({ links }: { links: AccommodationView["bookingLinks"] }) {
   if (!links.length) return null;
   return (
-    <TopicCard title="予約">
+    <Card title="予約">
       <div className="flex flex-col gap-1.5 pb-2.5 pt-1">
         {links.map((l, i) => (
           <a
@@ -307,6 +302,6 @@ export function Booking({ links }: { links: AccommodationView["bookingLinks"] })
           </a>
         ))}
       </div>
-    </TopicCard>
+    </Card>
   );
 }

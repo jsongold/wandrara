@@ -11,10 +11,11 @@ export function joinLabels(labels: string[]): string {
   return `${u.slice(0, -1).join("・")}と${u[u.length - 1]}`;
 }
 
-/** 料金の表の下の注記。別にかかる料金があれば足す */
+/** 料金の表の下の注記。別にかかる料金があれば足す（宿泊料に込みのものは足さない） */
 export function priceNote(fees: LabeledText[]): string {
   const base = "人数と日によって変わります。";
-  return fees.length ? `${base}別途、${joinLabels(fees.map((f) => f.label))}がかかります。` : base;
+  const extra = fees.filter((f) => !f.includedInRoom);
+  return extra.length ? `${base}別途、${joinLabels(extra.map((f) => f.label))}がかかります。` : base;
 }
 
 /** 部屋の行の値。定員だけなら「12 名まで」、ほかもあれば「2 名・24㎡・シングル 2」 */

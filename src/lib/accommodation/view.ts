@@ -36,7 +36,11 @@ import { accommodationDetailsSchema, type AccommodationDetails } from "./schema.
 // ---- 出力の形（値の無い欄は null）----
 
 /** 見出しと文の 1 行（「諸経費」「1 名 1 泊 550 円（税込）」） */
-export type LabeledText = { label: string; text: string };
+export type LabeledText = {
+  label: string;
+  text: string;
+  includedInRoom?: true; // 宿泊料に込み（「別途かかる」に数えない）。text の最後に「（宿泊料に込み）」
+};
 
 export type PriceTableRow = {
   roomLabel: string; // 部屋の名前。名前の無い 1 部屋は「1 棟」
@@ -399,7 +403,11 @@ function priceTable(d: AccommodationDetails, roomLabel: (key: string | null) => 
       if (note) row.note = note;
       return row;
     }),
-    fees: hint.fees.map((it) => ({ label: labelOf(PRICE_KIND_LIST, it.kind), text: priceText(it, roomLabel) })),
+    fees: hint.fees.map((it): LabeledText => {
+      const label = labelOf(PRICE_KIND_LIST, it.kind);
+      const text = priceText(it, roomLabel);
+      return it.includedInRoom ? { label, text: `${text}（宿泊料に込み）`, includedInRoom: true } : { label, text };
+    }),
     children: hint.children.map((it) => ({ label: labelOf(PRICE_AUDIENCE_LIST, "child"), text: priceText(it, roomLabel) })),
     officialUrl,
   };
