@@ -114,6 +114,10 @@ pre{background:var(--chip);border-radius:8px;padding:12px;overflow:auto;font-siz
 .p-body.new .vocab td{vertical-align:top}.vocab td code{font-size:11px;color:var(--mute)}
 .p-mapph{height:110px;border-radius:10px;margin:2px 0 10px!important;border:0}
 .p-body.new>.p-note{text-align:center;margin-top:6px!important}
+.p-mini{width:100%;border-collapse:collapse;font-size:11px;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.p-mini th,.p-mini td{padding:4px 3px;border-bottom:1px solid rgba(20,20,19,.06);text-align:right;font-weight:500;color:#141413;white-space:nowrap}
+.p-mini tr:first-child th{color:#8a867c;font-weight:600;font-size:10px}
+.p-mini th:first-child{text-align:left;color:#8a867c;font-weight:500}
 @keyframes p-open{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .p-fact.tap:active{background:#efece4}
 .p-subph{height:150px;border-radius:16px;background:#cfd3cc;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
@@ -166,6 +170,7 @@ type AccommodationView = DestCommon &amp; {
   baths: Bath[]          // 風呂（サウナを含む）
   stay: { checkIn: string; checkOut: string }  // 必須。紹介文の下に必ず出す
   priceHint?: PriceHint      // 料金（参考）：最小と最大
+  prices: PriceTable         // すべての料金（行の下に開く）
   meals: Meal[]          // 食事
   amenities: AmenityGroup[]  // 設備：中カテゴリ → 小カテゴリ
   pets?: { allowed: boolean; size?: Label; fee?: number }  // ペット
@@ -175,6 +180,8 @@ type AccommodationView = DestCommon &amp; {
   surroundings?: { neighborDistanceM?: number; view?: Label }
   cautions: { kind: Label; note: string }[]
   bookingLinks: BookingLink[]
+  sources: { name: string; url: string; type: Label; retrievedAt: string;
+             fields: Label[] }[]   // 出典（どの項目の出典か）
   license?: { kind: Label; number?: string }
 }</pre></div>
 <div class="card"><pre>type Room = {
@@ -211,6 +218,13 @@ type PriceHint = { min: PricePoint; max: PricePoint
   hasExtraFees: boolean; detailsUrl?: string }
 type PricePoint = { amount: number; guests?: number; roomType?: string; season?: Label }
 
+type PriceTable = { seasons: { key: string; rule: SeasonRule; label: Label }[]
+  rooms: Price[]; fees: Price[] }   // Price・SeasonRule は 2.5
+
+// 通信は設備の 1 行（Wi-Fi）。詳細に accommodation_internet の中身を出す
+type Internet = { wifi?: boolean; downMbps?: number; upMbps?: number;
+  measuredAt?: string; desk?: Label }
+
 type Label = { value: string; label: string }</pre></div>
 </div>
 <div class="card">
@@ -244,7 +258,11 @@ type Label = { value: string; label: string }</pre></div>
 <tr><td>設備</td><td>中カテゴリと小カテゴリの名前</td><td>数・有料か・付いているもの（電気グリル・屋根の下 など）</td></tr>
 <tr><td>駐車場</td><td>台数・有料か</td><td>場所・車高の制限・料金</td></tr>
 <tr><td>アクセス</td><td>最寄り駅と時間</td><td>住所・道順・送迎</td></tr>
+<tr><td>料金</td><td>最小と最大</td><td>すべての料金（区分 × 人数／部屋の表・区分の日付・期間・追加の料金）</td></tr>
+<tr><td>設備の通信</td><td>Wi-Fi</td><td>実測の速さ・測った日・仕事用の机（accommodation_internet）</td></tr>
+<tr><td>出典</td><td>出典の名前と、どの項目の出典か</td><td>URL・種類・取得日</td></tr>
 </table>
+<p><b>持っている情報は全部見られるようにする。</b>型に持つ欄は、行か、行の下に開く詳細のどちらかに必ず出る（どこにも出ない欄は作らない）。詳しいほど品質が高い。料金も「すべての料金」を開けば区分 × 人数の表と追加の料金が全部見える。出典も最後に出す。</p>
 <p class="mute">「タップで出す」の欄に値が 1 つでもあれば、その行に › を付けてタップできるようにする。無ければタップできない（例：wr-ito-033 のサウナは種類と定員しか無いので行だけ）。決めるのは画面で、型の欄が埋まっているかだけを見る。詳細は別のページやシートにせず、その行のすぐ下に開く（もう一度タップで閉じる。› が下向きになる）。</p>
 </div>
 
@@ -384,6 +402,17 @@ total = room(season, guests).amount
 <h2 class="p-h">料金（参考）</h2>
 <div class="p-fact"><span>最小</span><span class="v">45,000 円（2 名・平日）</span></div>
 <div class="p-fact"><span>最大</span><span class="v">170,000 円（8 名・指定日）</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-prices"><span>すべての料金</span><span class="v">1 棟 1 泊・税込</span></div>
+<div class="p-drop" id="r-prices" hidden>
+<table class="p-mini"><tr><th>人数</th><th>①</th><th>②</th><th>③</th><th>④</th></tr><tr><th>2 名</th><td>45,000</td><td>75,000</td><td>99,000</td><td>170,000</td></tr><tr><th>3 名</th><td>55,000</td><td>87,000</td><td>99,000</td><td>170,000</td></tr><tr><th>4 名</th><td>65,000</td><td>99,000</td><td>99,000</td><td>170,000</td></tr><tr><th>5 名</th><td>75,000</td><td>111,000</td><td>99,000</td><td>170,000</td></tr><tr><th>6 名</th><td>85,000</td><td>123,000</td><td>140,000</td><td>170,000</td></tr><tr><th>7 名</th><td>95,000</td><td>135,000</td><td>155,000</td><td>170,000</td></tr><tr><th>8 名</th><td>105,000</td><td>147,000</td><td>170,000</td><td>170,000</td></tr></table>
+<div class="p-fact sub"><span>①</span><span class="v">平日（②③④以外）</span></div>
+<div class="p-fact sub"><span>②</span><span class="v">土曜と 4/26〜4/30・8/23〜8/28・10/11・11/22・1/10・3/21</span></div>
+<div class="p-fact sub"><span>③</span><span class="v">5/5・7/11〜8/7・8/16〜8/22・9/19〜9/22・12/12〜12/25・1/3</span></div>
+<div class="p-fact sub"><span>④</span><span class="v">日付が元データに無い</span></div>
+<div class="p-fact sub"><span>期間</span><span class="v">2026-04-01〜2027-03-31</span></div>
+<div class="p-fact sub"><span>諸経費</span><span class="v">1 名 1 泊 550 円（税込）</span></div>
+<div class="p-fact sub"><span>入湯税</span><span class="v">大人 1 名 1 泊 300 円</span></div>
+</div>
 <p class="p-note" style="margin-top:6px">1 棟 1 泊・税込。人数と日によって変わります。別途、諸経費と入湯税がかかります。</p>
 <a class="p-btn sub" href="https://pokke-mahoro.jimdofree.com/">料金の詳細は公式サイトへ</a>
 </section>
@@ -443,6 +472,21 @@ total = room(season, guests).amount
 <a class="p-btn" href="https://www.stagevilla.co.jp/villa/12974">ステージヴィラで予約</a>
 <a class="p-btn sub" href="https://www.aco.co.jp/id/67671.html">ACO で予約</a>
 </section>
+<section>
+<h2 class="p-h">出典</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-src1"><span>公式サイト</span><span class="v">定員・寝室・料金</span></div>
+<div class="p-drop" id="r-src1" hidden>
+<div class="p-fact sub"><span>URL</span><span class="v">pokke-mahoro.jimdofree.com</span></div>
+<div class="p-fact sub"><span>料金のページ</span><span class="v">料金とお問い合わせ</span></div>
+<div class="p-fact sub"><span>取得日</span><span class="v">2026-11-14</span></div>
+</div>
+<div class="p-fact tap" aria-expanded="false" data-sub="r-src2"><span>ステージヴィラ</span><span class="v">名前・位置・設備・駐車場・ペット・最寄り駅</span></div>
+<div class="p-drop" id="r-src2" hidden>
+<div class="p-fact sub"><span>種類</span><span class="v">予約サイト</span></div>
+<div class="p-fact sub"><span>URL</span><span class="v">stagevilla.co.jp/villa/12974</span></div>
+<div class="p-fact sub"><span>取得日</span><span class="v">2026-11-14</span></div>
+</div>
+</section>
 <p class="p-note" style="margin-top:8px">載っていない項目は、情報が無いことを示し、「無い」という意味ではありません。</p>
 </div></div></div></div>
 
@@ -458,8 +502,9 @@ total = room(season, guests).amount
 <li>トピックはそれぞれ独立した見出しにし、チェックイン・アウトは必須で、紹介文のすぐ下に時刻だけを必ず出す（wr-ito-033 は元データに無いので、見本では --:--。本来は upload の validation で落ちる）。そのあと 料金 → 部屋 → 食事 … の順に出す。ペットも独立。設備と条件だけは、小さな項目をまとめる見出し</li>
 <li>設備は中カテゴリ（風呂・キッチン・屋外・通信・駐車場 …）を行の名前にし、小カテゴリ（個々の設備）を値に並べる</li>
 <li>同じ種類の行は 1 行にまとめる（風呂 1〜3 → 風呂）。値はラベルで出す（open_air → 露天風呂）</li>
-<li>料金は全部を載せず、参考の最小と最大（それぞれの人数・日の条件つき）だけ。詳細は公式サイトへのリンク。注意点の 19 行は出さない</li>
-<li>DB には料金を全部、型で持つ（2.5）。画面に出すのはそこから作った参考の値</li>
+<li>料金は最小と最大を行に出し、「すべての料金」を開くと全部（区分 × 人数の表・区分の日付・追加の料金）が見える。公式サイトへのリンクも残す。注意点の 19 行（同じ文の繰り返し）は出さない</li>
+<li>持っている情報は全部、行か行の下の詳細で見られる。最後に出典を出す</li>
+<li>DB には料金を全部、型で持つ（2.5）。最小と最大はそこから作る</li>
 <li>kind では出し分けない。どの kind も同じトピックの並びで、データの無いトピックは出さない</li>
 <li>紹介文は公式の文の丸写しではなく、短く書き直したものを出す想定</li>
 </ul>
@@ -487,6 +532,12 @@ total = room(season, guests).amount
 <h2 class="p-h">料金（参考）</h2>
 <div class="p-fact"><span>最小</span><span class="v">12,000 円（ダブル・2 名・平日）</span></div>
 <div class="p-fact"><span>最大</span><span class="v">48,000 円（和洋室・4 名・指定日）</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-prices"><span>すべての料金</span><span class="v">1 室 1 泊・税込</span></div>
+<div class="p-drop" id="h-prices" hidden>
+<table class="p-mini"><tr><th>部屋</th><th>平日</th><th>指定日</th></tr><tr><th>ダブル（2 名）</th><td>12,000</td><td>20,000</td></tr><tr><th>ツイン（2 名）</th><td>14,000</td><td>24,000</td></tr><tr><th>和洋室（4 名）</th><td>30,000</td><td>48,000</td></tr></table>
+<div class="p-fact sub"><span>食事</span><span class="v">素泊まり。朝食は 1 名 2,500 円</span></div>
+<div class="p-fact sub"><span>入湯税</span><span class="v">大人 1 名 1 泊 150 円</span></div>
+</div>
 <p class="p-note" style="margin-top:6px">1 室 1 泊・素泊まり・税込。部屋・人数・日によって変わります。別途、入湯税がかかります。</p>
 <a class="p-btn sub" href="#">料金の詳細は公式サイトへ</a>
 </section>
@@ -528,7 +579,12 @@ total = room(season, guests).amount
 </section>
 <section>
 <h2 class="p-h">設備</h2>
-<div class="p-fact"><span>通信</span><span class="v">Wi-Fi</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-wifi"><span>通信</span><span class="v">Wi-Fi</span></div>
+<div class="p-drop" id="h-wifi" hidden>
+<div class="p-fact sub"><span>速さ（実測）</span><span class="v">下り 85 Mbps・上り 40 Mbps</span></div>
+<div class="p-fact sub"><span>測った日</span><span class="v">2026-10-02</span></div>
+<div class="p-fact sub"><span>仕事用の机</span><span class="v">全室</span></div>
+</div>
 <div class="p-fact"><span>洗濯</span><span class="v">コインランドリー</span></div>
 </section>
 <section>
@@ -570,6 +626,13 @@ total = room(season, guests).amount
 <h2 class="p-h">料金（参考）</h2>
 <div class="p-fact"><span>最小</span><span class="v">18,000 円（和室・4 名 1 室・平日）</span></div>
 <div class="p-fact"><span>最大</span><span class="v">45,000 円（露天風呂付き・2 名 1 室・指定日）</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="y-prices"><span>すべての料金</span><span class="v">1 名 1 泊・2 食・税込</span></div>
+<div class="p-drop" id="y-prices" hidden>
+<table class="p-mini"><tr><th>部屋（1 室の人数）</th><th>平日</th><th>指定日</th></tr><tr><th>和室（4 名）</th><td>18,000</td><td>26,000</td></tr><tr><th>和室（2 名）</th><td>22,000</td><td>30,000</td></tr><tr><th>露天風呂付き（2 名）</th><td>32,000</td><td>45,000</td></tr></table>
+<div class="p-fact sub"><span>食事</span><span class="v">夕食・朝食つき</span></div>
+<div class="p-fact sub"><span>子ども</span><span class="v">小学生 70%・幼児 50%</span></div>
+<div class="p-fact sub"><span>入湯税</span><span class="v">大人 1 名 1 泊 150 円</span></div>
+</div>
 <p class="p-note" style="margin-top:6px">1 名 1 泊・2 食つき・税込。部屋・人数・日によって変わります。別途、入湯税がかかります。</p>
 <a class="p-btn sub" href="#">料金の詳細は公式サイトへ</a>
 </section>
@@ -754,6 +817,7 @@ total = room(season, guests).amount
 <li>accommodation_amenities.kind は小カテゴリの code。options（text[]、一覧で決めた値だけ）と count（数）を足す</li>
 <li>一覧に無い code は upload で受け付けない。足りなければ一覧を直す PR を出す</li>
 <li>中カテゴリの並び順は一覧の順。画面もその順に出す</li>
+<li>Wi-Fi の速さ・測った日・机は accommodation_internet に残す（詳しいほど良い）。画面では通信の Wi-Fi の行の下に開く</li>
 </ul>
 </div>
 <div class="card">
@@ -767,7 +831,6 @@ total = room(season, guests).amount
 </ul>
 <h3>未決</h3>
 <ul>
-<li>accommodation_internet をやめて wifi の行に寄せるか（実測の速さの置き場）</li>
 <li>note の文を残すか（残しても画面には出さない案）</li>
 <li>OTA・Google の設備コードとの対応表を今作るか</li>
 </ul>
