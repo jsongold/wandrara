@@ -53,6 +53,16 @@ async function Account({ params, searchParams }: Pick<PageProps<"/[lang]/account
           </div>
         </div>
         <Link
+          href={to("/saved")}
+          data-testid="saved-link"
+          className="flex h-[52px] items-center justify-between rounded-2xl bg-white px-4 text-[15px] font-medium text-[#171717] no-underline"
+        >
+          {messages(lang).saves.openList}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#55524a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+        <Link
           href={to("/account?logout=1")}
           className="mt-auto flex h-[52px] items-center justify-center rounded-[26px] border border-[#d6d3cb] bg-white text-[15px] font-medium text-[#a1361f] no-underline"
         >
