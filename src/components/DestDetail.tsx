@@ -7,6 +7,7 @@ import { StayStrip } from "./accommodation/StayStrip";
 import { BackButton } from "./BackButton";
 import { FactRows } from "./FactRows";
 import { PhotoCarousel } from "./PhotoCarousel";
+import { SaveButton } from "./SaveButton";
 
 const GLASS: CSSProperties = {
   background: "rgba(18,18,16,0.46)",
@@ -39,6 +40,9 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
       <PhotoCarousel photos={dest.photos} label={dest.title} className="h-[420px]">
         <div className={`absolute left-4 ${variant === "sheet" ? "top-6" : "top-3.5"}`}>
           <BackButton variant={variant} style={GLASS} />
+        </div>
+        <div className={`absolute right-4 ${variant === "sheet" ? "top-6" : "top-3.5"}`}>
+          <SaveButton destId={dest.id} variant="detail" style={GLASS} />
         </div>
         {(hero?.isDemo ?? true) && (
           <span className="pointer-events-none absolute bottom-4 left-4 rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold text-white">{m.home.photoDemo}</span>
