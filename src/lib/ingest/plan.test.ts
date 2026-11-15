@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseDestInput } from "./bundle.ts";
 import { coreByType } from "./cores.ts";
 import { planDestWrite, type DestRefs } from "./plan.ts";
-import { withAccommodationQuality } from "./test-fixtures.ts";
+import { jsonDetailsCore, withAccommodationQuality } from "./test-fixtures.ts";
 
 const acc = coreByType("accommodation")!;
 const input = () => {
@@ -80,5 +80,35 @@ describe("planDestWrite", () => {
     );
     expect(p.destination).toMatchObject({ dest_id: "old", slug: "keep-me" });
     expect(p.tables[0].rows[0].dest_id).toBe("old");
+  });
+
+  it("写真の room は subject_key に入る（room の列は渡さない）", () => {
+    const i = input();
+    i.photos = [{ storage_key: "a.jpg", room: "r1" }, { storage_key: "b.jpg" }];
+    const rows = planDestWrite(acc, i, refs(), ctx()).tables.find((x) => x.table === "dest_photos")!.rows;
+    expect(rows[0]).toMatchObject({ subject_key: "r1", storage_key: "a.jpg" });
+    expect(rows[0]).not.toHaveProperty("room");
+    expect(rows[1]).not.toHaveProperty("subject_key");
+  });
+
+  it("detailsSchema を持つコアは details をコアの行に入れ、詳細の表を作らない", () => {
+    const r = parseDestInput(jsonDetailsCore, {
+      ref: "WR-json-001",
+      core: { kind: "hotel" },
+      texts: [{ lang: "ja", name: "宿" }],
+      details: { rooms: [{ key: "r1" }] },
+      photos: [{ storage_key: "a.jpg", room: "r1" }],
+    });
+    if (!r.ok) throw new Error(r.errors.join("\n"));
+    const p = planDestWrite(jsonDetailsCore, r.value, refs(), ctx());
+    expect(p.tables.map((t) => t.table)).toEqual(["accommodations", "accommodation_texts", "dest_photos"]);
+    expect(p.tables[0].rows[0]).toMatchObject({ kind: "hotel", details: { rooms: [{ key: "r1" }] } });
+    expect(p.tables[2].rows[0]).toMatchObject({ subject_key: "r1" });
+    const none = planDestWrite(jsonDetailsCore, { ...r.value, details: undefined }, refs(), ctx());
+    expect(none.tables[0].rows[0].details).toBeNull();
+  });
+
+  it("detailsSchema の無いコアの行に details の列は出ない", () => {
+    expect(planDestWrite(acc, input(), refs(), ctx()).tables[0].rows[0]).not.toHaveProperty("details");
   });
 });

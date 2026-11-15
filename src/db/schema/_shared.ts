@@ -26,6 +26,7 @@ import {
   type PgTable,
 } from "drizzle-orm/pg-core";
 import { anonRole, authenticatedRole } from "drizzle-orm/supabase";
+import type { z } from "zod";
 import { destinations } from "./common.ts";
 import { regions } from "./dictionary.ts";
 
@@ -140,4 +141,6 @@ export type CoreDef = {
   kindLabels: Record<string, string>;
   /** 親が先、子が後の順 */
   details: DetailDef[];
+  /** あるコアは details を JSON 1 つで受け、コアの行の details 列に書く。詳細の表は読み書きしない */
+  detailsSchema?: z.ZodType;
 };

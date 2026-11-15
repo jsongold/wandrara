@@ -1,4 +1,8 @@
 // テスト用：宿の最小の入力に、中身の決まり（quality.ts）が求める項目を足す。入力にある値はそのまま使う
+import { z } from "zod";
+import { accommodationCore } from "../../db/schema/accommodation.ts";
+import type { CoreDef } from "../../db/schema/_shared.ts";
+
 type Body = Record<string, unknown> & {
   core?: Record<string, unknown>;
   texts?: Record<string, unknown>[];
@@ -19,3 +23,10 @@ export function withAccommodationQuality<T extends Body>(body: T, photo: "file" 
     photos: body.photos ?? [photo === "file" ? { file: "images/001.jpg" } : { storage_key: "a.jpg" }],
   };
 }
+
+/** テスト用：宿のコアに、details を JSON 1 つで受ける小さなスキーマを付けたもの。中身の決まり（quality.ts）は外すため種類の名前を変える */
+export const jsonDetailsCore: CoreDef = {
+  ...accommodationCore,
+  coreType: "accommodation_json" as CoreDef["coreType"],
+  detailsSchema: z.strictObject({ rooms: z.array(z.strictObject({ key: z.string() })).optional() }),
+};

@@ -2,7 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { bundleJsonSchema, parseBundle, parseDestInput } from "./bundle.ts";
 import { coreByType } from "./cores.ts";
-import { withAccommodationQuality } from "./test-fixtures.ts";
+import { jsonDetailsCore, withAccommodationQuality } from "./test-fixtures.ts";
 
 const acc = coreByType("accommodation")!;
 const dest = () => withAccommodationQuality({
@@ -89,5 +89,38 @@ it("ref は英数字・_・- の 1〜80 文字", () => {
 });
 
 it("bundleJsonSchema を出せる", () => {
-  expect(JSON.stringify(bundleJsonSchema()).length).toBeGreaterThan(1000);
+  const s = JSON.stringify(bundleJsonSchema());
+  expect(s.length).toBeGreaterThan(1000);
+  expect(s).toContain('"room"');
+});
+
+it("photos の room は key の形だけ受ける（bundle・API とも）", () => {
+  const d = dest() as any;
+  d.photos = [{ file: "images/001.jpg", room: "main-room_1" }];
+  expect(parseBundle(bundle(d)).ok).toBe(true);
+  d.photos = [{ file: "images/001.jpg", room: "Main Room" }];
+  expect(parseBundle(bundle(d)).ok).toBe(false);
+  const a = dest() as any;
+  delete a.core_type;
+  expect(parseDestInput(acc, { ...a, photos: [{ storage_key: "a.jpg", room: "r1" }] }).ok).toBe(true);
+});
+
+describe("detailsSchema を持つコア", () => {
+  const body = (details: unknown) => ({
+    ref: "WR-json-001",
+    core: { kind: "hotel" },
+    texts: [{ lang: "ja", name: "宿" }],
+    details,
+    photos: [{ storage_key: "a.jpg" }],
+  });
+  it("details は detailsSchema で確かめる", () => {
+    const r = parseDestInput(jsonDetailsCore, body({ rooms: [{ key: "r1" }] }));
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value.details).toEqual({ rooms: [{ key: "r1" }] });
+    expect(parseDestInput(jsonDetailsCore, body(undefined)).ok).toBe(true);
+  });
+  it("detailsSchema に合わない details・表の形の details を弾く", () => {
+    expect(parseDestInput(jsonDetailsCore, body({ rooms: [{ key: 1 }] })).ok).toBe(false);
+    expect(parseDestInput(jsonDetailsCore, body({ units: [{ capacity: 2 }] })).ok).toBe(false);
+  });
 });
