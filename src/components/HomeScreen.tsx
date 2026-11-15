@@ -7,11 +7,12 @@ import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
 import { MODE_LABEL, otherMode } from "@/lib/modes";
 import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Photo, SortKey } from "@/lib/types";
+import { AccountButton } from "./AccountButton";
 import { Icon } from "./icons";
 import { PhotoCarousel } from "./PhotoCarousel";
 
 type Props = { query: DiscoverQuery; feed: FeedPage; categories: CategoryView[]; areas: AreaGroupView[] };
-type Sheet = null | "area" | "filter" | "login";
+type Sheet = null | "area" | "filter";
 
 const GLASS: CSSProperties = {
   background: "rgba(18,18,16,0.46)",
@@ -107,15 +108,11 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
           <span className="text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{feed.orderLabel} · デモ表示</span>
         </div>
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setSheet("login")}
-            aria-label="保存したものだけを表示"
+          <AccountButton
+            next={serializeDiscoverQuery(query)}
             className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-white"
             style={GLASS}
-          >
-            <Icon name="heart" />
-          </button>
+          />
         </div>
       </header>
 
@@ -246,23 +243,6 @@ export function HomeScreen({ query, feed, categories, areas }: Props) {
         </BottomSheet>
       )}
 
-      {/* Login placeholder */}
-      {sheet === "login" && (
-        <BottomSheet label="ログインが必要です" onClose={() => setSheet(null)}>
-          <div className="flex flex-col items-center gap-3 text-center">
-            <Icon name="heart" size={32} />
-            <h2 className="m-0 text-lg font-bold">保存するにはログインしてください</h2>
-            <p className="m-0 text-[13px] leading-[1.7] text-white/80">ログインと保存は次の版で対応します。</p>
-            <button
-              type="button"
-              onClick={() => setSheet(null)}
-              className="mt-2 h-12 w-full cursor-pointer rounded-[14px] border-0 bg-[#f4f1ea] text-[15px] font-bold text-[#141413]"
-            >
-              閉じる
-            </button>
-          </div>
-        </BottomSheet>
-      )}
     </div>
   );
 }

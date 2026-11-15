@@ -5,6 +5,8 @@ import { useActionState } from "react";
 import { sendMagicLink, type EmailLoginState } from "../app/login/actions";
 import { createClient } from "../lib/supabase/client";
 
+// 当面はメールのリンクだけ。Google は NEXT_PUBLIC_AUTH_GOOGLE=1 のときだけ出す
+const GOOGLE = process.env.NEXT_PUBLIC_AUTH_GOOGLE === "1";
 const initial: EmailLoginState = { error: null };
 
 export function LoginPanel({ next }: { next: string }) {
@@ -31,19 +33,23 @@ export function LoginPanel({ next }: { next: string }) {
             スポットの保存と My Tour の作成にはログインが必要です。見るだけならログインは要りません。
           </p>
         </div>
-        <button
-          type="button"
-          onClick={google}
-          className="flex h-[52px] items-center justify-center gap-2.5 rounded-[26px] border border-[#d6d3cb] bg-white text-[15px] font-medium"
-        >
-          <span aria-hidden className="flex size-[22px] items-center justify-center rounded-full border border-[#d6d3cb] text-xs font-semibold">G</span>
-          Google で続ける
-        </button>
-        <div className="flex items-center gap-3">
-          <span className="h-px flex-1 bg-[#e7e4dc]" />
-          <span className="text-xs text-[#6b675e]">または</span>
-          <span className="h-px flex-1 bg-[#e7e4dc]" />
-        </div>
+        {GOOGLE && (
+          <>
+            <button
+              type="button"
+              onClick={google}
+              className="flex h-[52px] items-center justify-center gap-2.5 rounded-[26px] border border-[#d6d3cb] bg-white text-[15px] font-medium"
+            >
+              <span aria-hidden className="flex size-[22px] items-center justify-center rounded-full border border-[#d6d3cb] text-xs font-semibold">G</span>
+              Google で続ける
+            </button>
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-[#e7e4dc]" />
+              <span className="text-xs text-[#6b675e]">または</span>
+              <span className="h-px flex-1 bg-[#e7e4dc]" />
+            </div>
+          </>
+        )}
         <form action={action} className="flex flex-col gap-5">
           <input type="hidden" name="next" value={next} data-testid="login-next" />
           <div className="flex flex-col gap-2">
