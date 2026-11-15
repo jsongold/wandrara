@@ -37,6 +37,16 @@ describe("format", () => {
     ).toBe("人数と日によって変わります。別途、諸経費と入湯税がかかります。");
   });
 
+  it("priceNote は宿泊料に込みの料金を「別途」に数えない", () => {
+    expect(
+      priceNote([
+        { label: "諸経費", text: "x" },
+        { label: "入湯税", text: "y（宿泊料に込み）", includedInRoom: true },
+      ]),
+    ).toBe("人数と日によって変わります。別途、諸経費がかかります。");
+    expect(priceNote([{ label: "入湯税", text: "y（宿泊料に込み）", includedInRoom: true }])).toBe("人数と日によって変わります。");
+  });
+
   it("roomSummary は定員だけなら「名まで」、ほかもあれば・でつなぐ", () => {
     expect(roomSummary(room({ capacity: 12 }))).toBe("12 名まで");
     expect(roomSummary(room({ capacity: 2, areaSqm: 24, bedrooms: [{ label: "寝室 1", beds: "シングル 2" }] }))).toBe("2 名・24㎡・シングル 2");

@@ -254,6 +254,15 @@ describe("料金（参考）の表（Codex の指摘）", () => {
     expect(t.rows[0].note).toBe("大人 13 歳以上・入湯税込み");
   });
 
+  it("どの宿泊料にも込みの料金は fees に残し、「（宿泊料に込み）」を付ける", () => {
+    const t = table([
+      room("double", 15000, { includes: ["bath_tax"] }),
+      room("twin", 16000, { includes: ["bath_tax"] }),
+      { kind: "bath_tax", per: "person_night", audience: "adult", amount: 150, currency: "JPY" },
+    ]);
+    expect(t.fees).toEqual([{ label: "入湯税", text: "大人 1 名 1 泊 150 円（宿泊料に込み）", includedInRoom: true }]);
+  });
+
   it("[P2] 単位の違う宿泊料は、その単位を持つ別の行にする", () => {
     const t = table([room("double", 15000), room("twin", 9000, { per: "person_night" })]);
     expect(t.unitLabel).toBe("1 室 1 泊・税込（円）");

@@ -1,6 +1,6 @@
 import type { AccommodationView } from "@/lib/accommodation/view";
 import { ExpandRow, SubRow } from "../ExpandRow";
-import { TopicCard } from "./Topics";
+import { Card } from "./Card";
 
 // 出典。行は名前とどの項目の出典か、開くと URL・種類・取得日
 
@@ -12,7 +12,7 @@ function shortUrl(url: string): string {
 export function Sources({ sources }: { sources: AccommodationView["sources"] }) {
   if (!sources.length) return null;
   return (
-    <TopicCard title="出典">
+    <Card title="出典">
       {sources.map((s, i) => (
         <ExpandRow key={`${s.url}-${i}`} label={s.name} value={s.fields.length ? s.fields.join("・") : s.typeLabel}>
           <SubRow
@@ -27,6 +27,6 @@ export function Sources({ sources }: { sources: AccommodationView["sources"] }) 
           <SubRow label="取得日" value={s.retrievedAt} />
         </ExpandRow>
       ))}
-    </TopicCard>
+    </Card>
   );
 }

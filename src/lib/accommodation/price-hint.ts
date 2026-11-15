@@ -3,7 +3,10 @@ import { PRICE_MEALS } from "../vocab/accommodation.ts";
 import type { PriceItem, Prices } from "./prices.ts";
 
 /** 区分をまとめた料金 1 件。amount〜amount_max・rate_percent〜rate_percent_max は区分をまたいだ幅 */
-export type PriceLine = Omit<PriceItem, "season"> & { rate_percent_max?: number };
+export type PriceLine = Omit<PriceItem, "season"> & {
+  rate_percent_max?: number;
+  includedInRoom?: true; // どの宿泊料にも込み（別には払わない）
+};
 
 /** 料金がかかる人（大人・年齢） */
 export type PriceWho = { audience?: string; age_min?: number; age_max?: number };
@@ -28,7 +31,7 @@ export type PriceHint = {
   currency: string | null;
   taxIncluded: boolean | null; // 主な単位の税込。混ざっているか分からないときは null
   rows: PriceHintRow[]; // 主な単位の行が先、ほかの単位の行は後
-  fees: PriceLine[];
+  fees: PriceLine[]; // 宿泊料に込みのものも残す（includedInRoom で見分ける）
   children: PriceLine[];
 };
 
@@ -60,10 +63,12 @@ export function priceHint(input: { rooms?: { key: string }[]; prices?: Prices })
   const rows = units.flatMap((u) => roomRows(u, roomKeys));
   const main = units[0];
 
-  // どの宿泊料にも込みの種類は、二重に数えないよう外す
+  // どの宿泊料にも込みの種類は、消さずに印を付ける（別途かかる料金として数えない）
   const included = (kind: string) =>
     candidates.length > 0 && candidates.every((it) => (it.includes as readonly string[] | undefined)?.includes(kind));
-  const fees = mergeLines(items.filter((it) => FEE_KINDS.includes(it.kind) && !included(it.kind)));
+  const fees = mergeLines(items.filter((it) => FEE_KINDS.includes(it.kind))).map((l) =>
+    included(l.kind) ? { ...l, includedInRoom: true as const } : l,
+  );
   const children = mergeLines(roomItems.filter(isChild));
 
   return {

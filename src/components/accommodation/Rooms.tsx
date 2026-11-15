@@ -3,9 +3,9 @@ import { ExpandRow, SubRow } from "../ExpandRow";
 import { Card } from "./Card";
 import { roomSummary } from "./format";
 
-// 行の値に出ていないこと（眺望・喫煙・写真・寝室ごとのベッド）があるときだけ開ける
+// 行の値に出ていないこと（眺望・喫煙・写真・寝室の名前とベッド）があるときだけ開ける
 function hasMore(r: RoomView, photos: number): boolean {
-  return r.view !== null || r.smokingLabel !== null || r.bedrooms.length > 1 || photos > 0;
+  return r.view !== null || r.smokingLabel !== null || r.bedrooms.length > 0 || photos > 0;
 }
 
 function RoomDetail({ room, photos }: { room: RoomView; photos: RoomView["photos"] }) {

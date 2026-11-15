@@ -135,7 +135,7 @@ describe("priceHint", () => {
     expect(priceHint({ rooms: hotelRooms, prices: excl })!.taxIncluded).toBe(false);
   });
 
-  it("どの宿泊料にも込みの種類は fees に出さない", () => {
+  it("どの宿泊料にも込みの種類は fees に残し、includedInRoom の印を付ける", () => {
     const meal = { kind: "meal", per: "person_night", amount: 5000, currency: "JPY", meals: "dinner" };
     const cleaning = { kind: "cleaning", per: "stay", amount: 8000, currency: "JPY" };
     const p = prices([
@@ -145,7 +145,8 @@ describe("priceHint", () => {
       cleaning,
       meal,
     ]);
-    expect(priceHint({ rooms: hotelRooms, prices: p })!.fees).toEqual([cleaning, meal]);
+    // 一部の部屋だけ込みの清掃料には印を付けない
+    expect(priceHint({ rooms: hotelRooms, prices: p })!.fees).toEqual([{ ...bathTax, includedInRoom: true }, cleaning, meal]);
   });
 
   it("子どもの料金と割合の料金は children に入り、行には入らない", () => {
