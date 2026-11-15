@@ -1,4 +1,6 @@
 import type { AccommodationView } from "@/lib/accommodation/view";
+import { messages } from "@/lib/i18n/messages";
+import type { Locale } from "@/lib/types";
 import { ExpandRow, SubRow } from "../ExpandRow";
 import { Card } from "./Card";
 
@@ -9,22 +11,23 @@ function shortUrl(url: string): string {
   return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
 }
 
-export function Sources({ sources }: { sources: AccommodationView["sources"] }) {
+export function Sources({ sources, locale }: { sources: AccommodationView["sources"]; locale: Locale }) {
   if (!sources.length) return null;
+  const t = messages(locale).accommodation;
   return (
-    <Card title="出典">
+    <Card title={t.title.sources}>
       {sources.map((s, i) => (
-        <ExpandRow key={`${s.url}-${i}`} label={s.name} value={s.fields.length ? s.fields.join("・") : s.typeLabel}>
+        <ExpandRow key={`${s.url}-${i}`} label={s.name} value={s.fields.length ? s.fields.join(t.sep) : s.typeLabel}>
           <SubRow
-            label="URL"
+            label={t.source.url}
             value={
               <a href={s.url} target="_blank" rel="noopener" className="break-all text-[#141413] underline">
                 {shortUrl(s.url)}
               </a>
             }
           />
-          <SubRow label="種類" value={s.typeLabel} />
-          <SubRow label="取得日" value={s.retrievedAt} />
+          <SubRow label={t.source.type} value={s.typeLabel} />
+          <SubRow label={t.source.retrievedAt} value={s.retrievedAt} />
         </ExpandRow>
       ))}
     </Card>

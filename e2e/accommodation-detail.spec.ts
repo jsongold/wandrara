@@ -83,3 +83,33 @@ test("details の無い宿は、設備・条件とアクセスの今の出し方
   await expect(main.locator("h2")).toHaveText(["設備・条件", "アクセス"]);
   await expect(main.getByText("料金（参考）")).toHaveCount(0);
 });
+
+// en は見出し・行のラベル・語彙・生成した文が英語。宿のデータ（駅名・注意点・予約先と出典の名前）は ja のことがある
+test("en は見出しも中身も英語", async ({ page }) => {
+  await page.goto(`/en/d/${SLUG}`);
+  const main = page.locator("main").last();
+  await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
+  const headings = await main.locator("h2").allInnerTexts();
+  for (const h of ["Prices (guide)", "Rooms", "Baths", "Amenities", "Pets", "Parking", "Getting there", "Good to know", "Book", "Sources"]) {
+    expect(headings).toContain(h);
+  }
+  expect(headings.join(" ")).not.toMatch(/[ぁ-んァ-ン一-龥]/);
+
+  // 料金の行は英語で、押すと開く
+  const row = page.locator("tbody tr").first();
+  await expect(row.locator("th, td")).toHaveText(["Entire house", "2–8", "45,000", "170,000", /.*/]);
+  const button = row.getByRole("button");
+  await row.click();
+  await expect(button).toHaveAttribute("aria-expanded", "true");
+  await expect(page.locator(`[id="${await button.getAttribute("aria-controls")}"]`)).toContainText("Service fee");
+
+  // データを出すカードのほかは、閉じた詳細も含めて日本語が無い
+  const dataCards = ["Getting there", "Good to know", "Book", "Sources"];
+  for (const card of await main.locator("section:has(h2)").all()) {
+    const title = await card.locator("h2").innerText();
+    if (dataCards.includes(title)) continue;
+    expect(await card.textContent(), title).not.toMatch(/[ぁ-んァ-ン一-龥]/);
+  }
+  const book = main.locator("section", { has: page.getByRole("heading", { name: "Book" }) });
+  for (const a of await book.locator("a").allInnerTexts()) expect(a).toMatch(/^Book on /);
+});

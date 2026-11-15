@@ -1,5 +1,6 @@
 // 宿の詳細の画面に出す形。details（jsonb）を、ラベルと文字にしてから渡す。画面は並べるだけ
 import { resolveLocalizedText } from "../feed.ts";
+import { messages, type Messages } from "../i18n/messages.ts";
 import type { Locale, Photo } from "../types.ts";
 import {
   ACCESS_MODE_LIST,
@@ -181,16 +182,17 @@ export type AccommodationViewInput = {
 
 // 許可・届出の種類（details.ts の LICENSE_KINDS と同じ並び）
 const LICENSE_KIND_LIST: readonly Term[] = [
-  { code: "ryokan_business", label: "旅館・ホテル営業" },
-  { code: "minpaku", label: "住宅宿泊事業（民泊）" },
-  { code: "special_zone_minpaku", label: "特区民泊" },
-  { code: "simple_lodging", label: "簡易宿所営業" },
+  { code: "ryokan_business", label: "旅館・ホテル営業", en: "Ryokan or hotel business" },
+  { code: "minpaku", label: "住宅宿泊事業（民泊）", en: "Private lodging (minpaku)" },
+  { code: "special_zone_minpaku", label: "特区民泊", en: "Special-zone private lodging" },
+  { code: "simple_lodging", label: "簡易宿所営業", en: "Simple lodging business" },
 ];
 
 // ---- 小道具 ----
 
 const orNull = <T>(v: T | undefined): T | null => (v === undefined ? null : v);
-const labelOrNull = (list: readonly Term[], code: string | undefined) => (code === undefined ? null : labelOf(list, code));
+const labelOrNull = (list: readonly Term[], code: string | undefined, locale: Locale) =>
+  code === undefined ? null : labelOf(list, code, locale);
 
 /** DB の time（"HH:MM:SS"）も "HH:MM" にする */
 export function toHHMM(v: string | null): string | null {
@@ -201,34 +203,45 @@ export function toHHMM(v: string | null): string | null {
 
 const num = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 
-/** 「550 円」「12.5 USD」。税込なら「（税込）」、税別なら「（税別）」を足す */
-export function formatMoney(m: { amount: number; amountMax?: number; currency: string; taxIncluded?: boolean }): string {
-  const amount = m.amountMax !== undefined && m.amountMax !== m.amount ? `${num(m.amount)}〜${num(m.amountMax)}` : num(m.amount);
-  const unit = m.currency === "JPY" ? "円" : m.currency;
-  const tax = m.taxIncluded === true ? "（税込）" : m.taxIncluded === false ? "（税別）" : "";
-  return `${amount} ${unit}${tax}`;
+type Text = Messages["accommodation"];
+type MoneyInput = { amount: number; amountMax?: number; currency: string; taxIncluded?: boolean };
+
+/** 金額だけ（税の注記なし）。ja「1,000〜2,000 円」、en「¥1,000–2,000」。円でなければ「12.5 USD」 */
+function amountText(m: MoneyInput, locale: Locale): string {
+  const t = messages(locale).accommodation;
+  const amount = m.amountMax !== undefined && m.amountMax !== m.amount ? t.range(num(m.amount), num(m.amountMax)) : num(m.amount);
+  return m.currency === "JPY" ? t.price.yen(amount) : `${amount} ${m.currency}`;
 }
 
-const money = (m: Money | undefined) => (m ? formatMoney({ amount: m.amount, currency: m.currency, taxIncluded: m.tax_included }) : null);
+/** 税込なら「（税込）」、税別なら「（税別）」。分からなければ空 */
+function taxText(taxIncluded: boolean | undefined, locale: Locale): string {
+  const t = messages(locale).accommodation.price;
+  return taxIncluded === true ? t.taxIn : taxIncluded === false ? t.taxOut : "";
+}
+
+/** 「550 円」「12.5 USD」。税込なら「（税込）」、税別なら「（税別）」を足す。en は「¥550 (tax incl.)」 */
+export function formatMoney(m: MoneyInput, locale: Locale = "ja"): string {
+  return amountText(m, locale) + taxText(m.taxIncluded, locale);
+}
 
 /** 「15:00〜24:00」。片方だけでも出す */
-function range(from: string | undefined, to: string | undefined): string | null {
+function range(t: Text, from: string | undefined, to: string | undefined): string | null {
   if (from === undefined && to === undefined) return null;
-  return `${from ?? ""}〜${to ?? ""}`;
+  return t.range(from ?? "", to ?? "");
 }
 
 /** 「2〜8」。同じなら「2」 */
-function guestsText(min: number | undefined, max: number | undefined): string | null {
+function guestsText(t: Text, min: number | undefined, max: number | undefined): string | null {
   if (min === undefined && max === undefined) return null;
   if (min === undefined || max === undefined || min === max) return String(min ?? max);
-  return `${min}〜${max}`;
+  return t.range(String(min), String(max));
 }
 
 /** 「6〜12 歳」「6 歳以上」「12 歳以下」 */
-function ageText(min: number | undefined, max: number | undefined): string | null {
-  if (min !== undefined && max !== undefined) return min === max ? `${min} 歳` : `${min}〜${max} 歳`;
-  if (min !== undefined) return `${min} 歳以上`;
-  if (max !== undefined) return `${max} 歳以下`;
+function ageText(t: Text, min: number | undefined, max: number | undefined): string | null {
+  if (min !== undefined && max !== undefined) return min === max ? t.price.age(min) : t.price.ages(t.range(String(min), String(max)));
+  if (min !== undefined) return t.price.ageMin(min);
+  if (max !== undefined) return t.price.ageMax(max);
   return null;
 }
 
@@ -240,42 +253,47 @@ export function toAccommodationView(input: AccommodationViewInput): Accommodatio
   const parsed = accommodationDetailsSchema.safeParse(input.details);
   if (!parsed.success) return null;
   const d: AccommodationDetails = parsed.data;
-  const text = (t: LocalizedText | undefined) => (t ? resolveLocalizedText(t, input.locale).text || null : null);
+  const locale = input.locale;
+  const t = messages(locale).accommodation;
+  const label = (list: readonly Term[], code: string) => labelOf(list, code, locale);
+  const labelOrNone = (list: readonly Term[], code: string | undefined) => labelOrNull(list, code, locale);
+  const money = (m: Money | undefined) => (m ? formatMoney({ amount: m.amount, currency: m.currency, taxIncluded: m.tax_included }, locale) : null);
+  const text = (x: LocalizedText | undefined) => (x ? resolveLocalizedText(x, locale).text || null : null);
   const rooms = d.rooms ?? [];
   const roomLabel = (key: string | null) => {
     const room = rooms.find((r) => r.key === key);
     const name = text(room?.name);
     if (name) return name;
-    return rooms.length <= 1 ? "1 棟" : (key ?? "1 棟");
+    return rooms.length <= 1 ? t.price.wholeHouse : (key ?? t.price.wholeHouse);
   };
 
   return {
     stay: { checkIn: toHHMM(input.checkIn), checkOut: toHHMM(input.checkOut) },
-    priceTable: priceTable(d, roomLabel, input.officialUrl),
+    priceTable: priceTable(d, roomLabel, input.officialUrl, locale),
     rooms: rooms.map((r) => ({
       key: r.key,
       label: roomLabel(r.key),
       capacity: orNull(r.capacity),
       areaSqm: orNull(r.area_sqm),
       tatami: orNull(r.tatami),
-      styleLabel: labelOrNull(ROOM_STYLE_LIST, r.style),
+      styleLabel: labelOrNone(ROOM_STYLE_LIST, r.style),
       view: text(r.view),
-      smokingLabel: labelOrNull(SMOKING_LIST, r.smoking),
+      smokingLabel: labelOrNone(SMOKING_LIST, r.smoking),
       bedrooms: (r.bedrooms ?? []).map((b, i) => {
         const name = text(b.name);
         return {
-          label: `寝室 ${i + 1}${name ? `（${name}）` : ""}`,
-          beds: b.beds.map((x) => `${labelOf(BED_TYPE_LIST, x.type)} ${x.count}`).join("・"),
+          label: `${t.room.bedroom(i + 1)}${name ? t.paren(name) : ""}`,
+          beds: b.beds.map((x) => t.room.bed(label(BED_TYPE_LIST, x.type), x.count)).join(t.sep),
         };
       }),
       photos: input.photos.filter((p) => p.subjectKey === r.key).map((p) => p.photo),
     })),
     meals: (d.meals ?? []).map((m) => ({
-      label: labelOf(MEAL_LIST, m.meal),
+      label: label(MEAL_LIST, m.meal),
       offered: m.offered,
-      styleLabel: labelOrNull(MEAL_STYLE_LIST, m.style),
-      placeLabel: labelOrNull(MEAL_PLACE_LIST, m.place),
-      hours: range(m.served_from, m.served_to),
+      styleLabel: labelOrNone(MEAL_STYLE_LIST, m.style),
+      placeLabel: labelOrNone(MEAL_PLACE_LIST, m.place),
+      hours: range(t, m.served_from, m.served_to),
       slots: m.slots ?? [],
       fee: money(m.fee),
       allergyConsult: orNull(m.allergy_consult),
@@ -283,48 +301,48 @@ export function toAccommodationView(input: AccommodationViewInput): Accommodatio
       note: text(m.note),
     })),
     baths: (d.baths ?? []).map((b) => ({
-      label: labelOf(BATH_KIND_LIST, b.kind),
-      saunaStyleLabel: labelOrNull(SAUNA_STYLE_LIST, b.sauna_style),
+      label: label(BATH_KIND_LIST, b.kind),
+      saunaStyleLabel: labelOrNone(SAUNA_STYLE_LIST, b.sauna_style),
       hotSpring: orNull(b.hot_spring),
       spring: orNull(b.spring),
-      sourceLabel: labelOrNull(HOT_SPRING_SOURCE_LIST, b.source),
+      sourceLabel: labelOrNone(HOT_SPRING_SOURCE_LIST, b.source),
       capacity: orNull(b.capacity),
       coldBath: orNull(b.cold_bath),
       outdoorRest: orNull(b.outdoor_rest),
-      hours: range(b.open_from, b.open_to),
-      genderLabel: labelOrNull(BATH_GENDER_LIST, b.gender),
+      hours: range(t, b.open_from, b.open_to),
+      genderLabel: labelOrNone(BATH_GENDER_LIST, b.gender),
       reservation: b.reservation
         ? [
-            b.reservation.required ? "要予約" : "予約不要",
-            labelOrNull(RESERVATION_TIMING_LIST, b.reservation.when),
-            b.reservation.slot_minutes !== undefined ? `${b.reservation.slot_minutes} 分` : null,
+            b.reservation.required ? t.bath.required : t.bath.notRequired,
+            labelOrNone(RESERVATION_TIMING_LIST, b.reservation.when),
+            b.reservation.slot_minutes !== undefined ? t.bath.minutes(b.reservation.slot_minutes) : null,
           ]
             .filter(Boolean)
-            .join("・")
+            .join(t.sep)
         : null,
       fee: money(b.fee),
       note: text(b.note),
     })),
-    amenityGroups: amenityGroups(d, text),
+    amenityGroups: amenityGroups(d, text, locale),
     internet: d.internet
       ? {
           wifi: orNull(d.internet.wifi),
           downMbps: orNull(d.internet.down_mbps),
           upMbps: orNull(d.internet.up_mbps),
           measuredAt: orNull(d.internet.measured_at),
-          deskLabel: labelOrNull(DESK_SCOPE_LIST, d.internet.desk),
+          deskLabel: labelOrNone(DESK_SCOPE_LIST, d.internet.desk),
           note: text(d.internet.note),
         }
       : null,
     pets: d.pets
-      ? { allowed: d.pets.allowed, sizeLabel: labelOrNull(PET_SIZE_LIST, d.pets.size), fee: money(d.pets.fee), note: text(d.pets.note) }
+      ? { allowed: d.pets.allowed, sizeLabel: labelOrNone(PET_SIZE_LIST, d.pets.size), fee: money(d.pets.fee), note: text(d.pets.note) }
       : null,
     conditions: d.rules
       ? {
-          smokingLabel: labelOrNull(SMOKING_LIST, d.rules.smoking),
+          smokingLabel: labelOrNone(SMOKING_LIST, d.rules.smoking),
           parties: orNull(d.rules.parties),
           fireworks: orNull(d.rules.fireworks),
-          quietHours: range(d.rules.quiet_from, d.rules.quiet_to),
+          quietHours: range(t, d.rules.quiet_from, d.rules.quiet_to),
           bbqUntil: orNull(d.rules.bbq_until),
           minNights: orNull(d.rules.min_nights),
           garbage: text(d.rules.garbage),
@@ -333,7 +351,7 @@ export function toAccommodationView(input: AccommodationViewInput): Accommodatio
       : null,
     parking: d.parking
       ? {
-          placeLabel: labelOrNull(PARKING_PLACE_LIST, d.parking.place),
+          placeLabel: labelOrNone(PARKING_PLACE_LIST, d.parking.place),
           spaces: orNull(d.parking.spaces),
           maxHeightM: orNull(d.parking.max_height_m),
           fee: money(d.parking.fee),
@@ -343,7 +361,7 @@ export function toAccommodationView(input: AccommodationViewInput): Accommodatio
     access: d.access
       ? {
           station: text(d.access.station),
-          modeLabel: labelOrNull(ACCESS_MODE_LIST, d.access.mode),
+          modeLabel: labelOrNone(ACCESS_MODE_LIST, d.access.mode),
           minutes: orNull(d.access.minutes),
           shuttle: orNull(d.access.shuttle),
           slopeOrStairs: orNull(d.access.slope_or_stairs),
@@ -362,99 +380,107 @@ export function toAccommodationView(input: AccommodationViewInput): Accommodatio
         }
       : null,
     cautions: (d.cautions ?? []).flatMap((c) => {
-      const t = text(c.note);
-      return t ? [t] : [];
+      const x = text(c.note);
+      return x ? [x] : [];
     }),
-    licenses: (d.licenses ?? []).map((l) => ({ label: labelOf(LICENSE_KIND_LIST, l.kind), number: orNull(l.number) })),
+    licenses: (d.licenses ?? []).map((l) => ({ label: label(LICENSE_KIND_LIST, l.kind), number: orNull(l.number) })),
     bookingLinks: (d.booking_links ?? []).map((b) => ({ label: b.label, url: b.url, isOfficial: b.is_official ?? false })),
+    // 出典の fields（details や core の欄の名前）は画面の言葉にする。知らない名前はそのまま出す
     sources: (d.sources ?? []).map((s) => ({
       name: s.name,
       url: s.url,
-      typeLabel: labelOf(SOURCE_TYPE_LIST, s.type),
+      typeLabel: label(SOURCE_TYPE_LIST, s.type),
       retrievedAt: s.retrieved_at,
-      fields: (s.fields ?? []).map((f) => SOURCE_FIELD_LABELS[f] ?? f),
+      fields: (s.fields ?? []).map((f) => t.fields[f] ?? f),
     })),
   };
 }
 
-// 出典の fields（details や core の欄の名前）を画面の言葉にする。知らない名前はそのまま出す
-const SOURCE_FIELD_LABELS: Record<string, string> = {
-  name: "名前", summary: "紹介", address: "住所", location: "位置", kind: "種類",
-  check_in: "チェックイン", check_out: "チェックアウト", official_url: "公式サイト",
-  rooms: "部屋", bedrooms: "寝室", baths: "風呂", meals: "食事", prices: "料金", amenities: "設備",
-  internet: "Wi-Fi", pets: "ペット", rules: "条件", parking: "駐車場", access: "アクセス",
-  surroundings: "周辺", cautions: "注意点", licenses: "許可・届出", booking_links: "予約", photos: "写真",
-};
-
 /** 料金（参考）の表。部屋ごとの最小〜最大だけ。区分ごとの値は出さない */
-function priceTable(d: AccommodationDetails, roomLabel: (key: string | null) => string, officialUrl: string | null): PriceTable | null {
+function priceTable(
+  d: AccommodationDetails,
+  roomLabel: (key: string | null) => string,
+  officialUrl: string | null,
+  locale: Locale,
+): PriceTable | null {
   const hint = priceHint({ rooms: d.rooms, prices: d.prices });
   if (!hint) return null;
+  const t = messages(locale).accommodation;
+  const label = (list: readonly Term[], code: string) => labelOf(list, code, locale);
   return {
-    unitLabel: hint.per && hint.currency ? unitText(hint.per, hint.currency, hint.taxIncluded) : null,
-    perLabel: hint.per ? labelOf(PRICE_PER_LIST, hint.per) : null,
+    unitLabel: hint.per && hint.currency ? unitText(hint.per, hint.currency, hint.taxIncluded, locale) : null,
+    perLabel: hint.per ? label(PRICE_PER_LIST, hint.per) : null,
     currency: hint.currency,
     taxIncluded: hint.taxIncluded,
     rows: hint.rows.map((r) => {
       const row: PriceTableRow = {
         roomLabel: roomLabel(r.room),
-        guests: guestsText(r.guestsMin, r.guestsMax),
+        guests: guestsText(t, r.guestsMin, r.guestsMax),
         min: r.min,
         max: r.max,
-        mealsLabels: r.meals.map((m) => labelOf(PRICE_MEALS_LIST, m)),
+        mealsLabels: r.meals.map((m) => label(PRICE_MEALS_LIST, m)),
       };
-      if (r.per !== hint.per || r.currency !== hint.currency) row.unitLabel = unitText(r.per, r.currency, r.taxIncluded);
+      if (r.per !== hint.per || r.currency !== hint.currency) row.unitLabel = unitText(r.per, r.currency, r.taxIncluded, locale);
       const note = [
-        ...r.who.map(whoText),
-        ...r.includes.map((k) => `${labelOf(PRICE_KIND_LIST, k)}込み`),
-        ...r.includesSome.map((k) => `${labelOf(PRICE_KIND_LIST, k)}込み（一部）`),
-      ].join("・");
+        ...r.who.map((w) => whoText(w, locale)),
+        ...r.includes.map((k) => t.price.includes(label(PRICE_KIND_LIST, k))),
+        ...r.includesSome.map((k) => t.price.includesSome(label(PRICE_KIND_LIST, k))),
+      ].join(t.sep);
       if (note) row.note = note;
       return row;
     }),
     fees: hint.fees.map((it): LabeledText => {
-      const label = labelOf(PRICE_KIND_LIST, it.kind);
-      const text = priceText(it, roomLabel);
-      return it.includedInRoom ? { label, text: `${text}（宿泊料に込み）`, includedInRoom: true } : { label, text };
+      const kind = label(PRICE_KIND_LIST, it.kind);
+      const text = priceText(it, roomLabel, locale);
+      return it.includedInRoom ? { label: kind, text: `${text}${t.price.inRoom}`, includedInRoom: true } : { label: kind, text };
     }),
-    children: hint.children.map((it) => ({ label: labelOf(PRICE_AUDIENCE_LIST, "child"), text: priceText(it, roomLabel) })),
+    children: hint.children.map((it) => ({ label: label(PRICE_AUDIENCE_LIST, "child"), text: priceText(it, roomLabel, locale) })),
     officialUrl,
   };
 }
 
-/** 「1 棟 1 泊・税込（円）」 */
-function unitText(per: string, currency: string, taxIncluded: boolean | null): string {
-  const unit = currency === "JPY" ? "円" : currency;
-  const tax = taxIncluded === true ? "・税込" : taxIncluded === false ? "・税別" : "";
-  return `${labelOf(PRICE_PER_LIST, per)}${tax}（${unit}）`;
+/** 「1 棟 1 泊・税込（円）」。en は「Per house per night · tax incl. (¥)」 */
+function unitText(per: string, currency: string, taxIncluded: boolean | null, locale: Locale): string {
+  const t = messages(locale).accommodation;
+  const unit = currency === "JPY" ? t.price.yenUnit : currency;
+  const tax = taxIncluded === true ? t.price.unitTaxIn : taxIncluded === false ? t.price.unitTaxOut : "";
+  return `${capitalize(labelOf(PRICE_PER_LIST, per, locale))}${tax}${t.paren(unit)}`;
 }
 
+// en の単位（per house per night）は文頭だけ大文字にする。ja は変わらない
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 /** 「大人」「6〜12 歳」「大人 13 歳以上」 */
-function whoText(w: PriceWho): string {
-  const who = w.audience !== undefined && w.audience !== "all" ? labelOf(PRICE_AUDIENCE_LIST, w.audience) : null;
-  return [who, ageText(w.age_min, w.age_max)].filter(Boolean).join(" ");
+function whoText(w: PriceWho, locale: Locale): string {
+  const t = messages(locale).accommodation;
+  const who = w.audience !== undefined && w.audience !== "all" ? labelOf(PRICE_AUDIENCE_LIST, w.audience, locale) : null;
+  return [who, ageText(t, w.age_min, w.age_max)].filter(Boolean).join(" ");
 }
 
 /** 料金 1 件の文。「ツイン 3〜4 名のとき 1 回の滞在 1,000〜2,000 円」「6〜12 歳 50〜70%」「大人 1 名 1 泊 150 円（税込）・入湯税込み」 */
-function priceText(it: PriceLine, roomLabel: (key: string | null) => string): string {
+function priceText(it: PriceLine, roomLabel: (key: string | null) => string, locale: Locale): string {
+  const t = messages(locale).accommodation;
   const room = it.room !== undefined ? roomLabel(it.room) : null;
-  const guests = guestsText(it.guests_min, it.guests_max);
+  const guests = guestsText(t, it.guests_min, it.guests_max);
   // 子どもの料金は見出しが「子ども」なので、年齢だけ出す
-  const who = it.kind === "room" ? ageText(it.age_min, it.age_max) : whoText(it);
-  const meals = it.meals ? labelOf(PRICE_MEALS_LIST, it.meals) : null;
+  const who = it.kind === "room" ? ageText(t, it.age_min, it.age_max) : whoText(it, locale);
+  const meals = it.meals ? labelOf(PRICE_MEALS_LIST, it.meals, locale) : null;
   const value =
     it.amount !== undefined
-      ? `${labelOf(PRICE_PER_LIST, it.per)} ${formatMoney({ amount: it.amount, amountMax: it.amount_max, currency: it.currency, taxIncluded: it.tax_included })}`
+      ? t.price.perPrice(
+          labelOf(PRICE_PER_LIST, it.per, locale),
+          amountText({ amount: it.amount, amountMax: it.amount_max, currency: it.currency }, locale),
+        ) + taxText(it.tax_included, locale)
       : it.rate_percent_max !== undefined
-        ? `${it.rate_percent}〜${it.rate_percent_max}%`
+        ? `${t.range(String(it.rate_percent), String(it.rate_percent_max))}%`
         : `${it.rate_percent}%`;
-  const text = [room, guests ? `${guests} 名のとき` : null, who || null, meals, value].filter(Boolean).join(" ");
-  const includes = (it.includes ?? []).map((k) => `${labelOf(PRICE_KIND_LIST, k)}込み`);
-  return [text, ...includes].join("・");
+  const text = [room, guests ? t.price.forGuests(guests) : null, who || null, meals, value].filter(Boolean).join(t.price.partSep);
+  const includes = (it.includes ?? []).map((k) => t.price.includes(labelOf(PRICE_KIND_LIST, k, locale)));
+  return [text, ...includes].join(t.sep);
 }
 
 /** 設備を中カテゴリにまとめる。中カテゴリも中身も語彙の順 */
-function amenityGroups(d: AccommodationDetails, text: (t: LocalizedText | undefined) => string | null): AmenityGroupView[] {
+function amenityGroups(d: AccommodationDetails, text: (t: LocalizedText | undefined) => string | null, locale: Locale): AmenityGroupView[] {
   const entries = d.amenities ?? [];
   const order = (code: string) => AMENITY_LIST.findIndex((a) => a.code === code);
   return AMENITY_GROUP_LIST.flatMap((g) => {
@@ -462,12 +488,12 @@ function amenityGroups(d: AccommodationDetails, text: (t: LocalizedText | undefi
       .filter((a) => amenityGroupOf(a.code)?.code === g.code)
       .sort((a, b) => order(a.code) - order(b.code))
       .map((a) => ({
-        label: labelOf(AMENITY_LIST, a.code),
-        options: (a.options ?? []).map((o) => labelOf(amenityOptions(a.code), o)),
+        label: labelOf(AMENITY_LIST, a.code, locale),
+        options: (a.options ?? []).map((o) => labelOf(amenityOptions(a.code), o, locale)),
         count: orNull(a.count),
         paid: orNull(a.paid),
         note: text(a.note),
       }));
-    return items.length ? [{ label: g.label, items }] : [];
+    return items.length ? [{ label: locale === "en" ? g.en : g.label, items }] : [];
   });
 }

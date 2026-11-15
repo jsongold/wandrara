@@ -2,6 +2,8 @@
 
 import { Fragment, useId, useState } from "react";
 import type { LabeledText, PriceTableRow } from "@/lib/accommodation/view";
+import { messages } from "@/lib/i18n/messages";
+import type { Locale } from "@/lib/types";
 import { SubRow } from "../ExpandRow";
 import { yen } from "./format";
 
@@ -15,7 +17,18 @@ const cell = (open: boolean, kind: "head" | "num" | "note") =>
   ].join(" ");
 
 // 料金の表の中身。中身のある行は押すと、その行のすぐ下に別料金・子ども・食事を開く
-export function PriceRows({ rows, fees, childFees }: { rows: PriceTableRow[]; fees: LabeledText[]; childFees: LabeledText[] }) {
+export function PriceRows({
+  rows,
+  fees,
+  childFees,
+  locale,
+}: {
+  rows: PriceTableRow[];
+  fees: LabeledText[];
+  childFees: LabeledText[];
+  locale: Locale;
+}) {
+  const t = messages(locale).accommodation;
   const [open, setOpen] = useState<Record<number, boolean>>({});
   const baseId = useId();
 
@@ -25,13 +38,13 @@ export function PriceRows({ rows, fees, childFees }: { rows: PriceTableRow[]; fe
         const manyMeals = r.mealsLabels.length > 1;
         // 行だけの単位・条件を先に、そのあと別料金・子ども・食事
         const extra: LabeledText[] = [
-          ...(r.unitLabel ? [{ label: "単位", text: r.unitLabel }] : []),
-          ...(r.note ? [{ label: "条件", text: r.note }] : []),
+          ...(r.unitLabel ? [{ label: t.price.unit, text: r.unitLabel }] : []),
+          ...(r.note ? [{ label: t.price.conditions, text: r.note }] : []),
           ...fees,
           ...childFees,
-          ...(manyMeals ? [{ label: "食事", text: r.mealsLabels.join("・") }] : []),
+          ...(manyMeals ? [{ label: t.price.meals, text: r.mealsLabels.join(t.sep) }] : []),
         ];
-        const note = manyMeals ? `${r.mealsLabels[0]}ほか` : (r.mealsLabels[0] ?? "");
+        const note = manyMeals ? t.price.mealsMore(r.mealsLabels[0]) : (r.mealsLabels[0] ?? "");
         const tappable = extra.length > 0;
         const isOpen = tappable && !!open[i];
         const panelId = `${baseId}-${i}`;
