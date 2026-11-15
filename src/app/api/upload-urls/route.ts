@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { adminClient } from "@/lib/supabase/admin";
 import { authenticateCollector } from "@/lib/ingest/auth";
+import { limiter } from "@/lib/limit";
 
 const BUCKET = "dest-photos";
+/** 1 リクエストの中で同時に Storage へ問い合わせる数 */
+const STORAGE_CONCURRENCY = 10;
 const EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" };
 
 export async function POST(req: Request) {
@@ -31,18 +34,19 @@ export async function POST(req: Request) {
   if (errors.length) return NextResponse.json({ errors }, { status: 400 });
 
   try {
-    const uploads = [];
-    for (const it of items) {
-      const { data: found, error: listErr } = await db.storage.from(BUCKET).list("", { search: it.storage_key, limit: 1 });
-      if (listErr) throw listErr;
-      if (found?.some((o) => o.name === it.storage_key)) {
-        uploads.push({ ...it, signed_url: null });
-        continue;
-      }
-      const { data, error } = await db.storage.from(BUCKET).createSignedUploadUrl(it.storage_key);
-      if (error) throw error;
-      uploads.push({ ...it, signed_url: data.signedUrl });
-    }
+    const run = limiter(STORAGE_CONCURRENCY);
+    const uploads = await Promise.all(
+      items.map((it) =>
+        run(async () => {
+          const { data: found, error: listErr } = await db.storage.from(BUCKET).list("", { search: it.storage_key, limit: 1 });
+          if (listErr) throw listErr;
+          if (found?.some((o) => o.name === it.storage_key)) return { ...it, signed_url: null };
+          const { data, error } = await db.storage.from(BUCKET).createSignedUploadUrl(it.storage_key);
+          if (error) throw error;
+          return { ...it, signed_url: data.signedUrl };
+        }),
+      ),
+    );
     return NextResponse.json({ uploads });
   } catch (e) {
     console.error(e);

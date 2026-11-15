@@ -24,6 +24,18 @@ describe("parseBundle", () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect((r.value.dests[0].details as any).units[0].area_sqm).toBe("45.5");
   });
+  it("同じ ref が 2 回ある bundle を弾く（ref の無いものは重ならない）", () => {
+    const b = bundle(dest()) as any;
+    const noRef = () => ({ ...dest(), ref: undefined });
+    b.dests = [dest(), { ...dest(), ref: "WR-other-001" }, dest(), noRef(), noRef()];
+    const r = parseBundle(b);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.errors).toHaveLength(1);
+      expect(r.errors[0]).toContain("/dests/2/ref");
+      expect(r.errors[0]).toContain("/dests/0");
+    }
+  });
   it("知らないキーを弾く", () => {
     const d = dest() as any;
     d.core.bogus = 1;

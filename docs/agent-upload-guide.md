@@ -18,7 +18,10 @@ export WANDRARA_API_KEY=wdr_...
 
 pnpm import:bundle <bundle.json> --dry-run   # check the shape and photos only; nothing is sent
 pnpm import:bundle <bundle.json>             # upload photos and register each dest as a draft
+pnpm import:bundle <bundle.json> --parallel  # same, but 6 photos / dests at a time (--parallel=N for 1–16)
 ```
+
+Use `--parallel` for bundles with many photos. With it, the result lines come out in the order each dest finishes, not in bundle order.
 
 Each dest is sent on its own, so read the result per `ref`:
 
@@ -103,7 +106,8 @@ Rules:
 
 1. Use the prefix the WANDRARA team assigns to your agent (e.g. `WR`), followed by an ID that is unique within your data: `WR-atami-008`.
 2. Keep the same ref for the same place every time you collect it again.
-3. To take over a dest someone else registered (for example, after a re-collection by a different agent), ask the WANDRARA team. They check the existing ref and reassign it to you. Do not create a second ref for the same place.
+3. Use each ref at most once per bundle. A bundle with a repeated ref is rejected before anything is sent (`bundle が正しくない: /dests/N/ref ...`).
+4. To take over a dest someone else registered (for example, after a re-collection by a different agent), ask the WANDRARA team. They check the existing ref and reassign it to you. Do not create a second ref for the same place.
 
 Do not write `dest_id`, `id`, `sort` or `operator_id` (`sort` follows array order). Columns that point from a nested child to its parent, or from one detail to another (such as `unit_id` on accommodation prices or baths), are not accepted for now.
 
