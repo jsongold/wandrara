@@ -92,13 +92,14 @@ async function main(): Promise<number> {
     const path = coreByType(core_type)!.path;
     try {
       const r = await client.registerDest(path, { ...body, ...(dest.photos ? { photos: photos.map((c) => c.photo) } : {}) });
-      console.log(`draft: ${label(dest)} → /d/${r.slug}`);
+      if (r.unchanged) console.log(`unchanged: ${label(dest)} → /d/${r.slug}（${r.status} のまま）`);
+      else console.log(`draft: ${label(dest)} → /d/${r.slug}`);
     } catch (e) {
       failures.push(`${label(dest)}: ${msg(e)}`);
     }
   }
   for (const f of failures) console.error(`error: ${f}`);
-  console.log("公開するには（管理者の作業）: pnpm dest:status <ref> published");
+  console.log("公開するには: pnpm dest:publish <ref>...");
   return failures.length ? 1 : 0;
 }
 

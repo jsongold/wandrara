@@ -4,6 +4,7 @@ import { getTableColumns } from "drizzle-orm/utils";
 import type { PgColumn } from "drizzle-orm/pg-core";
 import type { CoreDef } from "../../db/schema/_shared.ts";
 import type { DestInput } from "./bundle.ts";
+import { contentHash } from "./hash.ts";
 
 type Row = Record<string, unknown>;
 
@@ -23,7 +24,7 @@ export type DestWritePlan = {
   /** コアの表 → texts → details（CoreDef の順）→ dest_photos */
   tables: { table: string; rows: Row[] }[];
   dest_categories: Row[];
-  import: { dest_id: string; ref: string | null; collector_key_id: string; payload: unknown };
+  import: { dest_id: string; ref: string | null; collector_key_id: string; payload: unknown; content_hash: string };
 };
 
 function slugify(s: string): string {
@@ -103,6 +104,6 @@ export function planDestWrite(core: CoreDef, input: DestInput, refs: DestRefs, c
     categories,
     tables,
     dest_categories: catIds.map((c) => ({ dest_id: destId, category_id: c })),
-    import: { dest_id: destId, ref, collector_key_id: ctx.keyId, payload: input },
+    import: { dest_id: destId, ref, collector_key_id: ctx.keyId, payload: input, content_hash: contentHash(input) },
   };
 }

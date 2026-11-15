@@ -1,4 +1,4 @@
-// 1 件の dest を登録する：検証 → 既存の引き当て → 行に平たくする → dest_apply
+// 1 件の dest を登録する：検証 → 既存の引き当て → 行に平たくする → dest_apply（中身が前回と同じなら dest_apply が行ロックの中で飛ばす）
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CoreDef } from "../../db/schema/_shared.ts";
@@ -6,7 +6,8 @@ import { parseDestInput, type DestInput } from "./bundle.ts";
 import { planDestWrite, type DestRefs, type DestWritePlan } from "./plan.ts";
 
 export type RegisterResult =
-  | { ok: true; dest_id: string; slug: string; status: "draft" }
+  | { ok: true; dest_id: string; slug: string; status: "draft"; unchanged: false }
+  | { ok: true; dest_id: string; slug: string; status: string; unchanged: true }
   | { ok: false; status: 400 | 409; errors: string[] };
 
 function fail(error: { message: string } | null, what: string) {
@@ -53,10 +54,13 @@ export async function loadRefs(db: SupabaseClient, input: DestInput): Promise<De
   return { destByRef, slugs, regions, categories };
 }
 
-export async function applyDestWrite(db: SupabaseClient, plan: DestWritePlan): Promise<{ dest_id: string; slug: string }> {
+export type ApplyResult = { dest_id: string; slug: string; unchanged: boolean; status: string };
+
+export async function applyDestWrite(db: SupabaseClient, plan: DestWritePlan): Promise<ApplyResult> {
   const { data, error } = await db.rpc("dest_apply", { p: plan });
   if (error) throw new Error(`dest_apply: ${error.message}`);
-  return data as { dest_id: string; slug: string };
+  const r = data as Partial<ApplyResult> & { dest_id: string; slug: string };
+  return { dest_id: r.dest_id, slug: r.slug, unchanged: r.unchanged === true, status: r.status ?? "draft" };
 }
 
 export async function registerDest(
@@ -80,5 +84,7 @@ export async function registerDest(
   }
   const plan = planDestWrite(core, parsed.value, refs, { userId: principal.userId, keyId: principal.keyId, uuid: randomUUID });
   const res = await applyDestWrite(db, plan);
-  return { ok: true, dest_id: res.dest_id, slug: res.slug, status: "draft" };
+  // unchanged: 中身が前回と同じで何も書かなかった（公開中ならそのまま）
+  if (res.unchanged) return { ok: true, dest_id: res.dest_id, slug: res.slug, status: res.status, unchanged: true };
+  return { ok: true, dest_id: res.dest_id, slug: res.slug, status: "draft", unchanged: false };
 }

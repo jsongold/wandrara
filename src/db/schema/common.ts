@@ -107,6 +107,8 @@ export const destImports = pgTable(
     collectorKeyId: uuid("collector_key_id").references(() => collectorKeys.id, { onDelete: "set null" }),
     /** 受け取った入力そのまま（出典もここに残る） */
     payload: jsonb("payload").notNull(),
+    /** 中身のハッシュ（sources・verification_status を除く）。前回と同じなら書き込みを飛ばす */
+    contentHash: text("content_hash"),
     importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("dest_imports_dest_id_idx").on(t.destId)],
