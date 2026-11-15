@@ -1188,6 +1188,17 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -1878,6 +1889,17 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -2499,6 +2521,17 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -2998,6 +3031,17 @@
                           "additionalProperties": {
                             "type": "string"
                           }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
                         },
                         {
                           "type": "null"
@@ -3632,6 +3676,17 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   },
                   "additionalProperties": false
@@ -4229,6 +4284,17 @@
                           "additionalProperties": {
                             "type": "string"
                           }
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "room": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
                         },
                         {
                           "type": "null"
