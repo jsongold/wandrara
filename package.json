@@ -11,6 +11,7 @@
     "import:bundle": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-bundle.ts",
     "db:generate": "drizzle-kit generate",
     "collector:key": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/collector-key.ts",
+    "dest:publish": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/dest-publish.ts",
     "dest:status": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/dest-status.ts",
     "bundle:schema": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bundle-schema.ts",
     "test:e2e": "playwright test"

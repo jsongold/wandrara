@@ -2,7 +2,7 @@ Purpose: how an agent uploads data to WANDRARA — how to run the script, and wh
 
 # WANDRARA Data Upload Guide for Agents
 
-To add data to WANDRARA, prepare a bundle (JSON) and its photos, then run `pnpm import:bundle`. Uploaded data is saved as a draft and appears on the site after the WANDRARA team reviews and publishes it.
+To add data to WANDRARA, prepare a bundle (JSON) and its photos, then run `pnpm import:bundle`. Uploaded data is saved as a draft. You publish it yourself with `pnpm dest:publish` (see "Publishing").
 
 ## Using the script
 
@@ -24,13 +24,24 @@ Each dest is sent on its own, so read the result per `ref`:
 
 | Case | What you see | What to do next |
 | --- | --- | --- |
-| New registration | `draft: <ref> → /d/<slug>` for a ref never sent before | Nothing. The WANDRARA team publishes it; it then appears at https://wandrara.vercel.app/d/<slug> |
+| New registration | `draft: <ref> → /d/<slug>` for a ref never sent before | Publish it yourself with `pnpm dest:publish <ref>`; it then appears at https://wandrara.vercel.app/d/<slug> |
 | Full replace | `draft: <ref> → /d/<slug>` for a ref you sent before | The dest now holds exactly what you sent this time (see "Updates replace everything" below). A published dest is back in draft |
 | Partial success | Some `draft:` lines and some `error:` lines; exit code 1 | Remove the refs that printed `draft:` from the bundle, fix the rest, and run again. Do not resend the whole bundle: every resent dest goes back to draft, including ones already published |
 | Not registered | `error: <ref>: <reason>` where the reason is a photo error or an API answer (400 invalid data, 401 bad key, 403 not allowed, 409 ref conflict) | Nothing was saved for that ref. Fix the cause and send it again |
 | Result unknown | `error: <ref>: <reason>` where the reason is a network error, a timeout or HTTP 5xx | The dest may or may not have been saved. Ask the WANDRARA team to check that ref. If you resend, use the same ref and the complete data |
 
 `dry-run: dest N 件 / 写真 N 枚を確認した` means the shape and photos are fine and nothing has been sent. `bundle が正しくない:` followed by a list means the bundle has shape errors and nothing has been sent; fix each path in the list (e.g. `/dests/0/core/kind`).
+
+### Publishing
+
+```sh
+pnpm dest:publish <ref>...             # publish
+pnpm dest:publish <ref>... --draft     # take it back to draft
+```
+
+- You can change only refs you registered yourself. Others print `error: <ref>: 別の登録者のもの`.
+- After publishing, it can take up to about a minute before the page shows on the site.
+- Exit code 1 if any ref failed; the other refs are still processed.
 
 ### Updates replace everything
 
@@ -125,7 +136,7 @@ Accepted formats are jpeg, png, webp and avif, up to 10 MB each. The format is d
 
 If any photo of a dest cannot be read or uploaded, that dest is not registered and an `error:` line is printed. Other dests continue.
 
-Uploaded photos are public even while the dest is a draft: they are stored in a public bucket, and anyone with the URL can fetch them. Photos with `license: "none"` (rights not confirmed) are currently accepted and stored the same way, so they are reachable by URL before the WANDRARA team reviews the dest.
+Uploaded photos are public even while the dest is a draft: they are stored in a public bucket, and anyone with the URL can fetch them. Photos with `license: "none"` (rights not confirmed) are currently accepted and stored the same way, so they are reachable by URL even before you publish the dest.
 
 ## Example (one stay)
 
