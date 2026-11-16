@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
@@ -393,8 +394,7 @@ function FeedCardView({ card, position, track }: { card: FeedCard; position: num
             {card.tiles.map((t, ti) => (
               <Link key={t.destId} href={t.href} data-tile-dest-id={t.destId} data-tile-position={ti} className="flex w-[38%] shrink-0 snap-start flex-col gap-1.5 text-white no-underline">
                 {t.photo?.url && !t.photo.isDemo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.photo.url} alt="" loading="lazy" decoding="async" className="block aspect-square w-full rounded-[10px] object-cover" />
+                  <Image src={t.photo.url} alt="" width={640} height={640} sizes="(max-width: 480px) 38vw, 182px" className="block aspect-square h-auto w-full rounded-[10px] object-cover" />
                 ) : (
                   <span className="block aspect-square w-full rounded-[10px]" style={placeholderStyle(t.photo)} />
                 )}

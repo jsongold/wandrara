@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { RoomView } from "@/lib/accommodation/view";
 import { messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/types";
@@ -16,17 +17,17 @@ function RoomDetail({ room, photos, locale }: { room: RoomView; photos: RoomView
     <>
       {photos.length > 0 && (
         <div className="-mx-2.5 mb-1 mt-2 flex snap-x gap-1.5 overflow-x-auto px-2.5">
-          {photos.map((p, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+          {photos.map((p, i) => p.url ? (
+            <Image
               key={`${p.url}-${i}`}
-              src={p.url ?? ""}
+              src={p.url}
               alt={room.label}
-              loading="lazy"
-              decoding="async"
+              width={1080}
+              height={720}
+              sizes="(max-width: 480px) 100vw, 480px"
               className={`block h-[120px] shrink-0 snap-start rounded-[10px] object-cover ${photos.length === 1 ? "w-full" : "w-[78%]"}`}
             />
-          ))}
+          ) : null)}
         </div>
       )}
       {room.capacity !== null && <SubRow label={t.capacity} value={t.guests(room.capacity)} />}

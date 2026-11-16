@@ -2,6 +2,7 @@
 
 // 写真を横にスワイプして 1 枚ずつ切り替える（CSS の scroll-snap）。トップのカードと詳細で使う。
 // href があれば各写真がリンクになる（スワイプはスクロール、タップは遷移）。
+import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useMessages } from "@/lib/i18n/use-locale";
@@ -18,17 +19,16 @@ function placeholder(photo: Photo | null): CSSProperties {
 function Slide({ photo, index, eager, near }: { photo: Photo | null; index: number; eager: boolean; near: boolean }) {
   if (photo?.url && !photo.isDemo && near) {
     return (
-      // Supabase Storage の画像をそのまま出す（next/image の最適化は使わない）
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      // sizes を付けない fill なので srcset は deviceSizes（1080）だけになる（next.config.ts の images）
+      <Image
         src={photo.url}
         alt=""
+        fill
         draggable={false}
         loading={eager ? "eager" : "lazy"}
         fetchPriority={eager ? "high" : "auto"}
-        decoding="async"
         data-index={index}
-        className="h-full w-full select-none object-cover"
+        className="select-none object-cover"
       />
     );
   }
@@ -90,7 +90,7 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
         className="flex h-full w-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {slides.map((p, i) => (
-          <div key={i} className="h-full w-full shrink-0 snap-center snap-always" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>
+          <div key={i} className="relative h-full w-full shrink-0 snap-center snap-always" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>
             {href ? (
               <Link href={href} tabIndex={i === 0 ? 0 : -1} aria-hidden={i === 0 ? undefined : true} aria-label={i === 0 ? m.photos.open(label) : undefined} className="block h-full w-full" draggable={false}>
                 <Slide photo={p} index={i} eager={priority && i === 0} near={Math.abs(i - index) <= 1} />
