@@ -59,6 +59,7 @@ export type FeedCard = {
 export type FeedPage = {
   cards: FeedCard[];
   orderLabel: string;              // 例：「編集部のおすすめ順」
+  algorithm: string;               // 使った戦略の名前と版。例：「order=editorial@1 primary=by-mode@1 secondary=related-other-mode@1」
   emptyReason: "no-match" | null;  // 0 件のときの理由
 };
 
