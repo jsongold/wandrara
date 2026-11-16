@@ -43,7 +43,7 @@
 ## 語彙
 - 種類の値は `src/lib/vocab/hotspring.ts` の一覧にあるものだけ：`baths[].kind`・`baths[].source`・`baths[].gender`・`amenities.towel`・`fees[].audience`（all / adult / child）・`access.mode`。
 - `core.kind`：day_use public_bath foot_bath。
-- 風呂の `kind` に `public`（大浴場）・足湯は無い。宿の風呂の `kind` とは一覧が違う。
+- 風呂の `kind`：`public`（大浴場）・`open_air`・`indoor`・`private`・`sauna`・`foot`（足湯）。足湯は日帰り温泉だけの値。
 - 一覧に無いものは、近いコードに寄せずに報告する。
 
 ## 出典
@@ -51,7 +51,7 @@
 - 公式を優先する。公式以外だけで分かった値は `verification_status: "unverified"`。
 
 ## よくある落とし穴
-- 足湯：風呂の `kind` に足湯（`foot`）は今は無い。`core.kind` は `foot_bath` にできるが、`baths[].kind` に合う値が無い。`open_air` や `indoor` を無理に当てない。足湯として送れない旨を報告する。
+- 足湯：`core.kind` を `foot_bath`、風呂の `kind` を `foot` にする。`open_air` などを代わりに当てない。
 - 温泉でない風呂（人工温泉など）は `hot_spring: false`、`source: "none"`。`categories` に `onsen` を付けない。必須の `spring`（泉質）が出典に無いときは、書かずに報告して送らない。
 - `hours`・`access` は配列にしない。`amenities` もオブジェクト 1 つ。
 - 大人の料金は `audience: "adult"` を付ける。`all` だけだと必須に合わない。
@@ -66,7 +66,7 @@ pnpm import:bundle --dry-run <bundle.json>
 ## 報告
 次のときは、値を作らずに、日帰り温泉ごとにまとめて報告する：`ref`・項目（path）・見た出典の URL・分からなかったこと。
 - 必須の値が見つからない（座標・営業時間・大人の料金・泉質 など）
-- 語彙に無い種類がある（足湯・大浴場 など）
+- 語彙に無い種類がある
 - 型に合わない料金・休みの条件がある
 - 出典どうしで値が食い違う
 

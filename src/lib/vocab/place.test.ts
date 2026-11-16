@@ -21,7 +21,9 @@ describe("建物・日帰り温泉・まちの語彙", () => {
   });
 
   it("風呂の種類・男女は宿の語彙の一部（コードも表示名も同じ）", () => {
-    for (const t of hot.BATH_KIND_LIST) expect(ACC_BATHS.find((a) => a.code === t.code), t.code).toMatchObject({ en: t.en });
+    // 足湯（foot）は日帰り温泉だけ。それ以外は宿と同じコード・表示名
+    for (const t of hot.BATH_KIND_LIST.filter((x) => x.code !== "foot")) expect(ACC_BATHS.find((a) => a.code === t.code), t.code).toMatchObject({ en: t.en });
+    expect(hot.BATH_KINDS).toContain("foot");
     for (const t of hot.BATH_GENDER_LIST) expect(ACC_GENDERS.find((a) => a.code === t.code), t.code).toMatchObject({ label: t.label, en: t.en });
     expect(hot.BATH_KINDS).toContain("sauna");
   });
