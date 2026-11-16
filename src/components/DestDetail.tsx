@@ -4,6 +4,8 @@ import { messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/types";
 import { AccommodationSections } from "./accommodation/AccommodationSections";
 import { StayStrip } from "./accommodation/StayStrip";
+import { ExperienceSections, ExperienceSummaryPill } from "./experience/ExperienceSections";
+import { NatureSections, NatureSummaryPill } from "./nature/NatureSections";
 import { BackButton } from "./BackButton";
 import { FactRows } from "./FactRows";
 import { PhotoCarousel } from "./PhotoCarousel";
@@ -34,6 +36,9 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
   const m = messages(locale);
   const hero = dest.photos[0] ?? null;
   const acc = dest.accommodation;
+  const exp = dest.experience;
+  const nat = dest.nature;
+  const map = <MapPlaceholder label={m.detail.map} ariaLabel={m.detail.mapSoon} className="h-[150px] rounded-[10px]" />;
   return (
     <main className={`mx-auto w-full max-w-[480px] bg-[#f7f6f2] text-[#141413] ${variant === "page" ? "min-h-[100dvh]" : ""}`}>
       {/* 写真は横にスワイプで切り替える */}
@@ -63,12 +68,26 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
               <StayStrip checkIn={acc.stay.checkIn} checkOut={acc.stay.checkOut} />
             </div>
           )}
+          {exp && (
+            <div className="mt-1 flex">
+              <ExperienceSummaryPill summary={exp.summary} locale={locale} />
+            </div>
+          )}
+          {nat && (
+            <div className="mt-1 flex">
+              <NatureSummaryPill summary={nat.summary} locale={locale} />
+            </div>
+          )}
         </section>
 
-        {acc ? (
+        {exp ? (
+          <ExperienceSections view={exp} map={map} note={m.detail.factsNote} locale={locale} />
+        ) : nat ? (
+          <NatureSections view={nat} map={map} note={m.detail.factsNote} locale={locale} />
+        ) : acc ? (
           <AccommodationSections
             view={acc}
-            map={<MapPlaceholder label={m.detail.map} ariaLabel={m.detail.mapSoon} className="h-[150px] rounded-[10px]" />}
+            map={map}
             note={m.detail.factsNote}
             locale={locale}
           />
