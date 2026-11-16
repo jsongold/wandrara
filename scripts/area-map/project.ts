@@ -1,5 +1,5 @@
 // 緯度経度を表示範囲に合わせて SVG の座標にする（メルカトル。範囲の幅を width px に合わせる）
-import type { BBox, LngLat } from "./areas.ts";
+import type { BBox, LngLat } from "../../src/lib/region/types.ts";
 
 export type Geometry = { type: string; coordinates: unknown };
 export type Projection = { viewBox: string; project: (p: LngLat) => [number, number]; inside: (p: LngLat) => boolean };

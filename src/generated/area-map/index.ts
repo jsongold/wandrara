@@ -3,6 +3,7 @@ import type { AreaMapData } from "@/lib/area-map";
 
 export const AREA_MAP_LOADERS: Record<string, () => Promise<AreaMapData>> = {
   "japan": () => import("./japan.json").then((m) => m.default as unknown as AreaMapData),
-  "hakone-izu": () => import("./hakone-izu.json").then((m) => m.default as unknown as AreaMapData),
+  "chiho-kanto": () => import("./chiho-kanto.json").then((m) => m.default as unknown as AreaMapData),
+  "chiho-chubu": () => import("./chiho-chubu.json").then((m) => m.default as unknown as AreaMapData),
   "hakone": () => import("./hakone.json").then((m) => m.default as unknown as AreaMapData),
 };

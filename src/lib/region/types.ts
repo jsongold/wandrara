@@ -37,6 +37,7 @@ export type LookupManifest = {
   sources: Record<PartSource, string>;
   prefectures: { code: string; name: string; bbox: BBox }[];
   parents: Record<string, string | null>;
+  points: string[]; // 区画の無い（点だけの）エリア
 };
 
 /** 代表の位置。宿などはコアの位置、体験は details.locations の代表（meeting 優先、無ければ先頭） */

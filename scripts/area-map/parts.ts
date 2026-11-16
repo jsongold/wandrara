@@ -1,49 +1,50 @@
-// エリア定義に従って、元データの地物をエリアに割り当てる（純関数）
-import type { Part } from "./areas.ts";
+// 元データの地物を読み、エリアの材料コードに当てる
+import mapshaper from "mapshaper";
+import type { RegionPart } from "../../src/lib/region/types.ts";
+import { cityOfKeyCode } from "./sources.ts";
 
 export type Feature = { type: "Feature"; properties: Record<string, unknown>; geometry: unknown };
 export type FeatureCollection = { type: "FeatureCollection"; features: Feature[] };
+/** n03：市区町村（N03_007）の地物、estat：市区町村コード → 小地域の地物 */
 export type Sources = { n03: FeatureCollection; estat: Record<string, FeatureCollection> };
 
-function matches(part: Part, f: Feature, source: "n03" | string): boolean {
-  if ("n03" in part) return source === "n03" && f.properties.N03_007 === part.n03;
-  if (source !== part.estat) return false;
-  if ("names" in part) return part.names.includes(String(f.properties.S_NAME));
-  const head = Number(String(f.properties.S_AREA).slice(0, 3));
-  return head >= part.codeRange[0] && head <= part.codeRange[1];
-}
+export const q = (s: string) => `'${s}'`;
 
-// 指定したエリアの地物を集め、properties.area にエリア id を入れて返す
-export function featuresFor(ids: string[], parts: Record<string, Part[]>, src: Sources): Feature[] {
-  const out: Feature[] = [];
-  for (const id of ids) {
-    const ps = parts[id];
-    if (!ps) throw new Error(`エリア定義がありません: ${id}`);
-    let found = 0;
-    for (const part of ps) {
-      const [source, fc] = "n03" in part ? ["n03", src.n03] : [part.estat, src.estat[part.estat]];
-      if (!fc) throw new Error(`元データがありません: e-Stat ${source}`);
-      for (const f of fc.features) {
-        if (matches(part, f, source)) {
-          out.push({ type: "Feature", properties: { area: id }, geometry: f.geometry });
-          found++;
-        }
-      }
-    }
-    if (found === 0) throw new Error(`エリアの形が 1 つも見つかりません: ${id}`);
+/** mapshaper のコマンドを流し、GeoJSON の FeatureCollection で受け取る */
+export async function run(cmd: string, input?: Record<string, string>): Promise<FeatureCollection> {
+  const out = await mapshaper.applyCommands(`${cmd} -o format=geojson out.json`, input);
+  const g = JSON.parse(String(out["out.json"]));
+  if (g.type === "GeometryCollection") {
+    return { type: "FeatureCollection", features: g.geometries.map((geometry: unknown) => ({ type: "Feature", properties: {}, geometry })) };
   }
-  return out;
+  return g;
 }
 
-// エリア定義が使う市区町村コード（N03）と e-Stat の市区町村コード
-export function sourceCodes(ids: string[], parts: Record<string, Part[]>): { n03: string[]; estat: string[] } {
-  const n03 = new Set<string>();
+export const fc = (features: Feature[]): FeatureCollection => ({ type: "FeatureCollection", features });
+
+/** 材料 1 行に当たる地物。1 つも無ければ失敗（版の違い・合併で消えたコードを静かに通さない） */
+export function featuresOfPart(part: RegionPart, src: Sources): Feature[] {
+  const found =
+    part.source === "n03"
+      ? src.n03.features.filter((f) => f.properties.N03_007 === part.code)
+      : (src.estat[cityOfKeyCode(part.code)]?.features ?? []).filter((f) => f.properties.KEY_CODE === part.code);
+  if (found.length === 0) throw new Error(`元データに材料がありません: ${part.source} ${part.version} ${part.code}`);
+  return found;
+}
+
+/** 材料の列の地物を集め、properties.area にエリア id を入れる */
+export function featuresOf(id: string, parts: RegionPart[], src: Sources): Feature[] {
+  return parts.flatMap((p) => featuresOfPart(p, src).map((f) => ({ type: "Feature" as const, properties: { area: id }, geometry: f.geometry })));
+}
+
+/** 材料が使う市区町村コード（n03 はそのまま、estat は KEY_CODE の先頭 5 桁） */
+export function citiesOf(parts: RegionPart[]): { all: string[]; estat: string[] } {
+  const all = new Set<string>();
   const estat = new Set<string>();
-  for (const id of ids) {
-    for (const p of parts[id] ?? []) {
-      if ("n03" in p) n03.add(p.n03);
-      else estat.add(p.estat);
-    }
+  for (const p of parts) {
+    const city = p.source === "n03" ? p.code : cityOfKeyCode(p.code);
+    all.add(city);
+    if (p.source === "estat") estat.add(city);
   }
-  return { n03: [...n03], estat: [...estat] };
+  return { all: [...all].sort(), estat: [...estat].sort() };
 }

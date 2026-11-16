@@ -73,7 +73,8 @@ export function candidatePrefectures(loc: RepresentativeLocation, manifest: Look
     const [x, y] = [loc.lng as number, loc.lat as number];
     return manifest.prefectures.filter(({ bbox: [w, s, e, n] }) => x >= w && x <= e && y >= s && y <= n).map((p) => p.code);
   }
-  if (loc.prefecture) return manifest.prefectures.filter((p) => p.name === loc.prefecture.trim()).map((p) => p.code);
+  const pref = loc.prefecture?.trim();
+  if (pref) return manifest.prefectures.filter((p) => p.name === pref).map((p) => p.code);
   return [];
 }
 
@@ -112,18 +113,22 @@ export function resolveRegion(loc: RepresentativeLocation, shards: LookupShard[]
 
 /**
  * 書き込む region_id を 1 つの規則で決める（取り込みと付け直しで同じ）
- * ① 明示が実在し、決めた結果と同じかその子孫なら明示（大涌谷などの点のエリアを保つ）
+ * ① 明示が実在し、決めた結果と同じかその子孫なら明示。点だけのエリア（大涌谷）は、その親が決めた結果と同じかその祖先なら明示
+ *   （大涌谷は形を持たないので、座標では隣の仙石原などに決まる。明示した大涌谷を残す）
  * ② それ以外で決まれば決めた結果 ③ 決まらなければ実在する明示 ④ どれも無ければ決まらない
  */
 export function decideRegion(
   resolved: ResolveResult,
   explicit: string | null | undefined,
   exists: (id: string) => boolean,
-  parents: Record<string, string | null>,
+  manifest: Pick<LookupManifest, "parents" | "points">,
 ): RegionDecision {
+  const { parents, points } = manifest;
   const ex = explicit && exists(explicit) ? explicit : null;
   if (resolved.ok) {
-    if (ex && lineage(ex, parents).includes(resolved.regionId)) return { ok: true, regionId: ex, by: "explicit" };
+    const under = (id: string | null) => !!id && lineage(id, parents).includes(resolved.regionId);
+    const pointNear = (id: string) => points.includes(id) && !!parents[id] && lineage(resolved.regionId, parents).includes(parents[id] as string);
+    if (ex && (under(ex) || pointNear(ex))) return { ok: true, regionId: ex, by: "explicit" };
     return { ok: true, regionId: resolved.regionId, by: resolved.by };
   }
   if (ex) return { ok: true, regionId: ex, by: "explicit" };

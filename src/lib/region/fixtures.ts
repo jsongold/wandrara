@@ -50,4 +50,5 @@ export const FIXTURE_MANIFEST: LookupManifest = {
   sources: { n03: "N03-test", estat: "estat-test" },
   prefectures: [{ code: "99", name: "架空県", bbox: [0, 0, 8, 5.5] }],
   parents: { h: null, h1: "h", h2: "h", hp: "h", i: null, i1: "i", i2: "i", b: null, c: null },
+  points: ["hp"],
 };

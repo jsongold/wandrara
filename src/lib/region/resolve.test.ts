@@ -72,9 +72,11 @@ describe("resolveRegion：粗い位置", () => {
 
 describe("decideRegion", () => {
   const exists = (id: string) => id in M.parents;
-  const p = M.parents;
+  const p = M;
   it("明示が決めた結果の子孫なら明示（点のエリアを保つ）", () => {
     expect(decideRegion({ ok: true, regionId: "h", by: "point" }, "hp", exists, p)).toEqual({ ok: true, regionId: "hp", by: "explicit" });
+    expect(decideRegion({ ok: true, regionId: "h1", by: "point" }, "hp", exists, p)).toEqual({ ok: true, regionId: "hp", by: "explicit" }); // 点は隣の子に決まっても残す
+    expect(decideRegion({ ok: true, regionId: "i1", by: "point" }, "hp", exists, p)).toMatchObject({ regionId: "i1" }); // 別の親なら残さない
   });
   it("明示が別の系統なら決めた結果", () => {
     expect(decideRegion({ ok: true, regionId: "h1", by: "point" }, "i", exists, p)).toMatchObject({ regionId: "h1" });
@@ -86,8 +88,8 @@ describe("decideRegion", () => {
     expect(decideRegion({ ok: false, reason: "outside" }, null, exists, p)).toEqual({ ok: false, reason: "outside" });
   });
   it("commonAncestor：親子は親、別の親どうしは null", () => {
-    expect(commonAncestor(["h1", "h"], p)).toBe("h");
-    expect(commonAncestor(["h1", "i"], p)).toBeNull();
+    expect(commonAncestor(["h1", "h"], M.parents)).toBe("h");
+    expect(commonAncestor(["h1", "i"], M.parents)).toBeNull();
   });
 });
 

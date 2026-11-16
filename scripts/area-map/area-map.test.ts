@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { AREA_PARTS, AREA_POINTS, MAPS } from "./areas.ts";
-import { featuresFor, sourceCodes, type FeatureCollection } from "./parts.ts";
+import type { RegionDef, RegionPart } from "../../src/lib/region/types.ts";
+import { mappable, toDefinitions } from "./definitions.ts";
+import { citiesOf, featuresOf, type FeatureCollection } from "./parts.ts";
+import { deriveMapTree, intervalFor, name2, pad } from "./tree.ts";
+import { buildLookup } from "./write.ts";
 import { makeProjection, pathOf } from "./project.ts";
 
 const square = (x: number, y: number, s = 0.01) => ({
@@ -30,48 +33,109 @@ describe("makeProjection / pathOf", () => {
   });
 });
 
-describe("featuresFor", () => {
+const n03 = (code: string): RegionPart => ({ source: "n03", version: "N03-2024", code });
+const est = (code: string): RegionPart => ({ source: "estat", version: "estat-2020", code });
+
+describe("featuresOf / citiesOf", () => {
   const src = {
-    n03: fc([{ props: { N03_007: "22208" }, geom: square(139.1, 34.9) }, { props: { N03_007: "99999" }, geom: square(0, 0) }]),
-    estat: {
-      "22222": fc([
-        { props: { S_NAME: "修善寺", S_AREA: "017000" }, geom: square(138.9, 34.97) },
-        { props: { S_NAME: "冷川", S_AREA: "096000" }, geom: square(139, 34.95) },
-      ]),
-    },
+    n03: fc([{ props: { N03_007: "22208" }, geom: square(139.1, 34.9) }]),
+    estat: { "22222": fc([{ props: { KEY_CODE: "222220110" }, geom: square(138.9, 34.97) }]) },
   };
-  const parts = {
-    ito: [{ n03: "22208" }],
-    shuzenji: [{ estat: "22222", codeRange: [11, 52] as [number, number] }],
-    hiekawa: [{ estat: "22222", names: ["冷川"] }],
-  };
-
-  it("市区町村コード・コード範囲・名前でエリアに割り当てる", () => {
-    const out = featuresFor(["ito", "shuzenji", "hiekawa"], parts, src);
-    expect(out.map((f) => f.properties.area)).toEqual(["ito", "shuzenji", "hiekawa"]);
+  it("材料 1 行ずつ元データに当て、エリア id を付ける", () => {
+    expect(featuresOf("ito", [n03("22208")], src).map((f) => f.properties.area)).toEqual(["ito"]);
+    expect(featuresOf("shuzenji", [est("222220110")], src)).toHaveLength(1);
   });
-
-  it("定義の無いエリアと、形が見つからないエリアはエラー", () => {
-    expect(() => featuresFor(["nope"], parts, src)).toThrow(/エリア定義/);
-    expect(() => featuresFor(["x"], { x: [{ n03: "00000" }] }, src)).toThrow(/見つかりません/);
+  it("元データに無い材料は失敗（版の違い・合併）", () => {
+    expect(() => featuresOf("x", [n03("22208"), n03("00000")], src)).toThrow(/材料がありません/);
+    expect(() => featuresOf("x", [est("222229999")], src)).toThrow(/材料がありません/);
   });
-
-  it("使う元データのコードを集める", () => {
-    expect(sourceCodes(["ito", "shuzenji"], parts)).toEqual({ n03: ["22208"], estat: ["22222"] });
+  it("使う市区町村（estat は KEY_CODE の先頭 5 桁）", () => {
+    expect(citiesOf([n03("22208"), est("222220110")])).toEqual({ all: ["22208", "22222"], estat: ["22222"] });
   });
 });
 
-describe("エリア定義", () => {
-  const ids = new Set(MAPS.map((m) => m.id));
-
-  it("地図で使うエリアはすべて定義されている", () => {
-    for (const m of MAPS) {
-      for (const id of [...(m.shapes ?? []), ...(m.links ?? []).flatMap((l) => (l.shape ? [l.shape] : []))]) expect(AREA_PARTS[id], id).toBeDefined();
-      for (const id of m.points ?? []) expect(AREA_POINTS[id], id).toBeDefined();
-    }
+describe("toDefinitions", () => {
+  const row = (id: string, parent_id: string | null, extra: Partial<{ lat: number; lng: number }> = {}) => ({
+    id, parent_id, name: { ja: id }, sort: null, lat: extra.lat ?? null, lng: extra.lng ?? null,
   });
+  it("材料と点を定義にまとめ、材料も点も無いエリアは地図に出さない", () => {
+    const defs = toDefinitions(
+      [row("hakone", null), row("gora", "hakone"), row("owakudani", "hakone", { lat: 35.24, lng: 139.02 }), row("auto", null)],
+      [{ region_id: "gora", source: "estat", source_version: "estat-2020", code: "143820010" }],
+    );
+    expect(defs.find((d) => d.id === "owakudani")?.point).toEqual([139.02, 35.24]);
+    expect(mappable(defs).map((d) => d.id).sort()).toEqual(["gora", "hakone", "owakudani"]);
+  });
+  it("3 段以上・無い親・版違いは失敗", () => {
+    expect(() => toDefinitions([row("a", null), row("b", "a"), row("c", "b")], [])).toThrow(/3 段/);
+    expect(() => toDefinitions([row("a", "zz")], [])).toThrow(/親がありません/);
+    expect(() => toDefinitions([row("a", null)], [{ region_id: "a", source: "n03", source_version: "N03-2020", code: "1" }])).toThrow(/版が違います/);
+  });
+});
 
-  it("寄る先の地図が存在する", () => {
-    for (const m of MAPS) for (const l of m.links ?? []) expect(ids.has(l.map), l.map).toBe(true);
+describe("deriveMapTree", () => {
+  const def = (id: string, parentId: string | null, parts: RegionPart[] = [], point: [number, number] | null = null): RegionDef => ({
+    id, parentId, name: { ja: id }, sort: null, point, parts,
+  });
+  // 箱根（小さい親・神奈川）と伊豆（大きい親・静岡）。地方をまたいで隣り合う
+  const defs = [
+    def("hakone", null, [n03("14382")]),
+    def("gora", "hakone", [est("143820010")]),
+    def("owakudani", "hakone", [], [139.02, 35.24]),
+    def("izu", null, [n03("22205")]),
+    def("ito", "izu", [n03("22208")]),
+  ];
+  const bbox = new Map<string, [number, number, number, number]>([
+    ["hakone", [138.98, 35.17, 139.13, 35.29]],
+    ["gora", [139.03, 35.23, 139.06, 35.26]],
+    ["owakudani", [139.02, 35.24, 139.02, 35.24]],
+    ["izu", [138.7, 34.6, 139.2, 35.16]],
+    ["ito", [139.0, 34.85, 139.2, 35.05]],
+  ]);
+  const cities = new Map([
+    ["hakone", ["14382"]],
+    ["izu", ["22205", "22208"]],
+  ]);
+  const maps = deriveMapTree({ defs, bbox, cities });
+  const byId = new Map(maps.map((m) => [m.id, m]));
+
+  it("日本 → エリアのある地方だけ。またぐ隣のエリアは両方の地方の地図に出る", () => {
+    expect(byId.get("japan")?.links).toEqual([{ map: "chiho-kanto", chiho: "kanto" }, { map: "chiho-chubu", chiho: "chubu" }]);
+    for (const id of ["chiho-kanto", "chiho-chubu"]) expect(byId.get(id)?.wholes).toEqual(["hakone", "izu"]);
+  });
+  it("小さい親は自分の地図に寄り、大きい親は子をその場で出す（残りの形も）", () => {
+    const k = byId.get("chiho-kanto")!;
+    expect(k.links).toEqual([{ map: "hakone", shape: "hakone" }]);
+    expect(k.shapes).toEqual(["ito", "izu"]);
+    expect(byId.get("hakone")).toMatchObject({ shapes: ["gora"], points: ["owakudani"], wholes: ["hakone"] });
+  });
+  it("範囲は幅ゼロにならず、間隔は範囲の幅で決まる", () => {
+    const b = pad([139, 35, 139, 35], 0.1);
+    expect(b[2] - b[0]).toBeGreaterThan(0.02);
+    expect(intervalFor([138.68, 34.58, 139.22, 35.33])).toBe(500);
+    expect(intervalFor([138.96, 35.165, 139.135, 35.3])).toBe(100);
+  });
+  it("名前は ja・en をそろえる（無い en は ja）", () => {
+    expect(name2({ ja: "箱根" }, "hakone")).toEqual({ ja: "箱根", en: "箱根" });
+    expect(name2({}, "x")).toEqual({ ja: "x", en: "x" });
+  });
+});
+
+describe("buildLookup", () => {
+  const feat = (props: Record<string, unknown>, x: number) => ({ type: "Feature" as const, properties: props, geometry: square(x, 0, 1) });
+  it("県ごとに市区町村・エリアの材料・市区町村 → エリアをまとめ、版は中身で決まる", () => {
+    const defs: RegionDef[] = [
+      { id: "izu", parentId: null, name: { ja: "伊豆" }, sort: null, point: null, parts: [n03("22205")] },
+      { id: "shuzenji", parentId: "izu", name: { ja: "修善寺" }, sort: null, point: null, parts: [est("222220110")] },
+    ];
+    const n03f = [feat({ N03_007: "22205", N03_001: "静岡県", N03_004: "熱海市" }, 0), feat({ N03_007: "22222", N03_001: "静岡県", N03_004: "伊豆市" }, 1)];
+    const a = buildLookup({ defs, n03: n03f, estat: { "22222": [feat({ KEY_CODE: "222220110" }, 1)] } });
+    expect(a.shards).toHaveLength(1);
+    expect(a.shards[0].codeAreas).toEqual({ "22205": ["izu"], "22222": ["shuzenji"] });
+    expect(a.shards[0].areas.map((x) => [x.id, x.municipalities, x.shape.length])).toEqual([["izu", ["22205"], 0], ["shuzenji", [], 1]]);
+    expect(a.manifest.prefectures).toEqual([{ code: "22", name: "静岡県", bbox: [0, 0, 2, 1] }]);
+    expect(a.manifest.parents).toEqual({ izu: null, shuzenji: "izu" });
+    const b = buildLookup({ defs, n03: n03f, estat: { "22222": [feat({ KEY_CODE: "222220110" }, 1)] } });
+    expect(b.manifest.version).toBe(a.manifest.version);
   });
 });
