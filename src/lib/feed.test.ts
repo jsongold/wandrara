@@ -101,6 +101,16 @@ describe("buildFeed", () => {
     expect(feed.cards).toEqual([]);
     expect(feed.emptyReason).toBe("no-match");
   });
+  it("使った戦略の名前と版を返す。知らない名前は既定に戻す", () => {
+    const id = "order=editorial@1 primary=by-mode@1 secondary=related-other-mode@1";
+    expect(run({}).algorithm).toBe(id);
+    expect(loadFeedStrategies({ order: "nope" }).id).toBe(id);
+  });
+  it("公開日が無い dest は最後に出す", () => {
+    const undated = { ...dest("undated", "accommodation", "gora", [], 1), publishedAt: null };
+    const feed = buildFeed({ catalog: { ...catalog, dests: [undated, ...catalog.dests] }, query: DEFAULT_QUERY, locale: "ja" }, loadFeedStrategies({}));
+    expect(feed.cards.map((c) => c.key)).toEqual(["gora-inn", "lake-inn", "shimoda-inn", "undated"]);
+  });
   it("新着順に切り替えられる", () => {
     const feed = run({ sort: "fresh" });
     expect(feed.orderLabel).toBe("新着順");

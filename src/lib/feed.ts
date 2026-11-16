@@ -15,7 +15,11 @@ export type OrderStrategy = (cards: PrimaryCard[], ctx: Ctx) => { cards: Primary
 export type PrimaryStrategy = (candidates: DestCard[], ctx: Ctx) => PrimaryCard[];
 export type SecondaryStrategy = (cards: PrimaryCard[], ctx: Ctx) => Tile[][];
 
-export type Strategies = { order: OrderStrategy; primary: PrimaryStrategy; secondary: SecondaryStrategy };
+// 点の付け方。大きいほど上に出す。並べ方の戦略はこれを選んで使う
+export type Scorer = (card: PrimaryCard, ctx: Ctx) => number;
+
+// id は使った戦略の名前と版（例：order=editorial@1 …）。表示ログに残し、並べ方どうしを比べるのに使う
+export type Strategies = { id: string; order: OrderStrategy; primary: PrimaryStrategy; secondary: SecondaryStrategy };
 
 // ---- 表示用の小道具 ----
 
@@ -97,17 +101,29 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
 
 // ---- 並べ方 ----
 
+// 日付が無い・読めないものは最後
+function timeOf(iso: string | null): number {
+  const n = iso ? Date.parse(iso) : NaN;
+  return Number.isNaN(n) ? -Infinity : n;
+}
+
+export const scoreByPublished: Scorer = (c) => timeOf(c.anchor.publishedAt);
+export const scoreByCreated: Scorer = (c) => timeOf(c.anchor.createdAt);
+
+// 点の高い順。同点は元の順を保つ
+export function sortByScore(cards: PrimaryCard[], scorer: Scorer, ctx: Ctx): PrimaryCard[] {
+  return cards
+    .map((card) => ({ card, score: scorer(card, ctx) }))
+    .sort((a, b) => Number(b.score > a.score) - Number(b.score < a.score))
+    .map((x) => x.card);
+}
+
 // 人気データが無い間は編集部の順（公開日の新しい順）。ラベルで計測値ではないことを示す
 export const orderEditorial: OrderStrategy = (cards, ctx) => {
-  if (ctx.query.sort === "fresh") {
-    return {
-      cards: [...cards].sort((a, b) => b.anchor.createdAt.localeCompare(a.anchor.createdAt)),
-      label: messages(ctx.locale).home.orderFresh,
-    };
-  }
+  const fresh = ctx.query.sort === "fresh";
   return {
-    cards: [...cards].sort((a, b) => (b.anchor.publishedAt ?? "").localeCompare(a.anchor.publishedAt ?? "")),
-    label: messages(ctx.locale).home.orderEditorial,
+    cards: sortByScore(cards, fresh ? scoreByCreated : scoreByPublished, ctx),
+    label: fresh ? messages(ctx.locale).home.orderFresh : messages(ctx.locale).home.orderEditorial,
   };
 };
 
@@ -172,5 +188,5 @@ export function buildFeed(ctx: Ctx, strategies: Strategies): FeedPage {
     key: c.key, destId: c.destId, title: c.title, areaLabel: c.areaLabel, kindLabel: c.kindLabel, relLabel: c.relLabel,
     photos: c.photos.slice(0, MAX_CARD_PHOTOS), href: c.href, tiles: tiles[i],
   }));
-  return { cards, orderLabel: ordered.label, emptyReason: cards.length === 0 ? "no-match" : null };
+  return { cards, orderLabel: ordered.label, algorithm: strategies.id, emptyReason: cards.length === 0 ? "no-match" : null };
 }

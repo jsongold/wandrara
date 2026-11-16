@@ -85,6 +85,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
       {/* Feed */}
       <div
         data-feed
+        data-feed-algorithm={feed.algorithm}
         className="absolute inset-0 overflow-y-auto pb-[190px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
