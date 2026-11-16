@@ -28,10 +28,6 @@ export function LoginPanel({ locale, next, variant = "page" }: { locale: Locale;
   return (
     <div className={`flex ${variant === "page" ? "min-h-dvh" : "min-h-full"} flex-col bg-[#24231f] text-[#171717]`}>
       <div className={`relative flex ${variant === "page" ? "h-[420px] pt-14" : "h-[200px] pt-12"} flex-col items-center bg-[#3a3832]`}>
-        <LanguageSwitch
-          locale={locale}
-          className="absolute right-4 top-3.5 flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-white/10 px-3 text-[13px] font-semibold text-white"
-        />
         <span className="text-[15px] font-semibold tracking-[0.24em] text-white">WANDRARA</span>
         <span className="mt-2.5 text-xs text-[#e7e4dc]">{m.tagline}</span>
       </div>
@@ -83,6 +79,11 @@ export function LoginPanel({ locale, next, variant = "page" }: { locale: Locale;
             {m.send}
           </button>
         </form>
+        {/* 言語はログインしていなくても変えられる。アカウントと同じ形の行 */}
+        <div className="flex h-[52px] items-center justify-between rounded-2xl bg-[#f7f6f2] pl-4 pr-1.5 text-[15px] font-medium">
+          {messages(locale).account.language}
+          <LanguageSwitch locale={locale} className="h-10 min-w-10 cursor-pointer rounded-xl border border-[#d6d3cb] bg-white px-3 text-[13px] font-semibold text-[#171717]" />
+        </div>
         <div className="mt-auto flex flex-col items-center gap-2.5">
           <Link href={withLocale(locale, "/")} className="text-sm font-medium">{m.guest}</Link>
           <p className="text-center text-[11px] leading-relaxed text-[#6b675e]">
