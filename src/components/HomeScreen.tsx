@@ -140,11 +140,10 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
             onClick={() => go({ mode: otherMode(query.mode), cat: "all" })}
             aria-label={m.home.searchBySwitch(m.mode[query.mode], m.mode[otherMode(query.mode)])}
             title={m.home.searchBy(m.mode[query.mode])}
-            className="flex w-[58px] flex-none cursor-pointer flex-col items-center justify-center gap-0.5 self-stretch rounded-[18px] text-white"
+            className="flex w-[58px] flex-none cursor-pointer items-center justify-center self-stretch rounded-[18px] text-white"
             style={GLASS}
           >
             <Icon name={isStay ? "pin" : "sparkle"} />
-            <span className="text-[10px] font-semibold">{m.mode[query.mode]}</span>
           </button>
           <nav aria-label={m.home.navLabel} className="flex min-w-0 flex-auto items-center gap-1.5 rounded-[18px] p-1.5" style={GLASS}>
             <button
