@@ -13,7 +13,7 @@ export function CurrentFilterDisplay({ label, className }: { label: string | nul
       aria-label={label}
       title={label}
       data-testid="current-filter-display"
-      className={`pointer-events-none flex h-10 items-center justify-center text-[26px] leading-none text-white [font-family:'Hiragino_Mincho_ProN','Yu_Mincho',serif] [text-shadow:0_1px_8px_rgba(0,0,0,0.6)] ${className ?? ""}`}
+      className={`pointer-events-none flex h-10 items-center justify-center text-[22px] font-semibold leading-none text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.55)] ${className ?? ""}`}
     >
       <span aria-hidden="true" key={mark} className="filter-mark-in">{mark}</span>
     </span>
