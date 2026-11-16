@@ -2,7 +2,7 @@
 
 # WANDRARA データモデル
 
-状態：実装済み（2026-11-15）。今のマイルストーンで作る範囲。正本はコード（`src/db/schema`）で、この資料は考え方を書く。
+状態：改訂案（2026-11-15）。詳細の表をコアごとの型つき JSON（details）にまとめる案。今の実装は詳細を表で持っている（移行は 5 章）。正本はコード（`src/db/schema` と details の zod）で、この資料は考え方を書く。
 
 ## 1. ビジネスモデル
 
@@ -64,73 +64,63 @@ tours                 名前・説明・登録した User・公開/非公開
 
 ### コアと詳細
 
+列にするか details にするかは、取り込みの決まり（`src/lib/ingest/quality.ts`）に合わせる。
+
+| 決まりでの扱い | 置き場所 | 守り方 |
+|---|---|---|
+| 1 つの値で必須（地域・位置・チェックイン/アウト・所要時間） | コアの表の列 | DB の NOT NULL・CHECK と取り込みの決まり |
+| 「1 つ以上要る」一覧（部屋・料金・営業時間・行き方 など） | details の中 | details の zod で 1 件以上 |
+| 決まりに無い（任意） | details の中 | details の zod（書かなくてよい） |
+| 検索・並び替えに使う（任意でも） | コアの表の列 | details から作る（正は details） |
+
+details はコアごとの型つき JSON（jsonb）1 つ。形は core_type ごとの zod で決める。下の「必須」は quality.ts の決まり。
+
 ```
-accommodations                 operator_id・種類（ホテル・旅館・一棟貸し・民宿・ペンション・グランピング・キャンプ場）・位置・住所・地域・チェックイン/アウト・公式 URL
-├ accommodation_units          部屋タイプか一棟：定員・㎡・畳・和洋・眺望
-│ └ accommodation_bedrooms     寝室
-│   └ accommodation_beds       寝室ごとの寝具と数（布団を含む）
-├ accommodation_baths          大浴場/露天/貸切/客室露天・源泉の扱い・泉質・時間・予約・料金・男女入替（部屋のものは unit を指す）
-├ accommodation_meals          朝/夕・場所・時間・アレルギー・自炊
-├ accommodation_prices         unit・金額・通貨・人数・食事・期間・税と入湯税と宿泊税と清掃料の込み別・どの予約先で見たか
-├ accommodation_amenities      設備（BBQ・キッチン・ペット…）。宿全体か部屋か・有料か
-├ accommodation_parkings       駐車場：場所・台数・車高の制限・料金
-├ accommodation_internet       Wi-Fi の有無・実測の速さ・机
-├ accommodation_rules          静かにする時間・BBQ の時間・最短泊数・喫煙・パーティー・花火・ゴミ
-├ accommodation_access         駅・送迎・坂や階段・車が要るか・冬の規制
-├ accommodation_surroundings   隣家との距離・視線・騒音源・眺望・標高
-├ accommodation_cautions       よくある誤解と注意点
-├ accommodation_licenses       旅館業の許可・民泊の届出番号
-├ accommodation_booking_links  予約先
-└ accommodation_texts          名前・説明（言語ごと）
+accommodations                 operator_id・種類（ホテル・旅館・一棟貸し・民宿・ペンション・グランピング・キャンプ場）・公式 URL・details
+                               必須の列：地域・位置（範囲の中）・チェックイン・チェックアウト
+└ details                      必須：rooms（定員のある部屋が 1 つ以上）・prices（金額・通貨・人数のある料金が 1 つ以上）
+                               rooms（key・定員・㎡・畳・和洋・眺望・喫煙・寝室と寝具）
+                               baths（種類〔サウナを含む〕・温泉か・泉質・時間・男女・予約・料金・水風呂・外気浴）
+                               meals（朝/夕・出るか・形式・場所・時間・選べる時刻・料金・アレルギー・自炊）
+                               prices（seasons〔key・期間・曜日・祝日・日付〕・items〔種類・単位・room と season の key・人数・対象と年齢・割合・含むもの〕）
+                               amenities（語彙の code・付いているもの・数・有料か）・internet（上り/下り・測った日・机）
+                               pets・rules・parking・access（手段と時間・送迎・坂）・surroundings・cautions・licenses・booking_links・sources
 
-experiences                    operator_id・種類（ツアー・ワークショップ・試飲・アクティビティ・施設の利用・イベント）・地域・所要時間・要予約・公式 URL
-├ experience_courses           内容・時間・人数・年齢・案内の言語
-├ experience_prices            course・1 人/1 グループ/1 回・子ども料金・込み別
-├ experience_schedules         季節・曜日・時間帯・雨天時の扱い
-├ experience_locations         集合場所・実施場所の位置と住所（座標が 1 つとは限らない）
-├ experience_inclusions        含まれるもの・含まれないもの・持ち物
-├ experience_cautions
-├ experience_booking_links
-└ experience_texts
+experiences                    operator_id・種類・要予約・公式 URL・details
+                               必須の列：地域・所要時間
+└ details                      必須：prices（1 つ以上）・locations（範囲の中の座標が 1 つ以上）
+                               courses（key）・prices（course の key）・schedules・locations（座標が 1 つとは限らない）・inclusions・cautions・booking_links・sources
 
-natures                        種類（海岸・山・湖・高原・渓谷・滝・森・火山）・位置・地域・保護の区分
-├ nature_seasons               見頃（何が・いつ）
-├ nature_hours_fees            入れる時間・入場料
-├ nature_access                駐車場・最寄り駅・徒歩の時間
-├ nature_trails                距離・高低差・難しさ・所要時間
-├ nature_restrictions          立入規制・火山ガスの警戒・期間
-├ nature_cautions
-└ nature_texts
+natures                        種類・保護の区分・details
+                               必須の列：地域・位置
+└ details                      必須：access（1 つ以上）
+                               seasons・hours・fees・access・trails・restrictions・cautions・sources
 
-villages                       種類（温泉街・宿場町・漁村・門前町・城下町）・位置・地域
-├ village_walks                巡る範囲・所要時間
-├ village_shop_hours           店が開いている時間帯
-├ village_access               アクセス・駐車場
-├ village_events               祭り・イベントと時期
-├ village_cautions
-└ village_texts
+villages                       種類・details
+                               必須の列：地域・位置
+└ details                      必須：access（1 つ以上）
+                               walks・shop_hours・access・events・cautions・sources
 
-buildings                      operator_id・種類（美術館・博物館・神社・寺・城・展望台・歴史的建造物）・位置・地域・公式 URL
-├ building_hours               開いている時間・休みの日
-├ building_fees                入館料・拝観料
-├ building_access              アクセス・駐車場
-├ building_events              企画展・祭事と時期
-├ building_cautions
-└ building_texts
+buildings                      operator_id・種類・公式 URL・details
+                               必須の列：地域・位置
+└ details                      必須：hours（1 つ以上）・fees（無料は 0）
+                               hours・fees・access・events・cautions・sources
 
-hotsprings                     operator_id・種類（日帰り温泉・外湯・足湯）・位置・地域・公式 URL
-├ hotspring_baths              内湯/露天・源泉の扱い・泉質
-├ hotspring_hours              開いている時間・休みの日
-├ hotspring_fees               料金（大人・子ども・貸切）
-├ hotspring_amenities          タオル・休憩所・食事
-├ hotspring_access             アクセス・駐車場
-├ hotspring_cautions
-└ hotspring_texts
+hotsprings                     operator_id・種類・公式 URL・details
+                               必須の列：地域・位置
+└ details                      必須：hours・fees（大人の料金）・baths（泉質のある浴槽）
+                               baths・hours・fees・amenities・access・cautions・sources
+
+*_texts                        名前・紹介・住所（言語ごと。名前で検索するので表のまま。名前と紹介は必須、住所は位置を持つコアで必須）
 ```
+
+- 検索や並び替えに使う値は、details から列に出す（例：宿の料金の最小・最大で並べるなら、取り込みのときに列にも書く）。出した列の正は details
+- 料金の区分ごとの値も details に型で持つ。画面には出さない（不正確だとクレームの元）
+- 詳細の中の参照（料金→部屋・料金→区分・写真→部屋）は dest の中の key で指す。id は使わない
 
 ### 全コアで共通
 ```
-dest_photos           dest_id・写真・権利・何を写しているか（部屋やコースを指すときは、その dest に属するものに限る）
+dest_photos           dest_id・写真・何を写しているか（部屋やコースは details の key で指す）
 dest_categories       dest_id・category_id
 publications          dest_id・状態・公開日時・承認者
 ```
@@ -139,7 +129,7 @@ publications          dest_id・状態・公開日時・承認者
 ```
 regions               箱根・伊豆などの範囲（自治体コードも）
 categories            分類（親子を持つ）
-amenity_codes など     設備・規則のコード（OTA や Google のコードへの対応）（まだ作っていない）
+語彙                   設備（中カテゴリ → 小カテゴリの 2 段）・風呂の種類・料金の種類など。表にせず、コードに一覧を 1 つ置く。details の zod・表示名・OTA や Google のコードへの対応が同じ一覧を見る
 languages・currencies・fx_rates（まだ作っていない）
 ```
 
@@ -150,22 +140,54 @@ dest_imports          投入された入力の原本（出典・確認の状態�
 ```
 
 ## 3. 決まり
-- **コアを増やすとき**：コアの表（主キー dest_id）と、意味のある詳細テーブルを作る。Tour・保存・写真・分類・公開の表は直さない
-- **詳細テーブルの分け方**：「別の対象か」「独立して複数行になるか」「更新や確認の単位が違うか」で分ける。関連の薄い列をまとめない
-- **項目が無いとき**：NULL。分かっている値は、その型（false・0 など）で持つ
+- **コアを増やすとき**：コアの表（主キー dest_id）と details の zod を作る。Tour・保存・写真・分類・公開の表は直さない
+- **列にするか details にするか**：取り込みの決まり（quality.ts）に合わせる（2 章の表）。1 つの値で必須なものと検索・並び替えに使うものは列、一覧の必須と任意は details
+- **表にするもの**：ほかの dest や機能から指されるもの（destinations・写真・分類・公開・Tour）と、ファイルとつながるもの（写真と Storage）
+- **決まりの正は 1 か所**：必須の決まりは quality.ts に置き、列の NOT NULL・CHECK と details の zod（1 件以上）が同じ決まりに合うようにする。決まりを変えたら両方を同じ PR で直す
+- **「どちらか一方」の決まり**（公式 URL か出典のどちらか など）は列の制約にできないので、取り込みの決まりだけで確かめる
+- **details の形**：core_type ごとの zod で決め、書き込む前に必ず確かめる。値の種類は語彙の一覧から選ぶ。DB 側でも JSON Schema（Supabase の pg_jsonschema）で確かめる（使えるかは確かめてから決める）
+- **形を変えるとき**：zod を直し、投入の原本（dest_imports）から作り直す。migration は表の列を変えるときだけ
+- **項目が無いとき**：欄を書かない（JSON にキーが無い）。分かっている値は、その型（false・0 など）で持つ
 - **公開**：コアの列には持たせず、publications で持つ
-- **翻訳**：コアごとの *_texts に、列と型を保ったまま持つ（何でも入る field_name / text の形にしない）
+- **翻訳**：名前・紹介・住所はコアごとの *_texts に、列と型を保ったまま持つ。details の中の文（注意点・メモなど）は LocalizedText（`{"ja": "...", "en": "..."}`）
+- **何でも入る形にしない**：field_name / text の形（EAV）にはしない。details は欄と型が zod で決まっているので、これに当たらない
 - **近さ**：コアの位置から計算する。テーブルには持たない
 - **spot という語は使わない**
 
 ### 実装で決めたこと
-- **詳細の行の中の文**（注意点・メモなど）は、列ごとに jsonb の LocalizedText（`{"ja": "...", "en": "..."}`）で持つ。名前・紹介・住所は *_texts
-- **詳細の表は全部 dest_id を持つ**（入れ子の子も）。消す・入れ直す・RLS の判定を dest_id だけでできる
 - **投入**：エージェントは API キー（collector_keys）で `POST /api/{core}` に送り、受け取った入力そのものは dest_imports に残す。登録すると publications は draft になり、管理者が公開する
-- **詳細どうしの参照**（unit_id・booking_link_id・course_id など）は、今は入力で受けない（入れ子の親を指す列は、入れ子の位置から入る）
 - **ログイン**：メールのリンク（Supabase Auth）。Google は後で（`NEXT_PUBLIC_AUTH_GOOGLE=1` のときだけ出る）
 
 ## 4. 次のマイルストーンで検討
 - 近さで分からないつながり（宿泊者限定の体験、宿が手配する体験、集合場所など）。案：つながりの持ち主のコアに、相手の dest_id をカラムで持つ。role は使わない
-- 出典・根拠：詳細の値の 1 つずつに、複数の出典を付ける仕組み
+- 出典・根拠：details の sources に、どの項目の出典かを持つ（fields）。値の 1 つずつに付けるかは後で決める
 - 承認した版：公開中の内容を見せながら、新しい内容を審査する仕組み
+
+## 5. 移行（詳細の表 → details）
+
+なぜ変えるか
+| | 詳細を表に分ける（今） | details（型つき JSON） |
+|---|---|---|
+| 形を変えるとき | 毎回 migration | zod を直し、原本から作り直す |
+| 詳細どうしの参照 | 外部キーが要り、今の取り込みでは受けられない | dest の中の key で指す |
+| 値の正しさ | DB の CHECK・外部キー | 書き込み前の zod（DB でも JSON Schema で確かめられる） |
+| dest をまたぐ検索 | SQL で素直に書ける | よく使う条件は列に出す。それ以外は JSON の検索と GIN 索引 |
+| 書き込み | 表ごとに消して入れ直す | dest ごとに 1 つ置き換える（コレクターは毎回全部を送るので合う） |
+| 公開の権限（RLS） | 詳細の表すべてに要る | コアの行だけ |
+| 人が DB を直接見る・直す | 見やすい | JSON を読む（直接直すのは不向き） |
+
+今変える理由：beta 前で本番は開発環境として扱える。投入の原本が dest_imports に全部残っていて作り直せる。投入の作り直し（handoff ingest-pipeline）の structure の段の書き込み先をこの形にすれば、二度作らずに済む
+
+手順
+0. 必須の列は先に作り、NOT NULL は付けずに始める。今は必須の値が欠けた dest が公開されている（チェックイン/アウトなし 77・座標なし 122、2026-11-15 の点検）。直し終わってから NOT NULL を付ける
+1. 宿だけで移す：accommodations に details を足し、zod・取り込み（plan・apply）・画面用の型（docs/proposals/web-output-model-spec.html の 2 章）・詳細の画面を直す。wr-ito-033 で確かめる
+2. 原本から宿の details を作り直すスクリプトで、全部の宿を移す。移ったら宿の詳細の表を消す
+3. 残りの 5 種類を同じ形で移す
+4. collector-guide・agent-upload-guide の送り方を直す
+
+未決
+- pg_jsonschema を使うか（Supabase で使えるか、zod から JSON Schema を作れるか）
+- quality.ts の決まりから、列の制約と details の zod をどう作るか（手で合わせるか、1 つの定義から作るか）
+- 料金の最小・最大など、どの値を列に出すか（画面の並び替え・絞り込みで決める）
+- 体験の locations（座標が複数）を details に入れたとき、近さの計算をどうするか
+

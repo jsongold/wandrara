@@ -37,11 +37,19 @@ places as (
   union all select dest_id, region_id, lat, lng from public.buildings
   union all select dest_id, region_id, lat, lng from public.hotsprings
   union all
-  select e.dest_id, e.region_id, l.lat, l.lng
+  select e.dest_id, e.region_id, j.lat, j.lng
   from public.experiences e
+  -- details があれば details.locations から（meeting を先に、なければ先頭の場所）
   left join lateral (
-    select x.lat, x.lng from public.experience_locations x where x.dest_id = e.dest_id order by x.sort, x.id limit 1
-  ) l on true
+    select
+      case when jsonb_typeof(x.loc->'lat') = 'number' then (x.loc->>'lat')::double precision end as lat,
+      case when jsonb_typeof(x.loc->'lng') = 'number' then (x.loc->>'lng')::double precision end as lng
+    from jsonb_array_elements(
+      case when jsonb_typeof(e.details->'locations') = 'array' then e.details->'locations' else '[]'::jsonb end
+    ) with ordinality as x(loc, n)
+    order by (x.loc->>'kind' = 'meeting') desc, x.n
+    limit 1
+  ) j on e.details is not null
 )
 select
   d.dest_id, d.core_type, d.slug, d.is_demo, d.created_at, pub.published_at,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { accommodationCore } from "../db/schema/accommodation";
+import { tableDetailsCore } from "./ingest/test-fixtures";
 import { buildFacts, columnMap, formatValue } from "./detail";
 
 describe("formatValue", () => {
@@ -30,16 +31,21 @@ describe("columnMap", () => {
 describe("buildFacts", () => {
   it("null の列は出さず、kind は日本語、詳細は 1 件 1 行", () => {
     const facts = buildFacts(
-      accommodationCore,
-      { kind: "private_rental", check_in: null, check_out: "10:00:00" },
-      [{ key: "units", rows: [{ id: "u1", name: "離れ", capacity: 4, area_sqm: null }] }],
+      tableDetailsCore,
+      { kind: "museum", official_url: null },
+      [{ key: "fees", rows: [{ id: "f1", amount: 500, currency: "JPY", note: null }] }],
       "ja",
     );
     expect(facts.map((f) => [f.label, f.value])).toEqual([
+      ["種類", "資料館"],
+      ["料金", "500"],
+    ]);
+  });
+  it("詳細の表の無いコア（宿）はコアの列だけ", () => {
+    const facts = buildFacts(accommodationCore, { kind: "private_rental", check_in: null, check_out: "10:00:00" }, [], "ja");
+    expect(facts.map((f) => [f.label, f.value])).toEqual([
       ["種類", "一棟貸し"],
       ["チェックアウト", "10:00"],
-      ["部屋", "離れ"],
     ]);
-    expect(facts[2].detail).toBe("名前：離れ ／ 定員：4");
   });
 });

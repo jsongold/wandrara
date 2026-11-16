@@ -1,18 +1,18 @@
-// コアの表の書き方（accommodation.ts の例。名前は snake_case の文字列で渡す。RLS はポリシーを付けると有効になる）
-//   const KIND_LABELS = { hotel: "ホテル", private_rental: "一棟貸し" };
-//   export const accommodations = pgTable("accommodations", {
+// コアの表の書き方（building.ts の例。名前は snake_case の文字列で渡す。RLS はポリシーを付けると有効になる）
+//   const KIND_LABELS = { museum: "美術館・博物館", shrine: "神社" };
+//   export const buildings = pgTable("buildings", {
 //     destId: uuid("dest_id").primaryKey().references(() => destinations.destId, { onDelete: "cascade" }),
-//     kind: text("kind"), ...locationColumns(), officialUrl: text("official_url"),
-//   }, (t) => [oneOf("accommodations_kind_check", t.kind, Object.keys(KIND_LABELS)), geoPrecisionCheck("accommodations", t), publishedRead(t.destId)]);
-//   export const accommodationUnits = pgTable("accommodation_units", {
-//     ...destChildColumns(), capacity: integer("capacity"), note: localized("note"),
-//   }, (t) => [index("accommodation_units_dest_id_idx").on(t.destId), publishedRead(t.destId)]);
-//   入れ子：unitId: uuid("unit_id").notNull().references(() => accommodationUnits.id, { onDelete: "cascade" })
-//   export const accommodationTexts = pgTable("accommodation_texts", { ...textsColumns() },
-//     (t) => [primaryKey({ columns: [t.destId, t.lang] }), langCheck("accommodation_texts", t), publishedRead(t.destId)]);
-//   export const accommodationCore: CoreDef = { coreType: "accommodation", path: "accommodations", label: "宿",
-//     table: accommodations, texts: accommodationTexts, columns: { kind: "種類" }, kindLabels: KIND_LABELS,
-//     details: [{ key: "units", table: accommodationUnits, label: "部屋", columns: { capacity: "定員" } }] };
+//     kind: text("kind"), officialUrl: text("official_url"),
+//   }, (t) => [oneOf("buildings_kind_check", t.kind, Object.keys(KIND_LABELS)), publishedRead(t.destId)]);
+//   export const buildingHours = pgTable("building_hours", {
+//     ...destChildColumns(), openTime: time("open_time"), note: localized("note"),
+//   }, (t) => [index("building_hours_dest_id_idx").on(t.destId), publishedRead(t.destId)]);
+//   入れ子にするなら：parentId: uuid("parent_id").notNull().references(() => 親の表.id, { onDelete: "cascade" }) と、details に parent: { key, column } を付ける
+//   export const buildingTexts = pgTable("building_texts", { ...textsColumns() },
+//     (t) => [primaryKey({ columns: [t.destId, t.lang] }), langCheck("building_texts", t), publishedRead(t.destId)]);
+//   export const buildingCore: CoreDef = { coreType: "building", path: "buildings", label: "建物",
+//     table: buildings, texts: buildingTexts, columns: { kind: "種類" }, kindLabels: KIND_LABELS,
+//     details: [{ key: "hours", table: buildingHours, label: "開館時間", columns: { openTime: "開く時刻" } }] };
 import { sql } from "drizzle-orm";
 import {
   check,
@@ -113,7 +113,7 @@ export function currencyCheck(tableName: string, t: { currency: PgColumn }) {
 }
 
 export type DetailDef = {
-  /** bundle と API での名前（例 "units"、"baths"） */
+  /** bundle と API での名前（例 "courses"、"prices"） */
   key: string;
   /** 詳細の表 */
   table: PgTable;
@@ -121,7 +121,7 @@ export type DetailDef = {
   label: string;
   /** 画面に出す列（TS のプロパティ名 → 日本語のラベル） */
   columns: Record<string, string>;
-  /** 入れ子なら親の key と、親を指す列（TS のプロパティ名、例 "unitId"） */
+  /** 入れ子なら親の key と、親を指す列（TS のプロパティ名、例 "courseId"） */
   parent?: { key: string; column: string };
 };
 

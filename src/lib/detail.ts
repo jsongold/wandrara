@@ -3,10 +3,16 @@ import { createClient } from "@supabase/supabase-js";
 import { getTableColumns, getTableName } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import { cacheLife } from "next/cache";
+import { toAccommodationView, type AccommodationView } from "./accommodation/view";
+import { toBuildingView, type BuildingView } from "./building/view";
+import { toExperienceView, type ExperienceView } from "./experience/view";
 import { getCatalog, photoUrl } from "./data";
+import { toHotspringView, type HotspringView } from "./hotspring/view";
 import { areaLabel, resolveLocalizedText } from "./feed";
 import { coreLabels } from "./i18n/core-labels";
 import { messages } from "./i18n/messages";
+import { toNatureView, type NatureView } from "./nature/view";
+import { toVillageView, type VillageView } from "./village/view";
 import { coreByType } from "./ingest/cores";
 import type { CoreDef } from "../db/schema/_shared";
 import type { FactView, Locale, Photo } from "./types";
@@ -20,6 +26,18 @@ export type DestDetailView = {
   isDemo: boolean;
   photos: Photo[];
   facts: FactView[];
+  /** 宿の新しい画面の形。details が無いか形が違う宿と、宿でない dest は null（facts を出す） */
+  accommodation: AccommodationView | null;
+  /** 体験の新しい画面の形。details が無いか形が違う体験と、体験でない dest は null（facts を出す） */
+  experience: ExperienceView | null;
+  /** 自然の新しい画面の形。details が無いか形が違う自然と、自然でない dest は null（facts を出す） */
+  nature: NatureView | null;
+  /** 建物の新しい画面の形。details が無いか形が違う建物と、建物でない dest は null（facts を出す） */
+  building: BuildingView | null;
+  /** 日帰り温泉の新しい画面の形。details が無いか形が違う温泉と、温泉でない dest は null（facts を出す） */
+  hotspring: HotspringView | null;
+  /** まちの新しい画面の形。details が無いか形が違うまちと、まちでない dest は null（facts を出す） */
+  village: VillageView | null;
 };
 
 type Row = Record<string, unknown>;
@@ -102,11 +120,28 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
   const core = coreByType(dest.core_type);
   if (!core) return null;
   const id: string = dest.dest_id;
+  const isAcc = core.coreType === "accommodation";
+  const isExp = core.coreType === "experience";
+  const isNat = core.coreType === "nature";
+  const isBld = core.coreType === "building";
+  const isHot = core.coreType === "hotspring";
+  const isVil = core.coreType === "village";
+  // 宿・体験・自然・建物・日帰り温泉・まちは details と、画面の 1 行・料金のリンク・地図に使う列も読む
+  const extraCols = isAcc
+    ? ["details", "check_in", "check_out", "official_url"]
+    : isExp
+      ? ["details", "duration_minutes", "reservation_required", "official_url"]
+      : isBld || isHot
+        ? ["details", "lat", "lng", "official_url"]
+        : isNat || isVil
+          ? ["details", "lat", "lng"]
+          : [];
+  const coreCols = [...new Set(["region_id", ...names(core.table, core.columns), ...extraCols])];
 
   const [coreRes, textsRes, photosRes, catalog, ...detailRes] = await Promise.all([
-    db.from(getTableName(core.table)).select(["region_id", ...names(core.table, core.columns)].join(", ")).eq("dest_id", id).maybeSingle(),
+    db.from(getTableName(core.table)).select(coreCols.join(", ")).eq("dest_id", id).maybeSingle(),
     db.from(getTableName(core.texts)).select("lang, name, summary").eq("dest_id", id),
-    db.from("dest_photos").select("storage_key, license, credit").eq("dest_id", id).order("sort"),
+    db.from("dest_photos").select("storage_key, license, credit, subject_key").eq("dest_id", id).order("sort"),
     getCatalog(),
     ...core.details.map((d) =>
       db.from(getTableName(d.table)).select(["id", ...names(d.table, d.columns)].join(", ")).eq("dest_id", id).order("sort"),
@@ -120,16 +155,49 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
   const pick = (f: "name" | "summary") => Object.fromEntries(texts.filter((x) => x[f]).map((x) => [x.lang, x[f] as string]));
   const coreRow = (coreRes.data ?? null) as unknown as Row | null;
   const details = core.details.map((d, i) => ({ key: d.key, rows: (detailRes[i].data ?? []) as unknown as Row[] }));
-  const photoRows = (photosRes.data ?? []) as unknown as { storage_key: string; license: string | null; credit: string | null }[];
+  const photoRows = (photosRes.data ?? []) as unknown as { storage_key: string; license: string | null; credit: string | null; subject_key: string | null }[];
+  const photos = photoRows.map((p) => ({
+    subjectKey: p.subject_key,
+    photo: { url: photoUrl(url, p.storage_key), license: p.license, credit: p.credit, isDemo: false, placeholderSky: null, placeholderLand: null } satisfies Photo,
+  }));
+  const str = (k: string) => (typeof coreRow?.[k] === "string" ? (coreRow[k] as string) : null);
+  const accommodation = isAcc
+    ? toAccommodationView({ details: coreRow?.details ?? null, checkIn: str("check_in"), checkOut: str("check_out"), officialUrl: str("official_url"), photos, locale })
+    : null;
+  const bool = (k: string) => (typeof coreRow?.[k] === "boolean" ? (coreRow[k] as boolean) : null);
+  const numOf = (k: string) => (typeof coreRow?.[k] === "number" ? (coreRow[k] as number) : null);
+  const experience = isExp
+    ? toExperienceView({
+        details: coreRow?.details ?? null,
+        durationMinutes: numOf("duration_minutes"),
+        reservationRequired: bool("reservation_required"),
+        officialUrl: str("official_url"),
+        locale,
+      })
+    : null;
+  const placeInput = { details: coreRow?.details ?? null, lat: numOf("lat"), lng: numOf("lng"), locale };
+  const nature = isNat ? toNatureView(placeInput) : null;
+  // 建物・日帰り温泉は公式サイトの列も渡す（まちには列が無い）
+  const officialInput = { ...placeInput, officialUrl: str("official_url") };
+  const building = isBld ? toBuildingView(officialInput) : null;
+  const hotspring = isHot ? toHotspringView(officialInput) : null;
+  const village = isVil ? toVillageView(placeInput) : null;
 
   return {
     id,
     title: resolveLocalizedText(pick("name"), locale).text,
     areaLabel: areaLabel((coreRow?.region_id as string | null) ?? null, catalog.regions, locale),
-    kindLabel: coreLabels(core, locale).label,
+    // 新しい画面の宿・体験・自然・建物・日帰り温泉・まちは種類（一棟貸し・ツアー・海岸…）を出す。ほかは今どおりコアの名前
+    kindLabel: ((accommodation ?? experience ?? nature ?? building ?? hotspring ?? village) && coreLabels(core, locale).kindLabels[str("kind") ?? ""]) || coreLabels(core, locale).label,
     summary: resolveLocalizedText(pick("summary"), locale).text || null,
     isDemo: dest.is_demo,
-    photos: photoRows.map((p): Photo => ({ url: photoUrl(url, p.storage_key), license: p.license, credit: p.credit, isDemo: false, placeholderSky: null, placeholderLand: null })),
+    photos: photos.map((p) => p.photo),
     facts: buildFacts(core, coreRow, details, locale),
+    accommodation,
+    experience,
+    nature,
+    building,
+    hotspring,
+    village,
   };
 }

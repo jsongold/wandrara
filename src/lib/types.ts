@@ -46,6 +46,7 @@ export type Tile = { destId: string; label: string; sub: string; photo: Photo | 
 
 export type FeedCard = {
   key: string;
+  destId: string;      // そのカードの dest の dest_id（保存の対象。catalog の DestCard.id）
   title: string;
   areaLabel: string;   // 例：「箱根・芦ノ湖」
   kindLabel: string;   // 例：「宿」「温泉地」（コアのラベル）

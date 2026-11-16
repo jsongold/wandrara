@@ -67,7 +67,8 @@ describe("registerDest", () => {
     expect(rpcCalls[0].fn).toBe("dest_apply");
     const p = rpcCalls[0].args.p as { destination: Record<string, unknown>; tables: { table: string }[]; import: Record<string, unknown> };
     expect(p.destination).toMatchObject({ core_type: "accommodation", ref: "WR-x-001", created_by: "u1" });
-    expect(p.tables[0].table).toBe("accommodations");
+    // 宿の details は accommodations の行に入る（詳細の表の行は渡さない。dest_apply が古い行を消す）
+    expect(p.tables.map((t) => t.table)).toEqual(["accommodations", "accommodation_texts", "dest_photos"]);
     expect(p.import).toMatchObject({ collector_key_id: "k1" });
   });
 

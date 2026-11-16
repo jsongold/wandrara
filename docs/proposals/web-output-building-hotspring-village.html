@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>建物・温泉・まちの詳細画面 提案</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d1c1a;--mute:#6b6862;--line:#e3e0d8;--accent:#2f6f5e;--warn:#a5552a;--chip:#eef3f1}
+@media (prefers-color-scheme:dark){:root{--bg:#161614;--card:#1f1e1b;--ink:#ecebe6;--mute:#a19e96;--line:#34322d;--accent:#7cc3ad;--warn:#e39a6b;--chip:#26302c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}
+main{max-width:1280px;margin:0 auto;padding:32px 16px 80px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:40px 0 12px;padding-top:8px;border-top:1px solid var(--line)}h3{font-size:15px;margin:20px 0 8px}
+.lead{color:var(--mute);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px}
+.box{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--card)}
+.box b{display:block}.box span{color:var(--mute);font-size:12px}
+.arrow{color:var(--mute)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{color:var(--mute);font-weight:600}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.matrix td,.matrix th{text-align:right}.matrix th:first-child,.matrix td:first-child{text-align:left}
+.merged{background:var(--chip)}
+.chip{display:inline-block;background:var(--chip);border-radius:99px;padding:1px 9px;margin:2px 4px 2px 0;font-size:13px}
+.flag{color:var(--warn);font-size:13px}
+.mute{color:var(--mute);font-size:13px}
+pre{background:var(--chip);border-radius:8px;padding:12px;overflow:auto;font-size:12.5px;line-height:1.5}
+.before li{color:var(--mute);font-size:13px}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--mute);margin-left:6px}
+/* 画面の見本（実際の詳細画面と同じ色・幅） */
+.phones{display:flex;gap:28px;flex-wrap:nowrap;overflow-x:auto;align-items:flex-start;padding-bottom:12px}
+.phones>:first-child{margin-left:auto}.phones>:last-child{margin-right:auto}
+.phone-wrap{flex:0 0 auto}
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.phone-wrap>p{margin:0;font-weight:700}
+.phone{position:relative;width:375px;max-width:100%;height:780px;overflow:hidden;border:10px solid #111;border-radius:36px;background:#000;color:#141413;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+/* 今の DetailSheet と同じ形：裏のトップが縮み、背景が暗くなり、下から 94% のシートが上がる */
+.p-home{position:absolute;inset:0;background:#f7f6f2;border-radius:14px;transform:scale(.92) translateY(-14px);transform-origin:top center;padding:44px 16px 0;animation:p-shrink 420ms cubic-bezier(.32,.72,0,1)}
+.p-home .tg{display:flex;gap:6px;margin-bottom:14px}.p-home .tg span{background:#e8e5dc;border-radius:99px;padding:5px 14px;font-size:12px;font-weight:600}.p-home .tg span:first-child{background:#141413;color:#fff}
+.p-home .cd{height:210px;border-radius:18px;background:#cfd3cc center/cover;margin-bottom:12px}
+.p-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);animation:p-fade 420ms ease-out}
+.p-sheet{position:absolute;left:0;right:0;bottom:0;height:94%;background:#f7f6f2;border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 -8px 30px rgba(0,0,0,.25);animation:p-up 420ms cubic-bezier(.32,.72,0,1)}
+.p-handle{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:44px;height:6px;border-radius:99px;background:rgba(255,255,255,.85);box-shadow:0 1px 3px rgba(0,0,0,.3);z-index:2}
+.p-back{position:absolute;left:14px;top:22px;z-index:2;background:rgba(18,18,16,.46);color:#fff!important;border-radius:99px;font-size:12px;padding:5px 11px;backdrop-filter:blur(14px)}
+.p-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain}
+@keyframes p-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes p-fade{from{opacity:0}to{opacity:1}}
+@keyframes p-shrink{from{transform:none;border-radius:0}to{transform:scale(.92) translateY(-14px);border-radius:14px}}
+.replay{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:4px 12px;cursor:pointer}
+.phone *{color:inherit}
+.p-hero{height:300px;background:#cfd3cc center/cover no-repeat;position:relative}
+.p-hero .cnt{position:absolute;right:12px;bottom:12px;background:rgba(15,15,14,.6);color:#fff;font-size:11px;font-weight:600;border-radius:6px;padding:2px 8px}
+.p-body{padding:18px 20px 36px;display:flex;flex-direction:column;gap:24px}
+.p-badges{display:flex;flex-wrap:wrap;gap:6px}
+.p-badge{background:#e8e5dc;color:#3d3b35;font-size:11px;font-weight:600;border-radius:6px;padding:3px 8px}
+.p-title{font-size:22px;font-weight:700;line-height:1.35;margin:6px 0 2px}
+.p-area{font-size:13px;color:#55524a;margin:0}
+.p-sum{font-size:13.5px;line-height:1.8;color:#2b2a26;margin:6px 0 0}
+.p-h{font-size:17px;font-weight:700;margin:0 0 10px}
+.p-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.p-key{background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:8px 4px;text-align:center}
+.p-key b{display:block;font-size:15px}.p-key span{font-size:10.5px;color:#55524a}
+.p-rates{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border-radius:12px;overflow:hidden}
+.p-rates th,.p-rates td{padding:6px 5px;border-bottom:1px solid #eeebe4;text-align:right;font-variant-numeric:tabular-nums}
+.p-rates th{background:#efece5;color:#3d3b35;font-weight:600;font-size:11.5px}
+.p-rates td:first-child,.p-rates th:first-child{text-align:left;padding-left:10px}
+.p-rates td.m{background:#f3f6f4;color:#2f6f5e;text-align:center}
+.p-legend{font-size:11.5px;color:#55524a;line-height:1.7;margin:8px 0 0;padding:0;list-style:none}
+.p-extra{background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-top:10px}
+.p-extra div{display:flex;justify-content:space-between;padding:2px 0}
+.p-calc{margin-top:8px;font-size:12px;color:#2f6f5e;background:#eef3f1;border-radius:10px;padding:8px 10px}
+.p-list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.p-list li{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:10px 12px;font-size:13px}
+.p-list li i{font-style:normal;font-size:16px;width:22px;text-align:center}
+.p-list li small{display:block;color:#55524a;font-size:11.5px}
+.p-chips{display:flex;flex-wrap:wrap;gap:6px}
+.p-chip{background:#fff;border:1px solid #e3e0d8;border-radius:99px;padding:4px 10px;font-size:12px}
+.p-map{height:160px;border:0;border-radius:16px;width:100%;background:#dfe3de}
+.p-btn{display:block;text-align:center;background:#141413;color:#fff!important;border-radius:12px;padding:11px;font-size:13.5px;font-weight:600;text-decoration:none;margin-top:8px}
+.p-btn.sub{background:#fff;color:#141413!important;border:1px solid #d6d2c8}
+.p-note{font-size:11.5px;color:#55524a;line-height:1.7;margin:0}
+.p-missing{font-size:11.5px;color:#a5552a}
+/* 今の画面 */
+.p-fact{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #e6e3db;padding:7px 0;font-size:12.5px}
+.p-fact span:first-child{color:#55524a;white-space:nowrap}
+.p-fact em{font-style:normal;font-size:10px;background:#e8e5dc;border-radius:4px;padding:0 4px;color:#6b6862;margin-left:6px;white-space:nowrap}
+.p-fact .v{text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.p-body.new .p-fact .v{white-space:normal;max-width:230px}
+.p-fact.tap{cursor:pointer}
+.p-fact.tap .v::after{content:"›";display:inline-block;margin-left:8px;color:#8a867c;font-size:15px;line-height:1;transition:transform .2s}
+.p-fact.tap[aria-expanded="true"] .v::after{transform:rotate(90deg)}
+.p-fact.tap[aria-expanded="true"]{border-bottom-color:transparent}
+.p-drop{background:#efece4;border-radius:12px;padding:4px 12px 8px;margin:2px 0 6px;animation:p-open .2s ease-out}
+.p-drop[hidden]{display:none}
+.p-drop .p-fact{font-size:12px;padding:6px 0}
+.p-drop .p-fact:last-child{border-bottom:none}
+.p-drop .p-subph{height:120px;margin:8px 0 4px}
+/* 提案の画面：見出しは小さなラベル、行は白いカードの中に詰めて並べる */
+.p-body.new{gap:10px;padding-top:16px}
+.p-body.new>section:first-child{margin-bottom:6px}
+.p-body.new>section:not(:first-child){background:#fff;border-radius:14px;padding:10px 14px 4px;box-shadow:0 1px 2px rgba(20,20,19,.04)}
+.p-body.new .p-h{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:#8a867c;margin:0 0 2px;padding:0;border:0}
+.p-body.new .p-fact{font-size:13px;padding:8px 0;border-bottom:1px solid rgba(20,20,19,.06);align-items:baseline}
+.p-body.new .p-fact:last-of-type{border-bottom:0}
+.p-body.new .p-fact span:first-child{color:#8a867c;font-size:12px}
+.p-body.new .p-fact .v{font-weight:500;color:#141413}
+.p-body.new .p-fact.tap .v::after{font-size:13px;margin-left:6px;color:#b5b0a5}
+.p-body.new .p-note{font-size:11px;color:#8a867c;margin:4px 0 8px!important}
+.p-body.new section .p-btn{padding:9px;font-size:12.5px;border-radius:10px;margin:0 0 10px}
+.p-body.new section .p-btn+.p-btn{margin-top:-4px}
+.p-body.new .p-drop{background:#f6f4ef;border-radius:10px;padding:2px 10px 4px;margin:0 0 8px}
+.p-body.new .p-drop .p-fact{font-size:12px;padding:6px 0}
+.p-body.new .vocab td{vertical-align:top}.vocab td code{font-size:11px;color:var(--mute)}
+.p-mapph{height:110px;border-radius:10px;margin:2px 0 10px!important;border:0}
+.p-body.new>.p-note{text-align:center;margin-top:6px!important}
+.p-mini{width:100%;border-collapse:collapse;font-size:11px;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.p-mini th,.p-mini td{padding:4px 3px;border-bottom:1px solid rgba(20,20,19,.06);text-align:right;font-weight:500;color:#141413;white-space:nowrap}
+.p-mini tr:first-child th{color:#8a867c;font-weight:600;font-size:10px}
+.p-mini th:first-child{text-align:left;color:#8a867c;font-weight:500}
+.p-unit{font-size:10.5px;color:#8a867c;margin:2px 0 4px}
+.p-price{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.p-price th,.p-price td{padding:7px 2px;border-bottom:1px solid rgba(20,20,19,.06);text-align:right;white-space:nowrap;font-weight:500;color:#141413}
+.p-price tr:first-child th{font-size:10px;font-weight:600;color:#8a867c;padding-top:2px}
+.p-price th:first-child{text-align:left}
+.p-price td.nt{font-size:10.5px;color:#8a867c}
+.p-price tr.tap{cursor:pointer}
+.p-price tr.tap td.nt::after{content:"›";display:inline-block;margin-left:4px;color:#b5b0a5;transition:transform .2s}
+.p-price tr.tap[aria-expanded="true"] td.nt::after{transform:rotate(90deg)}
+.p-price tr.p-droprow td{padding:0;border:0;text-align:left;white-space:normal}
+.p-price tr.p-droprow .p-drop{margin:4px 0 6px}
+@keyframes p-open{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.p-fact.tap:active{background:#efece4}
+.p-subph{height:150px;border-radius:16px;background:#cfd3cc;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
+.p-stay{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:10px;padding:5px 11px;border-radius:99px;background:#efece4;line-height:1}
+.p-stay .k{font-size:9.5px;font-weight:700;letter-spacing:.08em;color:#8a867c}
+.p-stay b{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.p-stay.miss b{color:#b5b0a5}
+.p-stay .ln{width:14px;height:1px;background:#b9b4a8;margin:0 2px}
+.p-mapph{height:160px;border-radius:16px;border:1px solid #d0d5cf;background:#dfe3de;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
+</style>
+</head>
+<body><main>
+<h1>建物・日帰り温泉・まちの詳細画面（提案）</h1>
+<p class="lead">宿・体験・自然と同じ形（列 + details、トピックのカード、› で行の下に開く）。名前と値は架空の見本。</p>
+<div class="phones">
+<div class="phone-wrap"><p>建物（架空の見本）</p>
+<div class="phone">
+<div class="p-home"><div class="tg"><span>宿</span><span>体験</span></div><div class="cd"></div><div class="cd"></div></div>
+<div class="p-backdrop"></div>
+<div class="p-sheet"><span class="p-handle"></span><span class="p-back">‹ 戻る</span><div class="p-scroll">
+<div class="p-hero"><span class="cnt">1 / 6</span></div>
+<div class="p-body new">
+<section>
+<div class="p-badges"><span class="p-badge">美術館</span></div>
+<h1 class="p-title">（見本）湖畔の美術館</h1>
+<p class="p-area">箱根・仙石原</p>
+<p class="p-sum">ガラス工芸を中心に集めた美術館。庭から湖が見える。</p>
+<div class="p-stay"><span class="k">開館</span><b>9:00〜17:00</b><span class="ln"></span><span class="k">入館</span><b>1,500 円〜</b></div>
+</section>
+<section>
+<h2 class="p-h">時間</h2>
+<div class="p-fact"><span>開館</span><span class="v">9:00〜17:00</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="b-h"><span>休み</span><span class="v">水曜</span></div>
+<div class="p-drop" id="b-h" hidden>
+<div class="p-fact sub"><span>年末年始</span><span class="v">12/29〜1/1</span></div>
+<div class="p-fact sub"><span>入館の締め切り</span><span class="v">16:30</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">料金</h2>
+<div class="p-fact"><span>大人</span><span class="v">1,500 円</span></div>
+<div class="p-fact"><span>子ども（小・中学生）</span><span class="v">700 円</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="b-f"><span>割引</span><span class="v">団体 1,200 円</span></div>
+<div class="p-drop" id="b-f" hidden>
+<div class="p-fact sub"><span>団体</span><span class="v">20 名以上・大人 1,200 円</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">催し</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="b-e"><span>ガラスの冬展</span><span class="v">2026-12-01〜2027-02-28</span></div>
+<div class="p-drop" id="b-e" hidden>
+<div class="p-fact sub"><span>内容</span><span class="v">冬の器 120 点</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">アクセス</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="b-a"><span>最寄り駅</span><span class="v">（見本）○○駅 バス 20 分</span></div>
+<div class="p-drop" id="b-a" hidden>
+<div class="p-fact sub"><span>駐車場</span><span class="v">あり（無料・100 台）</span></div>
+<div class="p-fact sub"><span>道順</span><span class="v">バス停「美術館前」すぐ</span></div>
+</div>
+<div class="p-mapph" style="margin-top:10px">地図</div>
+</section>
+<section>
+<h2 class="p-h">注意点</h2>
+<div class="p-fact"><span class="v" style="text-align:left">館内は撮影できない部屋がある</span></div>
+</section>
+<section>
+<h2 class="p-h">出典</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="b-s"><span>公式サイト</span><span class="v">時間・料金・行き方</span></div>
+<div class="p-drop" id="b-s" hidden>
+<div class="p-fact sub"><span>URL</span><span class="v">example.com</span></div>
+<div class="p-fact sub"><span>取得日</span><span class="v">2026-11-16</span></div>
+</div>
+</section>
+<p class="p-note" style="margin-top:8px">載っていない項目は、情報が無いことを示し、「無い」という意味ではありません。</p>
+</div></div></div></div>
+<button class="replay" type="button">もう一度開く</button></div>
+
+<div class="phone-wrap"><p>日帰り温泉（架空の見本）</p>
+<div class="phone">
+<div class="p-home"><div class="tg"><span>宿</span><span>体験</span></div><div class="cd"></div><div class="cd"></div></div>
+<div class="p-backdrop"></div>
+<div class="p-sheet"><span class="p-handle"></span><span class="p-back">‹ 戻る</span><div class="p-scroll">
+<div class="p-hero"><span class="cnt">1 / 6</span></div>
+<div class="p-body new">
+<section>
+<div class="p-badges"><span class="p-badge">日帰り温泉</span></div>
+<h1 class="p-title">（見本）川沿いの湯</h1>
+<p class="p-area">伊豆・修善寺</p>
+<p class="p-sum">川を見ながら入れる露天風呂のある日帰り温泉。</p>
+<div class="p-stay"><span class="k">営業</span><b>10:00〜21:00</b><span class="ln"></span><span class="k">大人</span><b>1,000 円</b></div>
+</section>
+<section>
+<h2 class="p-h">風呂</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-b0"><span>露天風呂</span><span class="v">温泉・源泉かけ流し</span></div>
+<div class="p-drop" id="h-b0" hidden>
+<div class="p-fact sub"><span>泉質</span><span class="v">アルカリ性単純温泉</span></div>
+<div class="p-fact sub"><span>男女</span><span class="v">男女別</span></div>
+</div>
+<div class="p-fact"><span>内湯</span><span class="v">温泉</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-b1"><span>貸切風呂</span><span class="v">温泉</span></div>
+<div class="p-drop" id="h-b1" hidden>
+<div class="p-fact sub"><span>料金</span><span class="v">50 分 2,000 円</span></div>
+<div class="p-fact sub"><span>予約</span><span class="v">当日受付</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">料金</h2>
+<div class="p-fact"><span>大人</span><span class="v">1,000 円</span></div>
+<div class="p-fact"><span>子ども</span><span class="v">500 円</span></div>
+<div class="p-fact"><span>貸切風呂</span><span class="v">50 分 2,000 円</span></div>
+</section>
+<section>
+<h2 class="p-h">時間</h2>
+<div class="p-fact"><span>営業</span><span class="v">10:00〜21:00</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-h"><span>休み</span><span class="v">木曜</span></div>
+<div class="p-drop" id="h-h" hidden>
+<div class="p-fact sub"><span>受付の締め切り</span><span class="v">20:30</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">設備</h2>
+<div class="p-fact"><span>タオル</span><span class="v">貸し出し（200 円）</span></div>
+<div class="p-fact"><span>休憩所</span><span class="v">あり</span></div>
+<div class="p-fact"><span>食事</span><span class="v">あり</span></div>
+</section>
+<section>
+<h2 class="p-h">アクセス</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-a"><span>最寄り駅</span><span class="v">（見本）○○駅 徒歩 10 分</span></div>
+<div class="p-drop" id="h-a" hidden>
+<div class="p-fact sub"><span>駐車場</span><span class="v">あり（無料・30 台）</span></div>
+</div>
+<div class="p-mapph" style="margin-top:10px">地図</div>
+</section>
+<section>
+<h2 class="p-h">注意点</h2>
+<div class="p-fact"><span class="v" style="text-align:left">タトゥーのある人は入れない</span></div>
+</section>
+<section>
+<h2 class="p-h">出典</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="h-s"><span>公式サイト</span><span class="v">時間・料金・行き方</span></div>
+<div class="p-drop" id="h-s" hidden>
+<div class="p-fact sub"><span>URL</span><span class="v">example.com</span></div>
+<div class="p-fact sub"><span>取得日</span><span class="v">2026-11-16</span></div>
+</div>
+</section>
+<p class="p-note" style="margin-top:8px">載っていない項目は、情報が無いことを示し、「無い」という意味ではありません。</p>
+</div></div></div></div>
+<button class="replay" type="button">もう一度開く</button></div>
+
+<div class="phone-wrap"><p>まち（架空の見本）</p>
+<div class="phone">
+<div class="p-home"><div class="tg"><span>宿</span><span>体験</span></div><div class="cd"></div><div class="cd"></div></div>
+<div class="p-backdrop"></div>
+<div class="p-sheet"><span class="p-handle"></span><span class="p-back">‹ 戻る</span><div class="p-scroll">
+<div class="p-hero"><span class="cnt">1 / 6</span></div>
+<div class="p-body new">
+<section>
+<div class="p-badges"><span class="p-badge">温泉街</span></div>
+<h1 class="p-title">（見本）湯けむりの温泉街</h1>
+<p class="p-area">伊豆・修善寺</p>
+<p class="p-sum">川沿いに旅館と土産物屋が並ぶ温泉街。竹林の小径が歩ける。</p>
+<div class="p-stay"><span class="k">歩く</span><b>約 60 分</b><span class="ln"></span><span class="k">店</span><b>10:00〜17:00</b></div>
+</section>
+<section>
+<h2 class="p-h">歩き方</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="v-w0"><span>竹林と寺めぐり</span><span class="v">約 60 分・1.5 km</span></div>
+<div class="p-drop" id="v-w0" hidden>
+<div class="p-fact sub"><span>範囲</span><span class="v">駅前のバス停から寺まで</span></div>
+<div class="p-fact sub"><span>坂</span><span class="v">少しある</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">店の時間</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="v-s"><span>店が開いている時間</span><span class="v">10:00〜17:00</span></div>
+<div class="p-drop" id="v-s" hidden>
+<div class="p-fact sub"><span>メモ</span><span class="v">水曜に休む店が多い</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">催し</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="v-e"><span>もみじ祭り</span><span class="v">11 月</span></div>
+<div class="p-drop" id="v-e" hidden>
+<div class="p-fact sub"><span>内容</span><span class="v">夜のライトアップ</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">アクセス</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="v-a"><span>最寄り駅</span><span class="v">（見本）○○駅 バス 10 分</span></div>
+<div class="p-drop" id="v-a" hidden>
+<div class="p-fact sub"><span>駐車場</span><span class="v">町営 200 台（有料）</span></div>
+</div>
+<div class="p-mapph" style="margin-top:10px">地図</div>
+</section>
+<section>
+<h2 class="p-h">注意点</h2>
+<div class="p-fact"><span class="v" style="text-align:left">夕方以降は店の多くが閉まる</span></div>
+</section>
+<section>
+<h2 class="p-h">出典</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="v-s2"><span>公式サイト</span><span class="v">時間・料金・行き方</span></div>
+<div class="p-drop" id="v-s2" hidden>
+<div class="p-fact sub"><span>URL</span><span class="v">example.com</span></div>
+<div class="p-fact sub"><span>取得日</span><span class="v">2026-11-16</span></div>
+</div>
+</section>
+<p class="p-note" style="margin-top:8px">載っていない項目は、情報が無いことを示し、「無い」という意味ではありません。</p>
+</div></div></div></div>
+<button class="replay" type="button">もう一度開く</button></div>
+</div>
+<h2>details の形</h2>
+<div class="card"><pre>// 建物：列＝ kind・位置（必須）・region_id（必須）・official_url
+type BuildingDetails = {
+  hours?: { open?: string; close?: string; last_entry?: string
+            closed_weekdays?: number[]; closed_note?: LocalizedText; note?: LocalizedText }
+  fees?: { label?: LocalizedText; audience?: "all" | "adult" | "child"; age_min?: number; age_max?: number
+           amount: number; amount_max?: number; currency: string; tax_included?: boolean
+           note?: LocalizedText }[]                              // 無料は amount 0
+  events?: { name: LocalizedText; date_from?: string; date_to?: string
+             months?: number[]; note?: LocalizedText }[]
+  access?: Access        // 自然と同じ（station・mode・minutes・parking・route）
+  cautions?: { note: LocalizedText }[]
+  booking_links?: BookingLink[]; sources?: Source[]
+}
+
+// 日帰り温泉：列＝ kind・位置（必須）・region_id（必須）・official_url
+type HotspringDetails = {
+  baths?: { kind: "indoor" | "open_air" | "private" | "sauna"; hot_spring?: boolean
+            spring?: string; source?: "natural_flow" | "circulated" | "heated" | "diluted" | "none"
+            gender?: "separate" | "mixed" | "private"; fee?: Money
+            reservation?: { required: boolean; slot_minutes?: number }; note?: LocalizedText }[]
+  hours?: { open?: string; close?: string; last_entry?: string
+            closed_weekdays?: number[]; closed_note?: LocalizedText }
+  fees?: { audience?: "all" | "adult" | "child"; age_min?: number; age_max?: number
+           amount: number; amount_max?: number; currency: string; tax_included?: boolean
+           note?: LocalizedText }[]
+  amenities?: { towel?: "free" | "rental" | "sale" | "none"; towel_fee?: Money
+                rest_area?: boolean; meal?: boolean; note?: LocalizedText }
+  access?: Access; cautions?: { note: LocalizedText }[]; sources?: Source[]
+}
+
+// まち：列＝ kind・位置（必須）・region_id（必須）
+type VillageDetails = {
+  walks?: { key: string; name: LocalizedText; area?: LocalizedText
+            duration_minutes?: number; distance_km?: number; note?: LocalizedText }[]
+  shop_hours?: { open?: string; close?: string; note?: LocalizedText }
+  events?: { name: LocalizedText; date_from?: string; date_to?: string
+             months?: number[]; note?: LocalizedText }[]
+  access?: Access; cautions?: { note: LocalizedText }[]; sources?: Source[]
+}</pre></div>
+<h2>必須の項目</h2>
+<div class="card"><table>
+<tr><th>コア</th><th>必須の列</th><th>details の必須（quality.ts）</th><th>今の決まりからの変更</th></tr>
+<tr><td>建物</td><td>地域・位置</td><td>時間（hours）・料金 1 つ以上（無料は 0）</td><td>hours を 1 つ（配列でなく）に。料金に audience</td></tr>
+<tr><td>日帰り温泉</td><td>地域・位置</td><td>時間・大人の料金・泉質のある風呂 1 つ以上</td><td>hours を 1 つに。風呂の種類を宿と同じ語彙に（sauna を足す）</td></tr>
+<tr><td>まち</td><td>地域・位置</td><td>行き方（access）</td><td>access を 1 つ（配列でなく）に</td></tr>
+</table>
+<p class="mute">体験・自然と同じく、列を足して先に本番に当てる → コードを出す → 集め直す → 旧い表を消す、の順に進める。</p></div>
+<h2>画面の並び</h2>
+<div class="grid">
+<div class="card"><h3>建物</h3><p>「開館・入館」の 1 行 → 時間（休み）→ 料金 → 催し → アクセス（地図）→ 注意点 → 出典</p></div>
+<div class="card"><h3>日帰り温泉</h3><p>「営業・大人の料金」の 1 行 → 風呂（泉質）→ 料金 → 時間（休み）→ 設備 → アクセス（地図）→ 注意点 → 出典</p></div>
+<div class="card"><h3>まち</h3><p>「歩く時間・店の時間」の 1 行 → 歩き方 → 店の時間 → 催し → アクセス（地図）→ 注意点 → 出典</p></div>
+</div>
+</main>
+<script>
+// 詳細のある行（›）をタップすると、その行のすぐ下に詳細が開く（もう一度で閉じる）
+document.querySelectorAll('.tap[data-sub]').forEach(function (r) {
+  r.addEventListener('click', function () {
+    var d = document.getElementById(r.dataset.sub);
+    var open = d.hidden;
+    d.hidden = !open;
+    r.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+});
+// 「もう一度開く」：シートが上がる動きをやり直す
+document.querySelectorAll('.replay').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var phone = b.parentElement.querySelector('.phone');
+    phone.querySelectorAll('.p-home,.p-backdrop,.p-sheet').forEach(function (el) {
+      el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+    });
+    phone.querySelector('.p-scroll').scrollTop = 0;
+    phone.querySelectorAll('.p-drop').forEach(function (x) { x.hidden = true; });
+    phone.querySelectorAll('.tap[data-sub]').forEach(function (x) { x.setAttribute('aria-expanded', 'false'); });
+  });
+});
+</script>
+</body></html>

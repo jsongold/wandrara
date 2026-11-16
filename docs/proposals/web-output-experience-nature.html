@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>体験・自然の詳細画面 提案</title>
+<style>
+:root{--bg:#f7f6f2;--card:#fff;--ink:#1d1c1a;--mute:#6b6862;--line:#e3e0d8;--accent:#2f6f5e;--warn:#a5552a;--chip:#eef3f1}
+@media (prefers-color-scheme:dark){:root{--bg:#161614;--card:#1f1e1b;--ink:#ecebe6;--mute:#a19e96;--line:#34322d;--accent:#7cc3ad;--warn:#e39a6b;--chip:#26302c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}
+main{max-width:1280px;margin:0 auto;padding:32px 16px 80px}
+h1{font-size:24px;margin:0 0 4px}h2{font-size:18px;margin:40px 0 12px;padding-top:8px;border-top:1px solid var(--line)}h3{font-size:15px;margin:20px 0 8px}
+.lead{color:var(--mute);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px}
+.box{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--card)}
+.box b{display:block}.box span{color:var(--mute);font-size:12px}
+.arrow{color:var(--mute)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{color:var(--mute);font-weight:600}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.matrix td,.matrix th{text-align:right}.matrix th:first-child,.matrix td:first-child{text-align:left}
+.merged{background:var(--chip)}
+.chip{display:inline-block;background:var(--chip);border-radius:99px;padding:1px 9px;margin:2px 4px 2px 0;font-size:13px}
+.flag{color:var(--warn);font-size:13px}
+.mute{color:var(--mute);font-size:13px}
+pre{background:var(--chip);border-radius:8px;padding:12px;overflow:auto;font-size:12.5px;line-height:1.5}
+.before li{color:var(--mute);font-size:13px}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--mute);margin-left:6px}
+/* 画面の見本（実際の詳細画面と同じ色・幅） */
+.phones{display:flex;gap:28px;flex-wrap:nowrap;overflow-x:auto;align-items:flex-start;padding-bottom:12px}
+.phones>:first-child{margin-left:auto}.phones>:last-child{margin-right:auto}
+.phone-wrap{flex:0 0 auto}
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.phone-wrap>p{margin:0;font-weight:700}
+.phone{position:relative;width:375px;max-width:100%;height:780px;overflow:hidden;border:10px solid #111;border-radius:36px;background:#000;color:#141413;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+/* 今の DetailSheet と同じ形：裏のトップが縮み、背景が暗くなり、下から 94% のシートが上がる */
+.p-home{position:absolute;inset:0;background:#f7f6f2;border-radius:14px;transform:scale(.92) translateY(-14px);transform-origin:top center;padding:44px 16px 0;animation:p-shrink 420ms cubic-bezier(.32,.72,0,1)}
+.p-home .tg{display:flex;gap:6px;margin-bottom:14px}.p-home .tg span{background:#e8e5dc;border-radius:99px;padding:5px 14px;font-size:12px;font-weight:600}.p-home .tg span:first-child{background:#141413;color:#fff}
+.p-home .cd{height:210px;border-radius:18px;background:#cfd3cc center/cover;margin-bottom:12px}
+.p-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);animation:p-fade 420ms ease-out}
+.p-sheet{position:absolute;left:0;right:0;bottom:0;height:94%;background:#f7f6f2;border-radius:24px 24px 0 0;overflow:hidden;box-shadow:0 -8px 30px rgba(0,0,0,.25);animation:p-up 420ms cubic-bezier(.32,.72,0,1)}
+.p-handle{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:44px;height:6px;border-radius:99px;background:rgba(255,255,255,.85);box-shadow:0 1px 3px rgba(0,0,0,.3);z-index:2}
+.p-back{position:absolute;left:14px;top:22px;z-index:2;background:rgba(18,18,16,.46);color:#fff!important;border-radius:99px;font-size:12px;padding:5px 11px;backdrop-filter:blur(14px)}
+.p-scroll{height:100%;overflow-y:auto;overscroll-behavior:contain}
+@keyframes p-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes p-fade{from{opacity:0}to{opacity:1}}
+@keyframes p-shrink{from{transform:none;border-radius:0}to{transform:scale(.92) translateY(-14px);border-radius:14px}}
+.replay{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:4px 12px;cursor:pointer}
+.phone *{color:inherit}
+.p-hero{height:300px;background:#cfd3cc center/cover no-repeat;position:relative}
+.p-hero .cnt{position:absolute;right:12px;bottom:12px;background:rgba(15,15,14,.6);color:#fff;font-size:11px;font-weight:600;border-radius:6px;padding:2px 8px}
+.p-body{padding:18px 20px 36px;display:flex;flex-direction:column;gap:24px}
+.p-badges{display:flex;flex-wrap:wrap;gap:6px}
+.p-badge{background:#e8e5dc;color:#3d3b35;font-size:11px;font-weight:600;border-radius:6px;padding:3px 8px}
+.p-title{font-size:22px;font-weight:700;line-height:1.35;margin:6px 0 2px}
+.p-area{font-size:13px;color:#55524a;margin:0}
+.p-sum{font-size:13.5px;line-height:1.8;color:#2b2a26;margin:6px 0 0}
+.p-h{font-size:17px;font-weight:700;margin:0 0 10px}
+.p-keys{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.p-key{background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:8px 4px;text-align:center}
+.p-key b{display:block;font-size:15px}.p-key span{font-size:10.5px;color:#55524a}
+.p-rates{width:100%;border-collapse:collapse;font-size:12.5px;background:#fff;border-radius:12px;overflow:hidden}
+.p-rates th,.p-rates td{padding:6px 5px;border-bottom:1px solid #eeebe4;text-align:right;font-variant-numeric:tabular-nums}
+.p-rates th{background:#efece5;color:#3d3b35;font-weight:600;font-size:11.5px}
+.p-rates td:first-child,.p-rates th:first-child{text-align:left;padding-left:10px}
+.p-rates td.m{background:#f3f6f4;color:#2f6f5e;text-align:center}
+.p-legend{font-size:11.5px;color:#55524a;line-height:1.7;margin:8px 0 0;padding:0;list-style:none}
+.p-extra{background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-top:10px}
+.p-extra div{display:flex;justify-content:space-between;padding:2px 0}
+.p-calc{margin-top:8px;font-size:12px;color:#2f6f5e;background:#eef3f1;border-radius:10px;padding:8px 10px}
+.p-list{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.p-list li{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #e3e0d8;border-radius:12px;padding:10px 12px;font-size:13px}
+.p-list li i{font-style:normal;font-size:16px;width:22px;text-align:center}
+.p-list li small{display:block;color:#55524a;font-size:11.5px}
+.p-chips{display:flex;flex-wrap:wrap;gap:6px}
+.p-chip{background:#fff;border:1px solid #e3e0d8;border-radius:99px;padding:4px 10px;font-size:12px}
+.p-map{height:160px;border:0;border-radius:16px;width:100%;background:#dfe3de}
+.p-btn{display:block;text-align:center;background:#141413;color:#fff!important;border-radius:12px;padding:11px;font-size:13.5px;font-weight:600;text-decoration:none;margin-top:8px}
+.p-btn.sub{background:#fff;color:#141413!important;border:1px solid #d6d2c8}
+.p-note{font-size:11.5px;color:#55524a;line-height:1.7;margin:0}
+.p-missing{font-size:11.5px;color:#a5552a}
+/* 今の画面 */
+.p-fact{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #e6e3db;padding:7px 0;font-size:12.5px}
+.p-fact span:first-child{color:#55524a;white-space:nowrap}
+.p-fact em{font-style:normal;font-size:10px;background:#e8e5dc;border-radius:4px;padding:0 4px;color:#6b6862;margin-left:6px;white-space:nowrap}
+.p-fact .v{text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.p-body.new .p-fact .v{white-space:normal;max-width:230px}
+.p-fact.tap{cursor:pointer}
+.p-fact.tap .v::after{content:"›";display:inline-block;margin-left:8px;color:#8a867c;font-size:15px;line-height:1;transition:transform .2s}
+.p-fact.tap[aria-expanded="true"] .v::after{transform:rotate(90deg)}
+.p-fact.tap[aria-expanded="true"]{border-bottom-color:transparent}
+.p-drop{background:#efece4;border-radius:12px;padding:4px 12px 8px;margin:2px 0 6px;animation:p-open .2s ease-out}
+.p-drop[hidden]{display:none}
+.p-drop .p-fact{font-size:12px;padding:6px 0}
+.p-drop .p-fact:last-child{border-bottom:none}
+.p-drop .p-subph{height:120px;margin:8px 0 4px}
+/* 提案の画面：見出しは小さなラベル、行は白いカードの中に詰めて並べる */
+.p-body.new{gap:10px;padding-top:16px}
+.p-body.new>section:first-child{margin-bottom:6px}
+.p-body.new>section:not(:first-child){background:#fff;border-radius:14px;padding:10px 14px 4px;box-shadow:0 1px 2px rgba(20,20,19,.04)}
+.p-body.new .p-h{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:#8a867c;margin:0 0 2px;padding:0;border:0}
+.p-body.new .p-fact{font-size:13px;padding:8px 0;border-bottom:1px solid rgba(20,20,19,.06);align-items:baseline}
+.p-body.new .p-fact:last-of-type{border-bottom:0}
+.p-body.new .p-fact span:first-child{color:#8a867c;font-size:12px}
+.p-body.new .p-fact .v{font-weight:500;color:#141413}
+.p-body.new .p-fact.tap .v::after{font-size:13px;margin-left:6px;color:#b5b0a5}
+.p-body.new .p-note{font-size:11px;color:#8a867c;margin:4px 0 8px!important}
+.p-body.new section .p-btn{padding:9px;font-size:12.5px;border-radius:10px;margin:0 0 10px}
+.p-body.new section .p-btn+.p-btn{margin-top:-4px}
+.p-body.new .p-drop{background:#f6f4ef;border-radius:10px;padding:2px 10px 4px;margin:0 0 8px}
+.p-body.new .p-drop .p-fact{font-size:12px;padding:6px 0}
+.p-body.new .vocab td{vertical-align:top}.vocab td code{font-size:11px;color:var(--mute)}
+.p-mapph{height:110px;border-radius:10px;margin:2px 0 10px!important;border:0}
+.p-body.new>.p-note{text-align:center;margin-top:6px!important}
+.p-mini{width:100%;border-collapse:collapse;font-size:11px;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+.p-mini th,.p-mini td{padding:4px 3px;border-bottom:1px solid rgba(20,20,19,.06);text-align:right;font-weight:500;color:#141413;white-space:nowrap}
+.p-mini tr:first-child th{color:#8a867c;font-weight:600;font-size:10px}
+.p-mini th:first-child{text-align:left;color:#8a867c;font-weight:500}
+.p-unit{font-size:10.5px;color:#8a867c;margin:2px 0 4px}
+.p-price{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+.p-price th,.p-price td{padding:7px 2px;border-bottom:1px solid rgba(20,20,19,.06);text-align:right;white-space:nowrap;font-weight:500;color:#141413}
+.p-price tr:first-child th{font-size:10px;font-weight:600;color:#8a867c;padding-top:2px}
+.p-price th:first-child{text-align:left}
+.p-price td.nt{font-size:10.5px;color:#8a867c}
+.p-price tr.tap{cursor:pointer}
+.p-price tr.tap td.nt::after{content:"›";display:inline-block;margin-left:4px;color:#b5b0a5;transition:transform .2s}
+.p-price tr.tap[aria-expanded="true"] td.nt::after{transform:rotate(90deg)}
+.p-price tr.p-droprow td{padding:0;border:0;text-align:left;white-space:normal}
+.p-price tr.p-droprow .p-drop{margin:4px 0 6px}
+@keyframes p-open{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.p-fact.tap:active{background:#efece4}
+.p-subph{height:150px;border-radius:16px;background:#cfd3cc;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
+.p-stay{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:10px;padding:5px 11px;border-radius:99px;background:#efece4;line-height:1}
+.p-stay .k{font-size:9.5px;font-weight:700;letter-spacing:.08em;color:#8a867c}
+.p-stay b{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.p-stay.miss b{color:#b5b0a5}
+.p-stay .ln{width:14px;height:1px;background:#b9b4a8;margin:0 2px}
+.p-mapph{height:160px;border-radius:16px;border:1px solid #d0d5cf;background:#dfe3de;display:flex;align-items:center;justify-content:center;font-size:12px;color:#4a5048}
+</style>
+</head>
+<body><main>
+<h1>体験・自然の詳細画面（提案）</h1>
+<p class="lead">宿と同じ形（列 + details の型つき JSON、トピックごとのカード、› で行の下に開く）。名前と値は架空の見本。</p>
+<div class="phones">
+<div class="phone-wrap"><p>体験（架空の見本）</p>
+<div class="phone">
+<div class="p-home"><div class="tg"><span>宿</span><span>体験</span></div><div class="cd"></div><div class="cd"></div></div>
+<div class="p-backdrop"></div>
+<div class="p-sheet"><span class="p-handle"></span><span class="p-back">‹ 戻る</span><div class="p-scroll">
+<div class="p-hero"><span class="cnt">1 / 8</span></div>
+<div class="p-body new">
+<section>
+<div class="p-badges"><span class="p-badge">ワイナリー見学</span></div>
+<h1 class="p-title">（見本）丘のワイナリー見学</h1>
+<p class="p-area">伊豆・中伊豆</p>
+<p class="p-sum">ぶどう畑と醸造所をガイドと歩き、最後に 3 種を試飲する。</p>
+<div class="p-stay"><span class="k">所要</span><b>90 分</b><span class="ln"></span><span class="k">予約</span><b>必要</b></div>
+</section>
+<section>
+<h2 class="p-h">料金（参考）</h2>
+<p class="p-unit">税込（円）</p>
+<table class="p-price"><tr><th>コース</th><th>人数</th><th>最小</th><th>最大</th><th>単位</th></tr>
+<tr class="p-trow tap" aria-expanded="false" data-sub="e-p-0"><th>見学と試飲</th><td>1〜20</td><td>2,500</td><td>3,500</td><td class="nt">1 名</td></tr>
+<tr class="p-droprow"><td colspan="5"><div class="p-drop" id="e-p-0" hidden>
+<div class="p-fact sub"><span>大人</span><span class="v">3,500 円</span></div>
+<div class="p-fact sub"><span>子ども（6〜12 歳）</span><span class="v">2,500 円・試飲なし</span></div>
+</div></td></tr>
+<tr class="p-trow tap" aria-expanded="false" data-sub="e-p-1"><th>貸切ツアー</th><td>2〜8</td><td>20,000</td><td>20,000</td><td class="nt">1 グループ</td></tr>
+<tr class="p-droprow"><td colspan="5"><div class="p-drop" id="e-p-1" hidden>
+<div class="p-fact sub"><span>人数</span><span class="v">2〜8 名</span></div>
+<div class="p-fact sub"><span>含むもの</span><span class="v">ガイド・試飲 5 種</span></div>
+</div></td></tr>
+</table>
+<p class="p-note">コースと人数によって変わります。</p>
+<a class="p-btn sub" href="#">料金の詳細は公式サイトへ</a>
+</section>
+<section>
+<h2 class="p-h">コース</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="e-c0"><span>見学と試飲</span><span class="v">90 分・1〜20 名</span></div>
+<div class="p-drop" id="e-c0" hidden>
+<div class="p-fact sub"><span>内容</span><span class="v">畑と醸造所の見学、試飲 3 種</span></div>
+<div class="p-fact sub"><span>年齢</span><span class="v">6 歳から</span></div>
+<div class="p-fact sub"><span>案内の言語</span><span class="v">日本語・英語</span></div>
+</div>
+<div class="p-fact tap" aria-expanded="false" data-sub="e-c1"><span>貸切ツアー</span><span class="v">120 分・2〜8 名</span></div>
+<div class="p-drop" id="e-c1" hidden>
+<div class="p-fact sub"><span>内容</span><span class="v">ガイドが付きっきり、試飲 5 種</span></div>
+<div class="p-fact sub"><span>案内の言語</span><span class="v">日本語</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">開催</h2>
+<div class="p-fact"><span>時期</span><span class="v">3〜11 月</span></div>
+<div class="p-fact"><span>曜日</span><span class="v">金・土・日</span></div>
+<div class="p-fact tap" aria-expanded="false" data-sub="e-s0"><span>時間</span><span class="v">10:00 / 14:00</span></div>
+<div class="p-drop" id="e-s0" hidden>
+<div class="p-fact sub"><span>雨の日</span><span class="v">屋内の見学に変える</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">集合場所</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="e-l0"><span>集合</span><span class="v">ワイナリーの受付</span></div>
+<div class="p-drop" id="e-l0" hidden>
+<div class="p-fact sub"><span>住所</span><span class="v">（見本）伊豆市○○ 1-2</span></div>
+<div class="p-fact sub"><span>駐車場</span><span class="v">あり</span></div>
+</div>
+<div class="p-mapph" style="margin-top:10px">地図</div>
+</section>
+<section>
+<h2 class="p-h">含まれるもの</h2>
+<div class="p-fact"><span>含む</span><span class="v">ガイド・試飲・グラス</span></div>
+<div class="p-fact"><span>含まない</span><span class="v">交通</span></div>
+<div class="p-fact"><span>持ち物</span><span class="v">歩きやすい靴</span></div>
+</section>
+<section>
+<h2 class="p-h">注意点</h2>
+<div class="p-fact"><span class="v" style="text-align:left">運転する人は試飲できません</span></div>
+</section>
+<section>
+<h2 class="p-h">予約</h2>
+<a class="p-btn" href="#">公式サイトで予約</a>
+</section>
+<section>
+<h2 class="p-h">出典</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="e-src"><span>公式サイト</span><span class="v">料金・コース・開催</span></div>
+<div class="p-drop" id="e-src" hidden>
+<div class="p-fact sub"><span>URL</span><span class="v">example.com</span></div>
+<div class="p-fact sub"><span>取得日</span><span class="v">2026-11-16</span></div>
+</div>
+</section>
+<p class="p-note" style="margin-top:8px">載っていない項目は、情報が無いことを示し、「無い」という意味ではありません。</p>
+</div></div></div></div>
+<button class="replay" type="button">もう一度開く</button></div>
+
+<div class="phone-wrap"><p>自然（架空の見本）</p>
+<div class="phone">
+<div class="p-home"><div class="tg"><span>宿</span><span>体験</span></div><div class="cd"></div><div class="cd"></div></div>
+<div class="p-backdrop"></div>
+<div class="p-sheet"><span class="p-handle"></span><span class="p-back">‹ 戻る</span><div class="p-scroll">
+<div class="p-hero"><span class="cnt">1 / 8</span></div>
+<div class="p-body new">
+<section>
+<div class="p-badges"><span class="p-badge">海岸</span></div>
+<h1 class="p-title">（見本）岬の遊歩道</h1>
+<p class="p-area">伊豆・伊東</p>
+<p class="p-sum">溶岩の岩場と吊り橋を歩く海沿いの道。</p>
+<div class="p-stay"><span class="k">見頃</span><b>4〜5 月</b><span class="ln"></span><span class="k">入場</span><b>無料</b></div>
+</section>
+<section>
+<h2 class="p-h">見頃</h2>
+<div class="p-fact"><span>つつじ</span><span class="v">4〜5 月</span></div>
+<div class="p-fact"><span>夕日</span><span class="v">10〜2 月</span></div>
+</section>
+<section>
+<h2 class="p-h">時間・料金</h2>
+<div class="p-fact"><span>入れる時間</span><span class="v">いつでも</span></div>
+<div class="p-fact"><span>入場</span><span class="v">無料</span></div>
+</section>
+<section>
+<h2 class="p-h">アクセス</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="n-a0"><span>最寄り駅</span><span class="v">（見本）○○駅 徒歩 15 分</span></div>
+<div class="p-drop" id="n-a0" hidden>
+<div class="p-fact sub"><span>駐車場</span><span class="v">あり（有料・80 台）</span></div>
+<div class="p-fact sub"><span>道順</span><span class="v">駅から海の方へ下る</span></div>
+</div>
+<div class="p-mapph" style="margin-top:10px">地図</div>
+</section>
+<section>
+<h2 class="p-h">歩く道</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="n-t0"><span>岬めぐりコース</span><span class="v">3.2 km・90 分</span></div>
+<div class="p-drop" id="n-t0" hidden>
+<div class="p-fact sub"><span>高低差</span><span class="v">120 m</span></div>
+<div class="p-fact sub"><span>難しさ</span><span class="v">普通</span></div>
+</div>
+<div class="p-fact tap" aria-expanded="false" data-sub="n-t1"><span>吊り橋まで</span><span class="v">0.8 km・20 分</span></div>
+<div class="p-drop" id="n-t1" hidden>
+<div class="p-fact sub"><span>高低差</span><span class="v">30 m</span></div>
+<div class="p-fact sub"><span>難しさ</span><span class="v">易しい</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">規制</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="n-r0"><span>立入禁止</span><span class="v">岩場の一部</span></div>
+<div class="p-drop" id="n-r0" hidden>
+<div class="p-fact sub"><span>期間</span><span class="v">2026-12-01〜2027-02-28</span></div>
+<div class="p-fact sub"><span>理由</span><span class="v">落石</span></div>
+</div>
+</section>
+<section>
+<h2 class="p-h">注意点</h2>
+<div class="p-fact"><span class="v" style="text-align:left">波の高い日は岩場に下りない</span></div>
+</section>
+<section>
+<h2 class="p-h">出典</h2>
+<div class="p-fact tap" aria-expanded="false" data-sub="n-src"><span>市の観光サイト</span><span class="v">見頃・アクセス・道</span></div>
+<div class="p-drop" id="n-src" hidden>
+<div class="p-fact sub"><span>URL</span><span class="v">example.com</span></div>
+<div class="p-fact sub"><span>取得日</span><span class="v">2026-11-16</span></div>
+</div>
+</section>
+<p class="p-note" style="margin-top:8px">載っていない項目は、情報が無いことを示し、「無い」という意味ではありません。</p>
+</div></div></div></div>
+<button class="replay" type="button">もう一度開く</button></div>
+</div>
+<h2>details の形</h2>
+<div class="grid">
+<div class="card"><pre>// 体験：列（core）＝ kind・region_id・duration_minutes（必須）・reservation_required・official_url
+type ExperienceDetails = {
+  courses?: { key: string; name: LocalizedText; description?: LocalizedText
+              duration_minutes?: number; people_min?: number; people_max?: number
+              age_min?: number; languages?: string[] }[]
+  prices?: { items: { course?: string          // courses[].key
+      per: "person" | "group" | "session"; audience?: "all" | "adult" | "child"
+      age_min?: number; age_max?: number; people_min?: number; people_max?: number
+      amount: number; amount_max?: number; currency: string; tax_included?: boolean }[] }
+  schedules?: { months_from?: number; months_to?: number; weekdays?: number[]
+                start_times?: string[]; end_time?: string; rain_policy?: LocalizedText }[]
+  locations?: { kind: "meeting" | "activity"; lat: number; lng: number
+                geo_precision: string; address?: LocalizedText; note?: LocalizedText }[]
+  inclusions?: { kind: "included" | "excluded" | "bring"; item: LocalizedText }[]
+  cautions?: { note: LocalizedText }[]
+  booking_links?: { label: string; url: string; is_official?: boolean }[]
+  sources?: Source[]   // 宿と同じ
+}</pre></div>
+<div class="card"><pre>// 自然：列（core）＝ kind・位置（必須）・region_id・protection
+type NatureDetails = {
+  seasons?: { subject: LocalizedText; month_from: number; month_to: number }[]
+  hours?: { always_open?: boolean; open?: string; close?: string; closed_note?: LocalizedText }
+  fees?: { audience?: "all" | "adult" | "child"; amount: number; amount_max?: number
+           currency: string; note?: LocalizedText }[]   // 無料は amount 0
+  access?: { station?: LocalizedText; mode?: "walk" | "bus" | "car"; minutes?: number
+             parking?: { available: boolean; spaces?: number; paid?: boolean }
+             route?: LocalizedText }
+  trails?: { key: string; name: LocalizedText; distance_km?: number
+             elevation_gain_m?: number; difficulty?: "easy" | "moderate" | "hard"
+             duration_minutes?: number }[]
+  restrictions?: { kind: "closure" | "volcanic_gas" | "other"; note?: LocalizedText
+                   date_from?: string; date_to?: string }[]
+  cautions?: { note: LocalizedText }[]
+  sources?: Source[]
+}</pre></div>
+</div>
+<h2>必須の項目</h2>
+<div class="card"><table>
+<tr><th>コア</th><th>必須の列（NOT NULL・CHECK）</th><th>details の必須（zod と quality.ts）</th><th>今の決まりからの変更</th></tr>
+<tr><td>体験</td><td>地域・所要時間</td><td>料金 1 つ以上・範囲の中の座標を持つ集合場所 1 つ以上・official_url か予約先</td><td>場所を details.locations で見る。料金に per（1 名・1 グループ・1 回）が要る</td></tr>
+<tr><td>自然</td><td>地域・位置</td><td>行き方（access）</td><td>access は 1 つ（配列でなくする）</td></tr>
+</table>
+<p class="mute">宿と同じく、1 つの値で必須なものは列（NOT NULL は欠けたデータを直してから付ける）、一覧の必須は details の中で zod と quality.ts で確かめる。旧い表は集め直しの後に消す。</p></div>
+<h2>画面の並び</h2>
+<div class="grid">
+<div class="card"><h3>体験</h3><p>紹介文の下に「所要・予約」の 1 行 → 料金（参考：コースごとに 1 行。区分の値は出さない）→ コース → 開催（時期・曜日・時間）→ 集合場所（地図）→ 含まれるもの → 注意点 → 予約 → 出典</p></div>
+<div class="card"><h3>自然</h3><p>紹介文の下に「見頃・入場」の 1 行 → 見頃 → 時間・料金 → アクセス（地図）→ 歩く道 → 規制 → 注意点 → 出典</p></div>
+</div>
+</main>
+<script>
+// 詳細のある行（›）をタップすると、その行のすぐ下に詳細が開く（もう一度で閉じる）
+document.querySelectorAll('.tap[data-sub]').forEach(function (r) {
+  r.addEventListener('click', function () {
+    var d = document.getElementById(r.dataset.sub);
+    var open = d.hidden;
+    d.hidden = !open;
+    r.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+});
+// 「もう一度開く」：シートが上がる動きをやり直す
+document.querySelectorAll('.replay').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var phone = b.parentElement.querySelector('.phone');
+    phone.querySelectorAll('.p-home,.p-backdrop,.p-sheet').forEach(function (el) {
+      el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+    });
+    phone.querySelector('.p-scroll').scrollTop = 0;
+    phone.querySelectorAll('.p-drop').forEach(function (x) { x.hidden = true; });
+    phone.querySelectorAll('.tap[data-sub]').forEach(function (x) { x.setAttribute('aria-expanded', 'false'); });
+  });
+});
+</script>
+</body></html>

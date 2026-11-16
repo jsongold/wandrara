@@ -1,0 +1,62 @@
+-- DROP すると select の grant が消えるので、OR REPLACE で置き換える（列は同じ）
+CREATE OR REPLACE VIEW "public"."dest_cards" WITH (security_invoker = true) AS (
+with texts as (
+  select dest_id, lang, name, summary from public.accommodation_texts
+  union all select dest_id, lang, name, summary from public.experience_texts
+  union all select dest_id, lang, name, summary from public.nature_texts
+  union all select dest_id, lang, name, summary from public.village_texts
+  union all select dest_id, lang, name, summary from public.building_texts
+  union all select dest_id, lang, name, summary from public.hotspring_texts
+),
+places as (
+  select dest_id, region_id, lat, lng from public.accommodations
+  union all select dest_id, region_id, lat, lng from public.natures
+  union all select dest_id, region_id, lat, lng from public.villages
+  union all select dest_id, region_id, lat, lng from public.buildings
+  union all select dest_id, region_id, lat, lng from public.hotsprings
+  union all
+  select e.dest_id, e.region_id, coalesce(j.lat, l.lat), coalesce(j.lng, l.lng)
+  from public.experiences e
+  -- details があれば details.locations から（meeting を先に、なければ先頭の場所）
+  left join lateral (
+    select
+      case when jsonb_typeof(x.loc->'lat') = 'number' then (x.loc->>'lat')::double precision end as lat,
+      case when jsonb_typeof(x.loc->'lng') = 'number' then (x.loc->>'lng')::double precision end as lng
+    from jsonb_array_elements(
+      case when jsonb_typeof(e.details->'locations') = 'array' then e.details->'locations' else '[]'::jsonb end
+    ) with ordinality as x(loc, n)
+    order by (x.loc->>'kind' = 'meeting') desc, x.n
+    limit 1
+  ) j on e.details is not null
+  -- details が NULL（集め直し前）のときだけ旧い表から
+  left join lateral (
+    select x.lat, x.lng from public.experience_locations x where x.dest_id = e.dest_id order by x.sort, x.id limit 1
+  ) l on e.details is null
+)
+select
+  d.dest_id, d.core_type, d.slug, d.is_demo, d.created_at, pub.published_at,
+  pl.region_id, pl.lat, pl.lng,
+  t.name, t.summary,
+  coalesce(c.category_ids, '{}'::text[]) as category_ids,
+  coalesce(ph.photos, '[]'::jsonb) as photos
+from public.destinations d
+join public.publications pub on pub.dest_id = d.dest_id and pub.status = 'published'
+left join places pl on pl.dest_id = d.dest_id
+left join lateral (
+  select
+    jsonb_object_agg(x.lang, x.name) as name,
+    jsonb_object_agg(x.lang, x.summary) filter (where x.summary is not null) as summary
+  from texts x where x.dest_id = d.dest_id
+) t on true
+left join lateral (
+  select array_agg(x.category_id order by x.category_id) as category_ids
+  from public.dest_categories x where x.dest_id = d.dest_id
+) c on true
+left join lateral (
+  select jsonb_agg(
+    jsonb_build_object('storage_key', x.storage_key, 'license', x.license, 'credit', x.credit, 'alt', x.alt)
+    order by x.sort, x.id
+  ) as photos
+  from public.dest_photos x where x.dest_id = d.dest_id
+) ph on true
+);

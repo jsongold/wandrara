@@ -1,7 +1,11 @@
+import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 
+// .env.local があれば読む（e2e のテスト用ログインが Supabase の env を使う）
+if (existsSync(".env.local")) process.loadEnvFile(".env.local");
+
 // e2e は本番ビルドを next start で立てて確かめる（BASE_URL を渡せば既存のサーバーに向ける）
-const port = 3124;
+const port = Number(process.env.E2E_PORT ?? 3124);
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: false,

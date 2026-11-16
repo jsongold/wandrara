@@ -78,7 +78,8 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
       }}
       onPointerCancel={() => { swiped.current = true; }}
       onClickCapture={(e) => {
-        if (!swiped.current) return;
+        // detail === 0 はキーボード由来のクリック。ポインターのスワイプの残りで止めない（保存ボタンを Enter/Space で押せるように）
+        if (!swiped.current || e.detail === 0) return;
         e.preventDefault();
         e.stopPropagation();
       }}

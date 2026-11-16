@@ -71,6 +71,12 @@ describe("buildFeed", () => {
     expect(feed.cards[0].href).toBe("/ja/d/gora-inn");
     expect(feed.orderLabel).toBe("編集部のおすすめ順");
   });
+  it("カードの destId は元の dest の id（slug と別でも）と一致する", () => {
+    const d = { ...dest("x", "accommodation", "gora", [], 1), id: "dest-uuid-1", slug: "some-slug" };
+    const feed = buildFeed({ catalog: { ...catalog, dests: [d] }, query: DEFAULT_QUERY, locale: "ja" }, loadFeedStrategies({}));
+    expect(feed.cards[0].destId).toBe("dest-uuid-1");
+    expect(feed.cards[0].href).toBe("/ja/d/some-slug");
+  });
   it("do は stay 以外の core_type を dest 単位で出す", () => {
     const feed = run({ mode: "do" });
     expect(feed.cards.map((c) => c.key)).toEqual(["shimoda-hike", "gora-bath", "lake-walk"]);

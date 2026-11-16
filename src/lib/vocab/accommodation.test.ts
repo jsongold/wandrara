@@ -30,6 +30,15 @@ describe("語彙の一覧", () => {
     }
   });
 
+  it("どの一覧も英語の表示名があり、日本語が混ざらない", () => {
+    const terms = [...lists.flatMap(([name, list]) => list.map((t) => [`${name}.${t.code}`, t] as const))];
+    for (const item of AMENITY_LIST) for (const o of item.options) terms.push([`${item.code}.${o.code}`, o]);
+    for (const [key, t] of terms) {
+      expect(t.en, key).not.toBe("");
+      expect(t.en, key).not.toMatch(/[ぁ-んァ-ン一-龥]/);
+    }
+  });
+
   it("コードの tuple は一覧と同じ並び", () => {
     expect(BATH_KINDS).toEqual(BATH_KIND_LIST.map((t) => t.code));
   });
@@ -42,9 +51,9 @@ describe("語彙の一覧", () => {
 });
 
 describe("設備", () => {
-  it("中カテゴリ 11・小カテゴリ 47", () => {
+  it("中カテゴリ 11・小カテゴリ 50", () => {
     expect(AMENITY_GROUP_LIST).toHaveLength(11);
-    expect(AMENITY_LIST).toHaveLength(47);
+    expect(AMENITY_LIST).toHaveLength(50);
   });
 
   it("小カテゴリはどれもちょうど 1 つの中カテゴリに入る", () => {
@@ -63,7 +72,7 @@ describe("設備", () => {
   });
 
   it("amenityGroupOf は中カテゴリを返し、知らないコードは undefined", () => {
-    expect(amenityGroupOf("bbq")).toEqual({ code: "outdoor", label: "屋外" });
+    expect(amenityGroupOf("bbq")).toEqual({ code: "outdoor", label: "屋外", en: "Outdoor" });
     expect(amenityGroupOf("nope")).toBeUndefined();
   });
 
@@ -81,5 +90,11 @@ describe("labelOf", () => {
 
   it("知らないコードはコードのまま返す", () => {
     expect(labelOf(BATH_KIND_LIST, "onsen")).toBe("onsen");
+    expect(labelOf(BATH_KIND_LIST, "onsen", "en")).toBe("onsen");
+  });
+
+  it("en は英語の表示名を返す", () => {
+    expect(labelOf(BATH_KIND_LIST, "open_air", "en")).toBe("Open-air bath");
+    expect(labelOf(BATH_KIND_LIST, "open_air", "ja")).toBe("露天風呂");
   });
 });

@@ -1,4 +1,4 @@
-Purpose: how an agent uploads data to WANDRARA — how to run the script, and which resources go where in which schema.
+Purpose: how an agent uploads data to WANDRARA — how to run the script, and which resources go where in which schema. The detailed per-place rules (in Japanese) are in docs/collector-agent/README.md and the per-core guides it links to.
 
 # WANDRARA Data Upload Guide for Agents
 
@@ -49,7 +49,7 @@ pnpm dest:publish <ref>... --draft     # take it back to draft
 
 ### Updates replace everything
 
-If the content is exactly the same as the last upload of that `ref`, nothing is written (`unchanged:`). `sources` and `verification_status` are not compared, so a new `retrieved_at` alone does not count as a change.
+If the content is exactly the same as the last upload of that `ref`, nothing is written (`unchanged:`). The dest-level `sources` and `verification_status` are not compared, so a new `retrieved_at` there alone does not count as a change. `details.sources` is part of `details` (for all six core types), so a new `retrieved_at` in it does count as a change.
 
 There is no partial update. Sending a `ref` that already exists with changed content deletes everything stored for that dest — core columns, details, texts, photos and categories — and stores only what you sent. Anything you leave out is not kept. For example, resending a dest with only new prices removes its photos and amenities.
 
@@ -87,11 +87,11 @@ One entry in `dests`:
 | `slug` | no | The URL name (lowercase letters, digits, hyphens; 3–60 chars). Derived from ref if omitted. Never changes for an existing dest |
 | `core` | yes | Columns of the core table (kind, location, official URL, ...) |
 | `texts` | yes | Per language: `lang`, `name` (required), `summary`, `address` |
-| `details` | no | Arrays per detail key (next section) |
+| `details` | no | One JSON object for every core type (shape per core type: see "core and details per core type") |
 | `categories` | no | Array of category ids. Unknown ids are created |
 | `photos` | no | Photos (see "Photo upload") |
 | `region` | no | `{id, name, parent_id}`. Created when `core.region_id` is not in the DB yet |
-| `sources` | no | Array of sources (`type`, `url`, `retrieved_at`, `evidence`). Not stored as columns; kept in the raw import record |
+| `sources` | no | Array of sources (`type`, `url`, `retrieved_at`, `evidence`). Not stored as columns; kept in the raw import record. Write sources in `details.sources` instead (all six core types have it) |
 | `verification_status` | no | verified / unverified / conflict. Kept in the raw import record |
 
 ### Choosing ref
@@ -109,38 +109,75 @@ Rules:
 3. Use each ref at most once per bundle. A bundle with a repeated ref is rejected before anything is sent (`bundle が正しくない: /dests/N/ref ...`).
 4. To take over a dest someone else registered (for example, after a re-collection by a different agent), ask the WANDRARA team. They check the existing ref and reassign it to you. Do not create a second ref for the same place.
 
-Do not write `dest_id`, `id`, `sort` or `operator_id` (`sort` follows array order). Columns that point from a nested child to its parent, or from one detail to another (such as `unit_id` on accommodation prices or baths), are not accepted for now.
+Do not write `dest_id`, `id`, `sort` or `operator_id` (`sort` follows array order). Columns that point from a nested child to its parent, or from one detail to another, are not accepted. In accommodations, references use keys inside the dest (see "Keys and references").
 
 ## core and details per core type
 
-Each `core_type` has its own `core` columns and `details` keys. Core types with a location can also take `region_id`, `prefecture`, `municipality`, `district`, `lat`, `lng` and `geo_precision` (exact / street / district / municipality) in `core`.
+Each `core_type` has its own `core` columns and its own `details`. For all six core types, `details` is one JSON object. Every field may be left out (left out = unknown). Unknown keys are rejected, and the old table shape (arrays of rows per table) is rejected. Core types with a location (all except experience) can also take `region_id`, `prefecture`, `municipality`, `district`, `lat`, `lng` and `geo_precision` (exact / street / district / municipality) in `core`. An experience keeps its positions in `details.locations`.
 
-| core_type | kind values | Main core columns | details keys (main columns) |
-| --- | --- | --- | --- |
-| accommodation | hotel, ryokan, private_rental, minshuku, pension, glamping, campsite | kind, check_in, check_out, official_url | units(name, capacity, area_sqm, style) > bedrooms > beds(bed_type, count) / baths / meals / booking_links / prices(amount, currency, guests, meals, valid_from, valid_to, tax_included) / amenities / parkings / internet / rules / access / surroundings / cautions / licenses |
-| experience | tour, workshop, tasting, activity, facility_use, event | kind, region_id, duration_minutes, reservation_required, official_url | courses / prices(unit, audience, amount, currency) / schedules / locations / inclusions / cautions / booking_links |
-| nature | coast, mountain, lake, highland, gorge, waterfall, forest, volcano | kind, protection | seasons / hours_fees / access / trails(name, distance_km, difficulty) / restrictions / cautions |
-| village | onsen_town, post_town, fishing_village, temple_town, castle_town | kind, region_id, municipality | walks / shop_hours / access / events / cautions |
-| building | museum, shrine, temple, castle, observatory, historic_building | kind, official_url | hours / fees(label, amount, currency) / access / events / cautions |
-| hotspring | day_use, public_bath, foot_bath | kind, official_url | baths(bath_type, spring_handling, spring_quality) / hours / fees(fee_kind, amount, currency) / amenities / access / cautions |
+| core_type | kind values | core columns | details fields | Guide (Japanese) |
+| --- | --- | --- | --- | --- |
+| accommodation | hotel, ryokan, private_rental, minshuku, pension, glamping, campsite | kind, region_id, prefecture, municipality, district, lat, lng, geo_precision, check_in, check_out, official_url | see "Accommodation details" | [accommodation.md](collector-agent/accommodation.md) |
+| experience | tour, workshop, tasting, activity, facility_use, event | kind, region_id, duration_minutes, reservation_required, official_url | courses / prices.items / schedules / locations / inclusions / cautions / booking_links / sources | [experience.md](collector-agent/experience.md) |
+| nature | coast, mountain, lake, highland, gorge, waterfall, forest, volcano | kind, region_id, prefecture, municipality, district, lat, lng, geo_precision, protection | seasons / hours / fees / access / trails / restrictions / cautions / sources | [nature.md](collector-agent/nature.md) |
+| building | museum, shrine, temple, castle, observatory, historic_building | kind, region_id, prefecture, municipality, district, lat, lng, geo_precision, official_url | hours / fees / events / access / cautions / booking_links / sources | [building.md](collector-agent/building.md) |
+| hotspring | day_use, public_bath, foot_bath | kind, region_id, prefecture, municipality, district, lat, lng, geo_precision, official_url | baths / hours / fees / amenities / access / cautions / sources | [hotspring.md](collector-agent/hotspring.md) |
+| village | onsen_town, post_town, fishing_village, temple_town, castle_town | kind, region_id, prefecture, municipality, district, lat, lng, geo_precision | walks / shop_hours / events / access / cautions / sources | [village.md](collector-agent/village.md) |
 
-Write nested children inside the parent row as an array under the child's key (e.g. `units[].bedrooms[].beds[]`). Free text (cautions, notes) is `{"ja": "...", "en": "..."}`, times are `HH:MM`, dates are `YYYY-MM-DD`, and amounts are numbers.
+`hours`, `access`, `shop_hours` and `amenities` are one object, not an array. Fields that can repeat are arrays. The shape of each field is defined in `src/lib/<core>/details.ts`; vocabularies are in `src/lib/vocab/<core>.ts`. Free text (cautions, notes) is `{"ja": "...", "en": "..."}`, times are `HH:MM`, dates are `YYYY-MM-DD`, and amounts are numbers.
+
+## Accommodation details
+
+For `core_type: "accommodation"`, `details` is one JSON object. Every field may be left out (left out = unknown). Unknown keys are rejected. The old table shape (`units`, `parkings`, `prices` as an array, `bed_type`, ...) is rejected. Pricing details (undated prices, daily-rate booking engines, image price tables) are in [accommodation.md](collector-agent/accommodation.md).
+
+| Field | Content |
+| --- | --- |
+| `rooms` | Array of rooms: `key` (required), `name`, `capacity` (max guests), `area_sqm`, `tatami`, `style`, `view`, `smoking`, `bedrooms[].beds[]` (`type`, `count`) |
+| `baths` | Array of baths: `kind` (required; saunas are `sauna`), `sauna_style` (only when kind is `sauna`), `hot_spring`, `spring`, `source`, `gender`, `open_from`, `open_to`, `reservation`, `fee`, ... |
+| `meals` | Array of meals: `meal` (breakfast / dinner), `offered` (required), `style`, `place`, `served_from`, `served_to`, `fee`, ... |
+| `prices` | `{ seasons, items }`: price periods and prices (see "Prices") |
+| `amenities` | Array: `code` (from the vocabulary), `options`, `count`, `paid`, `note` |
+| `internet` / `pets` / `rules` / `parking` / `access` / `surroundings` | One object each |
+| `cautions` | Array of `{ "note": { "ja": "..." } }` |
+| `licenses` | Array: `kind` (ryokan_business / minpaku / special_zone_minpaku / simple_lodging), `number` |
+| `booking_links` | Array: `label`, `url`, `is_official` |
+| `sources` | Array: `name`, `url`, `type` (official / ota / map / other), `retrieved_at` (YYYY-MM-DD), `fields` (which fields came from this source, e.g. `["prices", "rooms"]`) |
+
+Codes (bath kinds, amenity codes, bed types, ...) come from [`src/lib/vocab/accommodation.ts`](../src/lib/vocab/accommodation.ts). The source of truth for the shape is `src/lib/accommodation/details.ts` and `prices.ts`. Money is `{ "amount": number >= 0, "currency": "JPY", "tax_included": true }`.
+
+### Keys and references
+
+- Name each room with `rooms[].key`: lowercase letters, digits, `_`, `-`; 1–40 chars; unique within the dest. A whole-house rental has one room (e.g. `house`).
+- Name each price period with `prices.seasons[].key` (same rule).
+- A price points to a room with `prices.items[].room` and to a period with `prices.items[].season`. A key that does not exist is rejected. A price without `season` applies to every day.
+- A room photo points to a room with `photos[].room`. A key not in `rooms` is rejected.
+- No ids. References always use keys inside the dest.
+
+### Prices
+
+- Each `items[]` entry needs `kind` (room / meal / service_fee / bath_tax / lodging_tax / cleaning), `per` (house_night / room_night / person_night / stay) and `currency`. Write exactly one of `amount` and `rate_percent`.
+- Write service fees, bath tax and cleaning fees as their own items with their own `kind`, not as caution text. If the room price already includes one, list it in that price's `includes`.
+- Child prices use `audience: "child"` with `age_min` / `age_max`. If the child price is a share of the adult price, use `rate_percent`.
+- Prices that depend on the number of guests use `guests_min` / `guests_max`. A price range uses `amount` and `amount_max`. Meals use `meals` (none / breakfast / dinner / both).
+- Each `seasons[]` entry needs `valid_from` and `valid_to`. The period for days no other period matches has `is_default: true`. Weekends and peak periods use `weekdays` (1 = Mon … 7 = Sun), `dates`, `holidays`, `day_before_holiday` and `priority` (higher wins).
 
 ## Required fields (v1)
 
-Every dest must meet these before it is sent. The check runs in `pnpm import:bundle` (including `--dry-run`) and again in the API. If any dest fails, the whole bundle is rejected with `bundle が正しくない:` and one line per missing field (e.g. `/dests/3/details/prices 料金（amount > 0・currency・guests）が 1 つ以上要る`). Nothing is sent. Text may be in any language.
+Every dest must meet these before it is sent. The check runs in `pnpm import:bundle` (including `--dry-run`) and again in the API. If any dest fails, the whole bundle is rejected with `bundle が正しくない:` and one line per missing field (e.g. `/dests/3/details/prices/items 宿泊料（kind: room・amount > 0・currency）が 1 つ以上要る`). Nothing is sent. Text may be in any language. The source of truth is `src/lib/ingest/quality.ts`.
 
 | core_type | Required |
 | --- | --- |
-| all | a text with `name` and `summary`; at least 1 photo; `core.region_id`; a source (`core.official_url` or `sources[].url`) |
-| accommodation | `texts[].address`; `lat`/`lng` inside Hakone and Izu; `check_in` and `check_out`; at least 1 `units` with `capacity`; at least 1 `prices` with `amount` > 0, `currency` and `guests` |
-| experience | at least 1 `prices` with `amount` > 0 and `currency`; `duration_minutes`; `core.official_url` or a `booking_links` URL; at least 1 `locations` with `lat`/`lng` inside Hakone and Izu |
-| building | `texts[].address`; `lat`/`lng` inside Hakone and Izu; at least 1 `hours`; at least 1 `fees` with `amount` (free entry is `0`) |
-| hotspring | `texts[].address`; `lat`/`lng` inside Hakone and Izu; at least 1 `hours`; a `fees` row with `fee_kind: "adult"` and `amount`; at least 1 `baths` with `spring_quality` |
-| nature | `lat`/`lng` inside Hakone and Izu; at least 1 `access` |
-| village | `lat`/`lng` inside Hakone and Izu; at least 1 `access` |
+| all | a text with `name` and `summary`; at least 1 photo; `core.region_id`; a source: `core.official_url`, `details.sources[].url` or a dest-level `sources[].url` (experience: `core.official_url` or `details.booking_links[].url`). Only accommodation, experience, building and hotspring have an `official_url` column |
+| accommodation | `texts[].address`; `lat`/`lng` inside Hakone and Izu; `check_in` and `check_out`; at least 1 `details.rooms` entry with `capacity` > 0; at least 1 `details.prices.items` entry with `kind: "room"`, `amount` > 0 and `currency`; every `photos[].room` is a key in `details.rooms` |
+| experience | `core.duration_minutes` (optional when `core.kind` is `facility_use`); at least 1 `details.prices.items` entry with `amount` > 0, `currency` and `per`; at least 1 `details.locations` entry with `kind: "meeting"` and `lat`/`lng` inside Hakone and Izu (a `facility_use` may use `kind: "activity"`) |
+| building | `lat`/`lng` inside Hakone and Izu; `details.hours`; at least 1 `details.fees` entry with `amount` >= 0 and `currency` (free entry is `0`) |
+| hotspring | `lat`/`lng` inside Hakone and Izu; `details.hours`; a `details.fees` entry with `audience: "adult"`, `amount` >= 0 and `currency`; at least 1 `details.baths` entry with `spring` |
+| nature | `lat`/`lng` inside Hakone and Izu; `details.access` |
+| village | `lat`/`lng` inside Hakone and Izu; `details.access` |
 
 "Inside Hakone and Izu" means latitude 34.55–35.35 and longitude 138.65–139.25.
+
+If a required value cannot be found, do not guess. Leave that dest out and report what is missing (see [docs/collector-agent/README.md](collector-agent/README.md), "報告のしかた").
 
 ## Photo upload
 
@@ -154,6 +191,7 @@ List each photo in `photos`. `pnpm import:bundle` does the upload, so you do not
 | `credit` | no | Photographer or provider |
 | `subject` | no | exterior / room / bath / view / food / activity / landscape / other |
 | `alt` | no | Image description, `{"ja": "..."}` |
+| `room` | no | Accommodation only: the `details.rooms[].key` this photo shows (use with `subject: "room"`). Set it only when you can confirm the photo shows that room |
 
 Accepted formats are jpeg, png, webp and avif, up to 10 MB each. The format is detected from the file contents, not the extension. Images that are only placed in `images/` are not used — list every image you want in `photos`.
 
@@ -163,7 +201,7 @@ Uploaded photos are public even while the dest is a draft: they are stored in a 
 
 ## Example (one stay)
 
-With `data/atami-01/bundle.json` and `data/atami-01/images/001.jpg` in place:
+A made-up stay. With `data/atami-01/bundle.json`, `data/atami-01/images/001.jpg` and `002.jpg` in place. The smallest valid example is [`scripts/import-bundle/fixtures/bundle.json`](../scripts/import-bundle/fixtures/bundle.json).
 
 ```json
 {
@@ -173,18 +211,34 @@ With `data/atami-01/bundle.json` and `data/atami-01/images/001.jpg` in place:
   "dests": [{
     "core_type": "accommodation",
     "ref": "EX-atami-001",
-    "slug": "example-villa-atami",
+    "slug": "example-ryokan-atami",
     "verification_status": "verified",
-    "core": { "kind": "private_rental", "region_id": "atami", "prefecture": "静岡県", "municipality": "熱海市", "lat": 35.03, "lng": 139.08, "geo_precision": "street", "check_in": "15:00", "check_out": "10:00", "official_url": "https://example.com/" },
-    "texts": [{ "lang": "ja", "name": "例のヴィラ 熱海", "summary": "海を望む一棟貸し", "address": "静岡県熱海市..." }],
+    "core": { "kind": "ryokan", "region_id": "atami", "prefecture": "静岡県", "municipality": "熱海市", "lat": 35.1, "lng": 139.07, "geo_precision": "street", "check_in": "15:00", "check_out": "10:00", "official_url": "https://example.com/" },
+    "texts": [{ "lang": "ja", "name": "例の宿 熱海", "summary": "温泉の大浴場がある旅館", "address": "静岡県熱海市..." }],
     "details": {
-      "units": [{ "capacity": 10, "bedrooms": [{ "beds": [{ "bed_type": "double", "count": 2 }] }] }],
-      "prices": [{ "amount": 80000, "currency": "JPY", "guests": 10, "tax_included": true }]
+      "rooms": [{ "key": "washitsu", "name": { "ja": "和室" }, "capacity": 2, "tatami": 8, "style": "japanese", "bedrooms": [{ "beds": [{ "type": "futon", "count": 2 }] }] }],
+      "baths": [{ "kind": "public", "hot_spring": true, "gender": "separate" }],
+      "prices": {
+        "seasons": [
+          { "key": "regular", "valid_from": "2026-04-01", "valid_to": "2027-03-31", "is_default": true },
+          { "key": "saturday", "valid_from": "2026-04-01", "valid_to": "2027-03-31", "weekdays": [6], "priority": 1 }
+        ],
+        "items": [
+          { "kind": "room", "per": "person_night", "room": "washitsu", "season": "regular", "amount": 20000, "currency": "JPY", "tax_included": true, "meals": "both", "audience": "adult", "includes": ["service_fee"] },
+          { "kind": "room", "per": "person_night", "room": "washitsu", "season": "saturday", "amount": 24000, "currency": "JPY", "tax_included": true, "meals": "both", "audience": "adult", "includes": ["service_fee"] },
+          { "kind": "room", "per": "person_night", "room": "washitsu", "audience": "child", "age_min": 6, "age_max": 11, "rate_percent": 70, "currency": "JPY", "meals": "both" },
+          { "kind": "bath_tax", "per": "person_night", "amount": 150, "currency": "JPY", "audience": "adult" }
+        ]
+      },
+      "amenities": [{ "code": "wifi" }, { "code": "hair_dryer" }],
+      "sources": [{ "name": "公式サイト", "url": "https://example.com/", "type": "official", "retrieved_at": "2026-11-14", "fields": ["rooms", "prices"] }]
     },
-    "categories": ["onsen", "bbq"],
-    "photos": [{ "file": "images/001.jpg", "license": "none", "source_page_url": "https://example.com/", "subject": "exterior" }],
-    "region": { "id": "atami", "name": { "ja": "熱海" }, "parent_id": "izu" },
-    "sources": [{ "type": "official", "url": "https://example.com/", "retrieved_at": "2026-11-14", "evidence": "公式の料金表" }]
+    "categories": ["onsen"],
+    "photos": [
+      { "file": "images/001.jpg", "license": "none", "source_page_url": "https://example.com/", "subject": "exterior" },
+      { "file": "images/002.jpg", "license": "none", "source_page_url": "https://example.com/", "subject": "room", "room": "washitsu" }
+    ],
+    "region": { "id": "atami", "name": { "ja": "熱海" } }
   }]
 }
 ```

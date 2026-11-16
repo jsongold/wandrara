@@ -185,87 +185,60 @@
               "details": {
                 "type": "object",
                 "properties": {
-                  "units": {
+                  "rooms": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
+                        "key": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
                         "name": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         },
                         "capacity": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
                         },
                         "area_sqm": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "tatami": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "style": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "japanese",
+                            "western",
+                            "japanese_western"
                           ]
                         },
                         "view": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "smoking": {
+                          "type": "string",
+                          "enum": [
+                            "none",
+                            "designated",
+                            "allowed"
                           ]
                         },
                         "bedrooms": {
@@ -274,60 +247,56 @@
                             "type": "object",
                             "properties": {
                               "name": {
-                                "anyOf": [
-                                  {
-                                    "anyOf": [
-                                      {
-                                        "type": "object",
-                                        "propertyNames": {
-                                          "type": "string"
-                                        },
-                                        "additionalProperties": {
-                                          "type": "string"
-                                        }
-                                      },
-                                      {
-                                        "type": "null"
-                                      }
-                                    ]
-                                  },
-                                  {
-                                    "type": "null"
-                                  }
-                                ]
+                                "type": "object",
+                                "propertyNames": {
+                                  "type": "string"
+                                },
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
                               },
                               "beds": {
                                 "type": "array",
                                 "items": {
                                   "type": "object",
                                   "properties": {
-                                    "bed_type": {
-                                      "type": [
-                                        "string",
-                                        "null"
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "single",
+                                        "semi_double",
+                                        "double",
+                                        "queen",
+                                        "king",
+                                        "bunk",
+                                        "futon",
+                                        "sofa_bed"
                                       ]
                                     },
                                     "count": {
-                                      "anyOf": [
-                                        {
-                                          "type": "integer",
-                                          "minimum": -2147483648,
-                                          "maximum": 2147483647
-                                        },
-                                        {
-                                          "type": "null"
-                                        }
-                                      ]
+                                      "type": "integer",
+                                      "exclusiveMinimum": 0,
+                                      "maximum": 9007199254740991
                                     }
                                   },
+                                  "required": [
+                                    "type",
+                                    "count"
+                                  ],
                                   "additionalProperties": false
                                 }
                               }
                             },
+                            "required": [
+                              "beds"
+                            ],
                             "additionalProperties": false
                           }
                         }
                       },
+                      "required": [
+                        "key"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -337,84 +306,129 @@
                       "type": "object",
                       "properties": {
                         "kind": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "public",
+                            "open_air",
+                            "indoor",
+                            "private",
+                            "room_open_air",
+                            "room",
+                            "sauna"
                           ]
                         },
-                        "source_type": {
-                          "type": [
-                            "string",
-                            "null"
+                        "sauna_style": {
+                          "type": "string",
+                          "enum": [
+                            "barrel",
+                            "dry",
+                            "steam",
+                            "tent"
                           ]
+                        },
+                        "hot_spring": {
+                          "type": "boolean"
                         },
                         "spring": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "natural_flow",
+                            "circulated",
+                            "heated",
+                            "diluted",
+                            "none"
                           ]
+                        },
+                        "capacity": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "cold_bath": {
+                          "type": "boolean"
+                        },
+                        "outdoor_rest": {
+                          "type": "boolean"
                         },
                         "open_from": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                         },
                         "open_to": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        "gender": {
+                          "type": "string",
+                          "enum": [
+                            "separate",
+                            "mixed",
+                            "private",
+                            "swaps"
                           ]
                         },
-                        "needs_reservation": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "amount": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "swaps_by_gender": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
+                        "reservation": {
+                          "type": "object",
+                          "properties": {
+                            "required": {
+                              "type": "boolean"
+                            },
+                            "when": {
+                              "type": "string",
+                              "enum": [
+                                "at_checkin",
+                                "in_advance",
+                                "on_site"
                               ]
                             },
-                            {
-                              "type": "null"
+                            "slot_minutes": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
                             }
-                          ]
+                          },
+                          "required": [
+                            "required"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "fee": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            },
+                            "tax_included": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "note": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "kind"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -424,171 +438,90 @@
                       "type": "object",
                       "properties": {
                         "meal": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "breakfast",
+                            "dinner"
+                          ]
+                        },
+                        "offered": {
+                          "type": "boolean"
+                        },
+                        "style": {
+                          "type": "string",
+                          "enum": [
+                            "buffet",
+                            "kaiseki",
+                            "set",
+                            "bbq_set",
+                            "course"
                           ]
                         },
                         "place": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "dining_room",
+                            "room",
+                            "private_room",
+                            "outdoor",
+                            "kitchen"
                           ]
                         },
                         "served_from": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                         },
                         "served_to": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                         },
-                        "allergy_ok": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
+                        "slots": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                          }
+                        },
+                        "fee": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            },
+                            "tax_included": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "allergy_consult": {
+                          "type": "boolean"
                         },
                         "self_cook": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
+                          "type": "boolean"
                         },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
-                  "booking_links": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "url": {
-                          "type": "string"
-                        },
-                        "is_official": {
-                          "type": "boolean"
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
                       "required": [
-                        "url"
-                      ],
-                      "additionalProperties": false
-                    }
-                  },
-                  "prices": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "amount": {
-                          "type": [
-                            "number",
-                            "string"
-                          ]
-                        },
-                        "amount_max": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "currency": {
-                          "type": "string"
-                        },
-                        "guests": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "meals": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "valid_from": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "valid_to": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "tax_included": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "bath_tax_included": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "lodging_tax_included": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "cleaning_fee_included": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        }
-                      },
-                      "required": [
-                        "amount",
-                        "currency"
+                        "meal",
+                        "offered"
                       ],
                       "additionalProperties": false
                     }
@@ -598,492 +531,402 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "kind": {
-                          "type": "string"
-                        },
-                        "is_paid": {
-                          "type": [
-                            "boolean",
-                            "null"
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "kitchen",
+                            "stove",
+                            "microwave",
+                            "refrigerator",
+                            "rice_cooker",
+                            "cookware",
+                            "tableware",
+                            "dishwasher",
+                            "coffee_maker",
+                            "bbq",
+                            "fire_pit",
+                            "terrace",
+                            "garden",
+                            "pool",
+                            "wifi",
+                            "wired_lan",
+                            "workspace",
+                            "towel",
+                            "shampoo",
+                            "toothbrush",
+                            "hair_dryer",
+                            "pajamas",
+                            "washing_machine",
+                            "dryer",
+                            "coin_laundry",
+                            "iron",
+                            "air_conditioner",
+                            "floor_heating",
+                            "fireplace",
+                            "wood_stove",
+                            "air_bed",
+                            "tv",
+                            "projector",
+                            "safe",
+                            "karaoke",
+                            "mahjong",
+                            "game_console",
+                            "board_games",
+                            "crib",
+                            "high_chair",
+                            "kids_amenities",
+                            "shop",
+                            "lounge",
+                            "gym",
+                            "vending_machine",
+                            "front_24h",
+                            "luggage_storage",
+                            "self_checkin",
+                            "step_free",
+                            "elevator"
                           ]
+                        },
+                        "options": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "count": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "paid": {
+                          "type": "boolean"
                         },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
                       "required": [
-                        "kind"
+                        "code"
                       ],
                       "additionalProperties": false
                     }
                   },
-                  "parkings": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "place": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "spaces": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "max_height_m": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "amount": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
                   "internet": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "has_wifi": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "measured_mbps": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "has_desk": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
+                    "type": "object",
+                    "properties": {
+                      "wifi": {
+                        "type": "boolean"
                       },
-                      "additionalProperties": false
-                    }
+                      "down_mbps": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "up_mbps": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "measured_at": {
+                        "type": "string",
+                        "format": "date",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                      },
+                      "desk": {
+                        "type": "string",
+                        "enum": [
+                          "all_rooms",
+                          "some_rooms",
+                          "common"
+                        ]
+                      },
+                      "note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "pets": {
+                    "type": "object",
+                    "properties": {
+                      "allowed": {
+                        "type": "boolean"
+                      },
+                      "size": {
+                        "type": "string",
+                        "enum": [
+                          "small",
+                          "medium",
+                          "large"
+                        ]
+                      },
+                      "fee": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                          },
+                          "tax_included": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "amount",
+                          "currency"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "allowed"
+                    ],
+                    "additionalProperties": false
                   },
                   "rules": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "quiet_from": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                    "type": "object",
+                    "properties": {
+                      "smoking": {
+                        "type": "string",
+                        "enum": [
+                          "none",
+                          "designated",
+                          "allowed"
+                        ]
+                      },
+                      "parties": {
+                        "type": "boolean"
+                      },
+                      "fireworks": {
+                        "type": "boolean"
+                      },
+                      "quiet_from": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "quiet_to": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "bbq_until": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "min_nights": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "garbage": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
                         },
-                        "quiet_to": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "bbq_until": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "min_nights": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "smoking": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "parties_allowed": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "fireworks_allowed": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "garbage": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "additionalProperties": {
+                          "type": "string"
                         }
                       },
-                      "additionalProperties": false
-                    }
+                      "note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "parking": {
+                    "type": "object",
+                    "properties": {
+                      "place": {
+                        "type": "string",
+                        "enum": [
+                          "on_site",
+                          "nearby",
+                          "none"
+                        ]
+                      },
+                      "spaces": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "max_height_m": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "fee": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                          },
+                          "tax_included": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "amount",
+                          "currency"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "access": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "nearest_station": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                    "type": "object",
+                    "properties": {
+                      "station": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
                         },
-                        "station_minutes": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "has_shuttle": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "has_slope_or_stairs": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "needs_car": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "winter_restriction": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "additionalProperties": {
+                          "type": "string"
                         }
                       },
-                      "additionalProperties": false
-                    }
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "walk",
+                          "bus",
+                          "car",
+                          "shuttle"
+                        ]
+                      },
+                      "minutes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "shuttle": {
+                        "type": "boolean"
+                      },
+                      "slope_or_stairs": {
+                        "type": "boolean"
+                      },
+                      "needs_car": {
+                        "type": "boolean"
+                      },
+                      "winter_restriction": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "route": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "surroundings": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "neighbor_distance_m": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                    "type": "object",
+                    "properties": {
+                      "neighbor_distance_m": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "sightlines": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
                         },
-                        "sightlines": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "noise_sources": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "view": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "elevation_m": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
+                        "additionalProperties": {
+                          "type": "string"
                         }
                       },
-                      "additionalProperties": false
-                    }
+                      "noise_sources": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "view": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "elevation_m": {
+                        "type": "number"
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "cautions": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
-                        "kind": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "note"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -1093,20 +936,283 @@
                       "type": "object",
                       "properties": {
                         "kind": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "ryokan_business",
+                            "minpaku",
+                            "special_zone_minpaku",
+                            "simple_lodging"
                           ]
                         },
                         "number": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string"
                         }
                       },
+                      "required": [
+                        "kind"
+                      ],
                       "additionalProperties": false
                     }
+                  },
+                  "booking_links": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "is_official": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "url"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "official",
+                            "ota",
+                            "map",
+                            "other"
+                          ]
+                        },
+                        "retrieved_at": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "url",
+                        "type",
+                        "retrieved_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "prices": {
+                    "type": "object",
+                    "properties": {
+                      "seasons": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {
+                              "type": "string",
+                              "pattern": "^[a-z0-9_-]{1,40}$"
+                            },
+                            "valid_from": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "valid_to": {
+                              "type": "string",
+                              "format": "date",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                            },
+                            "is_default": {
+                              "type": "boolean"
+                            },
+                            "priority": {
+                              "type": "integer",
+                              "minimum": -9007199254740991,
+                              "maximum": 9007199254740991
+                            },
+                            "weekdays": {
+                              "type": "array",
+                              "items": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 7
+                              }
+                            },
+                            "holidays": {
+                              "type": "boolean"
+                            },
+                            "day_before_holiday": {
+                              "type": "boolean"
+                            },
+                            "dates": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "from": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                  },
+                                  "to": {
+                                    "type": "string",
+                                    "format": "date",
+                                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                                  }
+                                },
+                                "required": [
+                                  "from",
+                                  "to"
+                                ],
+                                "additionalProperties": false
+                              }
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "valid_from",
+                            "valid_to"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "type": "string",
+                              "enum": [
+                                "room",
+                                "meal",
+                                "service_fee",
+                                "bath_tax",
+                                "lodging_tax",
+                                "cleaning"
+                              ]
+                            },
+                            "per": {
+                              "type": "string",
+                              "enum": [
+                                "house_night",
+                                "room_night",
+                                "person_night",
+                                "stay"
+                              ]
+                            },
+                            "room": {
+                              "type": "string",
+                              "pattern": "^[a-z0-9_-]{1,40}$"
+                            },
+                            "season": {
+                              "type": "string",
+                              "pattern": "^[a-z0-9_-]{1,40}$"
+                            },
+                            "amount": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "amount_max": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "rate_percent": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 100
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            },
+                            "tax_included": {
+                              "type": "boolean"
+                            },
+                            "guests_min": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            },
+                            "guests_max": {
+                              "type": "integer",
+                              "minimum": 1,
+                              "maximum": 9007199254740991
+                            },
+                            "audience": {
+                              "type": "string",
+                              "enum": [
+                                "all",
+                                "adult",
+                                "child"
+                              ]
+                            },
+                            "age_min": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "age_max": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "meals": {
+                              "type": "string",
+                              "enum": [
+                                "none",
+                                "breakfast",
+                                "dinner",
+                                "both"
+                              ]
+                            },
+                            "includes": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "service_fee",
+                                  "bath_tax",
+                                  "lodging_tax",
+                                  "cleaning"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "per",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        }
+                      }
+                    },
+                    "required": [
+                      "items"
+                    ],
+                    "additionalProperties": false
                   }
                 },
                 "additionalProperties": false
@@ -1380,259 +1486,183 @@
                     "items": {
                       "type": "object",
                       "properties": {
+                        "key": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
                         "name": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         },
                         "description": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         },
                         "duration_minutes": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
                         },
-                        "min_people": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "people_min": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
                         },
-                        "max_people": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "people_max": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
                         },
-                        "min_age": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "age_min": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
                         },
                         "languages": {
-                          "anyOf": [
-                            {
-                              "type": "array",
-                              "items": {
-                                "type": "string"
-                              }
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^[a-z]{2}$"
+                          }
                         }
                       },
+                      "required": [
+                        "key",
+                        "name"
+                      ],
                       "additionalProperties": false
                     }
                   },
                   "prices": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "unit": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "audience": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "amount": {
-                          "type": [
-                            "number",
-                            "string"
-                          ]
-                        },
-                        "amount_max": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "currency": {
-                          "type": "string"
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
+                    "type": "object",
+                    "properties": {
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "course": {
+                              "type": "string",
+                              "pattern": "^[a-z0-9_-]{1,40}$"
+                            },
+                            "per": {
+                              "type": "string",
+                              "enum": [
+                                "person",
+                                "group",
+                                "session"
                               ]
                             },
-                            {
-                              "type": "null"
+                            "audience": {
+                              "type": "string",
+                              "enum": [
+                                "all",
+                                "adult",
+                                "child"
+                              ]
+                            },
+                            "age_min": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "age_max": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "people_min": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "people_max": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "amount": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "amount_max": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            },
+                            "tax_included": {
+                              "type": "boolean"
                             }
-                          ]
+                          },
+                          "required": [
+                            "per",
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
                         }
-                      },
-                      "required": [
-                        "amount",
-                        "currency"
-                      ],
-                      "additionalProperties": false
-                    }
+                      }
+                    },
+                    "required": [
+                      "items"
+                    ],
+                    "additionalProperties": false
                   },
                   "schedules": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
-                        "start_month": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "months_from": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 12
                         },
-                        "end_month": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "months_to": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 12
                         },
                         "weekdays": {
-                          "anyOf": [
-                            {
-                              "type": "array",
-                              "items": {
-                                "type": "integer",
-                                "minimum": -2147483648,
-                                "maximum": 2147483647
-                              }
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 7
+                          }
                         },
-                        "start_time": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                        "start_times": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                          }
                         },
                         "end_time": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string",
+                          "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                         },
                         "rain_policy": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
                       "additionalProperties": false
@@ -1644,65 +1674,56 @@
                       "type": "object",
                       "properties": {
                         "kind": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "meeting",
+                            "activity"
                           ]
                         },
                         "lat": {
-                          "anyOf": [
-                            {
-                              "type": "number",
-                              "minimum": -140737488355328,
-                              "maximum": 140737488355327
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "number",
+                          "minimum": -90,
+                          "maximum": 90
                         },
                         "lng": {
-                          "anyOf": [
-                            {
-                              "type": "number",
-                              "minimum": -140737488355328,
-                              "maximum": 140737488355327
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "number",
+                          "minimum": -180,
+                          "maximum": 180
                         },
                         "geo_precision": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "exact",
+                            "street",
+                            "district",
+                            "municipality"
                           ]
                         },
                         "address": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "note": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "kind",
+                        "lat",
+                        "lng",
+                        "geo_precision"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -1712,35 +1733,27 @@
                       "type": "object",
                       "properties": {
                         "kind": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "included",
+                            "excluded",
+                            "bring"
                           ]
                         },
                         "item": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "kind",
+                        "item"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -1749,36 +1762,19 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "kind": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "note"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -1788,23 +1784,63 @@
                       "type": "object",
                       "properties": {
                         "label": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string",
+                          "minLength": 1
                         },
                         "url": {
-                          "type": "string"
+                          "type": "string",
+                          "format": "uri"
                         },
                         "is_official": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
+                          "type": "boolean"
                         }
                       },
                       "required": [
+                        "label",
                         "url"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "official",
+                            "ota",
+                            "map",
+                            "other"
+                          ]
+                        },
+                        "retrieved_at": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "url",
+                        "type",
+                        "retrieved_at"
                       ],
                       "additionalProperties": false
                     }
@@ -2114,242 +2150,202 @@
                       "type": "object",
                       "properties": {
                         "subject": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         },
                         "month_from": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 12
                         },
                         "month_to": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 12
                         }
                       },
+                      "required": [
+                        "subject",
+                        "month_from",
+                        "month_to"
+                      ],
                       "additionalProperties": false
                     }
                   },
-                  "hours_fees": {
+                  "hours": {
+                    "type": "object",
+                    "properties": {
+                      "always_open": {
+                        "type": "boolean"
+                      },
+                      "open": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "close": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "closed_note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "fees": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
-                        "open_time": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "close_time": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "closed_note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
+                        "audience": {
+                          "type": "string",
+                          "enum": [
+                            "all",
+                            "adult",
+                            "child"
                           ]
                         },
                         "amount": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "amount_max": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "currency": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        },
+                        "note": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "amount",
+                        "currency"
+                      ],
                       "additionalProperties": false
                     }
                   },
                   "access": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "has_parking": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
+                    "type": "object",
+                    "properties": {
+                      "station": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
                         },
-                        "parking_note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "nearest_station": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "walk_minutes": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "additionalProperties": {
+                          "type": "string"
                         }
                       },
-                      "additionalProperties": false
-                    }
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "walk",
+                          "bus",
+                          "car"
+                        ]
+                      },
+                      "minutes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "parking": {
+                        "type": "object",
+                        "properties": {
+                          "available": {
+                            "type": "boolean"
+                          },
+                          "spaces": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "paid": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "available"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "route": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "trails": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
+                        "key": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
+                        },
                         "name": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         },
                         "distance_km": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "elevation_gain_m": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "difficulty": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "easy",
+                            "moderate",
+                            "hard"
                           ]
                         },
                         "duration_minutes": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
                         }
                       },
+                      "required": [
+                        "key",
+                        "name"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -2359,47 +2355,36 @@
                       "type": "object",
                       "properties": {
                         "kind": {
-                          "type": [
-                            "string",
-                            "null"
+                          "type": "string",
+                          "enum": [
+                            "closure",
+                            "volcanic_gas",
+                            "other"
                           ]
                         },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         },
                         "date_from": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
                         },
                         "date_to": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
                         }
                       },
+                      "required": [
+                        "kind"
+                      ],
                       "additionalProperties": false
                     }
                   },
@@ -2408,36 +2393,62 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "kind": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "note"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "official",
+                            "ota",
+                            "map",
+                            "other"
+                          ]
+                        },
+                        "retrieved_at": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "url",
+                        "type",
+                        "retrieved_at"
+                      ],
                       "additionalProperties": false
                     }
                   }
@@ -2736,126 +2747,76 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "area": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "key": {
+                          "type": "string",
+                          "pattern": "^[a-z0-9_-]{1,40}$"
                         },
-                        "duration_min": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "name": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "area": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "duration_minutes": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "distance_km": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "note": {
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "key",
+                        "name"
+                      ],
                       "additionalProperties": false
                     }
                   },
                   "shop_hours": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "opens_at": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "closes_at": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
+                    "type": "object",
+                    "properties": {
+                      "open": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                       },
-                      "additionalProperties": false
-                    }
-                  },
-                  "access": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "kind": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
+                      "close": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
                       },
-                      "additionalProperties": false
-                    }
+                      "note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "events": {
                     "type": "array",
@@ -2863,96 +2824,166 @@
                       "type": "object",
                       "properties": {
                         "name": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         },
-                        "season": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                        "date_from": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "date_to": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "months": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 12
+                          }
                         },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "name"
+                      ],
                       "additionalProperties": false
                     }
+                  },
+                  "access": {
+                    "type": "object",
+                    "properties": {
+                      "station": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "walk",
+                          "bus",
+                          "car"
+                        ]
+                      },
+                      "minutes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "parking": {
+                        "type": "object",
+                        "properties": {
+                          "available": {
+                            "type": "boolean"
+                          },
+                          "spaces": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "paid": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "available"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "route": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "cautions": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
-                        "kind": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "note"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "official",
+                            "ota",
+                            "map",
+                            "other"
+                          ]
+                        },
+                        "retrieved_at": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "url",
+                        "type",
+                        "retrieved_at"
+                      ],
                       "additionalProperties": false
                     }
                   }
@@ -3254,71 +3285,48 @@
                 "type": "object",
                 "properties": {
                   "hours": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "open_time": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "close_time": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "closed_days": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                    "type": "object",
+                    "properties": {
+                      "open": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "close": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "last_entry": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "closed_weekdays": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 7
                         }
                       },
-                      "additionalProperties": false
-                    }
+                      "closed_note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "fees": {
                     "type": "array",
@@ -3326,66 +3334,55 @@
                       "type": "object",
                       "properties": {
                         "label": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "audience": {
+                          "type": "string",
+                          "enum": [
+                            "all",
+                            "adult",
+                            "child"
                           ]
+                        },
+                        "age_min": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "age_max": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
                         },
                         "amount": {
-                          "type": [
-                            "number",
-                            "string"
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "amount_max": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "currency": {
-                          "type": "string"
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        },
+                        "tax_included": {
+                          "type": "boolean"
                         },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
                       "required": [
@@ -3395,204 +3392,196 @@
                       "additionalProperties": false
                     }
                   },
-                  "access": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "how_to_get": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "has_parking": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "parking_capacity": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "parking_note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
-                      },
-                      "additionalProperties": false
-                    }
-                  },
                   "events": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
                         "name": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         },
-                        "start_date": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                        "date_from": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
                         },
-                        "end_date": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                        "date_to": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
                         },
-                        "season": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "months": {
+                          "type": "array",
+                          "items": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 12
+                          }
                         },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "name"
+                      ],
                       "additionalProperties": false
                     }
+                  },
+                  "access": {
+                    "type": "object",
+                    "properties": {
+                      "station": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "walk",
+                          "bus",
+                          "car"
+                        ]
+                      },
+                      "minutes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "parking": {
+                        "type": "object",
+                        "properties": {
+                          "available": {
+                            "type": "boolean"
+                          },
+                          "spaces": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "paid": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "available"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "route": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "cautions": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
-                        "kind": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "note"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "booking_links": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "label": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "is_official": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "label",
+                        "url"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "official",
+                            "ota",
+                            "map",
+                            "other"
+                          ]
+                        },
+                        "retrieved_at": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "url",
+                        "type",
+                        "retrieved_at"
+                      ],
                       "additionalProperties": false
                     }
                   }
@@ -3895,167 +3884,176 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "bath_type": {
-                          "type": [
-                            "string",
-                            "null"
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "public",
+                            "open_air",
+                            "indoor",
+                            "private",
+                            "sauna",
+                            "foot"
                           ]
                         },
-                        "spring_handling": {
-                          "type": [
-                            "string",
-                            "null"
+                        "hot_spring": {
+                          "type": "boolean"
+                        },
+                        "spring": {
+                          "type": "string"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "natural_flow",
+                            "circulated",
+                            "heated",
+                            "diluted",
+                            "none"
                           ]
                         },
-                        "spring_quality": {
-                          "type": [
-                            "string",
-                            "null"
+                        "gender": {
+                          "type": "string",
+                          "enum": [
+                            "separate",
+                            "mixed",
+                            "private"
                           ]
+                        },
+                        "fee": {
+                          "type": "object",
+                          "properties": {
+                            "amount": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "currency": {
+                              "type": "string",
+                              "pattern": "^[A-Z]{3}$"
+                            },
+                            "tax_included": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "amount",
+                            "currency"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "reservation": {
+                          "type": "object",
+                          "properties": {
+                            "required": {
+                              "type": "boolean"
+                            },
+                            "slot_minutes": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            }
+                          },
+                          "required": [
+                            "required"
+                          ],
+                          "additionalProperties": false
                         },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "kind"
+                      ],
                       "additionalProperties": false
                     }
                   },
                   "hours": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "opens_at": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "closes_at": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
-                        "closed_days": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                    "type": "object",
+                    "properties": {
+                      "open": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "close": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "last_entry": {
+                        "type": "string",
+                        "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                      },
+                      "closed_weekdays": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 7
                         }
                       },
-                      "additionalProperties": false
-                    }
+                      "closed_note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "fees": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
-                        "fee_kind": {
-                          "type": [
-                            "string",
-                            "null"
+                        "audience": {
+                          "type": "string",
+                          "enum": [
+                            "all",
+                            "adult",
+                            "child"
                           ]
+                        },
+                        "age_min": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "age_max": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
                         },
                         "amount": {
-                          "type": [
-                            "number",
-                            "string"
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "amount_max": {
-                          "type": [
-                            "number",
-                            "string",
-                            "null"
-                          ]
+                          "type": "number",
+                          "minimum": 0
                         },
                         "currency": {
-                          "type": "string"
+                          "type": "string",
+                          "pattern": "^[A-Z]{3}$"
+                        },
+                        "tax_included": {
+                          "type": "boolean"
                         },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
                       "required": [
@@ -4066,146 +4064,174 @@
                     }
                   },
                   "amenities": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "towel": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "rest_area": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "meal": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        }
+                    "type": "object",
+                    "properties": {
+                      "towel": {
+                        "type": "string",
+                        "enum": [
+                          "free",
+                          "rental",
+                          "sale",
+                          "none"
+                        ]
                       },
-                      "additionalProperties": false
-                    }
+                      "towel_fee": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "currency": {
+                            "type": "string",
+                            "pattern": "^[A-Z]{3}$"
+                          },
+                          "tax_included": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "amount",
+                          "currency"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "rest_area": {
+                        "type": "boolean"
+                      },
+                      "meal": {
+                        "type": "boolean"
+                      },
+                      "note": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "access": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "nearest_station": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
+                    "type": "object",
+                    "properties": {
+                      "station": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
                         },
-                        "parking": {
-                          "type": [
-                            "boolean",
-                            "null"
-                          ]
-                        },
-                        "parking_capacity": {
-                          "anyOf": [
-                            {
-                              "type": "integer",
-                              "minimum": -2147483648,
-                              "maximum": 2147483647
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                        "additionalProperties": {
+                          "type": "string"
                         }
                       },
-                      "additionalProperties": false
-                    }
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "walk",
+                          "bus",
+                          "car"
+                        ]
+                      },
+                      "minutes": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "parking": {
+                        "type": "object",
+                        "properties": {
+                          "available": {
+                            "type": "boolean"
+                          },
+                          "spaces": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          "paid": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "available"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "route": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "additionalProperties": false
                   },
                   "cautions": {
                     "type": "array",
                     "items": {
                       "type": "object",
                       "properties": {
-                        "kind": {
-                          "type": [
-                            "string",
-                            "null"
-                          ]
-                        },
                         "note": {
-                          "anyOf": [
-                            {
-                              "anyOf": [
-                                {
-                                  "type": "object",
-                                  "propertyNames": {
-                                    "type": "string"
-                                  },
-                                  "additionalProperties": {
-                                    "type": "string"
-                                  }
-                                },
-                                {
-                                  "type": "null"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "null"
-                            }
-                          ]
+                          "type": "object",
+                          "propertyNames": {
+                            "type": "string"
+                          },
+                          "additionalProperties": {
+                            "type": "string"
+                          }
                         }
                       },
+                      "required": [
+                        "note"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "official",
+                            "ota",
+                            "map",
+                            "other"
+                          ]
+                        },
+                        "retrieved_at": {
+                          "type": "string",
+                          "format": "date",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "url",
+                        "type",
+                        "retrieved_at"
+                      ],
                       "additionalProperties": false
                     }
                   }
