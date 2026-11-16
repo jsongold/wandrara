@@ -59,3 +59,22 @@ html[data-sheet="open"] [data-home] {
   [data-home] { transition: none; }
   html[data-sheet="open"] [data-home] { transform: none; border-radius: 0; }
 }
+
+/* アカウント／ログイン：右からスライドして入る */
+@keyframes page-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.page-slide-in { animation: page-slide-in var(--sheet-open-ms) var(--sheet-ease); }
+
+/* current-filter-display：文字が変わったら下から静かに浮かぶ */
+@keyframes filter-mark-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.filter-mark-in { display: inline-block; animation: filter-mark-in 280ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .page-slide-in { animation-name: sheet-fade; }
+  .filter-mark-in { animation: none; }
+}

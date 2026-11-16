@@ -13,7 +13,7 @@ import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Lo
 import { AccountButton } from "./AccountButton";
 import { AreaMap } from "./AreaMap";
 import { Chip } from "./Chip";
-import { LanguageSwitch } from "./LanguageSwitch";
+import { CurrentFilterDisplay } from "./CurrentFilterDisplay";
 import { Icon } from "./icons";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
@@ -131,16 +131,15 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
 
       {/* Top bar */}
       <header className="absolute inset-x-0 top-0 z-[5] flex items-center justify-between px-4 py-3.5">
-        <div className="flex flex-col gap-0.5">
+        {/* 真ん中の 1 文字に重ならない幅まで */}
+        <div className="flex min-w-0 max-w-[calc(50%-36px)] flex-col gap-0.5">
           <span className="text-[15px] font-semibold tracking-[0.24em] [text-shadow:0_1px_6px_rgba(0,0,0,0.55)]">WANDRARA</span>
-          <span className="text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{feed.orderLabel} · {m.home.demo}</span>
+          <span className="truncate text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{feed.orderLabel} · {m.home.demo}</span>
         </div>
+        {/* 今のエリアを 1 文字で。ヘッダーの真ん中 */}
+        <CurrentFilterDisplay label={currentArea} className="absolute left-1/2 top-[18px] -translate-x-1/2" />
+        {/* 言語の切り替えはアカウント／ログインの画面に置く */}
         <div className="flex gap-2">
-          <LanguageSwitch
-            locale={locale}
-            className="flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-full px-3 text-[13px] font-semibold text-white"
-            style={GLASS}
-          />
           <AccountButton
             locale={locale}
             next={serializeDiscoverQuery(query, locale)}

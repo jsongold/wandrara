@@ -11,10 +11,16 @@ test.describe("端末が英語", () => {
     await expect(page.locator('a[href^="/en/d/"]').first()).toBeVisible();
   });
 
-  test("切り替えると同じページの日本語へ移り、次からも日本語になる", async ({ page }) => {
-    await page.goto("/en?area=hakone");
+  // 言語の切り替えはトップではなくアカウント／ログインの画面にある
+  test("トップに言語の切り替えは無い", async ({ page }) => {
+    await page.goto("/en");
+    await expect(page.getByTestId("language-switch")).toHaveCount(0);
+  });
+
+  test("ログイン画面で切り替えると同じページの日本語へ移り、次からも日本語になる", async ({ page }) => {
+    await page.goto("/en/login");
     await page.getByTestId("language-switch").click();
-    await expect(page).toHaveURL(/\/ja\?area=hakone$/);
+    await expect(page).toHaveURL(/\/ja\/login$/);
     await expect(page.locator("html")).toHaveAttribute("lang", "ja");
     await page.goto("/");
     await expect(page).toHaveURL(/\/ja$/);

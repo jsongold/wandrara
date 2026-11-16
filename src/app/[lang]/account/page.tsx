@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth/next";
 import { isLocale, withLocale } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { signOut } from "./actions";
 
 export default function AccountPage(props: PageProps<"/[lang]/account">) {
@@ -30,7 +31,7 @@ async function Account({ params, searchParams }: Pick<PageProps<"/[lang]/account
   const how = user.app_metadata?.provider === "google" ? m.viaGoogle : m.viaEmail;
 
   return (
-    <div className="relative mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-[#faf9f6] text-[#171717]">
+    <div className="page-slide-in relative mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-[#faf9f6] text-[#171717]">
       <div className="flex h-14 items-center gap-1 px-2">
         <Link href={to("/")} aria-label={c.back} className="flex size-11 items-center justify-center">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#171717" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -62,6 +63,10 @@ async function Account({ params, searchParams }: Pick<PageProps<"/[lang]/account
             <path d="M9 5l7 7-7 7" />
           </svg>
         </Link>
+        <div className="flex h-[52px] items-center justify-between rounded-2xl bg-white pl-4 pr-1.5 text-[15px] font-medium">
+          {m.language}
+          <LanguageSwitch locale={lang} className="h-10 min-w-10 cursor-pointer rounded-xl border border-[#d6d3cb] bg-transparent px-3 text-[13px] font-semibold text-[#171717]" />
+        </div>
         <Link
           href={to("/account?logout=1")}
           className="mt-auto flex h-[52px] items-center justify-center rounded-[26px] border border-[#d6d3cb] bg-white text-[15px] font-medium text-[#a1361f] no-underline"

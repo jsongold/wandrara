@@ -7,6 +7,7 @@ import { withLocale } from "../lib/i18n/locale";
 import { messages } from "../lib/i18n/messages";
 import { createClient } from "../lib/supabase/client";
 import type { Locale } from "../lib/types";
+import { LanguageSwitch } from "./LanguageSwitch";
 
 // 当面はメールのリンクだけ。Google は NEXT_PUBLIC_AUTH_GOOGLE=1 のときだけ出す
 const GOOGLE = process.env.NEXT_PUBLIC_AUTH_GOOGLE === "1";
@@ -25,8 +26,12 @@ export function LoginPanel({ locale, next }: { locale: Locale; next: string }) {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#24231f] text-[#171717]">
-      <div className="flex h-[420px] flex-col items-center bg-[#3a3832] pt-14">
+    <div className="page-slide-in flex min-h-dvh flex-col bg-[#24231f] text-[#171717]">
+      <div className="relative flex h-[420px] flex-col items-center bg-[#3a3832] pt-14">
+        <LanguageSwitch
+          locale={locale}
+          className="absolute right-4 top-3.5 flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-white/10 px-3 text-[13px] font-semibold text-white"
+        />
         <span className="text-[15px] font-semibold tracking-[0.24em] text-white">WANDRARA</span>
         <span className="mt-2.5 text-xs text-[#e7e4dc]">{m.tagline}</span>
       </div>
