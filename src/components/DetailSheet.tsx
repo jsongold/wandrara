@@ -11,7 +11,7 @@ import { SheetCloseContext } from "./sheet-context";
 const CLOSE_DISTANCE = 120; // これ以上引き下げたら閉じる（px）
 const CLOSE_MS = 320; // globals.css の --sheet-close-ms と合わせる
 
-export function DetailSheet({ children }: { children: ReactNode }) {
+export function DetailSheet({ children, label }: { children: ReactNode; label?: string }) {
   const router = useRouter();
   const m = useMessages();
   const [dragY, setDragY] = useState(0);
@@ -65,7 +65,7 @@ export function DetailSheet({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div data-sheet={closing ? "closing" : "open"} className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={m.detail.sheetLabel}>
+    <div data-sheet={closing ? "closing" : "open"} className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={label ?? m.detail.sheetLabel}>
       <button
         type="button"
         aria-label={m.common.close}

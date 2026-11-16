@@ -13,7 +13,7 @@ import { LanguageSwitch } from "./LanguageSwitch";
 const GOOGLE = process.env.NEXT_PUBLIC_AUTH_GOOGLE === "1";
 const initial: EmailLoginState = { error: null };
 
-export function LoginPanel({ locale, next }: { locale: Locale; next: string }) {
+export function LoginPanel({ locale, next, variant = "page" }: { locale: Locale; next: string; variant?: "page" | "sheet" }) {
   const [state, action, pending] = useActionState(sendMagicLink, initial);
   const m = messages(locale).login;
 
@@ -26,8 +26,8 @@ export function LoginPanel({ locale, next }: { locale: Locale; next: string }) {
   }
 
   return (
-    <div className="page-slide-in flex min-h-dvh flex-col bg-[#24231f] text-[#171717]">
-      <div className="relative flex h-[420px] flex-col items-center bg-[#3a3832] pt-14">
+    <div className={`flex ${variant === "page" ? "min-h-dvh" : "min-h-full"} flex-col bg-[#24231f] text-[#171717]`}>
+      <div className={`relative flex ${variant === "page" ? "h-[420px] pt-14" : "h-[200px] pt-12"} flex-col items-center bg-[#3a3832]`}>
         <LanguageSwitch
           locale={locale}
           className="absolute right-4 top-3.5 flex h-11 min-w-11 cursor-pointer items-center justify-center rounded-full border border-white/25 bg-white/10 px-3 text-[13px] font-semibold text-white"
