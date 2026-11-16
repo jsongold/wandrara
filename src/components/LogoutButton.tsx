@@ -2,13 +2,15 @@
 
 // ログアウトのボタンと確認。確認は画面内の状態で出し入れする（URL を変えない）。
 // シートの「閉じる」は履歴を 1 つ戻るので、確認で履歴を積むと閉じたときに /account に戻ってシートが残るため
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signOut } from "@/app/[lang]/account/actions";
 import { messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/types";
 
 export function LogoutButton({ lang }: { lang: Locale }) {
   const [confirming, setConfirming] = useState(false);
+  // cacheComponents では閉じたシートが隠れて残る。隠れるときに確認を閉じておく（次に開いたとき確認から始まらない）
+  useEffect(() => () => setConfirming(false), []);
   const m = messages(lang).account;
   const c = messages(lang).common;
   return (
