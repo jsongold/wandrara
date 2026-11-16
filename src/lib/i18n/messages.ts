@@ -64,6 +64,7 @@ const ja = {
   },
   account: {
     title: "アカウント",
+    language: "言語",
     login: "ログイン",
     fallbackName: "ユーザー",
     viaGoogle: "Google でログイン中",
@@ -463,6 +464,7 @@ const en: Messages = {
   },
   account: {
     title: "Account",
+    language: "Language",
     login: "Log in",
     fallbackName: "User",
     viaGoogle: "Logged in with Google",
