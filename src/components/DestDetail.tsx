@@ -4,8 +4,11 @@ import { messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/types";
 import { AccommodationSections } from "./accommodation/AccommodationSections";
 import { StayStrip } from "./accommodation/StayStrip";
+import { BuildingSections, BuildingSummaryPill } from "./building/BuildingSections";
 import { ExperienceSections, ExperienceSummaryPill } from "./experience/ExperienceSections";
+import { HotspringSections, HotspringSummaryPill } from "./hotspring/HotspringSections";
 import { NatureSections, NatureSummaryPill } from "./nature/NatureSections";
+import { VillageSections, VillageSummaryPill } from "./village/VillageSections";
 import { BackButton } from "./BackButton";
 import { FactRows } from "./FactRows";
 import { PhotoCarousel } from "./PhotoCarousel";
@@ -38,6 +41,9 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
   const acc = dest.accommodation;
   const exp = dest.experience;
   const nat = dest.nature;
+  const bld = dest.building;
+  const hot = dest.hotspring;
+  const vil = dest.village;
   const map = <MapPlaceholder label={m.detail.map} ariaLabel={m.detail.mapSoon} className="h-[150px] rounded-[10px]" />;
   return (
     <main className={`mx-auto w-full max-w-[480px] bg-[#f7f6f2] text-[#141413] ${variant === "page" ? "min-h-[100dvh]" : ""}`}>
@@ -78,12 +84,33 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
               <NatureSummaryPill summary={nat.summary} locale={locale} />
             </div>
           )}
+          {bld && (
+            <div className="mt-1 flex">
+              <BuildingSummaryPill summary={bld.summary} locale={locale} />
+            </div>
+          )}
+          {hot && (
+            <div className="mt-1 flex">
+              <HotspringSummaryPill summary={hot.summary} locale={locale} />
+            </div>
+          )}
+          {vil && (
+            <div className="mt-1 flex">
+              <VillageSummaryPill summary={vil.summary} locale={locale} />
+            </div>
+          )}
         </section>
 
         {exp ? (
           <ExperienceSections view={exp} map={map} note={m.detail.factsNote} locale={locale} />
         ) : nat ? (
           <NatureSections view={nat} map={map} note={m.detail.factsNote} locale={locale} />
+        ) : bld ? (
+          <BuildingSections view={bld} map={map} note={m.detail.factsNote} locale={locale} />
+        ) : hot ? (
+          <HotspringSections view={hot} map={map} note={m.detail.factsNote} locale={locale} />
+        ) : vil ? (
+          <VillageSections view={vil} map={map} note={m.detail.factsNote} locale={locale} />
         ) : acc ? (
           <AccommodationSections
             view={acc}

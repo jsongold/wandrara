@@ -66,7 +66,7 @@ function HoursFees({ hours, fees, locale }: { hours: NatureView["hours"]; fees: 
 }
 
 // map は行の下に置く地図（今は準備中の枠）。地図があれば access が無くても出す
-function Access({ access, map, locale }: { access: NatureAccessView | null; map?: ReactNode; locale: Locale }) {
+export function Access({ access, map, locale }: { access: NatureAccessView | null; map?: ReactNode; locale: Locale }) {
   if (!access && !map) return null;
   const t = messages(locale).nature;
   const a = messages(locale).accommodation;
