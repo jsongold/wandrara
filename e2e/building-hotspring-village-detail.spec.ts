@@ -75,9 +75,10 @@ test.describe("まち", () => {
 
   test("トピックは決まった順に並ぶ", async ({ page }) => {
     await checkOrder(page, ["歩き方", "店の時間", "催し", "アクセス", "注意点", "出典"], ["アクセス"]);
-    // まち専用のカード（歩き方・店の時間）のどちらかが出る
+    // 新しい画面であること：旧い「設備・条件」が無く、アクセスがある（歩き方・店の時間はデータがあるときだけ出る）
     const headings = await page.locator("main").last().locator("h2").allInnerTexts();
-    expect(headings.some((h) => h === "歩き方" || h === "店の時間")).toBe(true);
+    expect(headings).not.toContain("設備・条件");
+    expect(headings).toContain("アクセス");
   });
 
   test("行を押すと開き、もう一度押すと閉じる", async ({ page }) => {
