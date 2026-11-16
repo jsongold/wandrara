@@ -31,6 +31,11 @@ export function trackFeedEvent(ctx: FeedEventContext, event: FeedEvent): void {
   }
 }
 
+// IntersectionObserver の最初の通知は少しでも見えていれば isIntersecting になるので、見えている割合で決める
+export function viewedEnough(entries: Pick<IntersectionObserverEntry, "isIntersecting" | "intersectionRatio">[], threshold: number): boolean {
+  return entries.some((e) => e.isIntersecting && e.intersectionRatio >= threshold);
+}
+
 // カードの中で押されたリンクから、カードのクリックか関連タイルのクリックかを決める。リンクでなければ null
 export function clickEventOf(
   link: { tileDestId: string | null; tilePosition: string | null } | null,

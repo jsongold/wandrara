@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { clickEventOf, setFeedEventSink, trackFeedEvent, type FeedEventContext, type FeedEventRecord } from "./feed-events";
+import { clickEventOf, setFeedEventSink, viewedEnough, trackFeedEvent, type FeedEventContext, type FeedEventRecord } from "./feed-events";
 
 const ctx: FeedEventContext = {
   algorithm: "order=editorial@1 primary=by-mode@1 secondary=related-other-mode@1",
@@ -21,6 +21,14 @@ describe("trackFeedEvent", () => {
   });
   it("送り先が無いときは捨てる", () => {
     expect(() => trackFeedEvent(ctx, { name: "feed_view", count: 0 })).not.toThrow();
+  });
+});
+
+describe("viewedEnough", () => {
+  it("少しだけ見えている通知では送らず、半分見えたら送る", () => {
+    expect(viewedEnough([{ isIntersecting: true, intersectionRatio: 0.01 }], 0.5)).toBe(false);
+    expect(viewedEnough([{ isIntersecting: true, intersectionRatio: 0.5 }], 0.5)).toBe(true);
+    expect(viewedEnough([{ isIntersecting: false, intersectionRatio: 0 }], 0.5)).toBe(false);
   });
 });
 

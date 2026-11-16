@@ -101,10 +101,12 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
 
 // ---- 並べ方 ----
 
-// 日付が無い・読めないものは最後
-function timeOf(iso: string | null): number {
+// 日付が無い・読めないものは最後。DB の timestamptz はマイクロ秒まであり Date.parse はミリ秒で切るので、下の桁を足す
+export function timeOf(iso: string | null): number {
   const n = iso ? Date.parse(iso) : NaN;
-  return Number.isNaN(n) ? -Infinity : n;
+  if (!iso || Number.isNaN(n)) return -Infinity;
+  const sub = /\.\d{3}(\d+)/.exec(iso)?.[1];
+  return sub ? n + Number(`0.${sub}`) : n;
 }
 
 export const scoreByPublished: Scorer = (c) => timeOf(c.anchor.publishedAt);

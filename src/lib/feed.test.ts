@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseDiscoverQuery, serializeDiscoverQuery, DEFAULT_QUERY } from "./discover-query";
-import { buildFeed, dedupeRelatedTiles, MAX_CARD_PHOTOS, resolveLocalizedText, type Catalog } from "./feed";
+import { buildFeed, dedupeRelatedTiles, MAX_CARD_PHOTOS, resolveLocalizedText, timeOf, type Catalog } from "./feed";
 import { loadFeedStrategies } from "./feed-config";
 import { MODES } from "./modes";
 import type { DestCard, DiscoverQuery, Tile } from "./types";
@@ -110,6 +110,21 @@ describe("buildFeed", () => {
     const undated = { ...dest("undated", "accommodation", "gora", [], 1), publishedAt: null };
     const feed = buildFeed({ catalog: { ...catalog, dests: [undated, ...catalog.dests] }, query: DEFAULT_QUERY, locale: "ja" }, loadFeedStrategies({}));
     expect(feed.cards.map((c) => c.key)).toEqual(["gora-inn", "lake-inn", "shimoda-inn", "undated"]);
+  });
+  it("DB のマイクロ秒の差でも新しい方を先に出す", () => {
+    const a = { ...dest("a", "accommodation", "gora", [], 1), publishedAt: "2026-11-16T00:00:00.123100+00:00" };
+    const b = { ...dest("b", "accommodation", "gora", [], 1), publishedAt: "2026-11-16T00:00:00.123900+00:00" };
+    const feed = buildFeed({ catalog: { ...catalog, dests: [a, b] }, query: DEFAULT_QUERY, locale: "ja" }, loadFeedStrategies({}));
+    expect(feed.cards.map((c) => c.key)).toEqual(["b", "a"]);
+  });
+  it("同じ日時は元の順を保ち、読めない日付は最後", () => {
+    const at = "2026-11-16T00:00:00.123456+00:00";
+    const x = { ...dest("x", "accommodation", "gora", [], 1), publishedAt: at };
+    const y = { ...dest("y", "accommodation", "gora", [], 1), publishedAt: at };
+    const bad = { ...dest("bad", "accommodation", "gora", [], 1), publishedAt: "not-a-date" };
+    const feed = buildFeed({ catalog: { ...catalog, dests: [bad, x, y] }, query: DEFAULT_QUERY, locale: "ja" }, loadFeedStrategies({}));
+    expect(feed.cards.map((c) => c.key)).toEqual(["x", "y", "bad"]);
+    expect(timeOf(null)).toBe(-Infinity);
   });
   it("新着順に切り替えられる", () => {
     const feed = run({ sort: "fresh" });

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
-import { clickEventOf, trackFeedEvent, type FeedEvent } from "@/lib/feed-events";
+import { clickEventOf, trackFeedEvent, viewedEnough, type FeedEvent } from "@/lib/feed-events";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
 import { messages, type Messages } from "@/lib/i18n/messages";
 import { useMessages } from "@/lib/i18n/use-locale";
@@ -317,7 +317,7 @@ function FeedCardView({ card, position, track }: { card: FeedCard; position: num
     if (!el) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
+        if (!viewedEnough(entries, VIEW_THRESHOLD)) return;
         track({ name: "card_view", destId, position });
         io.disconnect();
       },
@@ -327,9 +327,9 @@ function FeedCardView({ card, position, track }: { card: FeedCard; position: num
     return () => io.disconnect();
   }, [track, destId, position]);
 
-  // スワイプの残りのクリックは PhotoCarousel が止めるので、ここには来ない
+  // Link は画面内の遷移のために preventDefault するので defaultPrevented では見ない。
+  // スワイプの残りのクリックは PhotoCarousel が capture で stopPropagation するので、ここには来ない
   function onClick(e: MouseEvent<HTMLElement>) {
-    if (e.defaultPrevented) return;
     const a = (e.target as Element).closest("a");
     const event = clickEventOf(a && { tileDestId: a.getAttribute("data-tile-dest-id"), tilePosition: a.getAttribute("data-tile-position") }, { destId, position });
     if (event) track(event);
