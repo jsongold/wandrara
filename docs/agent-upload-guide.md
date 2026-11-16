@@ -1,4 +1,4 @@
-Purpose: how an agent uploads data to WANDRARA — how to run the script, and which resources go where in which schema.
+Purpose: how an agent uploads data to WANDRARA — how to run the script, and which resources go where in which schema. The detailed per-place rules (in Japanese) are in docs/collector-agent/README.md and the per-core guides it links to.
 
 # WANDRARA Data Upload Guide for Agents
 
@@ -49,7 +49,7 @@ pnpm dest:publish <ref>... --draft     # take it back to draft
 
 ### Updates replace everything
 
-If the content is exactly the same as the last upload of that `ref`, nothing is written (`unchanged:`). The dest-level `sources` and `verification_status` are not compared, so a new `retrieved_at` there alone does not count as a change. For accommodations, `details.sources` is part of `details`, so a new `retrieved_at` in it does count as a change.
+If the content is exactly the same as the last upload of that `ref`, nothing is written (`unchanged:`). The dest-level `sources` and `verification_status` are not compared, so a new `retrieved_at` there alone does not count as a change. `details.sources` is part of `details` (for all six core types), so a new `retrieved_at` in it does count as a change.
 
 There is no partial update. Sending a `ref` that already exists with changed content deletes everything stored for that dest — core columns, details, texts, photos and categories — and stores only what you sent. Anything you leave out is not kept. For example, resending a dest with only new prices removes its photos and amenities.
 
@@ -87,11 +87,11 @@ One entry in `dests`:
 | `slug` | no | The URL name (lowercase letters, digits, hyphens; 3–60 chars). Derived from ref if omitted. Never changes for an existing dest |
 | `core` | yes | Columns of the core table (kind, location, official URL, ...) |
 | `texts` | yes | Per language: `lang`, `name` (required), `summary`, `address` |
-| `details` | no | Accommodation: one JSON object (see "Accommodation details"). Other core types: arrays per detail key (next section) |
+| `details` | no | One JSON object for every core type (shape per core type: see "core and details per core type") |
 | `categories` | no | Array of category ids. Unknown ids are created |
 | `photos` | no | Photos (see "Photo upload") |
 | `region` | no | `{id, name, parent_id}`. Created when `core.region_id` is not in the DB yet |
-| `sources` | no | Array of sources (`type`, `url`, `retrieved_at`, `evidence`). Not stored as columns; kept in the raw import record. For accommodations, write sources in `details.sources` instead |
+| `sources` | no | Array of sources (`type`, `url`, `retrieved_at`, `evidence`). Not stored as columns; kept in the raw import record. Write sources in `details.sources` instead (all six core types have it) |
 | `verification_status` | no | verified / unverified / conflict. Kept in the raw import record |
 
 ### Choosing ref
@@ -113,22 +113,22 @@ Do not write `dest_id`, `id`, `sort` or `operator_id` (`sort` follows array orde
 
 ## core and details per core type
 
-Each `core_type` has its own `core` columns and `details`. Accommodation `details` is one JSON object (next section). The other 5 core types use arrays per detail key, as in the table. Core types with a location can also take `region_id`, `prefecture`, `municipality`, `district`, `lat`, `lng` and `geo_precision` (exact / street / district / municipality) in `core`.
+Each `core_type` has its own `core` columns and its own `details`. For all six core types, `details` is one JSON object. Every field may be left out (left out = unknown). Unknown keys are rejected, and the old table shape (arrays of rows per table) is rejected. Core types with a location (all except experience) can also take `region_id`, `prefecture`, `municipality`, `district`, `lat`, `lng` and `geo_precision` (exact / street / district / municipality) in `core`. An experience keeps its positions in `details.locations`.
 
-| core_type | kind values | Main core columns | details keys (main columns) |
-| --- | --- | --- | --- |
-| accommodation | hotel, ryokan, private_rental, minshuku, pension, glamping, campsite | kind, check_in, check_out, official_url | one JSON object (see "Accommodation details") |
-| experience | tour, workshop, tasting, activity, facility_use, event | kind, region_id, duration_minutes, reservation_required, official_url | courses / prices(unit, audience, amount, currency) / schedules / locations / inclusions / cautions / booking_links |
-| nature | coast, mountain, lake, highland, gorge, waterfall, forest, volcano | kind, protection | seasons / hours_fees / access / trails(name, distance_km, difficulty) / restrictions / cautions |
-| village | onsen_town, post_town, fishing_village, temple_town, castle_town | kind, region_id, municipality | walks / shop_hours / access / events / cautions |
-| building | museum, shrine, temple, castle, observatory, historic_building | kind, official_url | hours / fees(label, amount, currency) / access / events / cautions |
-| hotspring | day_use, public_bath, foot_bath | kind, official_url | baths(bath_type, spring_handling, spring_quality) / hours / fees(fee_kind, amount, currency) / amenities / access / cautions |
+| core_type | kind values | core columns | details fields | Guide (Japanese) |
+| --- | --- | --- | --- | --- |
+| accommodation | hotel, ryokan, private_rental, minshuku, pension, glamping, campsite | kind, region_id, prefecture, municipality, district, lat, lng, geo_precision, check_in, check_out, official_url | see "Accommodation details" | [accommodation.md](collector-agent/accommodation.md) |
+| experience | tour, workshop, tasting, activity, facility_use, event | kind, region_id, duration_minutes, reservation_required, official_url | courses / prices.items / schedules / locations / inclusions / cautions / booking_links / sources | [experience.md](collector-agent/experience.md) |
+| nature | coast, mountain, lake, highland, gorge, waterfall, forest, volcano | kind, region_id, prefecture, municipality, district, lat, lng, geo_precision, protection | seasons / hours / fees / access / trails / restrictions / cautions / sources | [nature.md](collector-agent/nature.md) |
+| building | museum, shrine, temple, castle, observatory, historic_building | kind, region_id, prefecture, municipality, district, lat, lng, geo_precision, official_url | hours / fees / events / access / cautions / booking_links / sources | [building.md](collector-agent/building.md) |
+| hotspring | day_use, public_bath, foot_bath | kind, region_id, prefecture, municipality, district, lat, lng, geo_precision, official_url | baths / hours / fees / amenities / access / cautions / sources | [hotspring.md](collector-agent/hotspring.md) |
+| village | onsen_town, post_town, fishing_village, temple_town, castle_town | kind, region_id, prefecture, municipality, district, lat, lng, geo_precision | walks / shop_hours / events / access / cautions / sources | [village.md](collector-agent/village.md) |
 
-For the 5 table-shaped core types, write nested children inside the parent row as an array under the child's key. Free text (cautions, notes) is `{"ja": "...", "en": "..."}`, times are `HH:MM`, dates are `YYYY-MM-DD`, and amounts are numbers.
+`hours`, `access`, `shop_hours` and `amenities` are one object, not an array. Fields that can repeat are arrays. The shape of each field is defined in `src/lib/<core>/details.ts`; vocabularies are in `src/lib/vocab/<core>.ts`. Free text (cautions, notes) is `{"ja": "...", "en": "..."}`, times are `HH:MM`, dates are `YYYY-MM-DD`, and amounts are numbers.
 
 ## Accommodation details
 
-For `core_type: "accommodation"`, `details` is one JSON object. Every field may be left out (left out = unknown). Unknown keys are rejected. The old table shape (`units`, `parkings`, `prices` as an array, `bed_type`, ...) is rejected.
+For `core_type: "accommodation"`, `details` is one JSON object. Every field may be left out (left out = unknown). Unknown keys are rejected. The old table shape (`units`, `parkings`, `prices` as an array, `bed_type`, ...) is rejected. Pricing details (undated prices, daily-rate booking engines, image price tables) are in [accommodation.md](collector-agent/accommodation.md).
 
 | Field | Content |
 | --- | --- |
@@ -163,19 +163,21 @@ Codes (bath kinds, amenity codes, bed types, ...) come from [`src/lib/vocab/acco
 
 ## Required fields (v1)
 
-Every dest must meet these before it is sent. The check runs in `pnpm import:bundle` (including `--dry-run`) and again in the API. If any dest fails, the whole bundle is rejected with `bundle が正しくない:` and one line per missing field (e.g. `/dests/3/details/prices/items 宿泊料（kind: room・amount > 0・currency）が 1 つ以上要る`). Nothing is sent. Text may be in any language.
+Every dest must meet these before it is sent. The check runs in `pnpm import:bundle` (including `--dry-run`) and again in the API. If any dest fails, the whole bundle is rejected with `bundle が正しくない:` and one line per missing field (e.g. `/dests/3/details/prices/items 宿泊料（kind: room・amount > 0・currency）が 1 つ以上要る`). Nothing is sent. Text may be in any language. The source of truth is `src/lib/ingest/quality.ts`.
 
 | core_type | Required |
 | --- | --- |
-| all | a text with `name` and `summary`; at least 1 photo; `core.region_id`; a source (`core.official_url` or `sources[].url`) |
-| accommodation | `texts[].address`; `lat`/`lng` inside Hakone and Izu; `check_in` and `check_out`; at least 1 `details.rooms` entry with `capacity` > 0; at least 1 `details.prices.items` entry with `kind: "room"`, `amount` > 0 and `currency`; every `photos[].room` is a key in `details.rooms`. The source may also be a `details.sources[].url` |
-| experience | at least 1 `prices` with `amount` > 0 and `currency`; `duration_minutes`; `core.official_url` or a `booking_links` URL; at least 1 `locations` with `lat`/`lng` inside Hakone and Izu |
-| building | `texts[].address`; `lat`/`lng` inside Hakone and Izu; at least 1 `hours`; at least 1 `fees` with `amount` (free entry is `0`) |
-| hotspring | `texts[].address`; `lat`/`lng` inside Hakone and Izu; at least 1 `hours`; a `fees` row with `fee_kind: "adult"` and `amount`; at least 1 `baths` with `spring_quality` |
-| nature | `lat`/`lng` inside Hakone and Izu; at least 1 `access` |
-| village | `lat`/`lng` inside Hakone and Izu; at least 1 `access` |
+| all | a text with `name` and `summary`; at least 1 photo; `core.region_id`; a source: `core.official_url`, `details.sources[].url` or a dest-level `sources[].url` (experience: `core.official_url` or `details.booking_links[].url`). Only accommodation, experience, building and hotspring have an `official_url` column |
+| accommodation | `texts[].address`; `lat`/`lng` inside Hakone and Izu; `check_in` and `check_out`; at least 1 `details.rooms` entry with `capacity` > 0; at least 1 `details.prices.items` entry with `kind: "room"`, `amount` > 0 and `currency`; every `photos[].room` is a key in `details.rooms` |
+| experience | `core.duration_minutes` (optional when `core.kind` is `facility_use`); at least 1 `details.prices.items` entry with `amount` > 0, `currency` and `per`; at least 1 `details.locations` entry with `kind: "meeting"` and `lat`/`lng` inside Hakone and Izu (a `facility_use` may use `kind: "activity"`) |
+| building | `lat`/`lng` inside Hakone and Izu; `details.hours`; at least 1 `details.fees` entry with `amount` >= 0 and `currency` (free entry is `0`) |
+| hotspring | `lat`/`lng` inside Hakone and Izu; `details.hours`; a `details.fees` entry with `audience: "adult"`, `amount` >= 0 and `currency`; at least 1 `details.baths` entry with `spring` |
+| nature | `lat`/`lng` inside Hakone and Izu; `details.access` |
+| village | `lat`/`lng` inside Hakone and Izu; `details.access` |
 
 "Inside Hakone and Izu" means latitude 34.55–35.35 and longitude 138.65–139.25.
+
+If a required value cannot be found, do not guess. Leave that dest out and report what is missing (see [docs/collector-agent/README.md](collector-agent/README.md), "報告のしかた").
 
 ## Photo upload
 
@@ -189,7 +191,7 @@ List each photo in `photos`. `pnpm import:bundle` does the upload, so you do not
 | `credit` | no | Photographer or provider |
 | `subject` | no | exterior / room / bath / view / food / activity / landscape / other |
 | `alt` | no | Image description, `{"ja": "..."}` |
-| `room` | no | Accommodation only: the `details.rooms[].key` this photo shows (use with `subject: "room"`) |
+| `room` | no | Accommodation only: the `details.rooms[].key` this photo shows (use with `subject: "room"`). Set it only when you can confirm the photo shows that room |
 
 Accepted formats are jpeg, png, webp and avif, up to 10 MB each. The format is detected from the file contents, not the extension. Images that are only placed in `images/` are not used — list every image you want in `photos`.
 
