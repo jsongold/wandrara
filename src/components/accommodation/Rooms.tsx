@@ -1,4 +1,6 @@
 import type { RoomView } from "@/lib/accommodation/view";
+import { messages } from "@/lib/i18n/messages";
+import type { Locale } from "@/lib/types";
 import { ExpandRow, SubRow } from "../ExpandRow";
 import { Card } from "./Card";
 import { roomSummary } from "./format";
@@ -8,7 +10,8 @@ function hasMore(r: RoomView, photos: number): boolean {
   return r.view !== null || r.smokingLabel !== null || r.bedrooms.length > 0 || photos > 0;
 }
 
-function RoomDetail({ room, photos }: { room: RoomView; photos: RoomView["photos"] }) {
+function RoomDetail({ room, photos, locale }: { room: RoomView; photos: RoomView["photos"]; locale: Locale }) {
+  const t = messages(locale).accommodation.room;
   return (
     <>
       {photos.length > 0 && (
@@ -26,12 +29,12 @@ function RoomDetail({ room, photos }: { room: RoomView; photos: RoomView["photos
           ))}
         </div>
       )}
-      {room.capacity !== null && <SubRow label="定員" value={`${room.capacity} 名`} />}
-      {room.areaSqm !== null && <SubRow label="広さ" value={`${room.areaSqm}㎡`} />}
-      {room.tatami !== null && <SubRow label="畳" value={`${room.tatami} 畳`} />}
-      {room.styleLabel && <SubRow label="種類" value={room.styleLabel} />}
-      {room.view && <SubRow label="眺望" value={room.view} />}
-      {room.smokingLabel && <SubRow label="喫煙" value={room.smokingLabel} />}
+      {room.capacity !== null && <SubRow label={t.capacity} value={t.guests(room.capacity)} />}
+      {room.areaSqm !== null && <SubRow label={t.size} value={t.sqm(room.areaSqm)} />}
+      {room.tatami !== null && <SubRow label={t.tatamiLabel} value={t.tatami(room.tatami)} />}
+      {room.styleLabel && <SubRow label={t.style} value={room.styleLabel} />}
+      {room.view && <SubRow label={t.view} value={room.view} />}
+      {room.smokingLabel && <SubRow label={t.smoking} value={room.smokingLabel} />}
       {room.bedrooms.map((b) => (
         <SubRow key={b.label} label={b.label} value={b.beds} />
       ))}
@@ -40,15 +43,15 @@ function RoomDetail({ room, photos }: { room: RoomView; photos: RoomView["photos
 }
 
 // 「部屋」のカード。部屋ごとに 1 行、押すとその下に中身を開く
-export function Rooms({ rooms }: { rooms: RoomView[] }) {
+export function Rooms({ rooms, locale }: { rooms: RoomView[]; locale: Locale }) {
   if (!rooms.length) return null;
   return (
-    <Card title="部屋">
+    <Card title={messages(locale).accommodation.title.rooms}>
       {rooms.map((r) => {
         const photos = r.photos.filter((p) => p.url && !p.isDemo);
         return (
-          <ExpandRow key={r.key} label={r.label} value={roomSummary(r)}>
-            {hasMore(r, photos.length) ? <RoomDetail room={r} photos={photos} /> : undefined}
+          <ExpandRow key={r.key} label={r.label} value={roomSummary(r, locale)}>
+            {hasMore(r, photos.length) ? <RoomDetail room={r} photos={photos} locale={locale} /> : undefined}
           </ExpandRow>
         );
       })}

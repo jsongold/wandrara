@@ -307,3 +307,76 @@ describe("formatMoney / toHHMM", () => {
     expect(toHHMM("")).toBeNull();
   });
 });
+
+describe("en の文", () => {
+  const e = toAccommodationView(input({ locale: "en" }))!;
+  const jp = /[ぁ-んァ-ン一-龥]/;
+
+  it("料金（参考）の表は英語。金額は ¥、範囲は –", () => {
+    expect(e.priceTable).toMatchObject({
+      unitLabel: "Per house per night · tax incl. (¥)",
+      perLabel: "per house per night",
+      rows: [{ roomLabel: "Entire house", guests: "2–8", min: 45000, max: 170000, mealsLabels: [] }],
+      fees: [
+        { label: "Service fee", text: "¥550 per person per night (tax incl.)" },
+        { label: "Bath tax", text: "Adults, ¥300 per person per night" },
+      ],
+    });
+  });
+
+  it("部屋・風呂・設備・出典のラベルも英語", () => {
+    expect(e.rooms[0].label).toBe("Entire house");
+    expect(e.rooms[0].bedrooms).toEqual([
+      { label: "Bedroom 1 (1F)", beds: "Double × 1, Single × 1" },
+      { label: "Bedroom 2 (2F)", beds: "Semi-double × 2" },
+      { label: "Bedroom 3", beds: "Semi-double × 2" },
+    ]);
+    expect(e.baths.map((b) => [b.label, b.saunaStyleLabel])).toEqual([
+      ["Open-air bath", null],
+      ["Indoor bath", null],
+      ["Sauna", "Barrel sauna"],
+    ]);
+    expect(e.amenityGroups.map((g) => g.label)).toEqual(["Kitchen", "Outdoor", "Internet and work", "Toiletries", "Laundry"]);
+    expect(e.amenityGroups[1].items[0].options).toEqual(["Electric grill", "Covered"]);
+    expect(e.access).toMatchObject({ modeLabel: "Walk", minutes: 8 });
+    expect(e.sources.map((s) => s.typeLabel)).toEqual(["Official", "Booking site"]);
+  });
+
+  it("食事・風呂の予約・年齢・込みの種類も英語", () => {
+    const d = {
+      rooms: [{ key: "twin", name: { ja: "ツイン", en: "Twin" } }],
+      meals: [{ meal: "breakfast", offered: true, style: "buffet", served_from: "07:00", served_to: "10:00", fee: { amount: 2500, currency: "JPY", tax_included: false } }],
+      baths: [{ kind: "public", reservation: { required: true, when: "at_checkin", slot_minutes: 45 } }],
+      licenses: [{ kind: "simple_lodging" }],
+      sources: [{ name: "x", url: "https://example.com", type: "ota", retrieved_at: "2026-11-14", fields: ["rooms", "prices"] }],
+      prices: {
+        items: [
+          { kind: "room", per: "room_night", room: "twin", audience: "adult", age_min: 13, includes: ["bath_tax"], amount: 15000, currency: "JPY" },
+          { kind: "room", per: "person_night", audience: "child", age_min: 6, age_max: 12, amount: 3000, amount_max: 5000, currency: "JPY" },
+          { kind: "cleaning", per: "stay", room: "twin", guests_min: 3, guests_max: 4, amount: 3000, currency: "JPY" },
+        ],
+      },
+    };
+    const w = toAccommodationView(input({ details: d, locale: "en" }))!;
+    expect(w.meals[0]).toMatchObject({ label: "Breakfast", styleLabel: "Buffet", hours: "07:00–10:00", fee: "¥2,500 (tax excl.)" });
+    expect(w.baths[0].reservation).toBe("Reservation required, At check-in, 45 min");
+    expect(w.licenses[0].label).toBe("Simple lodging business");
+    expect(w.sources[0].fields).toEqual(["Rooms", "Prices"]);
+    expect(w.priceTable!.rows[0].note).toBe("Adults age 13+, incl. bath tax");
+    expect(w.priceTable!.children).toEqual([{ label: "Children", text: "ages 6–12, ¥3,000–5,000 per person per night" }]);
+    expect(w.priceTable!.fees).toEqual([{ label: "Cleaning fee", text: "Twin, for 3–4 guests, ¥3,000 per stay" }]);
+  });
+
+  it("データ（駅名などの ja しかない文）のほかに日本語が残らない", () => {
+    const { access, bookingLinks, sources, ...rest } = e;
+    expect(JSON.stringify(rest)).not.toMatch(jp);
+    expect(access!.modeLabel).not.toMatch(jp);
+    expect(bookingLinks.length + sources.length).toBeGreaterThan(0);
+  });
+
+  it("formatMoney の en は ¥ と (tax incl.)", () => {
+    expect(formatMoney({ amount: 550, currency: "JPY", taxIncluded: true }, "en")).toBe("¥550 (tax incl.)");
+    expect(formatMoney({ amount: 1000, amountMax: 2000, currency: "JPY" }, "en")).toBe("¥1,000–2,000");
+    expect(formatMoney({ amount: 12.5, currency: "USD", taxIncluded: false }, "en")).toBe("12.5 USD (tax excl.)");
+  });
+});

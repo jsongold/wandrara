@@ -63,4 +63,21 @@ describe("format", () => {
     ).toBe("12 名・寝室 2 室");
     expect(roomSummary(room({}))).toBe("");
   });
+
+  it("en は英語の文", () => {
+    expect(joinLabels(["Service fee", "Bath tax", "Service fee"], "en")).toBe("Service fee, Bath tax");
+    expect(priceNote([], "en")).toBe("Prices vary by number of guests and date.");
+    expect(
+      priceNote(
+        [
+          { label: "Service fee", text: "x" },
+          { label: "Bath tax", text: "y" },
+        ],
+        "en",
+      ),
+    ).toBe("Prices vary by number of guests and date. Extra charges: Service fee, Bath tax.");
+    expect(roomSummary(room({ capacity: 12 }), "en")).toBe("Up to 12 guests");
+    expect(roomSummary(room({ capacity: 2, areaSqm: 24, tatami: 6 }), "en")).toBe("2 guests, 24 m², 6 tatami mats");
+    expect(roomSummary(room({ capacity: 12, bedrooms: [{ label: "a", beds: "x" }, { label: "b", beds: "y" }] }), "en")).toBe("12 guests, 2 bedrooms");
+  });
 });

@@ -12,6 +12,8 @@ import type {
   PetsView,
   SurroundingsView,
 } from "@/lib/accommodation/view";
+import { messages } from "@/lib/i18n/messages";
+import type { Locale } from "@/lib/types";
 import { AMENITY_LIST, labelOf } from "@/lib/vocab/accommodation";
 import { ExpandRow, SubRow } from "../ExpandRow";
 import { Card } from "./Card";
@@ -21,6 +23,9 @@ import { Card } from "./Card";
 // ---- 小道具 ----
 
 type Pair = [label: string, value: ReactNode];
+type Text = ReturnType<typeof messages>["accommodation"];
+
+const text = (locale: Locale): Text => messages(locale).accommodation;
 
 /** 値のある組だけ SubRow にする。空なら空配列（ExpandRow は押せない行になる） */
 function subRows(pairs: Pair[]) {
@@ -32,31 +37,33 @@ function plainRows(pairs: Pair[]) {
   return pairs.filter(([, v]) => v !== null && v !== undefined && v !== "").map(([label, v]) => <ExpandRow key={label} label={label} value={v} />);
 }
 
-const aru = (b: boolean | null) => (b === null ? null : b ? "あり" : "なし");
-const ka = (b: boolean | null) => (b === null ? null : b ? "可" : "不可");
-const withUnit = (n: number | null, unit: string) => (n === null ? null : `${n} ${unit}`);
+// あり・なし／可・不可。分からなければ null
+const aru = (t: Text, b: boolean | null) => (b === null ? null : b ? t.has : t.hasNot);
+const ka = (t: Text, b: boolean | null) => (b === null ? null : b ? t.ok : t.notOk);
+const withUnit = (n: number | null, unit: (n: number) => string) => (n === null ? null : unit(n));
 
 // ---- 食事 ----
 
-function mealValue(m: MealView): string {
-  if (!m.offered) return "なし";
-  const when = m.hours ?? (m.slots.length ? m.slots.join(" か ") : null);
-  return [when, m.placeLabel].filter(Boolean).join("・") || "あり";
+function mealValue(m: MealView, t: Text): string {
+  if (!m.offered) return t.meal.none;
+  const when = m.hours ?? (m.slots.length ? m.slots.join(t.meal.or) : null);
+  return [when, m.placeLabel].filter(Boolean).join(t.sep) || t.has;
 }
 
-export function Meals({ meals }: { meals: MealView[] }) {
+export function Meals({ meals, locale }: { meals: MealView[]; locale: Locale }) {
   if (!meals.length) return null;
+  const t = text(locale);
   return (
-    <Card title="食事">
+    <Card title={t.title.meals}>
       {meals.map((m, i) => (
-        <ExpandRow key={`${m.label}-${i}`} label={m.label} value={mealValue(m)}>
+        <ExpandRow key={`${m.label}-${i}`} label={m.label} value={mealValue(m, t)}>
           {subRows([
-            ["形式", m.styleLabel],
-            ["選べる時刻", m.slots.length ? m.slots.join("・") : null],
-            ["料金", m.fee],
-            ["アレルギー", m.allergyConsult === null ? null : m.allergyConsult ? "事前に相談できる" : "相談できない"],
-            ["自炊", ka(m.selfCook)],
-            ["メモ", m.note],
+            [t.meal.style, m.styleLabel],
+            [t.meal.slots, m.slots.length ? m.slots.join(t.sep) : null],
+            [t.fee, m.fee],
+            [t.meal.allergy, m.allergyConsult === null ? null : m.allergyConsult ? t.meal.allergyYes : t.meal.allergyNo],
+            [t.meal.selfCook, ka(t, m.selfCook)],
+            [t.note, m.note],
           ])}
         </ExpandRow>
       ))}
@@ -66,29 +73,30 @@ export function Meals({ meals }: { meals: MealView[] }) {
 
 // ---- 風呂 ----
 
-function bathValue(b: BathView): string {
-  return [b.hotSpring ? "温泉" : null, b.saunaStyleLabel].filter(Boolean).join("・") || "あり";
+function bathValue(b: BathView, t: Text): string {
+  return [b.hotSpring ? t.bath.hotSpring : null, b.saunaStyleLabel].filter(Boolean).join(t.sep) || t.has;
 }
 
-export function Baths({ baths }: { baths: BathView[] }) {
+export function Baths({ baths, locale }: { baths: BathView[]; locale: Locale }) {
   if (!baths.length) return null;
+  const t = text(locale);
   return (
-    <Card title="風呂">
+    <Card title={t.title.baths}>
       {baths.map((b, i) => (
-        <ExpandRow key={`${b.label}-${i}`} label={b.label} value={bathValue(b)}>
+        <ExpandRow key={`${b.label}-${i}`} label={b.label} value={bathValue(b, t)}>
           {subRows([
             // 温泉なら行に出ている。温泉でないと分かっているときだけここに出す
-            ["温泉", b.hotSpring === false ? "なし" : null],
-            ["泉質", b.spring],
-            ["源泉", b.sourceLabel],
-            ["定員", withUnit(b.capacity, "名")],
-            ["時間", b.hours],
-            ["男女", b.genderLabel],
-            ["予約", b.reservation],
-            ["料金", b.fee],
-            ["水風呂", aru(b.coldBath)],
-            ["外気浴", aru(b.outdoorRest)],
-            ["メモ", b.note],
+            [t.bath.hotSpring, b.hotSpring === false ? t.hasNot : null],
+            [t.bath.spring, b.spring],
+            [t.bath.source, b.sourceLabel],
+            [t.bath.capacity, withUnit(b.capacity, t.bath.people)],
+            [t.bath.hours, b.hours],
+            [t.bath.gender, b.genderLabel],
+            [t.bath.reservation, b.reservation],
+            [t.fee, b.fee],
+            [t.bath.coldBath, aru(t, b.coldBath)],
+            [t.bath.outdoorRest, aru(t, b.outdoorRest)],
+            [t.note, b.note],
           ])}
         </ExpandRow>
       ))}
@@ -98,50 +106,50 @@ export function Baths({ baths }: { baths: BathView[] }) {
 
 // ---- 設備 ----
 
-const WIFI_LABEL = labelOf(AMENITY_LIST, "wifi");
-
-function internetPairs(n: InternetView): Pair[] {
-  const speed = [n.downMbps !== null ? `下り ${n.downMbps} Mbps` : null, n.upMbps !== null ? `上り ${n.upMbps} Mbps` : null]
+function internetPairs(n: InternetView, t: Text): Pair[] {
+  const speed = [n.downMbps !== null ? t.amenity.down(n.downMbps) : null, n.upMbps !== null ? t.amenity.up(n.upMbps) : null]
     .filter(Boolean)
-    .join("・");
+    .join(t.sep);
   return [
-    ["Wi-Fi", n.wifi === null ? null : n.wifi ? "あり" : "なし"],
-    ["速さ（実測）", speed || null],
-    ["測った日", n.measuredAt],
-    ["仕事用の机", n.deskLabel],
-    ["通信のメモ", n.note],
+    ["Wi-Fi", aru(t, n.wifi)],
+    [t.amenity.speed, speed || null],
+    [t.amenity.measuredAt, n.measuredAt],
+    [t.amenity.desk, n.deskLabel],
+    [t.amenity.netNote, n.note],
   ];
 }
 
 /** 設備 1 つの詳細（付いているもの・数・有料か・メモ）を 1 行の文にする */
-function amenityDetail(a: AmenityView): string | null {
+function amenityDetail(a: AmenityView, t: Text): string | null {
   const parts = [
-    a.options.length ? a.options.join("・") : null,
-    withUnit(a.count, "台"),
-    a.paid === null ? null : a.paid ? "有料" : "無料",
+    a.options.length ? a.options.join(t.sep) : null,
+    withUnit(a.count, t.amenity.count),
+    a.paid === null ? null : a.paid ? t.amenity.paid : t.amenity.free,
     a.note,
   ].filter(Boolean);
-  return parts.length ? parts.join("・") : null;
+  return parts.length ? parts.join(t.sep) : null;
 }
 
-export function Amenities({ groups, internet }: { groups: AmenityGroupView[]; internet: InternetView | null }) {
-  const hasWifiItem = groups.some((g) => g.items.some((a) => a.label === WIFI_LABEL));
-  const net = internet ? subRows(internetPairs(internet)) : [];
+export function Amenities({ groups, internet, locale }: { groups: AmenityGroupView[]; internet: InternetView | null; locale: Locale }) {
+  const t = text(locale);
+  const wifiLabel = labelOf(AMENITY_LIST, "wifi", locale);
+  const hasWifiItem = groups.some((g) => g.items.some((a) => a.label === wifiLabel));
+  const net = internet ? subRows(internetPairs(internet, t)) : [];
   // Wi-Fi の設備が無いのに通信の情報があるときは、別の行に出す（どこにも出ない欄を作らない）
   const netRow = !hasWifiItem && internet && (net.length || internet.wifi !== null);
   if (!groups.length && !netRow) return null;
   return (
-    <Card title="設備">
+    <Card title={t.title.amenities}>
       {groups.map((g) => (
-        <ExpandRow key={g.label} label={g.label} value={g.items.map((a) => a.label).join("・")}>
+        <ExpandRow key={g.label} label={g.label} value={g.items.map((a) => a.label).join(t.sep)}>
           {g.items.flatMap((a) => {
-            const rows = subRows([[a.label, amenityDetail(a)]]);
-            return a.label === WIFI_LABEL && internet ? [...rows, ...net] : rows;
+            const rows = subRows([[a.label, amenityDetail(a, t)]]);
+            return a.label === wifiLabel && internet ? [...rows, ...net] : rows;
           })}
         </ExpandRow>
       ))}
       {netRow && internet ? (
-        <ExpandRow label={WIFI_LABEL} value={aru(internet.wifi) ?? "通信"}>
+        <ExpandRow label={wifiLabel} value={aru(t, internet.wifi) ?? t.amenity.internet}>
           {net}
         </ExpandRow>
       ) : null}
@@ -151,15 +159,16 @@ export function Amenities({ groups, internet }: { groups: AmenityGroupView[]; in
 
 // ---- ペット ----
 
-export function Pets({ pets }: { pets: PetsView | null }) {
+export function Pets({ pets, locale }: { pets: PetsView | null; locale: Locale }) {
   if (!pets) return null;
+  const t = text(locale);
   return (
-    <Card title="ペット">
-      <ExpandRow label="同伴" value={ka(pets.allowed)}>
+    <Card title={t.title.pets}>
+      <ExpandRow label={t.pets.allowed} value={ka(t, pets.allowed)}>
         {subRows([
-          ["大きさ", pets.sizeLabel],
-          ["料金", pets.fee],
-          ["メモ", pets.note],
+          [t.pets.size, pets.sizeLabel],
+          [t.fee, pets.fee],
+          [t.note, pets.note],
         ])}
       </ExpandRow>
     </Card>
@@ -168,36 +177,41 @@ export function Pets({ pets }: { pets: PetsView | null }) {
 
 // ---- 条件 ----
 
-export function Conditions({ conditions }: { conditions: ConditionsView | null }) {
+export function Conditions({ conditions, locale }: { conditions: ConditionsView | null; locale: Locale }) {
   if (!conditions) return null;
+  const t = text(locale);
   const c = conditions;
   const rows = plainRows([
-    ["喫煙", c.smokingLabel],
-    ["パーティー", ka(c.parties)],
-    ["花火", ka(c.fireworks)],
-    ["静かな時間", c.quietHours],
-    ["BBQ", c.bbqUntil ? `${c.bbqUntil} まで` : null],
-    ["最短泊数", withUnit(c.minNights, "泊")],
-    ["ゴミ", c.garbage],
-    ["メモ", c.note],
+    [t.rules.smoking, c.smokingLabel],
+    [t.rules.parties, ka(t, c.parties)],
+    [t.rules.fireworks, ka(t, c.fireworks)],
+    [t.rules.quietHours, c.quietHours],
+    [t.rules.bbq, c.bbqUntil ? t.rules.until(c.bbqUntil) : null],
+    [t.rules.minNights, withUnit(c.minNights, t.rules.nights)],
+    [t.rules.garbage, c.garbage],
+    [t.note, c.note],
   ]);
   if (!rows.length) return null;
-  return <Card title="条件">{rows}</Card>;
+  return <Card title={t.title.rules}>{rows}</Card>;
 }
 
 // ---- 駐車場 ----
 
-export function Parking({ parking }: { parking: ParkingView | null }) {
+export function Parking({ parking, locale }: { parking: ParkingView | null; locale: Locale }) {
   if (!parking) return null;
+  const t = text(locale);
   const p = parking;
   return (
-    <Card title="駐車場">
-      <ExpandRow label={p.spaces !== null ? "台数" : "駐車場"} value={p.spaces !== null ? `${p.spaces} 台` : "あり"}>
+    <Card title={t.title.parking}>
+      <ExpandRow
+        label={p.spaces !== null ? t.parking.spaces : t.parking.parking}
+        value={p.spaces !== null ? t.parking.spacesCount(p.spaces) : t.has}
+      >
         {subRows([
-          ["場所", p.placeLabel],
-          ["高さの制限", withUnit(p.maxHeightM, "m まで")],
-          ["料金", p.fee],
-          ["メモ", p.note],
+          [t.parking.place, p.placeLabel],
+          [t.parking.height, withUnit(p.maxHeightM, t.parking.heightUpTo)],
+          [t.fee, p.fee],
+          [t.note, p.note],
         ])}
       </ExpandRow>
     </Card>
@@ -206,26 +220,28 @@ export function Parking({ parking }: { parking: ParkingView | null }) {
 
 // ---- アクセス ----
 
-/** 「徒歩 8 分」。手段だけ・時間だけでも出す */
-function howLong(a: AccessView): string | null {
-  return [a.modeLabel, a.minutes !== null ? `${a.minutes} 分` : null].filter(Boolean).join(" ") || null;
+/** 「徒歩 8 分」（en は「8 min walk」）。手段だけ・時間だけでも出す */
+function howLong(a: AccessView, t: Text): string | null {
+  if (a.modeLabel && a.minutes !== null) return t.access.travel(a.modeLabel, a.minutes);
+  return a.modeLabel ?? (a.minutes !== null ? t.access.minutes(a.minutes) : null);
 }
 
 // map は行の下に置く地図（今は準備中の枠）。地図があれば access が無くても出す
-export function Access({ access, map }: { access: AccessView | null; map?: ReactNode }) {
+export function Access({ access, map, locale }: { access: AccessView | null; map?: ReactNode; locale: Locale }) {
   if (!access && !map) return null;
+  const t = text(locale);
   const a = access;
-  const value = a ? [a.station, howLong(a)].filter(Boolean).join(" ") : "";
+  const value = a ? [a.station, howLong(a, t)].filter(Boolean).join(" ") : "";
   return (
-    <Card title="アクセス">
+    <Card title={t.title.access}>
       {a && (
-        <ExpandRow label={a.station ? "最寄り駅" : "行き方"} value={value || "詳細"}>
+        <ExpandRow label={a.station ? t.access.station : t.access.howTo} value={value || t.access.details}>
           {subRows([
-            ["道順", a.route],
-            ["送迎", aru(a.shuttle)],
-            ["坂や階段", aru(a.slopeOrStairs)],
-            ["車", a.needsCar === null ? null : a.needsCar ? "必要" : "なくても行ける"],
-            ["冬の制限", a.winterRestriction],
+            [t.access.route, a.route],
+            [t.access.shuttle, aru(t, a.shuttle)],
+            [t.access.slope, aru(t, a.slopeOrStairs)],
+            [t.access.car, a.needsCar === null ? null : a.needsCar ? t.access.carNeeded : t.access.carNotNeeded],
+            [t.access.winter, a.winterRestriction],
           ])}
         </ExpandRow>
       )}
@@ -236,26 +252,27 @@ export function Access({ access, map }: { access: AccessView | null; map?: React
 
 // ---- 周辺 ----
 
-export function Surroundings({ surroundings }: { surroundings: SurroundingsView | null }) {
+export function Surroundings({ surroundings, locale }: { surroundings: SurroundingsView | null; locale: Locale }) {
   if (!surroundings) return null;
+  const t = text(locale);
   const s = surroundings;
   const rows = plainRows([
-    ["隣の家まで", withUnit(s.neighborDistanceM, "m")],
-    ["視線", s.sightlines],
-    ["音", s.noiseSources],
-    ["眺め", s.view],
-    ["標高", withUnit(s.elevationM, "m")],
+    [t.around.neighbor, withUnit(s.neighborDistanceM, t.around.meters)],
+    [t.around.sightlines, s.sightlines],
+    [t.around.noise, s.noiseSources],
+    [t.around.view, s.view],
+    [t.around.elevation, withUnit(s.elevationM, t.around.meters)],
   ]);
   if (!rows.length) return null;
-  return <Card title="周辺">{rows}</Card>;
+  return <Card title={t.title.around}>{rows}</Card>;
 }
 
 // ---- 注意点 ----
 
-export function Cautions({ cautions }: { cautions: string[] }) {
+export function Cautions({ cautions, locale }: { cautions: string[]; locale: Locale }) {
   if (!cautions.length) return null;
   return (
-    <Card title="注意点">
+    <Card title={text(locale).title.cautions}>
       <ul className="m-0 list-none p-0">
         {cautions.map((c, i) => (
           <li key={i} className="border-b border-[rgba(20,20,19,.06)] py-2 text-[13px] leading-relaxed text-[#141413] last:border-b-0">
@@ -269,10 +286,10 @@ export function Cautions({ cautions }: { cautions: string[] }) {
 
 // ---- 許可・届出 ----
 
-export function Licenses({ licenses }: { licenses: AccommodationView["licenses"] }) {
+export function Licenses({ licenses, locale }: { licenses: AccommodationView["licenses"]; locale: Locale }) {
   if (!licenses.length) return null;
   return (
-    <Card title="許可・届出">
+    <Card title={text(locale).title.licenses}>
       {licenses.map((l, i) => (
         <ExpandRow key={`${l.label}-${i}`} label={l.label} value={l.number ?? "—"} />
       ))}
@@ -284,10 +301,13 @@ export function Licenses({ licenses }: { licenses: AccommodationView["licenses"]
 
 const BUTTON = "block rounded-[10px] p-[9px] text-center text-[12.5px] font-semibold no-underline";
 
-export function Booking({ links }: { links: AccommodationView["bookingLinks"] }) {
+export function Booking({ links, locale }: { links: AccommodationView["bookingLinks"]; locale: Locale }) {
   if (!links.length) return null;
+  const t = text(locale);
+  // 名前に「公式」（en は official）が入っていれば、（公式）は足さない
+  const official = (label: string) => label.includes("公式") || label.toLowerCase().includes(t.booking.officialWord);
   return (
-    <Card title="予約">
+    <Card title={t.title.booking}>
       <div className="flex flex-col gap-1.5 pb-2.5 pt-1">
         {links.map((l, i) => (
           <a
@@ -299,7 +319,8 @@ export function Booking({ links }: { links: AccommodationView["bookingLinks"] })
               i === 0 ? `${BUTTON} bg-[#141413] text-white` : `${BUTTON} border border-[#d6d2c8] bg-white text-[#141413]`
             }
           >
-            {l.label}で予約{l.isOfficial && !l.label.includes("公式") ? "（公式）" : ""}
+            {t.booking.bookOn(l.label)}
+            {l.isOfficial && !official(l.label) ? t.booking.official : ""}
           </a>
         ))}
       </div>

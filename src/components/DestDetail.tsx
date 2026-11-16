@@ -70,6 +70,7 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
             view={acc}
             map={<MapPlaceholder label={m.detail.map} ariaLabel={m.detail.mapSoon} className="h-[150px] rounded-[10px]" />}
             note={m.detail.factsNote}
+            locale={locale}
           />
         ) : (
           <>
