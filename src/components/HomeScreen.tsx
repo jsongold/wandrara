@@ -151,7 +151,8 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
       </header>
 
       {/* Floating overlay */}
-      <div className="absolute inset-x-3 bottom-[22px] z-[6] flex flex-col gap-2">
+      {/* 横幅は画面の 80% まで、中央に置く */}
+      <div className="absolute inset-x-0 bottom-[22px] z-[6] mx-auto flex w-[80%] flex-col gap-2">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
