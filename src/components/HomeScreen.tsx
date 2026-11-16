@@ -137,7 +137,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
             <span className="text-[15px] font-semibold tracking-[0.24em] [text-shadow:0_1px_6px_rgba(0,0,0,0.55)]">WANDRARA</span>
             <span className="truncate text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{feed.orderLabel} · {m.home.demo}</span>
           </div>
-          <CurrentFilterDisplay label={currentArea} className="flex-none" />
+          <CurrentFilterDisplay label={query.area === "all" ? null : currentArea} className="flex-none" />
         </div>
         {/* 言語の切り替えはアカウント／ログインの画面に置く */}
         <div className="flex gap-2">
