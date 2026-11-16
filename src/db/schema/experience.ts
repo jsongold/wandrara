@@ -1,15 +1,11 @@
 // 体験：ツアー・ワークショップ・試飲など。詳細は experiences.details（JSON）に持つ
-import { boolean, doublePrecision, index, integer, jsonb, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, primaryKey, text, uuid } from "drizzle-orm/pg-core";
 import { experienceDetailsSchema } from "../../lib/experience/details.ts";
 import { destinations } from "./common.ts";
 import { regions } from "./dictionary.ts";
 import { operators } from "./people.ts";
 import {
-  currencyCheck,
-  destChildColumns,
-  geoPrecisionCheck,
   langCheck,
-  localized,
   oneOf,
   publishedRead,
   textsColumns,
@@ -24,10 +20,6 @@ const KIND_LABELS = {
   facility_use: "施設の利用",
   event: "イベント",
 };
-const LOCATION_KIND_LABELS = { meeting: "集合場所", activity: "実施場所" };
-const PRICE_UNIT_LABELS = { per_person: "1人", per_group: "1グループ", per_time: "1回" };
-const AUDIENCE_LABELS = { all: "全員", adult: "大人", child: "子ども" };
-const INCLUSION_KIND_LABELS = { included: "含まれるもの", excluded: "含まれないもの", bring: "持ち物" };
 
 export const experiences = pgTable(
   "experiences",

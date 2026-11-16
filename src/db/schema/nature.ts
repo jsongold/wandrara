@@ -1,13 +1,9 @@
 // 自然のコア：natures・texts。詳細は natures.details（JSON）に持つ。operator_id は持たない
-import { sql } from "drizzle-orm";
-import { boolean, check, date, index, integer, jsonb, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { jsonb, pgTable, primaryKey, text, uuid } from "drizzle-orm/pg-core";
 import { natureDetailsSchema } from "../../lib/nature/details.ts";
 import {
-  currencyCheck,
-  destChildColumns,
   geoPrecisionCheck,
   langCheck,
-  localized,
   locationColumns,
   oneOf,
   publishedRead,
@@ -33,8 +29,6 @@ const PROTECTION_LABELS = {
   geopark: "ジオパーク",
   none: "指定なし",
 };
-const DIFFICULTY_LABELS = { easy: "易しい", moderate: "普通", hard: "難しい" };
-const RESTRICTION_KIND_LABELS = { closure: "立入禁止", volcanic_gas: "火山ガス警戒", other: "その他" };
 
 export const natures = pgTable(
   "natures",
