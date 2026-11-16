@@ -1,7 +1,7 @@
 -- backfill_region_apply：差分を出したときと同じ位置・region_id のときだけ region_id を書く。公開状態は変えない
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(9);
 
 insert into public.destinations (dest_id, core_type, slug, ref) values
   ('00000000-0000-4000-8000-0000000000b1', 'accommodation', 't-bf-b1', 'T-bf-b1'),
@@ -38,6 +38,12 @@ select is(public.backfill_region_apply('{"dest_id":"00000000-0000-4000-8000-0000
   'skipped', '住所だけ変わっていたら書かない');
 select is(public.backfill_region_apply('{"dest_id":"00000000-0000-4000-8000-0000000000b3","core_type":"accommodation","old_region_id":null,"lat":null,"lng":null,"geo_precision":"municipality","prefecture":"静岡県","municipality":"箱根町","new_region_id":"hakone"}'),
   'updated', '住所が同じなら書く');
+
+-- Data API は座標を 15 桁に丸めて返す。丸めた値で送っても同じ位置として書く
+update public.accommodations set lat = 35.24389097273162, lng = 139.04737977497612, municipality = '箱根町', region_id = 'hakone', geo_precision = 'exact'
+  where dest_id = '00000000-0000-4000-8000-0000000000b3';
+select is(public.backfill_region_apply('{"dest_id":"00000000-0000-4000-8000-0000000000b3","core_type":"accommodation","old_region_id":"hakone","lat":35.2438909727316,"lng":139.047379774976,"geo_precision":"exact","prefecture":"静岡県","municipality":"箱根町","new_region_id":"gora"}'),
+  'updated', '15 桁に丸めた座標でも同じ位置');
 
 select * from finish();
 rollback;

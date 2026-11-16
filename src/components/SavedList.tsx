@@ -2,6 +2,7 @@
 
 // 保存一覧の表示。サーバーで取った一覧を、画面全体の保存状態（詳細のシートなどで解除したものを含む）で絞る。
 // 保存状態を読み終えるまでは、サーバーで取った一覧をそのまま出す
+import Image from "next/image";
 import Link from "next/link";
 import type { SavedDestView } from "@/lib/saves-server";
 import type { Photo } from "@/lib/types";
@@ -31,12 +32,12 @@ export function SavedList({ items, emptyText }: { items: SavedDestView[]; emptyT
         <li key={it.destId}>
           <Link
             href={it.href}
+            prefetch={true}
             data-testid="saved-item"
             className="flex items-center gap-3.5 rounded-2xl bg-white p-3 text-[#171717] no-underline"
           >
             {it.photo?.url && !it.photo.isDemo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={it.photo.url} alt="" loading="lazy" decoding="async" className="block size-16 flex-none rounded-[10px] object-cover" />
+              <Image src={it.photo.url} alt="" width={64} height={64} className="block size-16 flex-none rounded-[10px] object-cover" />
             ) : (
               <span className="block size-16 flex-none rounded-[10px]" style={placeholderStyle(it.photo)} />
             )}
