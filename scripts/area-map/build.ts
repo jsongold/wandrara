@@ -109,6 +109,7 @@ async function buildMap(map: MapDef, maps: MapDef[], defs: RegionDef[], shapes: 
     id: map.id,
     name: map.name,
     viewBox: pr.viewBox,
+    ...(map.start ? { start: viewOf(map.start, pr.project) } : {}),
     land: land.features.map((f) => pathOf(f.geometry as Geometry, pr)).join(""),
     shapes: map.shapes.map((id) => ({ id, ...shape(`s:${id}`) })),
     points: map.points.map((id) => {
@@ -124,6 +125,13 @@ async function buildMap(map: MapDef, maps: MapDef[], defs: RegionDef[], shapes: 
     }),
     wholes: map.wholes,
   };
+}
+
+/** 緯度経度の範囲を、SVG の viewBox（"x y w h"）にする */
+function viewOf(b: BBox, project: (p: [number, number]) => [number, number]): string {
+  const [x0, y0] = project([b[0], b[3]]);
+  const [x1, y1] = project([b[2], b[1]]);
+  return `${x0} ${y0} ${Math.round((x1 - x0) * 10) / 10} ${Math.round((y1 - y0) * 10) / 10}`;
 }
 
 const write = (file: string, body: string) => {

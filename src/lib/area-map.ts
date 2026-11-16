@@ -4,7 +4,8 @@ export type LocalizedName = { ja: string; en: string };
 export type AreaMapData = {
   id: string;
   name: LocalizedName;
-  viewBox: string;
+  viewBox: string; // 地図全体
+  start?: string; // 開いたときに見せる範囲（viewBox の形。無ければ全体）
   land: string; // 背景の陸地の path
   shapes: { id: string; d: string; label: [number, number] }[]; // 押すと選べるエリア（形）
   points: { id: string; at: [number, number] }[]; // 押すと選べるエリア（点）

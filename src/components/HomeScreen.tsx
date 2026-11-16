@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode, type Ref } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
 import { clickEventOf, trackFeedEvent, viewedEnough, type FeedEvent } from "@/lib/feed-events";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
@@ -66,12 +66,6 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
   const [isPending, startTransition] = useTransition();
   const [sheet, setSheet] = useState<Sheet>(null);
   const [areaView, setAreaView] = useState<AreaView>("list");
-  const areaSheetRef = useRef<HTMLElement>(null);
-  const [listHeight, setListHeight] = useState<number | null>(null);
-  // リストのときのシートの高さを覚え、地図に切り替えても同じ大きさにする
-  useLayoutEffect(() => {
-    if (sheet === "area" && areaView === "list" && areaSheetRef.current) setListHeight(areaSheetRef.current.offsetHeight);
-  }, [sheet, areaView]);
   const m = messages(locale);
 
   // 全画面の詳細から戻るときのために、今の条件を控えておく
@@ -246,9 +240,8 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
         <BottomSheet
           label={m.home.chooseArea}
           onClose={() => setSheet(null)}
-          sheetRef={areaSheetRef}
-          // 地図はリストのときと同じ高さに収める（リストを先に見ていなければ画面の 8 割）
-          height={areaView === "map" ? (listHeight ? `${listHeight}px` : "min(700px, 80svh)") : undefined}
+          // リストと地図で高さを変えない（地図はこの中に収める）
+          height="min(700px, 85svh)"
         >
           <SheetHeader title={m.home.chooseArea} onClose={() => setSheet(null)} />
           <div role="group" aria-label={m.home.areaView} className="grid grid-cols-2 rounded-xl bg-white/[0.08] p-[3px]">
@@ -428,13 +421,11 @@ function BottomSheet({
   label,
   onClose,
   children,
-  sheetRef,
   height,
 }: {
   label: string;
   onClose: () => void;
   children: ReactNode;
-  sheetRef?: Ref<HTMLElement>;
   height?: string;
 }) {
   const m = useMessages();
@@ -444,7 +435,6 @@ function BottomSheet({
       <section
         role="dialog"
         aria-label={label}
-        ref={sheetRef}
         style={height ? { height } : undefined}
         className="absolute inset-x-0 bottom-0 z-20 flex max-h-[700px] flex-col gap-5 overflow-y-auto rounded-t-3xl bg-[#1b1b19] px-5 pb-7 pt-5"
       >

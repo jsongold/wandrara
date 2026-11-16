@@ -15,9 +15,12 @@ export type MapDef = {
   points: string[]; // 押すと選べるエリア（点）
   links: { map: string; shape?: string; chiho?: string }[]; // 押すと寄る先。shape は親エリア全体の形、chiho は地方の形
   wholes: string[]; // 「〇〇全体」として出す親エリア
+  start?: BBox; // 開いたときに見せる範囲（無ければ全体）
 };
 
 export const JAPAN_BBOX: BBox = [127.5, 24.0, 146.0, 45.7];
+// 日本の地図は、開いたとき東京を中心に寄せて見せる（動かせば全国が見える）
+export const JAPAN_START: BBox = [136.9, 33.4, 141.9, 37.9];
 const SMALL_PARENT = 0.15; // 表示範囲に対する面積の比がこれより小さい親は、自分の地図に寄る
 const NEAR = 0.2; // 地方の範囲をこの割合だけ広げ、かかる親エリアも同じ地図に出す
 const INTERVALS = [100, 250, 500, 1000, 2500, 5000];
@@ -126,7 +129,8 @@ export function deriveMapTree({ defs, bbox, cities }: TreeInput): MapDef[] {
     id: "japan",
     name: { ja: "日本", en: "Japan" },
     bbox: JAPAN_BBOX,
-    interval: 5000,
+    start: JAPAN_START,
+    interval: 2500,
     land: "prefectures",
     shapes: [],
     points: [],

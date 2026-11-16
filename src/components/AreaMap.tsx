@@ -6,6 +6,7 @@ import { AREA_MAP_CREDIT, AREA_MAP_START, type AreaMapData } from "@/lib/area-ma
 import { useLocale, useMessages } from "@/lib/i18n/use-locale";
 import { AREA_MAP_LOADERS } from "@/generated/area-map";
 import { Chip } from "./Chip";
+import { usePanZoom } from "./use-pan-zoom";
 
 type Props = { current: string; labelOf: (id: string) => string; onSelect: (id: string) => void };
 
@@ -40,18 +41,9 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
   }, [mapId]);
 
   const shown = data?.id === mapId ? data : null;
-  // 図は枠に収まるよう縮むので、文字と点がいつも同じ大きさ（px）に見えるよう、縮んだ分だけ大きくする
+  // 地図はドラッグで動かし、ピンチ・ホイールで寄せられる。文字と点は寄せても同じ px に見えるよう k 倍する
   const svgRef = useRef<SVGSVGElement>(null);
-  const [box, setBox] = useState<{ w: number; h: number } | null>(null);
-  useEffect(() => {
-    const el = svgRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([e]) => setBox({ w: e.contentRect.width, h: e.contentRect.height }));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [shown]);
-  const [, , vbW, vbH] = shown ? shown.viewBox.split(" ").map(Number) : [0, 0, 1, 1];
-  const k = box && box.w > 0 && box.h > 0 ? Math.max(vbW / box.w, vbH / box.h) : 1;
+  const { viewBox, unit: k } = usePanZoom(svgRef, shown?.viewBox ?? null, shown?.start ?? null);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
@@ -72,8 +64,14 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
         ))}
       </div>
       {shown ? (
-        <svg ref={svgRef} viewBox={shown.viewBox} role="group" aria-label={shown.name[locale]} className="block min-h-[160px] w-full flex-1">
-          <path d={shown.land} fill="#3b3f39" stroke="rgba(255,255,255,0.18)" strokeWidth={0.4} />
+        <svg
+          ref={svgRef}
+          viewBox={viewBox}
+          role="group"
+          aria-label={shown.name[locale]}
+          className="block min-h-[160px] w-full flex-1 cursor-grab touch-none select-none overflow-hidden"
+        >
+          <path d={shown.land} fill="#3b3f39" stroke="rgba(255,255,255,0.18)" strokeWidth={0.6} vectorEffect="non-scaling-stroke" />
           {shown.shapes.map((s) => (
             <path
               key={s.id}
@@ -86,7 +84,8 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
               onKeyDown={onKey(() => onSelect(s.id))}
               fill={current === s.id ? FILL_ON : FILL}
               stroke="rgba(255,255,255,0.55)"
-              strokeWidth={0.8}
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
               className="cursor-pointer outline-none focus-visible:stroke-[#9cc3ff]"
             />
           ))}
@@ -102,7 +101,8 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
                 onKeyDown={onKey(() => setTrail([...trail, l.map]))}
                 fill={FILL_LINK}
                 stroke="#ffffff"
-                strokeWidth={1.2}
+                strokeWidth={1.5}
+                vectorEffect="non-scaling-stroke"
                 strokeDasharray="3 2"
                 className="cursor-pointer outline-none"
               />
@@ -120,6 +120,7 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
                 fill={FILL_ON}
                 stroke="#141413"
                 strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
                 className="cursor-pointer outline-none"
               />
             ),
@@ -139,6 +140,7 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
               fill={current === p.id ? FILL_ON : "#1b1b19"}
               stroke="#ffffff"
               strokeWidth={2}
+              vectorEffect="non-scaling-stroke"
               className="cursor-pointer outline-none"
             />
           ))}
