@@ -1,4 +1,5 @@
-import { boolean, date, index, integer, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, jsonb, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { buildingDetailsSchema } from "../../lib/building/details.ts";
 import { destinations } from "./common.ts";
 import { operators } from "./people.ts";
 import {
@@ -33,6 +34,8 @@ export const buildings = pgTable(
     kind: text("kind"),
     ...locationColumns(),
     officialUrl: text("official_url"),
+    /** 建物の詳細（時間・料金・催し・アクセス・注意点 など）。型つき JSON。null は新しい形でまだ入っていない建物 */
+    details: jsonb("details").$type<Record<string, unknown>>(),
   },
   (t) => [oneOf("buildings_kind_check", t.kind, Object.keys(BUILDING_KIND_LABELS)), geoPrecisionCheck("buildings", t), publishedRead(t.destId)],
 );
@@ -111,6 +114,8 @@ export const buildingCore: CoreDef = {
   texts: buildingTexts,
   columns: { kind: "種類", officialUrl: "公式 URL" },
   kindLabels: BUILDING_KIND_LABELS,
+  // 詳細は details の JSON 1 つ。下の旧い詳細の表は、集め直しが済むまで残す（detailsSchema があれば取り込みは表を見ない）
+  detailsSchema: buildingDetailsSchema,
   details: [
     { key: "hours", table: buildingHours, label: "開館時間", columns: { openTime: "開く時刻", closeTime: "閉まる時刻", closedDays: "休みの日", note: "メモ" } },
     { key: "fees", table: buildingFees, label: "入館料・拝観料", columns: { label: "区分", amount: "料金", amountMax: "料金（上限）", currency: "通貨", note: "メモ" } },

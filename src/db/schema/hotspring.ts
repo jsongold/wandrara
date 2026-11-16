@@ -1,5 +1,6 @@
 // 温泉（日帰り温泉・外湯・足湯）：コアの表と詳細
-import { boolean, index, integer, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { hotspringDetailsSchema } from "../../lib/hotspring/details.ts";
 import {
   currencyCheck,
   destChildColumns,
@@ -36,6 +37,8 @@ export const hotsprings = pgTable(
     kind: text("kind"),
     ...locationColumns(),
     officialUrl: text("official_url"),
+    /** 温泉の詳細（風呂・時間・料金・設備・アクセス・注意点）。型つき JSON。null は新しい形でまだ入っていない温泉 */
+    details: jsonb("details").$type<Record<string, unknown>>(),
   },
   (t) => [
     oneOf("hotsprings_kind_check", t.kind, Object.keys(KIND_LABELS)),
@@ -139,6 +142,8 @@ export const hotspringCore: CoreDef = {
   texts: hotspringTexts,
   columns: { kind: "種類", officialUrl: "公式 URL" },
   kindLabels: KIND_LABELS,
+  // 詳細は details の JSON 1 つ。下の旧い詳細の表は、集め直しが済むまで残す（detailsSchema があれば取り込みは表を見ない）
+  detailsSchema: hotspringDetailsSchema,
   details: [
     {
       key: "baths",

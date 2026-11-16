@@ -25,11 +25,24 @@ const complete: Record<string, () => DestInput> = {
       { prices: { items: [{ per: "person", amount: 3000, currency: "JPY" }] }, locations: [{ kind: "meeting", ...loc, geo_precision: "exact" }] },
       { address: false },
     ),
-  building: () => base(loc, { hours: [{ open_time: "09:00" }], fees: [{ amount: 0, currency: "JPY" }] }),
+  building: () =>
+    base(
+      loc,
+      { hours: { open: "09:00", close: "17:00" }, fees: [{ audience: "adult", amount: 0, currency: "JPY" }] },
+      { address: false },
+    ),
   hotspring: () =>
-    base(loc, { hours: [{ opens_at: "10:00" }], fees: [{ fee_kind: "adult", amount: 800, currency: "JPY" }], baths: [{ spring_quality: "単純温泉" }] }),
+    base(
+      loc,
+      {
+        hours: { open: "10:00", close: "21:00" },
+        fees: [{ audience: "adult", amount: 800, currency: "JPY" }],
+        baths: [{ kind: "open_air", spring: "単純温泉" }],
+      },
+      { address: false },
+    ),
   nature: () => base(loc, { access: { parking: { available: true } } }, { address: false }),
-  village: () => base(loc, { access: [{ note: "駅から徒歩" }] }, { address: false }),
+  village: () => base(loc, { access: { station: { ja: "○○駅" } } }, { address: false }),
 };
 
 describe("checkQuality", () => {
@@ -75,13 +88,24 @@ describe("checkQuality", () => {
     ["experience", "/core/official_url", (d) => ((d.sources = []), delete d.core.official_url)],
     ["experience", "/core/official_url", (d) => delete d.core.official_url], // sources だけでは足りない
     ["experience", "/core/official_url", (d) => (delete d.core.official_url, (d.details!.sources = [{ url: "https://example.com/" }]))],
-    ["building", "/details/fees", (d) => (d.details!.fees = [{ label: "要問い合わせ" }])],
+    ["building", "/details/fees", (d) => (d.details!.fees = [{ label: { ja: "要問い合わせ" } }])],
+    ["building", "/details/fees", (d) => (d.details!.fees = [{ amount: 500 }])], // currency が無い
+    ["building", "/details/fees", (d) => delete d.details!.fees],
     ["building", "/details/hours", (d) => delete d.details!.hours],
-    ["hotspring", "/details/fees", (d) => (d.details!.fees = [{ fee_kind: "child", amount: 400 }])],
-    ["hotspring", "/details/baths", (d) => (d.details!.baths = [{ bath_type: "outdoor" }])],
+    ["building", "/details/hours", (d) => (d.details!.hours = [{ open_time: "09:00" }])], // 旧い表の形
+    ["building", "/core/lat", (d) => (d.core.lat = 26.2)],
+    ["building", "/core/region_id", (d) => delete d.core.region_id],
+    ["hotspring", "/details/fees", (d) => (d.details!.fees = [{ audience: "child", amount: 400, currency: "JPY" }])],
+    ["hotspring", "/details/fees", (d) => (d.details!.fees = [{ amount: 800, currency: "JPY" }])], // 区分が無い
+    ["hotspring", "/details/hours", (d) => delete d.details!.hours],
+    ["hotspring", "/details/baths", (d) => (d.details!.baths = [{ kind: "indoor" }])], // 泉質が無い
+    ["hotspring", "/details/baths", (d) => delete d.details!.baths],
+    ["hotspring", "/core/lat", (d) => delete d.core.lng],
     ["nature", "/details/access", (d) => delete d.details!.access],
     ["nature", "/core/lat", (d) => (d.core.lat = 26.2)],
     ["village", "/core/lat", (d) => delete d.core.lng],
+    ["village", "/details/access", (d) => delete d.details!.access],
+    ["village", "/details/access", (d) => (d.details!.access = [{ note: "駅から徒歩" }])], // 旧い表の形
   ];
   for (const [type, path, drop] of missing) {
     it(`${type}: ${path} が欠けると弾く`, () => {
@@ -119,6 +143,16 @@ describe("checkQuality", () => {
     d.core.kind = "tour";
     (d.details as { locations: { kind: string }[] }).locations[0].kind = "activity";
     expect(checkQuality("experience", d).some((e) => e.startsWith("/details/locations"))).toBe(true);
+  });
+
+  it("建物・日帰り温泉・まち: 出どころは details.sources[].url でもよい。建物の無料は amount: 0", () => {
+    for (const type of ["building", "hotspring", "village"]) {
+      const d = complete[type]();
+      d.sources = [];
+      expect(checkQuality(type, d).map((e) => e.split(" ")[0])).toEqual(["/core/official_url"]);
+      d.details!.sources = [{ name: "公式", url: "https://example.com/", type: "official", retrieved_at: "2026-11-16" }];
+      expect(checkQuality(type, d)).toEqual([]);
+    }
   });
 
   it("experience: ページへのリンクは booking_links でもよい", () => {

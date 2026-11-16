@@ -114,21 +114,7 @@ export function toNatureView(input: NatureViewInput): NatureView | null {
         }
       : null,
     fees,
-    access: d.access
-      ? {
-          station: text(d.access.station),
-          modeLabel: d.access.mode ? labelOf(ACCESS_MODE_LIST, d.access.mode, locale) : null,
-          minutes: d.access.minutes ?? null,
-          how:
-            d.access.minutes === undefined
-              ? null
-              : d.access.mode
-                ? t.access.how(labelOf(ACCESS_MODE_LIST, d.access.mode, locale), d.access.minutes)
-                : a.access.minutes(d.access.minutes), // 手段が無くても分は出す
-          parking: d.access.parking ? { ...parkingView(d.access.parking, locale) } : null,
-          route: text(d.access.route),
-        }
-      : null,
+    access: d.access ? toAccessView(d.access, locale) : null,
     location: input.lat !== null && input.lng !== null ? { lat: input.lat, lng: input.lng } : null,
     trails: (d.trails ?? []).map((tr) => ({
       key: tr.key,
@@ -162,6 +148,26 @@ export function toNatureView(input: NatureViewInput): NatureView | null {
   };
 }
 
+/** 行き方（自然・建物・日帰り温泉・まちで共通） */
+export function toAccessView(access: NonNullable<NatureDetails["access"]>, locale: Locale): NatureAccessView {
+  const t = messages(locale).nature;
+  const a = messages(locale).accommodation;
+  const text = (x: LocalizedText | undefined) => (x ? resolveLocalizedText(x, locale).text || null : null);
+  return {
+    station: text(access.station),
+    modeLabel: access.mode ? labelOf(ACCESS_MODE_LIST, access.mode, locale) : null,
+    minutes: access.minutes ?? null,
+    how:
+      access.minutes === undefined
+        ? null
+        : access.mode
+          ? t.access.how(labelOf(ACCESS_MODE_LIST, access.mode, locale), access.minutes)
+          : a.access.minutes(access.minutes), // 手段が無くても分は出す
+    parking: access.parking ? { ...parkingView(access.parking, locale) } : null,
+    route: text(access.route),
+  };
+}
+
 /** 駐車場。「あり（有料・80 台）」「なし」 */
 function parkingView(p: { available: boolean; spaces?: number; paid?: boolean }, locale: Locale) {
   const t = messages(locale).nature;
@@ -177,7 +183,7 @@ function parkingView(p: { available: boolean; spaces?: number; paid?: boolean },
 }
 
 /** 規制の期間。「2026-12-01〜2027-02-28」「2026-12-01 から」「2027-02-28 まで」 */
-function periodText(from: string | undefined, to: string | undefined, locale: Locale): string | null {
+export function periodText(from: string | undefined, to: string | undefined, locale: Locale): string | null {
   const t = messages(locale).nature.restriction;
   if (from && to) return t.period(from, to);
   if (from) return t.since(from);

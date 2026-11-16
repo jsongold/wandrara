@@ -1,5 +1,6 @@
 // 村・町並み（温泉街・宿場町・漁村など）。operator_id は持たない
-import { index, integer, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { index, integer, jsonb, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { villageDetailsSchema } from "../../lib/village/details.ts";
 import {
   destChildColumns,
   geoPrecisionCheck,
@@ -29,6 +30,8 @@ export const villages = pgTable(
       .references(() => destinations.destId, { onDelete: "cascade" }),
     kind: text("kind"),
     ...locationColumns(),
+    /** まちの詳細（歩き方・店の時間・催し・アクセス・注意点）。型つき JSON。null は新しい形でまだ入っていないまち */
+    details: jsonb("details").$type<Record<string, unknown>>(),
   },
   (t) => [oneOf("villages_kind_check", t.kind, Object.keys(KIND_LABELS)), geoPrecisionCheck("villages", t), publishedRead(t.destId)],
 );
@@ -107,6 +110,8 @@ export const villageCore: CoreDef = {
   texts: villageTexts,
   columns: { kind: "種類", regionId: "地域", municipality: "市区町村" },
   kindLabels: KIND_LABELS,
+  // 詳細は details の JSON 1 つ。下の旧い詳細の表は、集め直しが済むまで残す（detailsSchema があれば取り込みは表を見ない）
+  detailsSchema: villageDetailsSchema,
   details: [
     { key: "walks", table: villageWalks, label: "巡る範囲", columns: { area: "範囲", durationMin: "所要時間（分）" } },
     { key: "shop_hours", table: villageShopHours, label: "店の時間", columns: { opensAt: "開店", closesAt: "閉店", note: "メモ" } },

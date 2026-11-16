@@ -9,7 +9,6 @@ export const AREA = { latMin: 34.55, latMax: 35.35, lngMin: 138.65, lngMax: 139.
 type Row = Record<string, unknown>;
 type Check = { path: string; message: string; ok: (d: DestInput) => boolean };
 
-const rowsOf = (d: DestInput, key: string): Row[] => ((d.details ?? {})[key] ?? []) as Row[];
 const present = (v: unknown) => v !== undefined && v !== null && String(v).trim() !== "";
 const num = (v: unknown) => (present(v) ? Number(v) : NaN);
 const inArea = (lat: unknown, lng: unknown) => {
@@ -17,9 +16,20 @@ const inArea = (lat: unknown, lng: unknown) => {
   return a >= AREA.latMin && a <= AREA.latMax && o >= AREA.lngMin && o <= AREA.lngMax;
 };
 const anyText = (d: DestInput, f: string) => d.texts.some((t) => present(t[f]));
-// details を JSON 1 つで持つコア（宿・体験・自然）の details
+// details を JSON 1 つで持つコア（宿・体験・自然・建物・日帰り温泉・まち）の details
 const json = (d: DestInput) =>
-  (d.details ?? {}) as { rooms?: Row[]; prices?: { items?: Row[] }; locations?: Row[]; booking_links?: Row[]; access?: unknown; sources?: Row[] };
+  (d.details ?? {}) as {
+    rooms?: Row[];
+    prices?: { items?: Row[] };
+    locations?: Row[];
+    booking_links?: Row[];
+    access?: unknown;
+    hours?: unknown;
+    fees?: Row[];
+    baths?: Row[];
+    sources?: Row[];
+  };
+const isObj = (v: unknown) => typeof v === "object" && v !== null && !Array.isArray(v);
 const hasUrl = (rows: unknown) => ((rows ?? []) as Row[]).some((s) => present(s.url));
 
 // 共通
@@ -29,7 +39,7 @@ const common: Check[] = [
   { path: "/core/region_id", message: "region_id が要る", ok: (d) => present(d.core.region_id) },
   {
     path: "/core/official_url",
-    message: "出どころが要る（core.official_url か sources[].url。宿・体験・自然は details.sources[].url も可）",
+    message: "出どころが要る（core.official_url か sources[].url。宿・体験・自然・建物・日帰り温泉・まちは details.sources[].url も可）",
     ok: (d) => present(d.core.official_url) || hasUrl(d.sources) || hasUrl(json(d).sources),
   },
 ];
@@ -39,11 +49,6 @@ const coords: Check = {
   message: `lat / lng が要り、箱根・伊豆の範囲（緯度 ${AREA.latMin}〜${AREA.latMax}・経度 ${AREA.lngMin}〜${AREA.lngMax}）に入ること`,
   ok: (d) => inArea(d.core.lat, d.core.lng),
 };
-const atLeast = (key: string, what: string, ok: (r: Row) => boolean = () => true): Check => ({
-  path: `/details/${key}`,
-  message: `${what}が 1 つ以上要る`,
-  ok: (d) => rowsOf(d, key).some(ok),
-});
 
 /** 種類ごとの決まり。core_type → 確かめること */
 export const QUALITY_RULES: Record<string, Check[]> = {
@@ -97,25 +102,39 @@ export const QUALITY_RULES: Record<string, Check[]> = {
   ],
   building: [
     ...common,
-    address,
     coords,
-    atLeast("hours", "営業時間（hours）"),
-    atLeast("fees", "料金（fees。無料は amount: 0）", (r) => num(r.amount) >= 0),
+    { path: "/details/hours", message: "営業時間（details.hours）が要る", ok: (d) => isObj(json(d).hours) },
+    {
+      path: "/details/fees",
+      message: "料金（amount ≥ 0・currency。無料は amount: 0）が 1 つ以上要る",
+      ok: (d) => (json(d).fees ?? []).some((r) => num(r.amount) >= 0 && present(r.currency)),
+    },
   ],
   hotspring: [
     ...common,
-    address,
     coords,
-    atLeast("hours", "営業時間（hours）"),
-    atLeast("fees", "大人の料金（fee_kind: adult・amount）", (r) => r.fee_kind === "adult" && num(r.amount) >= 0),
-    atLeast("baths", "泉質（spring_quality）のある浴槽（baths）", (r) => present(r.spring_quality)),
+    { path: "/details/hours", message: "営業時間（details.hours）が要る", ok: (d) => isObj(json(d).hours) },
+    {
+      path: "/details/fees",
+      message: "大人の料金（audience: adult・amount ≥ 0・currency）が要る",
+      ok: (d) => (json(d).fees ?? []).some((r) => r.audience === "adult" && num(r.amount) >= 0 && present(r.currency)),
+    },
+    {
+      path: "/details/baths",
+      message: "泉質（spring）のある風呂（baths）が 1 つ以上要る",
+      ok: (d) => (json(d).baths ?? []).some((r) => present(r.spring)),
+    },
   ],
   nature: [
     ...common,
     coords,
-    { path: "/details/access", message: "行き方（details.access）が要る", ok: (d) => json(d).access !== undefined && json(d).access !== null },
+    { path: "/details/access", message: "行き方（details.access）が要る", ok: (d) => isObj(json(d).access) },
   ],
-  village: [...common, coords, atLeast("access", "行き方（access）")],
+  village: [
+    ...common,
+    coords,
+    { path: "/details/access", message: "行き方（details.access）が要る", ok: (d) => isObj(json(d).access) },
+  ],
 };
 
 /** 決まりに合わない項目を「<path> <理由>」で返す。prefix は bundle なら "/dests/<i>" */
