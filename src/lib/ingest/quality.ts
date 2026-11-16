@@ -70,7 +70,12 @@ export const QUALITY_RULES: Record<string, Check[]> = {
   experience: [
     // 出どころの決まりは体験用に置き換える（booking_links も可）
     ...common.filter((c) => c.path !== "/core/official_url"),
-    { path: "/core/duration_minutes", message: "duration_minutes が要る", ok: (d) => num(d.core.duration_minutes) > 0 },
+    // 施設の利用（facility_use）は決まった所要時間が無いので、所要時間は任意
+    {
+      path: "/core/duration_minutes",
+      message: "duration_minutes が要る（施設の利用 facility_use は任意）",
+      ok: (d) => d.core.kind === "facility_use" || num(d.core.duration_minutes) > 0,
+    },
     {
       path: "/details/prices/items",
       message: "料金（amount > 0・currency・per）が 1 つ以上要る",
@@ -78,8 +83,11 @@ export const QUALITY_RULES: Record<string, Check[]> = {
     },
     {
       path: "/details/locations",
-      message: "箱根・伊豆の範囲の座標を持つ集合場所（locations の kind: meeting）が 1 つ以上要る",
-      ok: (d) => (json(d).locations ?? []).some((r) => r.kind === "meeting" && inArea(r.lat, r.lng)),
+      message: "箱根・伊豆の範囲の座標を持つ集合場所（locations の kind: meeting。施設の利用は実施場所 activity でもよい）が 1 つ以上要る",
+      ok: (d) =>
+        (json(d).locations ?? []).some(
+          (r) => (r.kind === "meeting" || (d.core.kind === "facility_use" && r.kind === "activity")) && inArea(r.lat, r.lng),
+        ),
     },
     {
       path: "/core/official_url",
