@@ -134,6 +134,13 @@
       "when": 1794807387011,
       "tag": "20261116053627_backfill_region_apply_address",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794811517328,
+      "tag": "20261116064517_regions_atami_higashi_izu",
+      "breakpoints": true
     }
   ]
 }
