@@ -12,12 +12,14 @@ export const KIND_LIST = [
 ] as const;
 export const KINDS = codesOf(KIND_LIST);
 
-// 風呂の種類。宿の BATH_KIND_LIST（同じコード・同じ表示名）から日帰り温泉で使うものだけ
+// 風呂の種類。宿の BATH_KIND_LIST と同じコード・表示名に、足湯（foot）を足したもの
 export const BATH_KIND_LIST = [
+  { code: "public", label: "大浴場", en: "Large public bath" },
   { code: "open_air", label: "露天風呂", en: "Open-air bath" },
   { code: "indoor", label: "内風呂", en: "Indoor bath" },
   { code: "private", label: "貸切風呂", en: "Private bath" },
   { code: "sauna", label: "サウナ", en: "Sauna" },
+  { code: "foot", label: "足湯", en: "Foot bath" }, // 日帰り温泉だけ（宿には無い）
 ] as const;
 export const BATH_KINDS = codesOf(BATH_KIND_LIST);
 

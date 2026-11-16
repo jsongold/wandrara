@@ -3884,10 +3884,12 @@
                         "kind": {
                           "type": "string",
                           "enum": [
+                            "public",
                             "open_air",
                             "indoor",
                             "private",
-                            "sauna"
+                            "sauna",
+                            "foot"
                           ]
                         },
                         "hot_spring": {

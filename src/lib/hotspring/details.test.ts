@@ -25,7 +25,7 @@ describe("hotspringDetailsSchema", () => {
   });
 
   it.each<[string, (d: D) => void, string]>([
-    ["風呂の kind が語彙に無い", (d) => ((d.baths![0] as { kind: string }).kind = "public"), "baths.0.kind"],
+    ["風呂の kind が語彙に無い", (d) => ((d.baths![0] as { kind: string }).kind = "room_open_air"), "baths.0.kind"],
     ["源泉の扱いが語彙に無い", (d) => ((d.baths![0] as { source: string }).source = "boiled"), "baths.0.source"],
     ["男女が語彙に無い", (d) => ((d.baths![0] as { gender: string }).gender = "swaps"), "baths.0.gender"],
     ["予約の枠が 0 分", (d) => (d.baths![2].reservation = { required: true, slot_minutes: 0 }), "baths.2.reservation.slot_minutes"],
