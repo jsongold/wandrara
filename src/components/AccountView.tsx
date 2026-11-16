@@ -2,13 +2,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
-import { signOut } from "@/app/[lang]/account/actions";
+import { LogoutButton } from "@/components/LogoutButton";
 import { getCurrentUser } from "@/lib/auth/next";
 import { withLocale } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/types";
 
-export async function AccountView({ lang, confirming, variant }: { lang: Locale; confirming: boolean; variant: "page" | "sheet" }) {
+export async function AccountView({ lang, variant }: { lang: Locale; variant: "page" | "sheet" }) {
   const to = (path: string) => withLocale(lang, path);
   const m = messages(lang).account;
   const c = messages(lang).common;
@@ -57,46 +57,9 @@ export async function AccountView({ lang, confirming, variant }: { lang: Locale;
           {m.language}
           <LanguageSwitch locale={lang} className="h-10 min-w-10 cursor-pointer rounded-xl border border-[#d6d3cb] bg-transparent px-3 text-[13px] font-semibold text-[#171717]" />
         </div>
-        <Link
-          href={to("/account?logout=1")}
-          className="mt-auto flex h-[52px] items-center justify-center rounded-[26px] border border-[#d6d3cb] bg-white text-[15px] font-medium text-[#a1361f] no-underline"
-        >
-          {m.logout}
-        </Link>
+        <LogoutButton lang={lang} />
       </div>
 
-      {confirming && (
-        <>
-          <Link href={to("/account")} aria-label={c.close} className="absolute inset-0 z-10 bg-black/45" />
-          <section
-            role="dialog"
-            aria-labelledby="logout-title"
-            className="absolute inset-x-0 bottom-0 z-20 flex flex-col gap-[18px] rounded-t-3xl bg-white px-6 pb-7 pt-2.5"
-          >
-            <div className="flex justify-center">
-              <span className="h-[5px] w-10 rounded-[3px] bg-[#d6d3cb]" />
-            </div>
-            <div className="flex flex-col gap-2">
-              <h2 id="logout-title" className="m-0 text-lg font-bold leading-snug">{m.logoutConfirm}</h2>
-              <p className="m-0 text-[13px] leading-[1.7] text-[#55524a]">
-                {m.logoutNote}
-              </p>
-            </div>
-            <form action={signOut} className="flex">
-              <input type="hidden" name="lang" value={lang} />
-              <button type="submit" className="h-[52px] flex-1 rounded-[26px] border-0 bg-[#a1361f] text-[15px] font-medium text-white">
-                {m.logout}
-              </button>
-            </form>
-            <Link
-              href={to("/account")}
-              className="flex h-[52px] items-center justify-center rounded-[26px] border border-[#d6d3cb] text-[15px] font-medium text-[#171717] no-underline"
-            >
-              {m.cancel}
-            </Link>
-          </section>
-        </>
-      )}
     </div>
   );
 }
