@@ -8,7 +8,7 @@ export function CurrentFilterDisplay({ label, className }: { label: string | nul
       role="status"
       title={text}
       data-testid="current-filter-display"
-      className={`filter-mark-in pointer-events-none block min-w-0 truncate text-[17px] font-semibold leading-tight text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.55)] ${className ?? ""}`}
+      className={`filter-mark-in pointer-events-none block min-w-0 truncate text-[21px] font-semibold leading-tight text-white [text-shadow:0_1px_6px_rgba(0,0,0,0.55)] ${className ?? ""}`}
     >
       {text}
     </span>
