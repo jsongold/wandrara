@@ -22,8 +22,8 @@
 - エージェント用投入 API の設計（/api/upload-urls・/api/accommodations・/api/experiences、collector:key）は保留。scratchpad の design-agent-api は消えうる
 
 次の一手
-1. ユーザーに残りの確認：モデルの割り振り（推奨：土台・データ移し替え・RLS・最後のまとめは Opus、コアごとのスキーマと画面・取り込みの書き換えは Sonnet medium、置き換え・テスト・docs は Sonnet low）
-2. docs/data-model.md を読み、/taskman で Task に分ける（土台：Drizzle 設定・destinations・命名・RLS の型 → コアごとのスキーマ並行 → migration 生成は 1 本 → データ移し替え → 画面・フィード・取り込み・spot:status 置き換え → 古い表を消す）
+1. モデルの割り振りは決定（2026-11-16 ユーザー承認）：土台・データ移し替え・RLS・最後のまとめは Opus、コアごとのスキーマと画面・フィード・取り込みの書き換えは Sonnet medium、置き換え・テスト・docs は Sonnet low
+2. 作業 branch を docs/data-model から切る（feat/area-map は別の変更なので混ぜない）。docs/data-model.md を読み、/taskman で Task に分ける（土台：Drizzle 設定・destinations・命名・RLS の型 → コアごとのスキーマ並行 → migration 生成は 1 本 → データ移し替え → 画面・フィード・取り込み・spot:status 置き換え → 古い表を消す）
 3. 本番 DB（Supabase ifozgrjshxwjeogtgctp）への push と古い表の削除は、実行前にユーザーに確認する
 
 注意・未解決
