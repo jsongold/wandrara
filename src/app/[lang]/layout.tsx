@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { BfcacheGuard } from "@/components/BfcacheGuard";
 import { DebugOverlay } from "@/components/DebugOverlay";
 import { SavesProvider } from "@/components/saves-context";
@@ -45,6 +46,7 @@ export default async function RootLayout({ children, sheet, params }: LayoutProp
           </SavesProvider>
           <BfcacheGuard />
           <DebugOverlay />
+          <SpeedInsights />
         </LocaleProvider>
       </body>
     </html>
