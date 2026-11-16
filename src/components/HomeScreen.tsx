@@ -67,6 +67,13 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [areaView, setAreaView] = useState<AreaView>("list");
   const m = messages(locale);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const queryKey = serializeDiscoverQuery(query, locale);
+
+  // 条件（カテゴリなど）が変わり新しい一覧が来たら、一覧の一番上から見せる
+  useEffect(() => {
+    feedRef.current?.scrollTo({ top: 0 });
+  }, [queryKey]);
 
   // 全画面の詳細から戻るときのために、今の条件を控えておく
   useEffect(() => {
@@ -107,13 +114,14 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
     <div data-home className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
       {/* Feed */}
       <div
+        ref={feedRef}
         data-feed
         data-feed-algorithm={feed.algorithm}
         className="absolute inset-0 overflow-y-auto pb-[120px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
       >
-        <FeedList key={serializeDiscoverQuery(query, locale)} cards={feed.cards} track={track} />
+        <FeedList key={queryKey} cards={feed.cards} track={track} />
         {feed.cards.length === 0 && (
           <div className="flex flex-col items-center gap-3.5 px-8 pt-[180px] text-center">
             <Icon name="search" size={40} />
