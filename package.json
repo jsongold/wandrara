@@ -15,7 +15,8 @@
     "dest:status": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/dest-status.ts",
     "bundle:schema": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bundle-schema.ts",
     "test:e2e": "playwright test",
-    "area-map:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/area-map/build.ts"
+    "area-map:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/area-map/build.ts",
+    "backfill:regions": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/backfill-regions.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
