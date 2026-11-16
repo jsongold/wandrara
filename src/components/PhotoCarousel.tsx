@@ -38,6 +38,7 @@ function Slide({ photo, index, eager, near }: { photo: Photo | null; index: numb
 type Props = {
   photos: Photo[];
   href?: string;
+  // href は詳細（/d/[slug]）へのリンク。prefetch={true} で詳細の中身（slug ごとの use cache）まで先に読み、押したら待たずに出す
   label: string; // 写真の説明（スクリーンリーダー向け）
   counterClassName?: string;
   className?: string;
@@ -92,7 +93,7 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
         {slides.map((p, i) => (
           <div key={i} className="relative h-full w-full shrink-0 snap-center snap-always" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>
             {href ? (
-              <Link href={href} tabIndex={i === 0 ? 0 : -1} aria-hidden={i === 0 ? undefined : true} aria-label={i === 0 ? m.photos.open(label) : undefined} className="block h-full w-full" draggable={false}>
+              <Link href={href} prefetch={true} tabIndex={i === 0 ? 0 : -1} aria-hidden={i === 0 ? undefined : true} aria-label={i === 0 ? m.photos.open(label) : undefined} className="block h-full w-full" draggable={false}>
                 <Slide photo={p} index={i} eager={priority && i === 0} near={Math.abs(i - index) <= 1} />
               </Link>
             ) : (

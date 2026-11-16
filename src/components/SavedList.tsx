@@ -32,6 +32,7 @@ export function SavedList({ items, emptyText }: { items: SavedDestView[]; emptyT
         <li key={it.destId}>
           <Link
             href={it.href}
+            prefetch={true}
             data-testid="saved-item"
             className="flex items-center gap-3.5 rounded-2xl bg-white p-3 text-[#171717] no-underline"
           >

@@ -392,7 +392,7 @@ function FeedCardView({ card, position, track }: { card: FeedCard; position: num
           {/* 横にスワイプして送る。3 枚目が少し覗く幅にして続きがあると分かるようにする */}
           <div className="-mx-3 flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-3 px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {card.tiles.map((t, ti) => (
-              <Link key={t.destId} href={t.href} data-tile-dest-id={t.destId} data-tile-position={ti} className="flex w-[38%] shrink-0 snap-start flex-col gap-1.5 text-white no-underline">
+              <Link key={t.destId} href={t.href} prefetch={true} data-tile-dest-id={t.destId} data-tile-position={ti} className="flex w-[38%] shrink-0 snap-start flex-col gap-1.5 text-white no-underline">
                 {t.photo?.url && !t.photo.isDemo ? (
                   <Image src={t.photo.url} alt="" width={640} height={640} sizes="(max-width: 480px) 38vw, 182px" className="block aspect-square h-auto w-full rounded-[10px] object-cover" />
                 ) : (
