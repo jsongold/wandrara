@@ -2,7 +2,7 @@
 import type { LookupManifest, LookupShard } from "../../lib/region/types.ts";
 
 export const LOOKUP_MANIFEST: LookupManifest = {
-  "version": "lookup-a9db489ace1d",
+  "version": "lookup-3863944c3986",
   "sources": {
     "n03": "N03-2024",
     "estat": "estat-2020"
@@ -41,7 +41,9 @@ export const LOOKUP_MANIFEST: LookupManifest = {
     "shuzenji": "izu",
     "nakaizu": "izu",
     "shimoda": "izu",
-    "nishiizu": "izu"
+    "nishiizu": "izu",
+    "atami": "izu",
+    "higashi-izu": "izu"
   },
   "points": [
     "owakudani"

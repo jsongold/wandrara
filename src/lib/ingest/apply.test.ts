@@ -121,11 +121,11 @@ describe("registerDest", () => {
     expect(rpcCalls).toHaveLength(1);
   });
 
-  // body() の位置（熱海）は索引で izu に決まり、明示の atami（索引に無い）より優先される
+  // body() の位置（熱海）は索引で atami に決まる（明示の atami と同じ）
   const hashOf = (b: unknown) => {
     const p = parseDestInput(acc, b);
     if (!p.ok) throw new Error(p.errors.join());
-    return contentHash(p.value, { region_id: "izu", lookup_version: lookupManifest.version });
+    return contentHash(p.value, { region_id: "atami", lookup_version: lookupManifest.version });
   };
 
   it("dest_imports に content_hash を渡す", async () => {
@@ -168,7 +168,7 @@ describe("registerDest", () => {
     delete (b.core as Record<string, unknown>).region_id;
     const r = await registerDest(db, acc, b, principal);
     expect(r.ok).toBe(true);
-    expect(coreRow(rpcCalls).region_id).toBe("izu");
+    expect(coreRow(rpcCalls).region_id).toBe("atami");
     expect(rpcCalls[0].args.p.regions).toEqual([]);
   });
 
@@ -205,8 +205,10 @@ describe("registerDest", () => {
   });
 
   it("決まったエリアが DB に無い（索引とずれている）なら 400", async () => {
-    const { db, rpcCalls } = mockDb(undefined, undefined, ["atami"]);
-    const r = await registerDest(db, acc, body(), principal);
+    const { db, rpcCalls } = mockDb(undefined, undefined, ["izu"]);
+    const b = body();
+    delete (b.core as Record<string, unknown>).region_id;
+    const r = await registerDest(db, acc, b, principal);
     expect(r).toMatchObject({ ok: false, status: 400 });
     expect(rpcCalls).toHaveLength(0);
   });
