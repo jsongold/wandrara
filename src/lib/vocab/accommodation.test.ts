@@ -51,9 +51,9 @@ describe("語彙の一覧", () => {
 });
 
 describe("設備", () => {
-  it("中カテゴリ 11・小カテゴリ 47", () => {
+  it("中カテゴリ 11・小カテゴリ 50", () => {
     expect(AMENITY_GROUP_LIST).toHaveLength(11);
-    expect(AMENITY_LIST).toHaveLength(47);
+    expect(AMENITY_LIST).toHaveLength(50);
   });
 
   it("小カテゴリはどれもちょうど 1 つの中カテゴリに入る", () => {

@@ -106,7 +106,7 @@
   - accessibility：step_free elevator
 - `options` は設備ごとに決まった値だけ（例：bbq の electric_grill・charcoal・gas・covered）。一覧はファイルを見る。
 - 風呂の `kind`：public open_air indoor private room_open_air room sauna。サウナの `sauna_style`：barrel dry steam tent。フィンランド式サウナは `dry`。
-- 一覧に無いものは、近いコードに寄せずに報告する。例：暖炉・薪ストーブ・エアベッドは設備の一覧に無い。入れずに報告する。
+- 一覧に無いものは、近いコードに寄せずに報告する（暖炉 fireplace・薪ストーブ wood_stove・エアベッド air_bed は室内 room にある）。
 
 ## 出典
 - `details.sources[]` に、使ったページごとに 1 つ書く：`name`・`url`・`type`（official / ota / map / other）・`retrieved_at`（見た日。`YYYY-MM-DD`）・`fields`（そのページから取った欄。例：`["rooms", "prices"]`）。
