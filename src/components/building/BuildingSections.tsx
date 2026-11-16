@@ -5,7 +5,7 @@ import type { Locale } from "@/lib/types";
 import { Sources } from "../accommodation/Sources";
 import { Booking, Cautions } from "../accommodation/Topics";
 import { Access } from "../nature/NatureSections";
-import { EventsCard, FeesCard, HoursCard } from "../place/PlaceCards";
+import { EventsCard, FeesCard, HoursCard, OfficialLink } from "../place/PlaceCards";
 import { SummaryPill } from "../SummaryPill";
 
 // 建物の詳細のトピックを決まった順に並べる。中身の無いトピックは出さない
@@ -34,6 +34,7 @@ export function BuildingSections({ view, map, note, locale }: { view: BuildingVi
       <Access access={view.access} map={map} locale={locale} />
       <Cautions cautions={view.cautions} locale={locale} />
       <Booking links={view.bookingLinks} locale={locale} />
+      <OfficialLink url={view.officialUrl} locale={locale} />
       <Sources sources={view.sources} locale={locale} />
       {note && <p className="m-0 mt-1 text-xs leading-[1.7] text-[#55524a]">{note}</p>}
     </div>

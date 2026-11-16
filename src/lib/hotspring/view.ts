@@ -49,6 +49,7 @@ export type HotspringView = {
   access: AccessView | null;
   /** 地図の位置（コアの座標）。無ければ null */
   location: { lat: number; lng: number } | null;
+  officialUrl: string | null;
   cautions: string[];
   sources: SourceView[];
 };
@@ -57,6 +58,7 @@ export type HotspringViewInput = {
   details: unknown;
   lat: number | null;
   lng: number | null;
+  officialUrl?: string | null;
   locale: Locale;
 };
 
@@ -85,7 +87,7 @@ export function toHotspringView(input: HotspringViewInput): HotspringView | null
         kind: b.kind,
         label: labelOf(BATH_KIND_LIST, b.kind, locale),
         text:
-          [b.hot_spring ? t.hotSpring : null, b.source ? labelOf(HOT_SPRING_SOURCE_LIST, b.source, locale) : null].filter(Boolean).join(a.sep) || a.has,
+          [b.hot_spring === undefined ? null : b.hot_spring ? t.hotSpring : t.notHotSpring, b.source ? labelOf(HOT_SPRING_SOURCE_LIST, b.source, locale) : null].filter(Boolean).join(a.sep) || a.has,
         spring: b.spring ?? null,
         genderLabel: b.gender ? labelOf(BATH_GENDER_LIST, b.gender, locale) : null,
         feeText: [slot, money(b.fee)].filter(Boolean).join(" ") || null,
@@ -97,9 +99,10 @@ export function toHotspringView(input: HotspringViewInput): HotspringView | null
     fees,
     amenities: d.amenities
       ? {
+          // タオルの区分が無くても、料金だけあれば出す
           towelText: d.amenities.towel
             ? labelOf(TOWEL_LIST, d.amenities.towel, locale) + (d.amenities.towel_fee ? a.paren(money(d.amenities.towel_fee)!) : "")
-            : null,
+            : money(d.amenities.towel_fee),
           restArea: yesNo(d.amenities.rest_area),
           meal: yesNo(d.amenities.meal),
           note: textOf(d.amenities.note, locale),
@@ -107,6 +110,7 @@ export function toHotspringView(input: HotspringViewInput): HotspringView | null
       : null,
     access: d.access ? toAccessView(d.access, locale) : null,
     location: locationOf(input.lat, input.lng),
+    officialUrl: input.officialUrl ?? null,
     cautions: (d.cautions ?? []).flatMap((x) => textOf(x.note, locale) ?? []),
     sources: toSourceViews(d.sources, locale),
   };

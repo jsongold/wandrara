@@ -286,6 +286,9 @@ const ja = {
       trails: "歩く道",
       restrictions: "規制",
       duration_minutes: "所要時間",
+      events: "催し",
+      walks: "歩き方",
+      shop_hours: "店の時間",
     } as Record<string, string>,
   },
   // 暦（月・曜日）。体験の開催・自然の見頃で使う
@@ -338,6 +341,7 @@ const ja = {
     tax: "税",
     taxIn: "税込",
     taxOut: "税別",
+    officialSite: "公式サイトを見る",
   },
   // 建物の詳細の画面（src/components/building と lib/building/view.ts）
   building: {
@@ -355,6 +359,7 @@ const ja = {
     lastEntry: "受付の締め切り",
     fee: "料金",
     hotSpring: "温泉",
+    notHotSpring: "温泉ではない",
     bath: {
       spring: "泉質",
       gender: "男女",
@@ -674,6 +679,9 @@ const en: Messages = {
       trails: "Trails",
       restrictions: "Restrictions",
       duration_minutes: "Duration",
+      events: "Events",
+      walks: "Walks",
+      shop_hours: "Shop hours",
     },
   },
   calendar: {
@@ -722,6 +730,7 @@ const en: Messages = {
     tax: "Tax",
     taxIn: "Included",
     taxOut: "Not included",
+    officialSite: "Official site",
   },
   building: {
     title: { hours: "Hours", fees: "Admission", events: "Events", access: "Getting there" },
@@ -737,6 +746,7 @@ const en: Messages = {
     lastEntry: "Last entry",
     fee: "Fee",
     hotSpring: "Hot spring",
+    notHotSpring: "Not a hot spring",
     bath: {
       spring: "Spring type",
       gender: "Men and women",

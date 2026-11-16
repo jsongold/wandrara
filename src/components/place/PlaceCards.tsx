@@ -79,3 +79,18 @@ export function EventsCard({ title, events, locale }: { title: string; events: P
     </Card>
   );
 }
+
+/** 公式サイトへのリンク（無ければ出さない） */
+export function OfficialLink({ url, locale }: { url: string | null; locale: Locale }) {
+  if (!url) return null;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block rounded-[10px] border border-[#d6d2c8] bg-white p-[9px] text-center text-[12.5px] font-semibold text-[#141413] no-underline"
+    >
+      {messages(locale).place.officialSite}
+    </a>
+  );
+}

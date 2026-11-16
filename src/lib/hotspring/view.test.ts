@@ -52,6 +52,22 @@ describe("toHotspringView", () => {
     expect(view({ details: {} }).amenities).toBeNull();
   });
 
+  it("温泉ではない風呂は明示し、不明と区別する", () => {
+    const text = (hot_spring?: boolean) => view({ details: { baths: [{ kind: "indoor", hot_spring }] } }).baths[0].text;
+    expect(text(false)).toBe("温泉ではない");
+    expect(text(undefined)).toBe("あり");
+    expect(view({ locale: "en", details: { baths: [{ kind: "indoor", hot_spring: false }] } }).baths[0].text).toBe("Not a hot spring");
+  });
+
+  it("タオルの料金だけでも出す", () => {
+    expect(view({ details: { amenities: { towel_fee: { amount: 200, currency: "JPY" } } } }).amenities?.towelText).toBe("200 円");
+  });
+
+  it("公式サイトの URL を渡す", () => {
+    expect(view({ officialUrl: "https://example.com/" }).officialUrl).toBe("https://example.com/");
+    expect(view().officialUrl).toBeNull();
+  });
+
   it("アクセスと地図の位置・注意点・出典", () => {
     const v = view();
     expect(v.access).toMatchObject({ how: "徒歩 10 分", parking: { text: "あり（無料・30 台）" } });

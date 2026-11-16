@@ -86,7 +86,7 @@ export function whoText(f: Pick<FeeInput, "audience" | "age_min" | "age_max">, l
   return who ?? age;
 }
 
-/** 料金 1 行。見出しは name（建物の label）→ 区分・年齢 →（区分が無ければ）メモ → fallback の順 */
+/** 料金 1 行。見出しは name（建物の label）と区分・年齢の両方 →（どちらも無ければ）メモ → fallback の順 */
 export function toFeeView(f: FeeInput, locale: Locale, opts: { name?: string | null; fallback: string }): PlaceFeeView {
   const p = messages(locale).place;
   const free = f.amount === 0 && (f.amount_max === undefined || f.amount_max === 0);
@@ -95,7 +95,8 @@ export function toFeeView(f: FeeInput, locale: Locale, opts: { name?: string | n
   // 区分も名前も無い料金は、メモを見出しにする（「貸切風呂 50 分」）
   const noteAsLabel = !opts.name && !who && note !== null;
   return {
-    label: opts.name ?? who ?? (noteAsLabel ? note : opts.fallback),
+    // 名前があっても、区分・年齢を隠さない（「団体・子ども（6〜15 歳）」）
+    label: [opts.name, who].filter(Boolean).join("・") || (noteAsLabel ? note : opts.fallback),
     text: free ? p.free : amountText({ amount: f.amount, amountMax: f.amount_max, currency: f.currency }, locale),
     free,
     audience: f.audience ?? null,

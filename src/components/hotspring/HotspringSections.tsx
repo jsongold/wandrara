@@ -7,7 +7,7 @@ import { Card } from "../accommodation/Card";
 import { Sources } from "../accommodation/Sources";
 import { Cautions } from "../accommodation/Topics";
 import { Access } from "../nature/NatureSections";
-import { FeesCard, HoursCard, subRows } from "../place/PlaceCards";
+import { FeesCard, HoursCard, OfficialLink, subRows } from "../place/PlaceCards";
 import { SummaryPill } from "../SummaryPill";
 
 // 日帰り温泉の詳細のトピックを決まった順に並べる。中身の無いトピックは出さない
@@ -76,6 +76,7 @@ export function HotspringSections({ view, map, note, locale }: { view: Hotspring
       <Amenities amenities={view.amenities} locale={locale} />
       <Access access={view.access} map={map} locale={locale} />
       <Cautions cautions={view.cautions} locale={locale} />
+      <OfficialLink url={view.officialUrl} locale={locale} />
       <Sources sources={view.sources} locale={locale} />
       {note && <p className="m-0 mt-1 text-xs leading-[1.7] text-[#55524a]">{note}</p>}
     </div>

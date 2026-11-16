@@ -6,6 +6,7 @@ import { toHotspringView } from "@/lib/hotspring/view";
 import { sampleHotspringDetails } from "@/lib/hotspring/sample";
 import { toVillageView } from "@/lib/village/view";
 import { sampleVillageDetails } from "@/lib/village/sample";
+import { toSourceViews } from "@/lib/place-view";
 import type { Locale } from "@/lib/types";
 import { BuildingSections, BuildingSummaryPill } from "./building/BuildingSections";
 import { HotspringSections, HotspringSummaryPill } from "./hotspring/HotspringSections";
@@ -27,6 +28,16 @@ describe("建物の詳細", () => {
     expect(h).toContain("ガラスの冬展");
     expect(h).toContain("入館の締め切り");
     expect(h).toContain("16:30");
+  });
+  it("公式サイトのリンクは URL があるときだけ出る", () => {
+    const v = toBuildingView({ ...input("ja", sampleBuildingDetails()), officialUrl: "https://example.com/" })!;
+    expect(html(<BuildingSections view={v} map={map} locale="ja" />)).toContain('href="https://example.com/"');
+    expect(html(<BuildingSections view={bld("ja")} map={map} locale="ja" />)).not.toContain("公式サイトを見る");
+  });
+  it("出典の欄名（催し・歩き方・店の時間）が日英とも訳される", () => {
+    const src = [{ name: "x", url: "https://example.com/", type: "official", retrieved_at: "2026-11-16", fields: ["events", "walks", "shop_hours"] }];
+    expect(toSourceViews(src, "ja")[0].fields).toEqual(["催し", "歩き方", "店の時間"]);
+    expect(toSourceViews(src, "en")[0].fields).toEqual(["Events", "Walks", "Shop hours"]);
   });
   it("ja: 概要の丸い行", () => {
     const h = html(<BuildingSummaryPill summary={bld("ja").summary} locale="ja" />);
@@ -52,6 +63,11 @@ describe("建物の詳細", () => {
 });
 
 describe("日帰り温泉の詳細", () => {
+  it("公式サイトのリンクは URL があるときだけ出る", () => {
+    const v = toHotspringView({ ...input("ja", sampleHotspringDetails()), officialUrl: "https://example.com/" })!;
+    expect(html(<HotspringSections view={v} map={map} locale="ja" />)).toContain('href="https://example.com/"');
+    expect(html(<HotspringSections view={hot("ja")} map={map} locale="ja" />)).not.toContain("公式サイトを見る");
+  });
   it("ja: 見出しが決まった順に並ぶ", () => {
     const h = html(<HotspringSections view={hot("ja")} map={map} locale="ja" />);
     expect(headings(h)).toEqual(["風呂", "料金", "時間", "設備", "アクセス", "注意点", "出典"]);

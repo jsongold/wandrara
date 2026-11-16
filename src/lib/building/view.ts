@@ -31,6 +31,7 @@ export type BuildingView = {
   access: AccessView | null;
   /** 地図の位置（コアの座標）。無ければ null */
   location: { lat: number; lng: number } | null;
+  officialUrl: string | null;
   cautions: string[];
   bookingLinks: { label: string; url: string; isOfficial: boolean }[];
   sources: SourceView[];
@@ -40,6 +41,7 @@ export type BuildingViewInput = {
   details: unknown;
   lat: number | null;
   lng: number | null;
+  officialUrl?: string | null;
   locale: Locale;
 };
 
@@ -61,6 +63,7 @@ export function toBuildingView(input: BuildingViewInput): BuildingView | null {
     events: toEventViews(d.events, locale),
     access: d.access ? toAccessView(d.access, locale) : null,
     location: locationOf(input.lat, input.lng),
+    officialUrl: input.officialUrl ?? null,
     cautions: (d.cautions ?? []).flatMap((x) => textOf(x.note, locale) ?? []),
     bookingLinks: (d.booking_links ?? []).map((b) => ({ label: b.label, url: b.url, isOfficial: b.is_official ?? false })),
     sources: toSourceViews(d.sources, locale),

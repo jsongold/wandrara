@@ -131,9 +131,11 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
     ? ["details", "check_in", "check_out", "official_url"]
     : isExp
       ? ["details", "duration_minutes", "reservation_required", "official_url"]
-      : isNat || isBld || isHot || isVil
-        ? ["details", "lat", "lng"]
-        : [];
+      : isBld || isHot
+        ? ["details", "lat", "lng", "official_url"]
+        : isNat || isVil
+          ? ["details", "lat", "lng"]
+          : [];
   const coreCols = [...new Set(["region_id", ...names(core.table, core.columns), ...extraCols])];
 
   const [coreRes, textsRes, photosRes, catalog, ...detailRes] = await Promise.all([
@@ -175,8 +177,10 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
     : null;
   const placeInput = { details: coreRow?.details ?? null, lat: numOf("lat"), lng: numOf("lng"), locale };
   const nature = isNat ? toNatureView(placeInput) : null;
-  const building = isBld ? toBuildingView(placeInput) : null;
-  const hotspring = isHot ? toHotspringView(placeInput) : null;
+  // 建物・日帰り温泉は公式サイトの列も渡す（まちには列が無い）
+  const officialInput = { ...placeInput, officialUrl: str("official_url") };
+  const building = isBld ? toBuildingView(officialInput) : null;
+  const hotspring = isHot ? toHotspringView(officialInput) : null;
   const village = isVil ? toVillageView(placeInput) : null;
 
   return {

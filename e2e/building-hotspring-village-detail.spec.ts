@@ -46,7 +46,9 @@ test.describe("建物", () => {
   test.beforeEach(async ({ page }) => open(BLD)({ page }));
 
   test("トピックは決まった順に並ぶ", async ({ page }) => {
-    await checkOrder(page, ["時間", "料金", "催し", "アクセス", "注意点", "予約", "出典"], ["アクセス"]);
+    await checkOrder(page, ["時間", "料金", "催し", "アクセス", "注意点", "予約", "出典"], ["アクセス", "料金"]);
+    // 新しい画面につながっていれば、概要の丸い行（開館・入館）が出る
+    await expect(page.getByText("入館").first()).toBeVisible();
   });
 
   test("行を押すと開き、もう一度押すと閉じる", async ({ page }) => {
@@ -59,7 +61,7 @@ test.describe("日帰り温泉", () => {
   test.beforeEach(async ({ page }) => open(HOT)({ page }));
 
   test("トピックは決まった順に並ぶ", async ({ page }) => {
-    await checkOrder(page, ["風呂", "料金", "時間", "設備", "アクセス", "注意点", "出典"], ["アクセス"]);
+    await checkOrder(page, ["風呂", "料金", "時間", "設備", "アクセス", "注意点", "出典"], ["アクセス", "風呂", "料金"]);
   });
 
   test("行を押すと開き、もう一度押すと閉じる", async ({ page }) => {
@@ -73,6 +75,9 @@ test.describe("まち", () => {
 
   test("トピックは決まった順に並ぶ", async ({ page }) => {
     await checkOrder(page, ["歩き方", "店の時間", "催し", "アクセス", "注意点", "出典"], ["アクセス"]);
+    // まち専用のカード（歩き方・店の時間）のどちらかが出る
+    const headings = await page.locator("main").last().locator("h2").allInnerTexts();
+    expect(headings.some((h) => h === "歩き方" || h === "店の時間")).toBe(true);
   });
 
   test("行を押すと開き、もう一度押すと閉じる", async ({ page }) => {

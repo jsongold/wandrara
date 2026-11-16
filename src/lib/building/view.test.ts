@@ -39,6 +39,16 @@ describe("toBuildingView", () => {
     expect(f).toMatchObject([{ label: "入館料", tax: "税込" }, { label: "5 歳以下", text: "無料", free: true }]);
   });
 
+  it("料金：名前と区分・年齢の両方を見出しに出す", () => {
+    const f = view({ details: { fees: [{ label: { ja: "団体" }, audience: "child", age_min: 6, age_max: 15, amount: 700, currency: "JPY" }] } }).fees;
+    expect(f[0].label).toBe("団体・子ども（6〜15 歳）");
+  });
+
+  it("公式サイトの URL を渡す", () => {
+    expect(view({ officialUrl: "https://example.com/" }).officialUrl).toBe("https://example.com/");
+    expect(view().officialUrl).toBeNull();
+  });
+
   it("催し：期間・月・内容", () => {
     expect(view().events).toEqual([{ name: "ガラスの冬展", when: "2026-12-01〜2027-02-28", note: "冬の器 120 点" }]);
     expect(view({ details: { events: [{ name: { ja: "祭り" }, months: [5, 4] }] } }).events).toEqual([{ name: "祭り", when: "4 月・5 月", note: null }]);
