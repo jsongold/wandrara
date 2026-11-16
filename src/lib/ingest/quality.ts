@@ -78,13 +78,13 @@ export const QUALITY_RULES: Record<string, Check[]> = {
     },
     {
       path: "/details/locations",
-      message: "箱根・伊豆の範囲の座標を持つ場所（locations）が 1 つ以上要る",
-      ok: (d) => (json(d).locations ?? []).some((r) => inArea(r.lat, r.lng)),
+      message: "箱根・伊豆の範囲の座標を持つ集合場所（locations の kind: meeting）が 1 つ以上要る",
+      ok: (d) => (json(d).locations ?? []).some((r) => r.kind === "meeting" && inArea(r.lat, r.lng)),
     },
     {
       path: "/core/official_url",
-      message: "ページへのリンクが要る（core.official_url か details.booking_links か details.sources[].url）",
-      ok: (d) => present(d.core.official_url) || hasUrl(d.sources) || hasUrl(json(d).booking_links) || hasUrl(json(d).sources),
+      message: "ページへのリンクが要る（core.official_url か details.booking_links[].url。sources だけでは足りない）",
+      ok: (d) => present(d.core.official_url) || hasUrl(json(d).booking_links),
     },
   ],
   building: [

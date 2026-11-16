@@ -68,10 +68,13 @@ describe("checkQuality", () => {
     ["experience", "/core/duration_minutes", (d) => delete d.core.duration_minutes],
     ["experience", "/details/locations", (d) => (d.details!.locations = [{ kind: "meeting", lat: 40, lng: 140 }])],
     ["experience", "/details/locations", (d) => delete d.details!.locations],
+    ["experience", "/details/locations", (d) => (d.details!.locations = [{ kind: "activity", ...loc }])], // 集合場所が無い
     ["experience", "/details/prices/items", (d) => delete d.details!.prices],
     ["experience", "/details/prices/items", (d) => (d.details!.prices = { items: [{ per: "person", amount: 0, currency: "JPY" }] })],
     ["experience", "/details/prices/items", (d) => (d.details!.prices = { items: [{ amount: 3000, currency: "JPY" }] })],
     ["experience", "/core/official_url", (d) => ((d.sources = []), delete d.core.official_url)],
+    ["experience", "/core/official_url", (d) => delete d.core.official_url], // sources だけでは足りない
+    ["experience", "/core/official_url", (d) => (delete d.core.official_url, (d.details!.sources = [{ url: "https://example.com/" }]))],
     ["building", "/details/fees", (d) => (d.details!.fees = [{ label: "要問い合わせ" }])],
     ["building", "/details/hours", (d) => delete d.details!.hours],
     ["hotspring", "/details/fees", (d) => (d.details!.fees = [{ fee_kind: "child", amount: 400 }])],
@@ -103,14 +106,11 @@ describe("checkQuality", () => {
     expect(checkQuality("accommodation", d)).toEqual([]);
   });
 
-  it("experience: ページへのリンクは booking_links か details.sources[].url でもよい", () => {
+  it("experience: ページへのリンクは booking_links でもよい", () => {
     const d = complete.experience();
     d.sources = [];
     delete d.core.official_url;
     d.details!.booking_links = [{ label: "予約", url: "https://example.com/book" }];
-    expect(checkQuality("experience", d)).toEqual([]);
-    delete d.details!.booking_links;
-    d.details!.sources = [{ name: "公式", url: "https://example.com/", type: "official", retrieved_at: "2026-11-16" }];
     expect(checkQuality("experience", d)).toEqual([]);
   });
 });

@@ -120,9 +120,11 @@ export function toNatureView(input: NatureViewInput): NatureView | null {
           modeLabel: d.access.mode ? labelOf(ACCESS_MODE_LIST, d.access.mode, locale) : null,
           minutes: d.access.minutes ?? null,
           how:
-            d.access.mode && d.access.minutes !== undefined
-              ? t.access.how(labelOf(ACCESS_MODE_LIST, d.access.mode, locale), d.access.minutes)
-              : null,
+            d.access.minutes === undefined
+              ? null
+              : d.access.mode
+                ? t.access.how(labelOf(ACCESS_MODE_LIST, d.access.mode, locale), d.access.minutes)
+                : a.access.minutes(d.access.minutes), // 手段が無くても分は出す
           parking: d.access.parking ? { ...parkingView(d.access.parking, locale) } : null,
           route: text(d.access.route),
         }

@@ -24,6 +24,8 @@ export function ExperiencePriceTable({ table, locale }: { table: PriceTableView;
   const [open, setOpen] = useState<Record<number, boolean>>({});
   const baseId = useId();
   if (!table.rows.length) return null;
+  // 通貨が混ざるときだけ、金額ごとに通貨を付ける
+  const money = (n: number, currency: string) => (table.currency ? yen(n) : `${currency} ${yen(n)}`);
   const columns = [t.price.colCourse, t.price.colPeople, t.price.colMin, t.price.colMax, t.price.colUnit];
   return (
     <Card title={t.title.price}>
@@ -65,8 +67,8 @@ export function ExperiencePriceTable({ table, locale }: { table: PriceTableView;
                     )}
                   </th>
                   <td className={cell(isOpen, "num")}>{r.people ?? "—"}</td>
-                  <td className={cell(isOpen, "num")}>{yen(r.min)}</td>
-                  <td className={cell(isOpen, "num")}>{yen(r.max)}</td>
+                  <td className={cell(isOpen, "num")}>{money(r.min, r.currency)}</td>
+                  <td className={cell(isOpen, "num")}>{money(r.max, r.currency)}</td>
                   <td className={cell(isOpen, "note")}>
                     {r.perLabel}
                     {tappable && (

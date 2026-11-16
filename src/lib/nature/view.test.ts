@@ -56,6 +56,8 @@ describe("toNatureView", () => {
     expect(view({ lat: null }).location).toBeNull();
     expect(view({ details: { access: { parking: { available: false } } } }).access).toMatchObject({ how: null, parking: { available: false, text: "なし" } });
     expect(view({ details: {} }).access).toBeNull();
+    // 手段が無くても分は出す
+    expect(view({ details: { access: { station: { ja: "○○駅" }, minutes: 10 } } }).access).toMatchObject({ how: "10 分" });
   });
 
   it("歩く道・規制・注意点・出典", () => {

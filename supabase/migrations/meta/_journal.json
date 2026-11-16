@@ -71,6 +71,13 @@
       "when": 1794794322951,
       "tag": "20261116015842_experience_nature_details",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794795311322,
+      "tag": "20261116021511_dest_cards_experience_details",
+      "breakpoints": true
     }
   ]
 }

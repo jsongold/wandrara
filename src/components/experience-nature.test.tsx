@@ -16,6 +16,15 @@ const html = (el: React.ReactElement) => renderToStaticMarkup(el);
 const headings = (h: string) => [...h.matchAll(/<h2[^>]*>(.*?)<\/h2>/g)].map((m) => m[1]);
 
 describe("体験の詳細", () => {
+  it("料金の通貨が混ざるときは金額ごとに通貨を付ける", () => {
+    const mixed = (cur2: string) =>
+      toExperienceView({
+        details: { prices: { items: [{ per: "person", amount: 3000, currency: "JPY" }, { per: "group", amount: 50, currency: cur2 }] } },
+        durationMinutes: null, reservationRequired: null, officialUrl: null, locale: "ja",
+      })!;
+    expect(html(<ExperienceSections view={mixed("USD")} map={map} locale="ja" />)).toContain("USD 50");
+    expect(html(<ExperienceSections view={mixed("JPY")} map={map} locale="ja" />)).not.toContain("JPY 3,000");
+  });
   it("ja: 見出しが決まった順に並ぶ", () => {
     const h = html(<ExperienceSections view={exp("ja")} map={map} locale="ja" />);
     expect(headings(h)).toEqual(["料金（参考）", "コース", "開催", "集合場所", "含まれるもの", "注意点", "予約", "出典"]);
