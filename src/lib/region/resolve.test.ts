@@ -85,6 +85,7 @@ describe("decideRegion", () => {
   it("決まらなければ実在する明示、無い明示は unknown_region、両方無ければ理由", () => {
     expect(decideRegion({ ok: false, reason: "outside" }, "b", exists, p)).toEqual({ ok: true, regionId: "b", by: "explicit" });
     expect(decideRegion({ ok: false, reason: "outside" }, "nope", exists, p)).toEqual({ ok: false, reason: "unknown_region" });
+    expect(decideRegion({ ok: true, regionId: "h1", by: "point" }, "nope", exists, p)).toEqual({ ok: false, reason: "unknown_region" }); // 決まっても書き間違いは通さない
     expect(decideRegion({ ok: false, reason: "outside" }, null, exists, p)).toEqual({ ok: false, reason: "outside" });
   });
   it("commonAncestor：親子は親、別の親どうしは null", () => {
