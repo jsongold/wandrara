@@ -131,14 +131,12 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
 
       {/* Top bar */}
       <header className="absolute inset-x-0 top-0 z-[5] flex items-center justify-between px-4 py-3.5">
-        {/* ロゴと、そのすぐ右に今のエリアを 1 文字で */}
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-[15px] font-semibold tracking-[0.24em] [text-shadow:0_1px_6px_rgba(0,0,0,0.55)]">WANDRARA</span>
-            <span className="truncate text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{feed.orderLabel} · {m.home.demo}</span>
-          </div>
-          <CurrentFilterDisplay label={query.area === "all" ? null : currentArea} className="flex-none" />
+        <div className="flex min-w-0 max-w-[calc(36%-16px)] flex-col gap-0.5">
+          <span className="text-[15px] font-semibold tracking-[0.24em] [text-shadow:0_1px_6px_rgba(0,0,0,0.55)]">WANDRARA</span>
+          <span className="truncate text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{feed.orderLabel} · {m.home.demo}</span>
         </div>
+        {/* 今のエリアの名前。画面の真ん中（幅は 28% まで）。全エリア（と知らないエリア）では出さない */}
+        <CurrentFilterDisplay label={query.area === "all" || currentArea === m.home.allAreas ? null : currentArea} className="absolute left-1/2 max-w-[28%] -translate-x-1/2 text-center" />
         {/* 言語の切り替えはアカウント／ログインの画面に置く */}
         <div className="flex gap-2">
           <AccountButton
