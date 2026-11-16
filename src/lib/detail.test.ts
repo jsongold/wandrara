@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { accommodationCore } from "../db/schema/accommodation";
-import { buildingCore } from "../db/schema/building";
+import { tableDetailsCore } from "./ingest/test-fixtures";
 import { buildFacts, columnMap, formatValue } from "./detail";
 
 describe("formatValue", () => {
@@ -31,14 +31,14 @@ describe("columnMap", () => {
 describe("buildFacts", () => {
   it("null の列は出さず、kind は日本語、詳細は 1 件 1 行", () => {
     const facts = buildFacts(
-      buildingCore,
+      tableDetailsCore,
       { kind: "museum", official_url: null },
       [{ key: "fees", rows: [{ id: "f1", amount: 500, currency: "JPY", note: null }] }],
       "ja",
     );
     expect(facts.map((f) => [f.label, f.value])).toEqual([
-      ["種類", "美術館・博物館"],
-      ["入館料・拝観料", "500"],
+      ["種類", "資料館"],
+      ["料金", "500"],
     ]);
   });
   it("詳細の表の無いコア（宿）はコアの列だけ", () => {

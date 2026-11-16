@@ -92,6 +92,13 @@
       "when": 1794799682428,
       "tag": "20261116032802_building_hotspring_village_details",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794802600090,
+      "tag": "20261116041640_drop_building_hotspring_village_detail_tables",
+      "breakpoints": true
     }
   ]
 }

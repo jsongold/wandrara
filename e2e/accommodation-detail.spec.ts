@@ -73,16 +73,7 @@ test("未検証のラベルを出さない", async ({ page }) => {
   await expect(page.getByText("未検証")).toHaveCount(0);
 });
 
-// 建物（まだ details を持たないコア）は、今までどおり「設備・条件」とアクセスを出す。公開中の宿はすべて details を持つ
-const PLAIN_SLUG = process.env.E2E_PLAIN_SLUG ?? "wr-ashinoko-bld-001";
-
-test("宿以外は、設備・条件とアクセスの今の出し方のまま", async ({ page }) => {
-  await page.goto(`/ja/d/${PLAIN_SLUG}`);
-  const main = page.locator("main").last();
-  await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(main.locator("h2")).toHaveText(["設備・条件", "アクセス"]);
-  await expect(main.getByText("料金（参考）")).toHaveCount(0);
-});
+// 旧い表示（設備・条件）は details の無い下書きにしか出ず、公開ページでは確かめられない。戻し方は src/lib/detail.test.ts で確かめる
 
 // en は見出し・行のラベル・語彙・生成した文が英語。宿のデータ（駅名・注意点・予約先と出典の名前）は ja のことがある
 test("en は見出しも中身も英語", async ({ page }) => {
