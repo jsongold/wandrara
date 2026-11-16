@@ -10,7 +10,6 @@ export type CoreLabelsEn = Record<
   }
 >;
 
-const BOOKING = { label: "Booking", columns: { label: "Name", url: "URL", isOfficial: "Official" } };
 const CAUTIONS = { label: "Cautions", columns: { kind: "Type", note: "Details" } };
 
 export const CORE_LABELS_EN: CoreLabelsEn = {
@@ -40,35 +39,8 @@ export const CORE_LABELS_EN: CoreLabelsEn = {
       facility_use: "Facility use",
       event: "Event",
     },
-    details: {
-      courses: {
-        label: "Course",
-        columns: {
-          name: "Name",
-          description: "Description",
-          durationMinutes: "Duration (min)",
-          minPeople: "Min. people",
-          maxPeople: "Max. people",
-          minAge: "Min. age",
-          languages: "Guide languages",
-        },
-      },
-      prices: {
-        label: "Price",
-        columns: { courseId: "Course", unit: "Per", audience: "For", amount: "Amount", amountMax: "Amount (max)", currency: "Currency", note: "Note" },
-      },
-      schedules: {
-        label: "Schedule",
-        columns: { startMonth: "From month", endMonth: "To month", weekdays: "Days", startTime: "Starts", endTime: "Ends", rainPolicy: "If it rains" },
-      },
-      locations: {
-        label: "Location",
-        columns: { kind: "Type", lat: "Latitude", lng: "Longitude", geoPrecision: "Location accuracy", address: "Address" },
-      },
-      inclusions: { label: "What's included", columns: { kind: "Type", item: "Item" } },
-      cautions: CAUTIONS,
-      booking_links: BOOKING,
-    },
+    // 詳細は details の JSON に持つ（詳細の表は無い）
+    details: {},
   },
   nature: {
     label: "Nature",
@@ -83,23 +55,8 @@ export const CORE_LABELS_EN: CoreLabelsEn = {
       forest: "Forest",
       volcano: "Volcano",
     },
-    details: {
-      seasons: { label: "Best season", columns: { subject: "What", monthFrom: "From month", monthTo: "To month" } },
-      hours_fees: {
-        label: "Hours and fees",
-        columns: { openTime: "Opens", closeTime: "Closes", closedNote: "Closed", amount: "Fee", currency: "Currency" },
-      },
-      access: {
-        label: "Getting there",
-        columns: { hasParking: "Parking", parkingNote: "Parking note", nearestStation: "Nearest station", walkMinutes: "Walk (min)" },
-      },
-      trails: {
-        label: "Trail",
-        columns: { name: "Name", distanceKm: "Distance (km)", elevationGainM: "Elevation gain (m)", difficulty: "Difficulty", durationMinutes: "Duration (min)" },
-      },
-      restrictions: { label: "Access restrictions", columns: { kind: "Type", note: "Details", dateFrom: "From", dateTo: "Until" } },
-      cautions: CAUTIONS,
-    },
+    // 詳細は details の JSON に持つ（詳細の表は無い）
+    details: {},
   },
   village: {
     label: "Village",

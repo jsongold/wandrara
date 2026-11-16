@@ -1,18 +1,18 @@
-// コアの表の書き方（experience.ts の例。名前は snake_case の文字列で渡す。RLS はポリシーを付けると有効になる）
-//   const KIND_LABELS = { tour: "ツアー", workshop: "ワークショップ" };
-//   export const experiences = pgTable("experiences", {
+// コアの表の書き方（building.ts の例。名前は snake_case の文字列で渡す。RLS はポリシーを付けると有効になる）
+//   const KIND_LABELS = { museum: "美術館・博物館", shrine: "神社" };
+//   export const buildings = pgTable("buildings", {
 //     destId: uuid("dest_id").primaryKey().references(() => destinations.destId, { onDelete: "cascade" }),
 //     kind: text("kind"), officialUrl: text("official_url"),
-//   }, (t) => [oneOf("experiences_kind_check", t.kind, Object.keys(KIND_LABELS)), publishedRead(t.destId)]);
-//   export const experienceCourses = pgTable("experience_courses", {
-//     ...destChildColumns(), name: localized("name"), maxPeople: integer("max_people"),
-//   }, (t) => [index("experience_courses_dest_id_idx").on(t.destId), publishedRead(t.destId)]);
-//   入れ子にするなら：courseId: uuid("course_id").notNull().references(() => experienceCourses.id, { onDelete: "cascade" })
-//   export const experienceTexts = pgTable("experience_texts", { ...textsColumns() },
-//     (t) => [primaryKey({ columns: [t.destId, t.lang] }), langCheck("experience_texts", t), publishedRead(t.destId)]);
-//   export const experienceCore: CoreDef = { coreType: "experience", path: "experiences", label: "体験",
-//     table: experiences, texts: experienceTexts, columns: { kind: "種類" }, kindLabels: KIND_LABELS,
-//     details: [{ key: "courses", table: experienceCourses, label: "コース", columns: { maxPeople: "最大人数" } }] };
+//   }, (t) => [oneOf("buildings_kind_check", t.kind, Object.keys(KIND_LABELS)), publishedRead(t.destId)]);
+//   export const buildingHours = pgTable("building_hours", {
+//     ...destChildColumns(), openTime: time("open_time"), note: localized("note"),
+//   }, (t) => [index("building_hours_dest_id_idx").on(t.destId), publishedRead(t.destId)]);
+//   入れ子にするなら：parentId: uuid("parent_id").notNull().references(() => 親の表.id, { onDelete: "cascade" }) と、details に parent: { key, column } を付ける
+//   export const buildingTexts = pgTable("building_texts", { ...textsColumns() },
+//     (t) => [primaryKey({ columns: [t.destId, t.lang] }), langCheck("building_texts", t), publishedRead(t.destId)]);
+//   export const buildingCore: CoreDef = { coreType: "building", path: "buildings", label: "建物",
+//     table: buildings, texts: buildingTexts, columns: { kind: "種類" }, kindLabels: KIND_LABELS,
+//     details: [{ key: "hours", table: buildingHours, label: "開館時間", columns: { openTime: "開く時刻" } }] };
 import { sql } from "drizzle-orm";
 import {
   check,

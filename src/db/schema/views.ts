@@ -37,7 +37,7 @@ places as (
   union all select dest_id, region_id, lat, lng from public.buildings
   union all select dest_id, region_id, lat, lng from public.hotsprings
   union all
-  select e.dest_id, e.region_id, coalesce(j.lat, l.lat), coalesce(j.lng, l.lng)
+  select e.dest_id, e.region_id, j.lat, j.lng
   from public.experiences e
   -- details があれば details.locations から（meeting を先に、なければ先頭の場所）
   left join lateral (
@@ -50,10 +50,6 @@ places as (
     order by (x.loc->>'kind' = 'meeting') desc, x.n
     limit 1
   ) j on e.details is not null
-  -- details が NULL（集め直し前）のときだけ旧い表から
-  left join lateral (
-    select x.lat, x.lng from public.experience_locations x where x.dest_id = e.dest_id order by x.sort, x.id limit 1
-  ) l on e.details is null
 )
 select
   d.dest_id, d.core_type, d.slug, d.is_demo, d.created_at, pub.published_at,

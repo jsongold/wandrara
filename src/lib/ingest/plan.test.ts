@@ -5,19 +5,16 @@ import { planDestWrite, type DestRefs } from "./plan.ts";
 import { jsonDetailsCore, tableDetailsCore, withAccommodationQuality, withExperienceQuality, withNatureQuality } from "./test-fixtures.ts";
 
 const acc = coreByType("accommodation")!;
-// 詳細の表で受けるコア（入れ子の書き込みを確かめる）
+// 詳細の表で受けるコア（表の書き込みを確かめる）
 const tab = tableDetailsCore;
 const input = () => {
   const r = parseDestInput(tab, {
     ref: "WR-atami-008",
-    core: { kind: "tour", region_id: "atami" },
-    texts: [{ lang: "ja", name: "港めぐり" }],
+    core: { kind: "museum", region_id: "atami" },
+    texts: [{ lang: "ja", name: "資料館" }],
     details: {
-      courses: [
-        { max_people: 8, prices: [{ amount: 3000, currency: "JPY" }, { amount: 1500, currency: "JPY", audience: "child" }] },
-        { max_people: 4 },
-      ],
-      schedules: [{ start_month: 4 }],
+      fees: [{ amount: 500, currency: "JPY" }, { amount: 300, currency: "JPY" }],
+      hours: [{ open_time: "09:00" }],
     },
     categories: ["onsen", "bbq"],
     photos: [{ storage_key: "a.jpg" }, { storage_key: "b.jpg" }],
@@ -40,15 +37,12 @@ describe("planDestWrite", () => {
     n = 0;
     const p = planDestWrite(tab, input(), refs(), ctx());
     const names = p.tables.map((t) => t.table);
-    expect(names).toEqual(["experiences", "experience_texts", "experience_courses", "experience_prices", "experience_schedules", "dest_photos"]);
+    expect(names).toEqual(["buildings", "building_texts", "building_hours", "building_fees", "dest_photos"]);
     const t = (name: string) => p.tables.find((x) => x.table === name)!.rows;
     const destId = p.destination.dest_id;
     for (const x of p.tables) for (const r of x.rows) expect(r.dest_id).toBe(destId);
-    const courses = t("experience_courses");
-    expect(courses.map((c) => c.sort)).toEqual([0, 1]);
-    expect(courses[0]).not.toHaveProperty("prices");
-    const prices = t("experience_prices");
-    expect(prices.map((r) => [r.course_id, r.sort, r.amount])).toEqual([[courses[0].id, 0, "3000"], [courses[0].id, 1, "1500"]]);
+    const fees = t("building_fees");
+    expect(fees.map((r) => [r.sort, r.amount])).toEqual([[0, "500"], [1, "300"]]);
     expect(t("dest_photos").map((r) => r.sort)).toEqual([0, 1]);
     expect(p.destination.slug).toBe("wr-atami-008");
     expect(p.categories).toEqual([{ id: "bbq", name: { ja: "bbq" } }]);

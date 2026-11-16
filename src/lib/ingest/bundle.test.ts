@@ -165,21 +165,15 @@ describe("体験・自然は details を JSON 1 つで受ける", () => {
 });
 
 describe("詳細の表で受けるコア", () => {
-  const body = (details: any) => ({ core: { kind: "tour" }, texts: [{ lang: "ja", name: "体験" }], details, photos: [{ storage_key: "a.jpg" }] });
-  it("入れ子の詳細を受ける。numeric は string になる", () => {
-    const r = parseDestInput(tableDetailsCore, body({ courses: [{ max_people: 8, prices: [{ amount: 3000.5, currency: "JPY" }] }] }));
+  const body = (details: any) => ({ core: { kind: "museum" }, texts: [{ lang: "ja", name: "資料館" }], details, photos: [{ storage_key: "a.jpg" }] });
+  it("表の詳細を受ける。numeric は string になる", () => {
+    const r = parseDestInput(tableDetailsCore, body({ fees: [{ amount: 500.5, currency: "JPY" }] }));
     expect(r.ok).toBe(true);
-    if (r.ok) expect((r.value.details as any).courses[0].prices[0].amount).toBe("3000.5");
+    if (r.ok) expect((r.value.details as any).fees[0].amount).toBe("500.5");
   });
-  it("親以外の詳細を指す列（course_id）を受けない", () => {
-    // 親（courses）の子でない形の体験の表。種類名を変えて中身の決まり（quality.ts）は外す
-    const exp = { ...tableDetailsCore, coreType: "experience_flat" as typeof tableDetailsCore.coreType, details: coreByType("experience")!.details };
-    const errs = (prices: unknown[]) => {
-      const r = parseDestInput(exp, body({ prices }));
-      return r.ok ? [] : r.errors.filter((e) => e.includes("course_id"));
-    };
-    expect(errs([{ amount: 3000, currency: "JPY" }])).toEqual([]);
-    expect(errs([{ amount: 3000, currency: "JPY", course_id: "00000000-0000-0000-0000-000000000000" }])).toEqual(['/details/prices/0 Unrecognized key: "course_id"']);
+  it("表にない列・キーを受けない", () => {
+    expect(parseDestInput(tableDetailsCore, body({ fees: [{ amount: 500, currency: "JPY", course_id: "x" }] })).ok).toBe(false);
+    expect(parseDestInput(tableDetailsCore, body({ units: [{ capacity: 2 }] })).ok).toBe(false);
   });
 });
 
