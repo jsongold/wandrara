@@ -1,0 +1,2838 @@
+{
+  "id": "2013cd5a-75ea-40ad-9f58-5e2e5614d828",
+  "prevId": "cf995360-bcae-4ddd-8db7-a78b818c743f",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.accommodation_texts": {
+      "name": "accommodation_texts",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lang": {
+          "name": "lang",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "accommodation_texts_dest_id_destinations_dest_id_fk": {
+          "name": "accommodation_texts_dest_id_destinations_dest_id_fk",
+          "tableFrom": "accommodation_texts",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "accommodation_texts_dest_id_lang_pk": {
+          "name": "accommodation_texts_dest_id_lang_pk",
+          "columns": [
+            "dest_id",
+            "lang"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"accommodation_texts\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "accommodation_texts_lang_check": {
+          "name": "accommodation_texts_lang_check",
+          "value": "\"accommodation_texts\".\"lang\" ~ '^[a-z]{2}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.accommodations": {
+      "name": "accommodations",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "operator_id": {
+          "name": "operator_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region_id": {
+          "name": "region_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prefecture": {
+          "name": "prefecture",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "municipality": {
+          "name": "municipality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng": {
+          "name": "lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "geo_precision": {
+          "name": "geo_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "check_in": {
+          "name": "check_in",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "check_out": {
+          "name": "check_out",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "official_url": {
+          "name": "official_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "accommodations_dest_id_destinations_dest_id_fk": {
+          "name": "accommodations_dest_id_destinations_dest_id_fk",
+          "tableFrom": "accommodations",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "accommodations_operator_id_operators_id_fk": {
+          "name": "accommodations_operator_id_operators_id_fk",
+          "tableFrom": "accommodations",
+          "columnsFrom": [
+            "operator_id"
+          ],
+          "tableTo": "operators",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        },
+        "accommodations_region_id_regions_id_fk": {
+          "name": "accommodations_region_id_regions_id_fk",
+          "tableFrom": "accommodations",
+          "columnsFrom": [
+            "region_id"
+          ],
+          "tableTo": "regions",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"accommodations\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "accommodations_kind_check": {
+          "name": "accommodations_kind_check",
+          "value": "\"accommodations\".\"kind\" in ('hotel', 'ryokan', 'private_rental', 'minshuku', 'pension', 'glamping', 'campsite')"
+        },
+        "accommodations_geo_precision_check": {
+          "name": "accommodations_geo_precision_check",
+          "value": "\"accommodations\".\"geo_precision\" in ('exact', 'street', 'district', 'municipality')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.building_texts": {
+      "name": "building_texts",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lang": {
+          "name": "lang",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "building_texts_dest_id_destinations_dest_id_fk": {
+          "name": "building_texts_dest_id_destinations_dest_id_fk",
+          "tableFrom": "building_texts",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "building_texts_dest_id_lang_pk": {
+          "name": "building_texts_dest_id_lang_pk",
+          "columns": [
+            "dest_id",
+            "lang"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"building_texts\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "building_texts_lang_check": {
+          "name": "building_texts_lang_check",
+          "value": "\"building_texts\".\"lang\" ~ '^[a-z]{2}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.buildings": {
+      "name": "buildings",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "operator_id": {
+          "name": "operator_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region_id": {
+          "name": "region_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prefecture": {
+          "name": "prefecture",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "municipality": {
+          "name": "municipality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng": {
+          "name": "lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "geo_precision": {
+          "name": "geo_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "official_url": {
+          "name": "official_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "buildings_dest_id_destinations_dest_id_fk": {
+          "name": "buildings_dest_id_destinations_dest_id_fk",
+          "tableFrom": "buildings",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "buildings_operator_id_operators_id_fk": {
+          "name": "buildings_operator_id_operators_id_fk",
+          "tableFrom": "buildings",
+          "columnsFrom": [
+            "operator_id"
+          ],
+          "tableTo": "operators",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        },
+        "buildings_region_id_regions_id_fk": {
+          "name": "buildings_region_id_regions_id_fk",
+          "tableFrom": "buildings",
+          "columnsFrom": [
+            "region_id"
+          ],
+          "tableTo": "regions",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"buildings\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "buildings_kind_check": {
+          "name": "buildings_kind_check",
+          "value": "\"buildings\".\"kind\" in ('museum', 'shrine', 'temple', 'castle', 'observatory', 'historic_building')"
+        },
+        "buildings_geo_precision_check": {
+          "name": "buildings_geo_precision_check",
+          "value": "\"buildings\".\"geo_precision\" in ('exact', 'street', 'district', 'municipality')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.dest_categories": {
+      "name": "dest_categories",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "dest_categories_dest_id_destinations_dest_id_fk": {
+          "name": "dest_categories_dest_id_destinations_dest_id_fk",
+          "tableFrom": "dest_categories",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "dest_categories_category_id_categories_id_fk": {
+          "name": "dest_categories_category_id_categories_id_fk",
+          "tableFrom": "dest_categories",
+          "columnsFrom": [
+            "category_id"
+          ],
+          "tableTo": "categories",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "dest_categories_dest_id_category_id_pk": {
+          "name": "dest_categories_dest_id_category_id_pk",
+          "columns": [
+            "dest_id",
+            "category_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"dest_categories\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.dest_imports": {
+      "name": "dest_imports",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ref": {
+          "name": "ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "collector_key_id": {
+          "name": "collector_key_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "imported_at": {
+          "name": "imported_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "dest_imports_dest_id_idx": {
+          "name": "dest_imports_dest_id_idx",
+          "columns": [
+            {
+              "expression": "dest_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "dest_imports_dest_id_destinations_dest_id_fk": {
+          "name": "dest_imports_dest_id_destinations_dest_id_fk",
+          "tableFrom": "dest_imports",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        },
+        "dest_imports_collector_key_id_collector_keys_id_fk": {
+          "name": "dest_imports_collector_key_id_collector_keys_id_fk",
+          "tableFrom": "dest_imports",
+          "columnsFrom": [
+            "collector_key_id"
+          ],
+          "tableTo": "collector_keys",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.dest_photos": {
+      "name": "dest_photos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sort": {
+          "name": "sort",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "storage_key": {
+          "name": "storage_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "license": {
+          "name": "license",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "credit": {
+          "name": "credit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_page_url": {
+          "name": "source_page_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "original_url": {
+          "name": "original_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subject": {
+          "name": "subject",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subject_ref": {
+          "name": "subject_ref",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subject_key": {
+          "name": "subject_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt": {
+          "name": "alt",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "dest_photos_dest_id_idx": {
+          "name": "dest_photos_dest_id_idx",
+          "columns": [
+            {
+              "expression": "dest_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "dest_photos_dest_id_destinations_dest_id_fk": {
+          "name": "dest_photos_dest_id_destinations_dest_id_fk",
+          "tableFrom": "dest_photos",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"dest_photos\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "dest_photos_subject_check": {
+          "name": "dest_photos_subject_check",
+          "value": "\"dest_photos\".\"subject\" in ('exterior', 'room', 'bath', 'view', 'food', 'activity', 'landscape', 'other')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.destinations": {
+      "name": "destinations",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "core_type": {
+          "name": "core_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ref": {
+          "name": "ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_demo": {
+          "name": "is_demo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "destinations_created_by_users_id_fk": {
+          "name": "destinations_created_by_users_id_fk",
+          "tableFrom": "destinations",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "destinations_slug_unique": {
+          "name": "destinations_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "nullsNotDistinct": false
+        },
+        "destinations_ref_unique": {
+          "name": "destinations_ref_unique",
+          "columns": [
+            "ref"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"destinations\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "destinations_core_type_check": {
+          "name": "destinations_core_type_check",
+          "value": "\"destinations\".\"core_type\" in ('accommodation', 'experience', 'nature', 'village', 'building', 'hotspring')"
+        },
+        "destinations_slug_check": {
+          "name": "destinations_slug_check",
+          "value": "\"destinations\".\"slug\" ~ '^[a-z0-9-]{3,60}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.publications": {
+      "name": "publications",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approved_by": {
+          "name": "approved_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "publications_dest_id_destinations_dest_id_fk": {
+          "name": "publications_dest_id_destinations_dest_id_fk",
+          "tableFrom": "publications",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "publications_approved_by_users_id_fk": {
+          "name": "publications_approved_by_users_id_fk",
+          "tableFrom": "publications",
+          "columnsFrom": [
+            "approved_by"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "\"publications\".\"status\" = 'published'"
+        }
+      },
+      "checkConstraints": {
+        "publications_status_check": {
+          "name": "publications_status_check",
+          "value": "\"publications\".\"status\" in ('draft', 'published')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.categories": {
+      "name": "categories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "icon": {
+          "name": "icon",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'tag'"
+        },
+        "sort": {
+          "name": "sort",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "categories_parent_id_fkey": {
+          "name": "categories_parent_id_fkey",
+          "tableFrom": "categories",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "tableTo": "categories",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "anyone read": {
+          "name": "anyone read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.region_parts": {
+      "name": "region_parts",
+      "schema": "",
+      "columns": {
+        "region_id": {
+          "name": "region_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_version": {
+          "name": "source_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "region_parts_region_id_regions_id_fk": {
+          "name": "region_parts_region_id_regions_id_fk",
+          "tableFrom": "region_parts",
+          "columnsFrom": [
+            "region_id"
+          ],
+          "tableTo": "regions",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "region_parts_pkey": {
+          "name": "region_parts_pkey",
+          "columns": [
+            "source",
+            "source_version",
+            "code"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "anyone read": {
+          "name": "anyone read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {
+        "region_parts_source_check": {
+          "name": "region_parts_source_check",
+          "value": "\"region_parts\".\"source\" in ('n03', 'estat')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.regions": {
+      "name": "regions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "municipality_code": {
+          "name": "municipality_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sort": {
+          "name": "sort",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng": {
+          "name": "lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "regions_parent_id_fkey": {
+          "name": "regions_parent_id_fkey",
+          "tableFrom": "regions",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "tableTo": "regions",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "anyone read": {
+          "name": "anyone read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {
+        "regions_id_check": {
+          "name": "regions_id_check",
+          "value": "\"regions\".\"id\" ~ '^[a-z0-9-]{1,40}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.experience_texts": {
+      "name": "experience_texts",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lang": {
+          "name": "lang",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "experience_texts_dest_id_destinations_dest_id_fk": {
+          "name": "experience_texts_dest_id_destinations_dest_id_fk",
+          "tableFrom": "experience_texts",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "experience_texts_dest_id_lang_pk": {
+          "name": "experience_texts_dest_id_lang_pk",
+          "columns": [
+            "dest_id",
+            "lang"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"experience_texts\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "experience_texts_lang_check": {
+          "name": "experience_texts_lang_check",
+          "value": "\"experience_texts\".\"lang\" ~ '^[a-z]{2}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.experiences": {
+      "name": "experiences",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "operator_id": {
+          "name": "operator_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region_id": {
+          "name": "region_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "duration_minutes": {
+          "name": "duration_minutes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reservation_required": {
+          "name": "reservation_required",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "official_url": {
+          "name": "official_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "experiences_dest_id_destinations_dest_id_fk": {
+          "name": "experiences_dest_id_destinations_dest_id_fk",
+          "tableFrom": "experiences",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "experiences_operator_id_operators_id_fk": {
+          "name": "experiences_operator_id_operators_id_fk",
+          "tableFrom": "experiences",
+          "columnsFrom": [
+            "operator_id"
+          ],
+          "tableTo": "operators",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        },
+        "experiences_region_id_regions_id_fk": {
+          "name": "experiences_region_id_regions_id_fk",
+          "tableFrom": "experiences",
+          "columnsFrom": [
+            "region_id"
+          ],
+          "tableTo": "regions",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"experiences\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "experiences_kind_check": {
+          "name": "experiences_kind_check",
+          "value": "\"experiences\".\"kind\" in ('tour', 'workshop', 'tasting', 'activity', 'facility_use', 'event')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.hotspring_texts": {
+      "name": "hotspring_texts",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lang": {
+          "name": "lang",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "hotspring_texts_dest_id_destinations_dest_id_fk": {
+          "name": "hotspring_texts_dest_id_destinations_dest_id_fk",
+          "tableFrom": "hotspring_texts",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "hotspring_texts_dest_id_lang_pk": {
+          "name": "hotspring_texts_dest_id_lang_pk",
+          "columns": [
+            "dest_id",
+            "lang"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"hotspring_texts\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "hotspring_texts_lang_check": {
+          "name": "hotspring_texts_lang_check",
+          "value": "\"hotspring_texts\".\"lang\" ~ '^[a-z]{2}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.hotsprings": {
+      "name": "hotsprings",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "operator_id": {
+          "name": "operator_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region_id": {
+          "name": "region_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prefecture": {
+          "name": "prefecture",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "municipality": {
+          "name": "municipality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng": {
+          "name": "lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "geo_precision": {
+          "name": "geo_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "official_url": {
+          "name": "official_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "hotsprings_dest_id_destinations_dest_id_fk": {
+          "name": "hotsprings_dest_id_destinations_dest_id_fk",
+          "tableFrom": "hotsprings",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "hotsprings_operator_id_operators_id_fk": {
+          "name": "hotsprings_operator_id_operators_id_fk",
+          "tableFrom": "hotsprings",
+          "columnsFrom": [
+            "operator_id"
+          ],
+          "tableTo": "operators",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        },
+        "hotsprings_region_id_regions_id_fk": {
+          "name": "hotsprings_region_id_regions_id_fk",
+          "tableFrom": "hotsprings",
+          "columnsFrom": [
+            "region_id"
+          ],
+          "tableTo": "regions",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"hotsprings\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "hotsprings_kind_check": {
+          "name": "hotsprings_kind_check",
+          "value": "\"hotsprings\".\"kind\" in ('day_use', 'public_bath', 'foot_bath')"
+        },
+        "hotsprings_geo_precision_check": {
+          "name": "hotsprings_geo_precision_check",
+          "value": "\"hotsprings\".\"geo_precision\" in ('exact', 'street', 'district', 'municipality')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.nature_texts": {
+      "name": "nature_texts",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lang": {
+          "name": "lang",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "nature_texts_dest_id_destinations_dest_id_fk": {
+          "name": "nature_texts_dest_id_destinations_dest_id_fk",
+          "tableFrom": "nature_texts",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "nature_texts_dest_id_lang_pk": {
+          "name": "nature_texts_dest_id_lang_pk",
+          "columns": [
+            "dest_id",
+            "lang"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"nature_texts\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "nature_texts_lang_check": {
+          "name": "nature_texts_lang_check",
+          "value": "\"nature_texts\".\"lang\" ~ '^[a-z]{2}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.natures": {
+      "name": "natures",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region_id": {
+          "name": "region_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prefecture": {
+          "name": "prefecture",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "municipality": {
+          "name": "municipality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng": {
+          "name": "lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "geo_precision": {
+          "name": "geo_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "protection": {
+          "name": "protection",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "natures_dest_id_destinations_dest_id_fk": {
+          "name": "natures_dest_id_destinations_dest_id_fk",
+          "tableFrom": "natures",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "natures_region_id_regions_id_fk": {
+          "name": "natures_region_id_regions_id_fk",
+          "tableFrom": "natures",
+          "columnsFrom": [
+            "region_id"
+          ],
+          "tableTo": "regions",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"natures\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "natures_kind_check": {
+          "name": "natures_kind_check",
+          "value": "\"natures\".\"kind\" in ('coast', 'mountain', 'lake', 'highland', 'gorge', 'waterfall', 'forest', 'volcano')"
+        },
+        "natures_protection_check": {
+          "name": "natures_protection_check",
+          "value": "\"natures\".\"protection\" in ('national_park', 'quasi_national_park', 'prefectural_park', 'geopark', 'none')"
+        },
+        "natures_geo_precision_check": {
+          "name": "natures_geo_precision_check",
+          "value": "\"natures\".\"geo_precision\" in ('exact', 'street', 'district', 'municipality')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.collector_keys": {
+      "name": "collector_keys",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key_hash": {
+          "name": "key_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "last_used_at": {
+          "name": "last_used_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "collector_keys_user_id_users_id_fk": {
+          "name": "collector_keys_user_id_users_id_fk",
+          "tableFrom": "collector_keys",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "collector_keys_key_hash_unique": {
+          "name": "collector_keys_key_hash_unique",
+          "columns": [
+            "key_hash"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.operator_memberships": {
+      "name": "operator_memberships",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operator_id": {
+          "name": "operator_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "operator_memberships_user_id_users_id_fk": {
+          "name": "operator_memberships_user_id_users_id_fk",
+          "tableFrom": "operator_memberships",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "operator_memberships_operator_id_operators_id_fk": {
+          "name": "operator_memberships_operator_id_operators_id_fk",
+          "tableFrom": "operator_memberships",
+          "columnsFrom": [
+            "operator_id"
+          ],
+          "tableTo": "operators",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "operator_memberships_user_id_operator_id_pk": {
+          "name": "operator_memberships_user_id_operator_id_pk",
+          "columns": [
+            "user_id",
+            "operator_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "self read": {
+          "name": "self read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"operator_memberships\".\"user_id\" = (select auth.uid())"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.operators": {
+      "name": "operators",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_email": {
+          "name": "contact_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_url": {
+          "name": "contact_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "operators_kind_check": {
+          "name": "operators_kind_check",
+          "value": "\"operators\".\"kind\" in ('company', 'individual', 'municipality', 'organization')"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.user_saves": {
+      "name": "user_saves",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_saves_user_id_users_id_fk": {
+          "name": "user_saves_user_id_users_id_fk",
+          "tableFrom": "user_saves",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "user_saves_dest_id_destinations_dest_id_fk": {
+          "name": "user_saves_dest_id_destinations_dest_id_fk",
+          "tableFrom": "user_saves",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "user_saves_user_id_dest_id_pk": {
+          "name": "user_saves_user_id_dest_id_pk",
+          "columns": [
+            "user_id",
+            "dest_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "self all": {
+          "name": "self all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"user_saves\".\"user_id\" = (select auth.uid())",
+          "withCheck": "\"user_saves\".\"user_id\" = (select auth.uid())"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "locale": {
+          "name": "locale",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "users_id_users_id_fk": {
+          "name": "users_id_users_id_fk",
+          "tableFrom": "users",
+          "columnsFrom": [
+            "id"
+          ],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "self read": {
+          "name": "self read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"users\".\"id\" = (select auth.uid())"
+        },
+        "self update": {
+          "name": "self update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"users\".\"id\" = (select auth.uid())",
+          "withCheck": "\"users\".\"id\" = (select auth.uid())"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tour_shares": {
+      "name": "tour_shares",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tour_id": {
+          "name": "tour_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "tour_shares_tour_id_idx": {
+          "name": "tour_shares_tour_id_idx",
+          "columns": [
+            {
+              "expression": "tour_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "tour_shares_tour_id_tours_id_fk": {
+          "name": "tour_shares_tour_id_tours_id_fk",
+          "tableFrom": "tour_shares",
+          "columnsFrom": [
+            "tour_id"
+          ],
+          "tableTo": "tours",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "tour_shares_token_unique": {
+          "name": "tour_shares_token_unique",
+          "columns": [
+            "token"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {
+        "owner all": {
+          "name": "owner all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (select 1 from \"tours\" where \"tours\".\"id\" = \"tour_shares\".\"tour_id\" and \"tours\".\"owner_id\" = (select auth.uid()))",
+          "withCheck": "exists (select 1 from \"tours\" where \"tours\".\"id\" = \"tour_shares\".\"tour_id\" and \"tours\".\"owner_id\" = (select auth.uid()))"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tour_stops": {
+      "name": "tour_stops",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tour_id": {
+          "name": "tour_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sort": {
+          "name": "sort",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "day": {
+          "name": "day",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "tour_stops_tour_id_idx": {
+          "name": "tour_stops_tour_id_idx",
+          "columns": [
+            {
+              "expression": "tour_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "tour_stops_tour_id_tours_id_fk": {
+          "name": "tour_stops_tour_id_tours_id_fk",
+          "tableFrom": "tour_stops",
+          "columnsFrom": [
+            "tour_id"
+          ],
+          "tableTo": "tours",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "tour_stops_dest_id_destinations_dest_id_fk": {
+          "name": "tour_stops_dest_id_destinations_dest_id_fk",
+          "tableFrom": "tour_stops",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "owner all": {
+          "name": "owner all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "exists (select 1 from \"tours\" where \"tours\".\"id\" = \"tour_stops\".\"tour_id\" and \"tours\".\"owner_id\" = (select auth.uid()))",
+          "withCheck": "exists (select 1 from \"tours\" where \"tours\".\"id\" = \"tour_stops\".\"tour_id\" and \"tours\".\"owner_id\" = (select auth.uid()))"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.tours": {
+      "name": "tours",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_public": {
+          "name": "is_public",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "tours_owner_id_idx": {
+          "name": "tours_owner_id_idx",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "tours_owner_id_users_id_fk": {
+          "name": "tours_owner_id_users_id_fk",
+          "tableFrom": "tours",
+          "columnsFrom": [
+            "owner_id"
+          ],
+          "tableTo": "users",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "owner all": {
+          "name": "owner all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "authenticated"
+          ],
+          "using": "\"tours\".\"owner_id\" = (select auth.uid())",
+          "withCheck": "\"tours\".\"owner_id\" = (select auth.uid())"
+        },
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "\"tours\".\"is_public\""
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.village_texts": {
+      "name": "village_texts",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lang": {
+          "name": "lang",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "village_texts_dest_id_destinations_dest_id_fk": {
+          "name": "village_texts_dest_id_destinations_dest_id_fk",
+          "tableFrom": "village_texts",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "village_texts_dest_id_lang_pk": {
+          "name": "village_texts_dest_id_lang_pk",
+          "columns": [
+            "dest_id",
+            "lang"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"village_texts\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "village_texts_lang_check": {
+          "name": "village_texts_lang_check",
+          "value": "\"village_texts\".\"lang\" ~ '^[a-z]{2}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.villages": {
+      "name": "villages",
+      "schema": "",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region_id": {
+          "name": "region_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prefecture": {
+          "name": "prefecture",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "municipality": {
+          "name": "municipality",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "district": {
+          "name": "district",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng": {
+          "name": "lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "geo_precision": {
+          "name": "geo_precision",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "villages_dest_id_destinations_dest_id_fk": {
+          "name": "villages_dest_id_destinations_dest_id_fk",
+          "tableFrom": "villages",
+          "columnsFrom": [
+            "dest_id"
+          ],
+          "tableTo": "destinations",
+          "columnsTo": [
+            "dest_id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "villages_region_id_regions_id_fk": {
+          "name": "villages_region_id_regions_id_fk",
+          "tableFrom": "villages",
+          "columnsFrom": [
+            "region_id"
+          ],
+          "tableTo": "regions",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "public read": {
+          "name": "public read",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "anon",
+            "authenticated"
+          ],
+          "using": "public.is_published(\"villages\".\"dest_id\")"
+        }
+      },
+      "checkConstraints": {
+        "villages_kind_check": {
+          "name": "villages_kind_check",
+          "value": "\"villages\".\"kind\" in ('onsen_town', 'post_town', 'fishing_village', 'temple_town', 'castle_town')"
+        },
+        "villages_geo_precision_check": {
+          "name": "villages_geo_precision_check",
+          "value": "\"villages\".\"geo_precision\" in ('exact', 'street', 'district', 'municipality')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "views": {
+    "public.dest_cards": {
+      "name": "dest_cards",
+      "schema": "public",
+      "columns": {
+        "dest_id": {
+          "name": "dest_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "core_type": {
+          "name": "core_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_demo": {
+          "name": "is_demo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "region_id": {
+          "name": "region_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lat": {
+          "name": "lat",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lng": {
+          "name": "lng",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "name": "name",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category_ids": {
+          "name": "category_ids",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "photos": {
+          "name": "photos",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "definition": "\nwith texts as (\n  select dest_id, lang, name, summary from public.accommodation_texts\n  union all select dest_id, lang, name, summary from public.experience_texts\n  union all select dest_id, lang, name, summary from public.nature_texts\n  union all select dest_id, lang, name, summary from public.village_texts\n  union all select dest_id, lang, name, summary from public.building_texts\n  union all select dest_id, lang, name, summary from public.hotspring_texts\n),\nplaces as (\n  select dest_id, region_id, lat, lng from public.accommodations\n  union all select dest_id, region_id, lat, lng from public.natures\n  union all select dest_id, region_id, lat, lng from public.villages\n  union all select dest_id, region_id, lat, lng from public.buildings\n  union all select dest_id, region_id, lat, lng from public.hotsprings\n  union all\n  select e.dest_id, e.region_id, j.lat, j.lng\n  from public.experiences e\n  -- details があれば details.locations から（meeting を先に、なければ先頭の場所）\n  left join lateral (\n    select\n      case when jsonb_typeof(x.loc->'lat') = 'number' then (x.loc->>'lat')::double precision end as lat,\n      case when jsonb_typeof(x.loc->'lng') = 'number' then (x.loc->>'lng')::double precision end as lng\n    from jsonb_array_elements(\n      case when jsonb_typeof(e.details->'locations') = 'array' then e.details->'locations' else '[]'::jsonb end\n    ) with ordinality as x(loc, n)\n    order by (x.loc->>'kind' = 'meeting') desc, x.n\n    limit 1\n  ) j on e.details is not null\n)\nselect\n  d.dest_id, d.core_type, d.slug, d.is_demo, d.created_at, pub.published_at,\n  pl.region_id, pl.lat, pl.lng,\n  t.name, t.summary,\n  coalesce(c.category_ids, '{}'::text[]) as category_ids,\n  coalesce(ph.photos, '[]'::jsonb) as photos\nfrom public.destinations d\njoin public.publications pub on pub.dest_id = d.dest_id and pub.status = 'published'\nleft join places pl on pl.dest_id = d.dest_id\nleft join lateral (\n  select\n    jsonb_object_agg(x.lang, x.name) as name,\n    jsonb_object_agg(x.lang, x.summary) filter (where x.summary is not null) as summary\n  from texts x where x.dest_id = d.dest_id\n) t on true\nleft join lateral (\n  select array_agg(x.category_id order by x.category_id) as category_ids\n  from public.dest_categories x where x.dest_id = d.dest_id\n) c on true\nleft join lateral (\n  select jsonb_agg(\n    jsonb_build_object('storage_key', x.storage_key, 'license', x.license, 'credit', x.credit, 'alt', x.alt)\n    order by x.sort, x.id\n  ) as photos\n  from public.dest_photos x where x.dest_id = d.dest_id\n) ph on true\n",
+      "materialized": false,
+      "with": {
+        "securityInvoker": true
+      },
+      "isExisting": false
+    }
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
