@@ -73,8 +73,8 @@ test("未検証のラベルを出さない", async ({ page }) => {
   await expect(page.getByText("未検証")).toHaveCount(0);
 });
 
-// 宿以外（details を持たないコア）は、今までどおり「設備・条件」とアクセスを出す。公開中の宿はすべて details を持つ
-const PLAIN_SLUG = process.env.E2E_PLAIN_SLUG ?? "wr-ashinoko-nat-001";
+// 建物（まだ details を持たないコア）は、今までどおり「設備・条件」とアクセスを出す。公開中の宿はすべて details を持つ
+const PLAIN_SLUG = process.env.E2E_PLAIN_SLUG ?? "wr-ashinoko-bld-001";
 
 test("宿以外は、設備・条件とアクセスの今の出し方のまま", async ({ page }) => {
   await page.goto(`/ja/d/${PLAIN_SLUG}`);
