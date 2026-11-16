@@ -10,6 +10,7 @@ import { representativeLocation } from "../src/lib/region/representative.ts";
 import { decideRegion } from "../src/lib/region/resolve.ts";
 import type { LookupManifest, RepresentativeLocation, ResolveResult } from "../src/lib/region/types.ts";
 import { adminClient } from "../src/lib/supabase/admin.ts";
+import { selectAll } from "../src/lib/supabase/select-all.ts";
 
 type Row = Record<string, unknown>;
 export type DestRow = { dest_id: string; core_type: string; slug: string; region_id: string | null; core: Row; details: unknown };
@@ -67,17 +68,17 @@ export async function planBackfill(
 }
 
 async function loadRows(db: SupabaseClient): Promise<DestRow[]> {
-  const { data: dests, error } = await db.from("destinations").select("dest_id, core_type, slug");
-  if (error) throw new Error(`destinations: ${error.message}`);
+  const dests = await selectAll<{ dest_id: string; core_type: string; slug: string }>(db, "destinations", "dest_id, core_type, slug", ["dest_id"]);
   const out: DestRow[] = [];
   for (const [type, table] of Object.entries(TABLES)) {
     const cols = type === "experience" ? "dest_id, region_id, details" : "dest_id, region_id, lat, lng, geo_precision, prefecture, municipality";
-    const { data, error: e } = await db.from(table).select(cols);
-    if (e) throw new Error(`${table}: ${e.message}`);
-    const byId = new Map(((data ?? []) as unknown as Row[]).map((r) => [r.dest_id as string, r]));
-    for (const d of (dests ?? []).filter((x) => x.core_type === type)) {
+    const byId = new Map((await selectAll<Row>(db, table, cols, ["dest_id"])).map((r) => [r.dest_id as string, r]));
+    for (const d of dests.filter((x) => x.core_type === type)) {
       const core = byId.get(d.dest_id);
-      if (!core) continue;
+      if (!core) {
+        console.warn(`コアの行が無い（読まない）: ${d.slug}`);
+        continue;
+      }
       out.push({ dest_id: d.dest_id, core_type: type, slug: d.slug, region_id: (core.region_id as string | null) ?? null, core, details: core.details ?? null });
     }
   }
@@ -85,9 +86,7 @@ async function loadRows(db: SupabaseClient): Promise<DestRow[]> {
 }
 
 async function existingRegions(db: SupabaseClient): Promise<Set<string>> {
-  const { data, error } = await db.from("regions").select("id");
-  if (error) throw new Error(`regions: ${error.message}`);
-  return new Set((data ?? []).map((r) => r.id as string));
+  return new Set((await selectAll<{ id: string }>(db, "regions", "id", ["id"])).map((r) => r.id));
 }
 
 /** 保存した差分を 1 件ずつ書く。結果は updated / skipped（その間に変わった）/ missing（消えた） */
