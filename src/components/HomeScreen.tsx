@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
+import { clickEventOf, trackFeedEvent, type FeedEvent } from "@/lib/feed-events";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
 import { messages, type Messages } from "@/lib/i18n/messages";
 import { useMessages } from "@/lib/i18n/use-locale";
@@ -63,6 +64,18 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
     saveLastDiscoverUrl(serializeDiscoverQuery(query, locale));
   }, [query, locale]);
 
+  // 表示とクリックの記録。どの並べ方（feed.algorithm）で出したかを毎回付ける
+  const { algorithm } = feed;
+  const { mode, sort, area, cat, q } = query;
+  const track = useCallback(
+    (e: FeedEvent) => trackFeedEvent({ algorithm, mode, sort, area, cat, q }, e),
+    [algorithm, mode, sort, area, cat, q],
+  );
+  const count = feed.cards.length;
+  useEffect(() => {
+    track({ name: "feed_view", count });
+  }, [track, count]);
+
   function go(next: Partial<DiscoverQuery>) {
     const merged: DiscoverQuery = { ...query, ...next };
     startTransition(() => {
@@ -90,7 +103,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
       >
-        <FeedList key={serializeDiscoverQuery(query, locale)} cards={feed.cards} />
+        <FeedList key={serializeDiscoverQuery(query, locale)} cards={feed.cards} track={track} />
         {feed.cards.length === 0 && (
           <div className="flex flex-col items-center gap-3.5 px-8 pt-[180px] text-center">
             <Icon name="search" size={40} />
@@ -260,7 +273,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
 }
 
 // 最初は FIRST_CARDS 枚だけ描き、終わりに近づいたら MORE_CARDS 枚ずつ足す。条件が変わると key で最初に戻る
-function FeedList({ cards }: { cards: FeedCard[] }) {
+function FeedList({ cards, track }: { cards: FeedCard[]; track: (e: FeedEvent) => void }) {
   const [shown, setShown] = useState(FIRST_CARDS);
   const sentinel = useRef<HTMLDivElement>(null);
 
@@ -280,7 +293,7 @@ function FeedList({ cards }: { cards: FeedCard[] }) {
   return (
     <>
       {cards.slice(0, shown).map((card, i) => (
-        <FeedCardView key={card.key} card={card} first={i === 0} />
+        <FeedCardView key={card.key} card={card} position={i} track={track} />
       ))}
       {shown < cards.length && <div ref={sentinel} aria-hidden="true" className="h-px" />}
     </>
@@ -290,10 +303,40 @@ function FeedList({ cards }: { cards: FeedCard[] }) {
 // 画面の外のカードは描画を省く（content-visibility）。最初のカードだけ写真を先に読む
 const OFFSCREEN: CSSProperties = { contentVisibility: "auto", containIntrinsicSize: "auto 760px" };
 
-function FeedCardView({ card, first }: { card: FeedCard; first: boolean }) {
+// 半分以上見えたら 1 回だけ card_view を残す
+const VIEW_THRESHOLD = 0.5;
+
+function FeedCardView({ card, position, track }: { card: FeedCard; position: number; track: (e: FeedEvent) => void }) {
   const m = useMessages();
+  const first = position === 0;
+  const ref = useRef<HTMLElement>(null);
+  const { destId } = card;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        track({ name: "card_view", destId, position });
+        io.disconnect();
+      },
+      { root: el.closest("[data-feed]"), threshold: VIEW_THRESHOLD },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [track, destId, position]);
+
+  // スワイプの残りのクリックは PhotoCarousel が止めるので、ここには来ない
+  function onClick(e: MouseEvent<HTMLElement>) {
+    if (e.defaultPrevented) return;
+    const a = (e.target as Element).closest("a");
+    const event = clickEventOf(a && { tileDestId: a.getAttribute("data-tile-dest-id"), tilePosition: a.getAttribute("data-tile-position") }, { destId, position });
+    if (event) track(event);
+  }
+
   return (
-    <article className="flex flex-col" style={first ? undefined : OFFSCREEN}>
+    <article ref={ref} onClick={onClick} className="flex flex-col" style={first ? undefined : OFFSCREEN}>
       {/* 写真は横にスワイプで切り替え、タップで詳細を開く */}
       <PhotoCarousel photos={card.photos} href={card.href} label={card.title} className="h-[520px] text-white" counterClassName="right-4 top-[76px]" priority={first}>
         {(card.photos[0]?.isDemo ?? true) && (
@@ -313,8 +356,8 @@ function FeedCardView({ card, first }: { card: FeedCard; first: boolean }) {
           <h2 className="m-0 text-xs font-semibold tracking-[0.04em] text-white/75">{card.relLabel}</h2>
           {/* 横にスワイプして送る。3 枚目が少し覗く幅にして続きがあると分かるようにする */}
           <div className="-mx-3 flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-3 px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {card.tiles.map((t) => (
-              <Link key={t.destId} href={t.href} className="flex w-[38%] shrink-0 snap-start flex-col gap-1.5 text-white no-underline">
+            {card.tiles.map((t, ti) => (
+              <Link key={t.destId} href={t.href} data-tile-dest-id={t.destId} data-tile-position={ti} className="flex w-[38%] shrink-0 snap-start flex-col gap-1.5 text-white no-underline">
                 {t.photo?.url && !t.photo.isDemo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={t.photo.url} alt="" loading="lazy" decoding="async" className="block aspect-square w-full rounded-[10px] object-cover" />
