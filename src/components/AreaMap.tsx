@@ -1,11 +1,12 @@
 "use client";
 
 // エリアを地図から選ぶ。全国 → 地方 → 箱根 と寄り、形か点を押すと onSelect(エリア id)
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { AREA_MAP_CREDIT, AREA_MAP_START, type AreaMapData } from "@/lib/area-map";
 import { useLocale, useMessages } from "@/lib/i18n/use-locale";
 import { AREA_MAP_LOADERS } from "@/generated/area-map";
 import { Chip } from "./Chip";
+import { usePanZoom } from "./use-pan-zoom";
 
 type Props = { current: string; labelOf: (id: string) => string; onSelect: (id: string) => void };
 
@@ -40,33 +41,37 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
   }, [mapId]);
 
   const shown = data?.id === mapId ? data : null;
-  // 縦長の図は高さの上限で縮んで表示されるので、文字と点をその分大きくする
-  const k = shown ? Math.max(1, Number(shown.viewBox.split(" ")[3]) / 400) : 1;
+  // 地図はドラッグで動かし、ピンチ・ホイールで寄せられる。文字と点は寄せても同じ px に見えるよう k 倍する
+  const svgRef = useRef<SVGSVGElement>(null);
+  const { viewBox, unit: k } = usePanZoom(svgRef, shown?.viewBox ?? null, shown?.start ?? null);
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex min-h-10 items-center gap-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-2">
+      {/* 戻る・地図の名前・「〇〇全体」を 1 行に並べ、地図に高さを残す */}
+      <div className="flex min-h-10 flex-wrap items-center gap-x-5">
         {trail.length > 1 && (
           <button
             type="button"
             onClick={() => setTrail(trail.slice(0, -1))}
-            className="h-10 cursor-pointer rounded-full border-0 bg-white/10 px-3.5 text-[13px] text-white"
+            className="h-10 cursor-pointer border-0 bg-transparent p-0 text-[14px] text-white/65"
           >
             ← {m.common.back}
           </button>
         )}
-        <h3 className="m-0 text-[15px] font-semibold">{shown ? shown.name[locale] : m.common.loading}</h3>
+        <h3 className="m-0 mr-1 text-[15px] font-semibold">{shown ? shown.name[locale] : m.common.loading}</h3>
+        {shown?.wholes.map((id) => (
+          <Chip key={id} on={current === id} onClick={() => onSelect(id)}>{m.home.areaWhole(labelOf(id))}</Chip>
+        ))}
       </div>
-      {shown && shown.wholes.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {shown.wholes.map((id) => (
-            <Chip key={id} on={current === id} onClick={() => onSelect(id)}>{m.home.areaWhole(labelOf(id))}</Chip>
-          ))}
-        </div>
-      )}
       {shown ? (
-        <svg viewBox={shown.viewBox} role="group" aria-label={shown.name[locale]} className="block h-auto max-h-[52vh] w-full rounded-2xl bg-[#1f2a2e]">
-          <path d={shown.land} fill="#3b3f39" stroke="rgba(255,255,255,0.18)" strokeWidth={0.4} />
+        <svg
+          ref={svgRef}
+          viewBox={viewBox}
+          role="group"
+          aria-label={shown.name[locale]}
+          className="block min-h-[160px] w-full flex-1 cursor-grab touch-none select-none overflow-hidden"
+        >
+          <path d={shown.land} fill="#3b3f39" stroke="rgba(255,255,255,0.18)" strokeWidth={0.6} vectorEffect="non-scaling-stroke" />
           {shown.shapes.map((s) => (
             <path
               key={s.id}
@@ -79,7 +84,8 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
               onKeyDown={onKey(() => onSelect(s.id))}
               fill={current === s.id ? FILL_ON : FILL}
               stroke="rgba(255,255,255,0.55)"
-              strokeWidth={0.8}
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
               className="cursor-pointer outline-none focus-visible:stroke-[#9cc3ff]"
             />
           ))}
@@ -95,7 +101,8 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
                 onKeyDown={onKey(() => setTrail([...trail, l.map]))}
                 fill={FILL_LINK}
                 stroke="#ffffff"
-                strokeWidth={1.2}
+                strokeWidth={1.5}
+                vectorEffect="non-scaling-stroke"
                 strokeDasharray="3 2"
                 className="cursor-pointer outline-none"
               />
@@ -113,6 +120,7 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
                 fill={FILL_ON}
                 stroke="#141413"
                 strokeWidth={2}
+                vectorEffect="non-scaling-stroke"
                 className="cursor-pointer outline-none"
               />
             ),
@@ -132,10 +140,11 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
               fill={current === p.id ? FILL_ON : "#1b1b19"}
               stroke="#ffffff"
               strokeWidth={2}
+              vectorEffect="non-scaling-stroke"
               className="cursor-pointer outline-none"
             />
           ))}
-          <g aria-hidden="true" fontSize={12 * k} textAnchor="middle" fill="#ffffff" stroke="rgba(0,0,0,0.7)" strokeWidth={3 * k} paintOrder="stroke" pointerEvents="none">
+          <g aria-hidden="true" fontSize={11 * k} textAnchor="middle" fill="#ffffff" stroke="rgba(0,0,0,0.7)" strokeWidth={3 * k} paintOrder="stroke" pointerEvents="none">
             {shown.shapes.map((s) => (
               <text key={s.id} x={s.label[0]} y={s.label[1] + 4 * k}>{labelOf(s.id)}</text>
             ))}
@@ -148,7 +157,7 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
           </g>
         </svg>
       ) : (
-        <div className="aspect-[3/4] max-h-[52vh] w-full rounded-2xl bg-[#1f2a2e]" />
+        <div className="min-h-[160px] w-full flex-1" />
       )}
       <p className="m-0 text-[10px] leading-[1.5] text-white/50">{AREA_MAP_CREDIT[locale]}</p>
     </div>

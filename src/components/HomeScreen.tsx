@@ -243,7 +243,12 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
 
       {/* Area sheet */}
       {sheet === "area" && (
-        <BottomSheet label={m.home.chooseArea} onClose={() => setSheet(null)}>
+        <BottomSheet
+          label={m.home.chooseArea}
+          onClose={() => setSheet(null)}
+          // リストと地図で高さを変えない（地図はこの中に収める）
+          height="min(700px, 85svh)"
+        >
           <SheetHeader title={m.home.chooseArea} onClose={() => setSheet(null)} />
           <div role="group" aria-label={m.home.areaView} className="grid grid-cols-2 rounded-xl bg-white/[0.08] p-[3px]">
             {(["list", "map"] as const).map((v) => (
@@ -259,20 +264,21 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
               </button>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-x-5">
             <Chip on={query.area === "all"} onClick={() => { go({ area: "all" }); setSheet(null); }}>{m.home.allAreasChip}</Chip>
           </div>
           {areaView === "map" && (
             <AreaMap
               current={query.area}
               labelOf={(id) => areaName(areas, id, id)}
-              onSelect={(id) => { go({ area: id }); setSheet(null); }}
+              // 地図では選んでもシートを閉じない（続けて寄ったり選び直したりできる）
+              onSelect={(id) => go({ area: id })}
             />
           )}
           {areaView === "list" && areas.map((g) => (
             <div key={g.id} className="flex flex-col gap-2.5">
               <h3 className="m-0 text-[13px] font-semibold text-white/85">{g.label}</h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-x-5">
                 <Chip on={query.area === g.id} onClick={() => { go({ area: g.id }); setSheet(null); }}>{m.home.areaWhole(g.label)}</Chip>
                 {g.subs.map((s) => (
                   <Chip key={s.id} on={query.area === s.id} onClick={() => { go({ area: s.id }); setSheet(null); }}>{s.label}</Chip>
@@ -289,7 +295,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
           <SheetHeader title={m.home.filter} onClose={() => setSheet(null)} />
           <div className="flex flex-col gap-2.5">
             <h3 className="m-0 text-[13px] font-semibold text-white/85">{m.home.sortHeading}</h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-x-5">
               {sorts(m).map((s) => (
                 <Chip key={s.id} on={query.sort === s.id} onClick={() => go({ sort: s.id })}>{s.label}</Chip>
               ))}
@@ -417,7 +423,17 @@ function FeedCardView({ card, position, track }: { card: FeedCard; position: num
   );
 }
 
-function BottomSheet({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
+function BottomSheet({
+  label,
+  onClose,
+  children,
+  height,
+}: {
+  label: string;
+  onClose: () => void;
+  children: ReactNode;
+  height?: string;
+}) {
   const m = useMessages();
   return (
     <>
@@ -425,6 +441,7 @@ function BottomSheet({ label, onClose, children }: { label: string; onClose: () 
       <section
         role="dialog"
         aria-label={label}
+        style={height ? { height } : undefined}
         className="absolute inset-x-0 bottom-0 z-20 flex max-h-[700px] flex-col gap-5 overflow-y-auto rounded-t-3xl bg-[#1b1b19] px-5 pb-7 pt-5"
       >
         {children}
