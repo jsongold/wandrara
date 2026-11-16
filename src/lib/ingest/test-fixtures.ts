@@ -1,6 +1,7 @@
 // テスト用：宿の最小の入力に、中身の決まり（quality.ts）が求める項目を足す。入力にある値はそのまま使う
 import { z } from "zod";
 import { accommodationCore } from "../../db/schema/accommodation.ts";
+import { experienceCore } from "../../db/schema/experience.ts";
 import type { CoreDef } from "../../db/schema/_shared.ts";
 
 type Body = Record<string, unknown> & {
@@ -31,9 +32,9 @@ export const jsonDetailsCore: CoreDef = {
   detailsSchema: z.strictObject({ rooms: z.array(z.strictObject({ key: z.string() })).optional() }),
 };
 
-/** テスト用：宿のコアから detailsSchema を外し、詳細の表（入れ子の units → bedrooms → beds）で受けるもの。表で受けるコアの入力と書き込みを確かめる */
+/** テスト用：体験のコアで、料金（prices）を コース（courses）の子にしたもの。入れ子の詳細の表の入力と書き込みを確かめる */
 export const tableDetailsCore: CoreDef = {
-  ...accommodationCore,
-  coreType: "accommodation_tables" as CoreDef["coreType"],
-  detailsSchema: undefined,
+  ...experienceCore,
+  coreType: "experience_nested" as CoreDef["coreType"],
+  details: experienceCore.details.map((d) => (d.key === "prices" ? { ...d, parent: { key: "courses", column: "courseId" } } : d)),
 };
