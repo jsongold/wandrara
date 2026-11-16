@@ -40,6 +40,9 @@ function placeholderStyle(photo: Photo | null): CSSProperties {
 }
 
 // 一度に描くカードの数。全部を一度に描くと、写真の展開で iOS がメモリ不足になりページを閉じる
+// トップのテキスト入力とフィルター。今は Off
+const SHOW_SEARCH_AND_FILTER = false;
+
 const FIRST_CARDS = 6;
 const MORE_CARDS = 6;
 
@@ -87,7 +90,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
       {/* Feed */}
       <div
         data-feed
-        className="absolute inset-0 overflow-y-auto pb-[190px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="absolute inset-0 overflow-y-auto pb-[120px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
       >
@@ -129,84 +132,88 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
         </div>
       </header>
 
-      {/* Floating two-row overlay */}
+      {/* Floating overlay */}
       <div className="absolute inset-x-3 bottom-[22px] z-[6] flex flex-col gap-2">
-        <nav aria-label={m.home.navLabel} className="flex items-center gap-1.5 rounded-[18px] p-1.5" style={GLASS}>
-          <button
-            type="button"
-            onClick={() => setSheet("area")}
-            aria-label={m.home.chooseAreaNow(currentArea)}
-            className="flex h-11 max-w-[128px] flex-none cursor-pointer items-center gap-[5px] rounded-xl pl-[9px] pr-2.5 text-[13px] font-semibold"
-            style={query.area === "all" ? { background: "rgba(255,255,255,0.10)", color: "#ffffff" } : { background: "#f4f1ea", color: "#141413" }}
-          >
-            <Icon name="map" size={18} />
-            <span className="truncate">{currentArea}</span>
-            <Icon name="chevron-down" size={14} />
-          </button>
-          <span aria-hidden="true" className="h-6 w-px flex-none bg-white/20" />
-          <div className="flex min-w-0 flex-auto gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {allCats.map((c) => {
-              const on = c.id === query.cat;
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => go({ cat: c.id })}
-                  aria-label={c.label}
-                  aria-pressed={on}
-                  title={c.label}
-                  className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl"
-                  style={on ? { background: "#f4f1ea", color: "#141413" } : { background: "rgba(255,255,255,0.10)", color: "#ffffff" }}
-                >
-                  <Icon name={c.icon} />
-                </button>
-              );
-            })}
-          </div>
-        </nav>
-
-        <div className="flex items-center gap-2">
+        <div className="flex items-stretch gap-2">
           <button
             type="button"
             onClick={() => go({ mode: otherMode(query.mode), cat: "all" })}
             aria-label={m.home.searchBySwitch(m.mode[query.mode], m.mode[otherMode(query.mode)])}
             title={m.home.searchBy(m.mode[query.mode])}
-            className="flex h-[52px] w-[52px] flex-none cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[14px] text-white"
+            className="flex w-[58px] flex-none cursor-pointer flex-col items-center justify-center gap-0.5 self-stretch rounded-[18px] text-white"
             style={GLASS}
           >
             <Icon name={isStay ? "pin" : "sparkle"} />
             <span className="text-[10px] font-semibold">{m.mode[query.mode]}</span>
           </button>
-          <form
-            role="search"
-            onSubmit={onSearch}
-            className="flex h-[52px] min-w-0 flex-auto items-center gap-2 rounded-[14px] px-3.5 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#f4f1ea]"
-            style={GLASS}
-          >
-            <Icon name="search" size={18} className="flex-none" />
-            <label className="sr-only" htmlFor="discover-q">{m.home.search}</label>
-            <input
-              key={query.q}
-              id="discover-q"
-              name="q"
-              type="search"
-              defaultValue={query.q}
-              placeholder={m.home.searchPlaceholder}
-              enterKeyHint="search"
-              className="min-w-0 flex-auto border-0 bg-transparent text-base text-white outline-none placeholder:text-white/80"
-            />
-          </form>
-          <button
-            type="button"
-            onClick={() => setSheet("filter")}
-            aria-label={query.sort !== "editorial" ? m.home.filterActive : m.home.filter}
-            className="relative flex h-[52px] w-[52px] flex-none cursor-pointer items-center justify-center rounded-[14px] text-white"
-            style={GLASS}
-          >
-            <Icon name="filter" />
-            {query.sort !== "editorial" && <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#f4f1ea]" />}
-          </button>
+          <nav aria-label={m.home.navLabel} className="flex min-w-0 flex-auto items-center gap-1.5 rounded-[18px] p-1.5" style={GLASS}>
+            <button
+              type="button"
+              onClick={() => setSheet("area")}
+              aria-label={m.home.chooseAreaNow(currentArea)}
+              title={currentArea}
+              className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl"
+              style={query.area === "all" ? { background: "rgba(255,255,255,0.10)", color: "#ffffff" } : { background: "#f4f1ea", color: "#141413" }}
+            >
+              <Icon name="map" />
+            </button>
+            <span aria-hidden="true" className="h-6 w-px flex-none bg-white/20" />
+            <div className="flex min-w-0 flex-auto gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {allCats.map((c) => {
+                const on = c.id === query.cat;
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => go({ cat: c.id })}
+                    aria-label={c.label}
+                    aria-pressed={on}
+                    title={c.label}
+                    className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl"
+                    style={on ? { background: "#f4f1ea", color: "#141413" } : { background: "rgba(255,255,255,0.10)", color: "#ffffff" }}
+                  >
+                    <Icon name={c.icon} />
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
         </div>
+
+        {/* テキスト入力とフィルターは今は出さない */}
+        {SHOW_SEARCH_AND_FILTER && (
+          <div className="flex items-center gap-2">
+            <form
+              role="search"
+              onSubmit={onSearch}
+              className="flex h-[52px] min-w-0 flex-auto items-center gap-2 rounded-[14px] px-3.5 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#f4f1ea]"
+              style={GLASS}
+            >
+              <Icon name="search" size={18} className="flex-none" />
+              <label className="sr-only" htmlFor="discover-q">{m.home.search}</label>
+              <input
+                key={query.q}
+                id="discover-q"
+                name="q"
+                type="search"
+                defaultValue={query.q}
+                placeholder={m.home.searchPlaceholder}
+                enterKeyHint="search"
+                className="min-w-0 flex-auto border-0 bg-transparent text-base text-white outline-none placeholder:text-white/80"
+              />
+            </form>
+            <button
+              type="button"
+              onClick={() => setSheet("filter")}
+              aria-label={query.sort !== "editorial" ? m.home.filterActive : m.home.filter}
+              className="relative flex h-[52px] w-[52px] flex-none cursor-pointer items-center justify-center rounded-[14px] text-white"
+              style={GLASS}
+            >
+              <Icon name="filter" />
+              {query.sort !== "editorial" && <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#f4f1ea]" />}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Area sheet */}
