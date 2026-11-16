@@ -4,12 +4,15 @@ import { getTableColumns, getTableName } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import { cacheLife } from "next/cache";
 import { toAccommodationView, type AccommodationView } from "./accommodation/view";
+import { toBuildingView, type BuildingView } from "./building/view";
 import { toExperienceView, type ExperienceView } from "./experience/view";
 import { getCatalog, photoUrl } from "./data";
+import { toHotspringView, type HotspringView } from "./hotspring/view";
 import { areaLabel, resolveLocalizedText } from "./feed";
 import { coreLabels } from "./i18n/core-labels";
 import { messages } from "./i18n/messages";
 import { toNatureView, type NatureView } from "./nature/view";
+import { toVillageView, type VillageView } from "./village/view";
 import { coreByType } from "./ingest/cores";
 import type { CoreDef } from "../db/schema/_shared";
 import type { FactView, Locale, Photo } from "./types";
@@ -29,6 +32,12 @@ export type DestDetailView = {
   experience: ExperienceView | null;
   /** 自然の新しい画面の形。details が無いか形が違う自然と、自然でない dest は null（facts を出す） */
   nature: NatureView | null;
+  /** 建物の新しい画面の形。details が無いか形が違う建物と、建物でない dest は null（facts を出す） */
+  building: BuildingView | null;
+  /** 日帰り温泉の新しい画面の形。details が無いか形が違う温泉と、温泉でない dest は null（facts を出す） */
+  hotspring: HotspringView | null;
+  /** まちの新しい画面の形。details が無いか形が違うまちと、まちでない dest は null（facts を出す） */
+  village: VillageView | null;
 };
 
 type Row = Record<string, unknown>;
@@ -114,14 +123,19 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
   const isAcc = core.coreType === "accommodation";
   const isExp = core.coreType === "experience";
   const isNat = core.coreType === "nature";
-  // 宿・体験・自然は details と、画面の 1 行・料金のリンク・地図に使う列も読む
+  const isBld = core.coreType === "building";
+  const isHot = core.coreType === "hotspring";
+  const isVil = core.coreType === "village";
+  // 宿・体験・自然・建物・日帰り温泉・まちは details と、画面の 1 行・料金のリンク・地図に使う列も読む
   const extraCols = isAcc
     ? ["details", "check_in", "check_out", "official_url"]
     : isExp
       ? ["details", "duration_minutes", "reservation_required", "official_url"]
-      : isNat
-        ? ["details", "lat", "lng"]
-        : [];
+      : isBld || isHot
+        ? ["details", "lat", "lng", "official_url"]
+        : isNat || isVil
+          ? ["details", "lat", "lng"]
+          : [];
   const coreCols = [...new Set(["region_id", ...names(core.table, core.columns), ...extraCols])];
 
   const [coreRes, textsRes, photosRes, catalog, ...detailRes] = await Promise.all([
@@ -161,14 +175,20 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
         locale,
       })
     : null;
-  const nature = isNat ? toNatureView({ details: coreRow?.details ?? null, lat: numOf("lat"), lng: numOf("lng"), locale }) : null;
+  const placeInput = { details: coreRow?.details ?? null, lat: numOf("lat"), lng: numOf("lng"), locale };
+  const nature = isNat ? toNatureView(placeInput) : null;
+  // 建物・日帰り温泉は公式サイトの列も渡す（まちには列が無い）
+  const officialInput = { ...placeInput, officialUrl: str("official_url") };
+  const building = isBld ? toBuildingView(officialInput) : null;
+  const hotspring = isHot ? toHotspringView(officialInput) : null;
+  const village = isVil ? toVillageView(placeInput) : null;
 
   return {
     id,
     title: resolveLocalizedText(pick("name"), locale).text,
     areaLabel: areaLabel((coreRow?.region_id as string | null) ?? null, catalog.regions, locale),
-    // 新しい画面の宿・体験・自然は種類（一棟貸し・ツアー・海岸…）を出す。ほかは今どおりコアの名前
-    kindLabel: ((accommodation ?? experience ?? nature) && coreLabels(core, locale).kindLabels[str("kind") ?? ""]) || coreLabels(core, locale).label,
+    // 新しい画面の宿・体験・自然・建物・日帰り温泉・まちは種類（一棟貸し・ツアー・海岸…）を出す。ほかは今どおりコアの名前
+    kindLabel: ((accommodation ?? experience ?? nature ?? building ?? hotspring ?? village) && coreLabels(core, locale).kindLabels[str("kind") ?? ""]) || coreLabels(core, locale).label,
     summary: resolveLocalizedText(pick("summary"), locale).text || null,
     isDemo: dest.is_demo,
     photos: photos.map((p) => p.photo),
@@ -176,5 +196,8 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
     accommodation,
     experience,
     nature,
+    building,
+    hotspring,
+    village,
   };
 }

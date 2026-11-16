@@ -147,11 +147,14 @@ describe("detailsSchema を持つコア", () => {
   });
 });
 
-describe("体験・自然は details を JSON 1 つで受ける", () => {
+describe("体験・自然・建物・日帰り温泉・まちは details を JSON 1 つで受ける", () => {
   const body = (details: unknown) => ({ core: {}, texts: [{ lang: "ja", name: "x" }], details, photos: [{ storage_key: "a.jpg" }] });
   const oldTables: [string, unknown][] = [
     ["experience", { courses: [{ name: { ja: "x" }, max_people: 8 }], prices: [{ amount: 3000, currency: "JPY" }] }],
     ["nature", { access: [{ has_parking: true }], hours_fees: [{ amount: 0 }] }],
+    ["building", { hours: [{ open_time: "09:00" }], fees: [{ amount: 500, currency: "JPY" }] }],
+    ["hotspring", { baths: [{ bath_type: "indoor", spring_quality: "単純温泉" }], hours: [{ opens_at: "10:00" }] }],
+    ["village", { walks: [{ area: { ja: "駅前" }, duration_min: 30 }], access: [{ kind: "bus" }] }],
   ];
   it.each(oldTables)("%s: 旧い表の形の details を弾く", (type, details) => {
     const r = parseDestInput(coreByType(type)!, body(details));
@@ -178,11 +181,11 @@ describe("詳細の表で受けるコア", () => {
 });
 
 describe("scripts/import-bundle の fixture bundle", () => {
-  it("宿・体験・自然（新しい形）が中身の決まりまで通る", async () => {
+  it("宿・体験・自然・建物・日帰り温泉・まち（新しい形）が中身の決まりまで通る", async () => {
     const { readFile } = await import("node:fs/promises");
     const json = JSON.parse(await readFile(new URL("../../../scripts/import-bundle/fixtures/bundle.json", import.meta.url), "utf8"));
     const r = parseBundle(json);
     if (!r.ok) throw new Error(r.errors.join("\n"));
-    expect(r.value.dests.map((d) => d.core_type)).toEqual(["accommodation", "experience", "nature"]);
+    expect(r.value.dests.map((d) => d.core_type)).toEqual(["accommodation", "experience", "nature", "building", "hotspring", "village"]);
   });
 });

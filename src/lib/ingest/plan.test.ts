@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseDestInput } from "./bundle.ts";
 import { coreByType } from "./cores.ts";
 import { planDestWrite, type DestRefs } from "./plan.ts";
-import { jsonDetailsCore, tableDetailsCore, withAccommodationQuality, withExperienceQuality, withNatureQuality } from "./test-fixtures.ts";
+import { jsonDetailsCore, tableDetailsCore, withAccommodationQuality, withBuildingQuality, withExperienceQuality, withHotspringQuality, withNatureQuality, withVillageQuality } from "./test-fixtures.ts";
 
 const acc = coreByType("accommodation")!;
 // 詳細の表で受けるコア（表の書き込みを確かめる）
@@ -37,11 +37,11 @@ describe("planDestWrite", () => {
     n = 0;
     const p = planDestWrite(tab, input(), refs(), ctx());
     const names = p.tables.map((t) => t.table);
-    expect(names).toEqual(["buildings", "building_texts", "building_hours", "building_fees", "dest_photos"]);
+    expect(names).toEqual(["fake_cores", "fake_texts", "fake_hours", "fake_fees", "dest_photos"]);
     const t = (name: string) => p.tables.find((x) => x.table === name)!.rows;
     const destId = p.destination.dest_id;
     for (const x of p.tables) for (const r of x.rows) expect(r.dest_id).toBe(destId);
-    const fees = t("building_fees");
+    const fees = t("fake_fees");
     expect(fees.map((r) => [r.sort, r.amount])).toEqual([[0, "500"], [1, "300"]]);
     expect(t("dest_photos").map((r) => r.sort)).toEqual([0, 1]);
     expect(p.destination.slug).toBe("wr-atami-008");
@@ -100,9 +100,13 @@ describe("planDestWrite", () => {
   it.each([
     ["experience", withExperienceQuality, ["experiences", "experience_texts", "dest_photos"]],
     ["nature", withNatureQuality, ["natures", "nature_texts", "dest_photos"]],
+    ["building", withBuildingQuality, ["buildings", "building_texts", "dest_photos"]],
+    ["hotspring", withHotspringQuality, ["hotsprings", "hotspring_texts", "dest_photos"]],
+    ["village", withVillageQuality, ["villages", "village_texts", "dest_photos"]],
   ] as const)("%s は details をコアの行に入れ、旧い詳細の表を作らない", (type, make, tables) => {
     const core = coreByType(type)!;
-    const r = parseDestInput(core, make({ ref: `WR-${type}-001`, core: { kind: type === "nature" ? "coast" : "tour" } }));
+    const kind = { experience: "tour", nature: "coast", building: "museum", hotspring: "day_use", village: "onsen_town" }[type];
+    const r = parseDestInput(core, make({ ref: `WR-${type}-001`, core: { kind } }));
     if (!r.ok) throw new Error(r.errors.join("\n"));
     const p = planDestWrite(core, r.value, refs(), ctx());
     expect(p.tables.map((t) => t.table)).toEqual(tables);
