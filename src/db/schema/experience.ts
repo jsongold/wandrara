@@ -1,5 +1,6 @@
-// 体験：ツアー・ワークショップ・試飲など。位置はコアに持たず experience_locations に持つ（region_id だけコアに持つ）
-import { boolean, doublePrecision, index, integer, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+// 体験：ツアー・ワークショップ・試飲など。詳細は experiences.details（JSON）に持つ。旧い詳細の表（experience_*）は集め直しが済むまで残す
+import { boolean, doublePrecision, index, integer, jsonb, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { experienceDetailsSchema } from "../../lib/experience/details.ts";
 import { destinations } from "./common.ts";
 import { regions } from "./dictionary.ts";
 import { operators } from "./people.ts";
@@ -40,6 +41,8 @@ export const experiences = pgTable(
     durationMinutes: integer("duration_minutes"),
     reservationRequired: boolean("reservation_required"),
     officialUrl: text("official_url"),
+    /** 体験の詳細（コース・料金・開催・場所 など）。型つき JSON。null は新しい形でまだ入っていない体験 */
+    details: jsonb("details").$type<Record<string, unknown>>(),
   },
   (t) => [oneOf("experiences_kind_check", t.kind, Object.keys(KIND_LABELS)), publishedRead(t.destId)],
 );
@@ -167,6 +170,8 @@ export const experienceCore: CoreDef = {
     officialUrl: "公式サイト",
   },
   kindLabels: KIND_LABELS,
+  // 詳細は details の JSON 1 つ。下の表の一覧は、集め直しが済むまで画面が旧い行を読むために残す（取り込みでは使わない）
+  detailsSchema: experienceDetailsSchema,
   details: [
     {
       key: "courses",

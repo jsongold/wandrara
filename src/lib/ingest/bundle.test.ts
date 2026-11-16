@@ -147,6 +147,23 @@ describe("detailsSchema を持つコア", () => {
   });
 });
 
+describe("体験・自然は details を JSON 1 つで受ける", () => {
+  const body = (details: unknown) => ({ core: {}, texts: [{ lang: "ja", name: "x" }], details, photos: [{ storage_key: "a.jpg" }] });
+  const oldTables: [string, unknown][] = [
+    ["experience", { courses: [{ name: { ja: "x" }, max_people: 8 }], prices: [{ amount: 3000, currency: "JPY" }] }],
+    ["nature", { access: [{ has_parking: true }], hours_fees: [{ amount: 0 }] }],
+  ];
+  it.each(oldTables)("%s: 旧い表の形の details を弾く", (type, details) => {
+    const r = parseDestInput(coreByType(type)!, body(details));
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.some((e) => e.startsWith("/details"))).toBe(true);
+  });
+  it("新しい形は details の形を通る（中身の決まりは別）", () => {
+    const r = parseDestInput(coreByType("nature")!, body({ access: { mode: "walk" } }));
+    if (!r.ok) expect(r.errors.some((e) => e.startsWith("/details"))).toBe(false);
+  });
+});
+
 describe("詳細の表で受けるコア", () => {
   const body = (details: any) => ({ core: { kind: "tour" }, texts: [{ lang: "ja", name: "体験" }], details, photos: [{ storage_key: "a.jpg" }] });
   it("入れ子の詳細を受ける。numeric は string になる", () => {
@@ -155,13 +172,23 @@ describe("詳細の表で受けるコア", () => {
     if (r.ok) expect((r.value.details as any).courses[0].prices[0].amount).toBe("3000.5");
   });
   it("親以外の詳細を指す列（course_id）を受けない", () => {
-    // 体験のコアは中身の決まり（quality.ts）でも弾くので、course_id のエラーだけを見る
-    const exp = coreByType("experience")!;
+    // 親（courses）の子でない形の体験の表。種類名を変えて中身の決まり（quality.ts）は外す
+    const exp = { ...tableDetailsCore, coreType: "experience_flat" as typeof tableDetailsCore.coreType, details: coreByType("experience")!.details };
     const errs = (prices: unknown[]) => {
       const r = parseDestInput(exp, body({ prices }));
       return r.ok ? [] : r.errors.filter((e) => e.includes("course_id"));
     };
     expect(errs([{ amount: 3000, currency: "JPY" }])).toEqual([]);
     expect(errs([{ amount: 3000, currency: "JPY", course_id: "00000000-0000-0000-0000-000000000000" }])).toEqual(['/details/prices/0 Unrecognized key: "course_id"']);
+  });
+});
+
+describe("scripts/import-bundle の fixture bundle", () => {
+  it("宿・体験・自然（新しい形）が中身の決まりまで通る", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const json = JSON.parse(await readFile(new URL("../../../scripts/import-bundle/fixtures/bundle.json", import.meta.url), "utf8"));
+    const r = parseBundle(json);
+    if (!r.ok) throw new Error(r.errors.join("\n"));
+    expect(r.value.dests.map((d) => d.core_type)).toEqual(["accommodation", "experience", "nature"]);
   });
 });
