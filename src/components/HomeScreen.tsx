@@ -27,6 +27,9 @@ const GLASS: CSSProperties = {
   WebkitBackdropFilter: "blur(16px) saturate(1.2)",
   border: "1px solid rgba(255,255,255,0.14)",
 };
+// 下に浮かぶアイコン。外枠は無く、1 つずつがガラスの上に乗る
+const ICON_OFF: CSSProperties = { ...GLASS, color: "#ffffff" };
+const ICON_ON: CSSProperties = { background: "#f4f1ea", color: "#141413", border: "1px solid #f4f1ea" };
 const sorts = (m: Messages): { id: SortKey; label: string }[] => [
   { id: "editorial", label: m.home.sortEditorial },
   { id: "fresh", label: m.home.sortFresh },
@@ -69,7 +72,8 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
   }, [query, locale]);
 
   function go(next: Partial<DiscoverQuery>) {
-    const merged: DiscoverQuery = { ...query, ...next };
+    // テキスト入力を出していない間は、URL に残った q を次の操作で外す（見えない絞り込みを残さない）
+    const merged: DiscoverQuery = { ...query, ...(SHOW_SEARCH_AND_FILTER ? {} : { q: "" }), ...next };
     startTransition(() => {
       router.replace(serializeDiscoverQuery(merged, locale), { scroll: false });
     });
@@ -134,29 +138,29 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
 
       {/* Floating overlay */}
       <div className="absolute inset-x-3 bottom-[22px] z-[6] flex flex-col gap-2">
-        <div className="flex items-stretch gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => go({ mode: otherMode(query.mode), cat: "all" })}
             aria-label={m.home.searchBySwitch(m.mode[query.mode], m.mode[otherMode(query.mode)])}
             title={m.home.searchBy(m.mode[query.mode])}
-            className="flex w-[58px] flex-none cursor-pointer items-center justify-center self-stretch rounded-[18px] text-white"
-            style={GLASS}
+            className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl"
+            style={ICON_OFF}
           >
             <Icon name={isStay ? "pin" : "sparkle"} />
           </button>
-          <nav aria-label={m.home.navLabel} className="flex min-w-0 flex-auto items-center gap-1.5 rounded-[18px] p-1.5" style={GLASS}>
+          <nav aria-label={m.home.navLabel} className="flex min-w-0 flex-auto items-center gap-1.5">
             <button
               type="button"
               onClick={() => setSheet("area")}
               aria-label={m.home.chooseAreaNow(currentArea)}
               title={currentArea}
               className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl"
-              style={query.area === "all" ? { background: "rgba(255,255,255,0.10)", color: "#ffffff" } : { background: "#f4f1ea", color: "#141413" }}
+              style={query.area === "all" ? ICON_OFF : ICON_ON}
             >
               <Icon name="map" />
             </button>
-            <span aria-hidden="true" className="h-6 w-px flex-none bg-white/20" />
+            <span aria-hidden="true" className="h-6 w-px flex-none bg-white/40" />
             <div className="flex min-w-0 flex-auto gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {allCats.map((c) => {
                 const on = c.id === query.cat;
@@ -169,7 +173,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
                     aria-pressed={on}
                     title={c.label}
                     className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl"
-                    style={on ? { background: "#f4f1ea", color: "#141413" } : { background: "rgba(255,255,255,0.10)", color: "#ffffff" }}
+                    style={on ? ICON_ON : ICON_OFF}
                   >
                     <Icon name={c.icon} />
                   </button>
