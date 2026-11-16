@@ -57,6 +57,13 @@
       "when": 1794750769828,
       "tag": "20261115135249_accommodation_details",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794791892471,
+      "tag": "20261116011812_drop_accommodation_detail_tables",
+      "breakpoints": true
     }
   ]
 }

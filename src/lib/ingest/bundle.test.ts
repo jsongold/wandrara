@@ -148,14 +148,20 @@ describe("detailsSchema を持つコア", () => {
 });
 
 describe("詳細の表で受けるコア", () => {
-  const body = (details: any) => ({ core: { kind: "hotel" }, texts: [{ lang: "ja", name: "宿" }], details, photos: [{ storage_key: "a.jpg" }] });
+  const body = (details: any) => ({ core: { kind: "tour" }, texts: [{ lang: "ja", name: "体験" }], details, photos: [{ storage_key: "a.jpg" }] });
   it("入れ子の詳細を受ける。numeric は string になる", () => {
-    const r = parseDestInput(tableDetailsCore, body({ units: [{ area_sqm: 45.5, bedrooms: [{ beds: [{ bed_type: "double", count: 2 }] }] }] }));
+    const r = parseDestInput(tableDetailsCore, body({ courses: [{ max_people: 8, prices: [{ amount: 3000.5, currency: "JPY" }] }] }));
     expect(r.ok).toBe(true);
-    if (r.ok) expect((r.value.details as any).units[0].area_sqm).toBe("45.5");
+    if (r.ok) expect((r.value.details as any).courses[0].prices[0].amount).toBe("3000.5");
   });
-  it("親以外の詳細を指す列（unit_id）を受けない", () => {
-    expect(parseDestInput(tableDetailsCore, body({ baths: [{ kind: "private" }] })).ok).toBe(true);
-    expect(parseDestInput(tableDetailsCore, body({ baths: [{ kind: "private", unit_id: "00000000-0000-0000-0000-000000000000" }] })).ok).toBe(false);
+  it("親以外の詳細を指す列（course_id）を受けない", () => {
+    // 体験のコアは中身の決まり（quality.ts）でも弾くので、course_id のエラーだけを見る
+    const exp = coreByType("experience")!;
+    const errs = (prices: unknown[]) => {
+      const r = parseDestInput(exp, body({ prices }));
+      return r.ok ? [] : r.errors.filter((e) => e.includes("course_id"));
+    };
+    expect(errs([{ amount: 3000, currency: "JPY" }])).toEqual([]);
+    expect(errs([{ amount: 3000, currency: "JPY", course_id: "00000000-0000-0000-0000-000000000000" }])).toEqual(['/details/prices/0 Unrecognized key: "course_id"']);
   });
 });

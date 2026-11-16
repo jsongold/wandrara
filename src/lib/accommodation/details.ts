@@ -196,7 +196,7 @@ export const surroundingsSchema = z.strictObject({
 
 export const cautionSchema = z.strictObject({ note: localizedTextSchema });
 
-// 今の accommodation_licenses の値
+// 旧 accommodation_licenses と同じ値
 export const LICENSE_KINDS = ["ryokan_business", "minpaku", "special_zone_minpaku", "simple_lodging"] as const;
 
 export const licenseSchema = z.strictObject({
