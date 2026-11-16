@@ -2,6 +2,7 @@
 // 根拠：Google Hotel Center（名前・住所・座標）、Google Things to do / OCTO（価格・所要時間・ページへのリンク）、
 // schema.org（営業時間・無料かどうか）、日帰り温泉の掲載（料金・営業時間・泉質）。言語は問わない（どれか 1 つの言語であればよい）
 import type { DestInput } from "./bundle.ts";
+import { representativeLocation } from "../region/representative.ts";
 
 /** 日本の範囲。この外の座標は誤りとして弾く（どのエリアに入るかは取り込みが位置から決める。src/lib/region） */
 export const JAPAN = { latMin: 20, latMax: 46, lngMin: 122, lngMax: 154 } as const;
@@ -87,11 +88,14 @@ export const QUALITY_RULES: Record<string, Check[]> = {
     },
     {
       path: "/details/locations",
-      message: "日本の範囲の座標を持つ集合場所（locations の kind: meeting。施設の利用は実施場所 activity でもよい）が 1 つ以上要る",
-      ok: (d) =>
-        (json(d).locations ?? []).some(
-          (r) => (r.kind === "meeting" || (d.core.kind === "facility_use" && r.kind === "activity")) && inJapan(r.lat, r.lng),
-        ),
+      message:
+        "集合場所（locations の kind: meeting。施設の利用は実施場所 activity でもよい）が要り、代表の場所（最初の meeting、無ければ先頭。カードとエリアに使う）が日本の範囲の座標を持つこと",
+      ok: (d) => {
+        const locs = json(d).locations ?? [];
+        const hasPlace = locs.some((r) => r.kind === "meeting" || (d.core.kind === "facility_use" && r.kind === "activity"));
+        const rep = representativeLocation("experience", d.core, d.details);
+        return hasPlace && inJapan(rep.lat, rep.lng);
+      },
     },
     {
       path: "/core/official_url",

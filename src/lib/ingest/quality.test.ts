@@ -80,6 +80,8 @@ describe("checkQuality", () => {
     ["experience", "/core/duration_minutes", (d) => delete d.core.duration_minutes],
     ["experience", "/details/locations", (d) => (d.details!.locations = [{ kind: "meeting", lat: 0, lng: 140 }])],
     ["experience", "/details/locations", (d) => delete d.details!.locations],
+    // 代表（最初の meeting）が日本の外。2 件目が日本の中でも通さない
+    ["experience", "/details/locations", (d) => (d.details!.locations = [{ kind: "meeting", lat: 0, lng: 0 }, { kind: "meeting", ...loc }])],
     ["experience", "/details/locations", (d) => (d.details!.locations = [{ kind: "activity", ...loc }])], // 集合場所が無い
     ["experience", "/details/prices/items", (d) => delete d.details!.prices],
     ["experience", "/details/prices/items", (d) => (d.details!.prices = { items: [{ per: "person", amount: 0, currency: "JPY" }] })],

@@ -210,4 +210,11 @@ describe("registerDest", () => {
     expect(r).toMatchObject({ ok: false, status: 400 });
     expect(rpcCalls).toHaveLength(0);
   });
+
+  it("位置で決まっても、明示した region_id が DB に無ければ 400（書き間違いを黙って捨てない）", async () => {
+    const { db, rpcCalls } = mockDb();
+    const r = await registerDest(db, acc, { ...body(), core: { ...body().core, region_id: "typo" } }, principal);
+    expect(r).toMatchObject({ ok: false, status: 400 });
+    expect(rpcCalls).toHaveLength(0);
+  });
 });

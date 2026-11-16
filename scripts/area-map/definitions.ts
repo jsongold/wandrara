@@ -1,6 +1,7 @@
 // エリアの定義をローカル DB（migration を当てた状態）から読む。本番や任意の接続先からは作らない
 import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
+import { selectAll } from "../../src/lib/supabase/select-all.ts";
 import type { PartSource, RegionDef } from "../../src/lib/region/types.ts";
 import { SOURCE_VERSIONS } from "./sources.ts";
 
@@ -50,11 +51,9 @@ function localDb() {
 
 export async function loadDefinitions(): Promise<RegionDef[]> {
   const db = localDb();
-  const [r, p] = await Promise.all([
-    db.from("regions").select("id, parent_id, name, sort, lat, lng"),
-    db.from("region_parts").select("region_id, source, source_version, code"),
+  const [regions, parts] = await Promise.all([
+    selectAll<RegionRow>(db, "regions", "id, parent_id, name, sort, lat, lng", ["id"]),
+    selectAll<PartRow>(db, "region_parts", "region_id, source, source_version, code", ["source", "source_version", "code"]),
   ]);
-  if (r.error) throw new Error(`regions: ${r.error.message}`);
-  if (p.error) throw new Error(`region_parts: ${p.error.message}`);
-  return toDefinitions(r.data as RegionRow[], p.data as PartRow[]);
+  return toDefinitions(regions, parts);
 }

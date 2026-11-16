@@ -116,6 +116,7 @@ export function resolveRegion(loc: RepresentativeLocation, shards: LookupShard[]
  * ① 明示が実在し、決めた結果と同じかその子孫なら明示。点だけのエリア（大涌谷）は、その親が決めた結果と同じかその祖先なら明示
  *   （大涌谷は形を持たないので、座標では隣の仙石原などに決まる。明示した大涌谷を残す）
  * ② それ以外で決まれば決めた結果 ③ 決まらなければ実在する明示 ④ どれも無ければ決まらない
+ * 明示が DB に無い id なら、位置で決まっても unknown_region（書き間違いを黙って捨てない）
  */
 export function decideRegion(
   resolved: ResolveResult,
@@ -124,7 +125,8 @@ export function decideRegion(
   manifest: Pick<LookupManifest, "parents" | "points">,
 ): RegionDecision {
   const { parents, points } = manifest;
-  const ex = explicit && exists(explicit) ? explicit : null;
+  if (explicit && !exists(explicit)) return { ok: false, reason: "unknown_region" };
+  const ex = explicit || null;
   if (resolved.ok) {
     const under = (id: string | null) => !!id && lineage(id, parents).includes(resolved.regionId);
     const pointNear = (id: string) => points.includes(id) && !!parents[id] && lineage(resolved.regionId, parents).includes(parents[id] as string);

@@ -1,6 +1,7 @@
 // 既存の宿・体験などの region_id を、位置から決め直す（取り込みと同じ規則。src/lib/region）。
-// 使い方: pnpm backfill:regions                → 差分を表示し、.cache/backfill-regions/<版>.json に保存する（書かない）
-//         pnpm backfill:regions --apply <file> → 保存した差分だけを 1 件ずつ書く。書く直前に位置と旧い値を照合し、変わっていれば飛ばす
+// 使い方: pnpm backfill:regions                → 差分を表示し、.cache/backfill-regions/<版>-<日時>.json に保存する（書かない。上書きしない）
+//         pnpm backfill:regions --apply <file> → 保存した差分だけを 1 件ずつ書く。書く直前に位置と旧い値を照合し、変わっていれば飛ばす。
+//                                               結果は <file> の隣に .applied.json で残す（旧い値は差分のファイルにある）
 // 決まらないものは今の値のまま。公開状態は変えない。本番に --apply するのは確認してから
 import fs from "node:fs";
 import path from "node:path";
@@ -10,6 +11,7 @@ import { representativeLocation } from "../src/lib/region/representative.ts";
 import { decideRegion } from "../src/lib/region/resolve.ts";
 import type { LookupManifest, RepresentativeLocation, ResolveResult } from "../src/lib/region/types.ts";
 import { adminClient } from "../src/lib/supabase/admin.ts";
+import { selectAll } from "../src/lib/supabase/select-all.ts";
 
 type Row = Record<string, unknown>;
 export type DestRow = { dest_id: string; core_type: string; slug: string; region_id: string | null; core: Row; details: unknown };
@@ -22,6 +24,8 @@ export type Change = {
   lat: number | null;
   lng: number | null;
   geo_precision: string | null;
+  prefecture: string | null; // 座標の無い行は住所でエリアを決めるので、書く直前に住所も照合する
+  municipality: string | null;
 };
 export type Kept = { dest_id: string; slug: string; region_id: string | null; reason: string };
 export type BackfillPlan = { lookup_version: string; changes: Change[]; kept: Kept[] };
@@ -61,23 +65,25 @@ export async function planBackfill(
       lat: loc.lat,
       lng: loc.lng,
       geo_precision: loc.precision,
+      prefecture: loc.prefecture,
+      municipality: loc.municipality,
     });
   }
   return { lookup_version: manifest.version, changes, kept };
 }
 
 async function loadRows(db: SupabaseClient): Promise<DestRow[]> {
-  const { data: dests, error } = await db.from("destinations").select("dest_id, core_type, slug");
-  if (error) throw new Error(`destinations: ${error.message}`);
+  const dests = await selectAll<{ dest_id: string; core_type: string; slug: string }>(db, "destinations", "dest_id, core_type, slug", ["dest_id"]);
   const out: DestRow[] = [];
   for (const [type, table] of Object.entries(TABLES)) {
     const cols = type === "experience" ? "dest_id, region_id, details" : "dest_id, region_id, lat, lng, geo_precision, prefecture, municipality";
-    const { data, error: e } = await db.from(table).select(cols);
-    if (e) throw new Error(`${table}: ${e.message}`);
-    const byId = new Map(((data ?? []) as unknown as Row[]).map((r) => [r.dest_id as string, r]));
-    for (const d of (dests ?? []).filter((x) => x.core_type === type)) {
+    const byId = new Map((await selectAll<Row>(db, table, cols, ["dest_id"])).map((r) => [r.dest_id as string, r]));
+    for (const d of dests.filter((x) => x.core_type === type)) {
       const core = byId.get(d.dest_id);
-      if (!core) continue;
+      if (!core) {
+        console.warn(`コアの行が無い（読まない）: ${d.slug}`);
+        continue;
+      }
       out.push({ dest_id: d.dest_id, core_type: type, slug: d.slug, region_id: (core.region_id as string | null) ?? null, core, details: core.details ?? null });
     }
   }
@@ -85,9 +91,7 @@ async function loadRows(db: SupabaseClient): Promise<DestRow[]> {
 }
 
 async function existingRegions(db: SupabaseClient): Promise<Set<string>> {
-  const { data, error } = await db.from("regions").select("id");
-  if (error) throw new Error(`regions: ${error.message}`);
-  return new Set((data ?? []).map((r) => r.id as string));
+  return new Set((await selectAll<{ id: string }>(db, "regions", "id", ["id"])).map((r) => r.id));
 }
 
 /** 保存した差分を 1 件ずつ書く。結果は updated / skipped（その間に変わった）/ missing（消えた） */
@@ -116,16 +120,19 @@ async function main(): Promise<number> {
       console.error(`差分の索引の版（${plan.lookup_version}）が今の索引（${lookupManifest.version}）と違う。差分を出し直す`);
       return 1;
     }
-    console.log(JSON.stringify(await applyBackfill(db, plan)));
+    const counts = await applyBackfill(db, plan);
+    fs.writeFileSync(file.replace(/\.json$/, "") + ".applied.json", JSON.stringify({ applied_at: new Date().toISOString(), counts }, null, 2) + "\n", { flag: "wx" });
+    console.log(JSON.stringify(counts));
     return 0;
   }
   const regions = await existingRegions(db);
   const plan = await planBackfill(await loadRows(db), resolveLocation, lookupManifest, (id) => regions.has(id));
   for (const c of plan.changes) console.log(`${c.slug}: ${c.old_region_id ?? "(なし)"} → ${c.new_region_id}`);
   for (const k of plan.kept) console.log(`そのまま（${k.reason}）: ${k.slug} ${k.region_id ?? "(なし)"}`);
-  const out = path.resolve(".cache/backfill-regions", `${lookupManifest.version}.json`);
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const out = path.resolve(".cache/backfill-regions", `${lookupManifest.version}-${stamp}.json`);
   fs.mkdirSync(path.dirname(out), { recursive: true });
-  fs.writeFileSync(out, JSON.stringify(plan, null, 2) + "\n");
+  fs.writeFileSync(out, JSON.stringify(plan, null, 2) + "\n", { flag: "wx" }); // 確かめた差分を後から上書きしない
   console.log(`変える ${plan.changes.length} 件・決まらずそのまま ${plan.kept.length} 件。差分: ${path.relative(process.cwd(), out)}`);
   return 0;
 }
