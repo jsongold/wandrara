@@ -64,6 +64,13 @@
       "when": 1794791892471,
       "tag": "20261116011812_drop_accommodation_detail_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794794322951,
+      "tag": "20261116015842_experience_nature_details",
+      "breakpoints": true
     }
   ]
 }

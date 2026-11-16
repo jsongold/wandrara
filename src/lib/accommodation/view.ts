@@ -201,13 +201,13 @@ export function toHHMM(v: string | null): string | null {
   return m ? m[1] : null;
 }
 
-const num = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+export const num = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });
 
 type Text = Messages["accommodation"];
 type MoneyInput = { amount: number; amountMax?: number; currency: string; taxIncluded?: boolean };
 
 /** 金額だけ（税の注記なし）。ja「1,000〜2,000 円」、en「¥1,000–2,000」。円でなければ「12.5 USD」 */
-function amountText(m: MoneyInput, locale: Locale): string {
+export function amountText(m: MoneyInput, locale: Locale): string {
   const t = messages(locale).accommodation;
   const amount = m.amountMax !== undefined && m.amountMax !== m.amount ? t.range(num(m.amount), num(m.amountMax)) : num(m.amount);
   return m.currency === "JPY" ? t.price.yen(amount) : `${amount} ${m.currency}`;

@@ -31,6 +31,58 @@
       "categories": ["onsen"],
       "photos": [{ "file": "001.png", "license": "none", "subject": "exterior" }],
       "region": { "id": "atami", "name": { "ja": "熱海" } }
+    },
+    {
+      "core_type": "experience",
+      "ref": "WR-test-002",
+      "slug": "import-test-002",
+      "core": {
+        "kind": "tour",
+        "region_id": "izu",
+        "duration_minutes": 90,
+        "reservation_required": true,
+        "official_url": "https://example.com/"
+      },
+      "texts": [{ "lang": "ja", "name": "取り込みテスト（体験）", "summary": "テスト用" }],
+      "details": {
+        "courses": [{ "key": "tasting", "name": { "ja": "見学と試飲" }, "duration_minutes": 90, "people_min": 1, "people_max": 20 }],
+        "prices": { "items": [{ "course": "tasting", "per": "person", "amount": 3500, "currency": "JPY", "tax_included": true }] },
+        "schedules": [{ "months_from": 3, "months_to": 11, "weekdays": [5, 6, 7], "start_times": ["10:00", "14:00"] }],
+        "locations": [{ "kind": "meeting", "lat": 34.9, "lng": 138.95, "geo_precision": "exact", "address": { "ja": "伊豆市○○ 1-2" } }],
+        "sources": [{ "name": "公式サイト", "url": "https://example.com/", "type": "official", "retrieved_at": "2026-11-16" }]
+      },
+      "photos": [{ "file": "001.png", "license": "none", "subject": "activity" }],
+      "region": {
+        "id": "izu",
+        "name": { "ja": "伊豆" }
+      }
+    },
+    {
+      "core_type": "nature",
+      "ref": "WR-test-003",
+      "slug": "import-test-003",
+      "core": {
+        "kind": "coast",
+        "region_id": "ito",
+        "lat": 34.9,
+        "lng": 139.1,
+        "geo_precision": "exact",
+        "protection": "none"
+      },
+      "texts": [{ "lang": "ja", "name": "取り込みテスト（自然）", "summary": "テスト用" }],
+      "details": {
+        "seasons": [{ "subject": { "ja": "つつじ" }, "month_from": 4, "month_to": 5 }],
+        "hours": { "always_open": true },
+        "fees": [{ "amount": 0, "currency": "JPY" }],
+        "access": { "station": { "ja": "○○駅" }, "mode": "walk", "minutes": 15, "parking": { "available": true, "spaces": 80, "paid": true } },
+        "trails": [{ "key": "misaki", "name": { "ja": "岬めぐりコース" }, "distance_km": 3.2, "difficulty": "moderate" }],
+        "sources": [{ "name": "市の観光サイト", "url": "https://example.com/", "type": "official", "retrieved_at": "2026-11-16" }]
+      },
+      "photos": [{ "file": "001.png", "license": "none", "subject": "landscape" }],
+      "region": {
+        "id": "ito",
+        "name": { "ja": "伊東" }
+      }
     }
   ]
 }

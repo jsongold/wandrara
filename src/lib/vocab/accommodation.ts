@@ -7,7 +7,7 @@ export type Term = { readonly code: string; readonly label: string; readonly en:
 type Codes<T extends readonly Term[]> = { -readonly [K in keyof T]: T[K]["code"] };
 
 // 一覧からコードの tuple を作る（z.enum に渡せる形）
-function codesOf<const T extends readonly [Term, ...Term[]]>(list: T): Readonly<Codes<T>> {
+export function codesOf<const T extends readonly [Term, ...Term[]]>(list: T): Readonly<Codes<T>> {
   return list.map((t) => t.code) as unknown as Readonly<Codes<T>>;
 }
 

@@ -17,8 +17,9 @@ const inArea = (lat: unknown, lng: unknown) => {
   return a >= AREA.latMin && a <= AREA.latMax && o >= AREA.lngMin && o <= AREA.lngMax;
 };
 const anyText = (d: DestInput, f: string) => d.texts.some((t) => present(t[f]));
-// details を JSON 1 つで持つコア（宿）の details
-const json = (d: DestInput) => (d.details ?? {}) as { rooms?: Row[]; prices?: { items?: Row[] }; sources?: Row[] };
+// details を JSON 1 つで持つコア（宿・体験・自然）の details
+const json = (d: DestInput) =>
+  (d.details ?? {}) as { rooms?: Row[]; prices?: { items?: Row[] }; locations?: Row[]; booking_links?: Row[]; access?: unknown; sources?: Row[] };
 const hasUrl = (rows: unknown) => ((rows ?? []) as Row[]).some((s) => present(s.url));
 
 // 共通
@@ -28,7 +29,7 @@ const common: Check[] = [
   { path: "/core/region_id", message: "region_id が要る", ok: (d) => present(d.core.region_id) },
   {
     path: "/core/official_url",
-    message: "出どころが要る（core.official_url か sources[].url。宿は details.sources[].url も可）",
+    message: "出どころが要る（core.official_url か sources[].url。宿・体験・自然は details.sources[].url も可）",
     ok: (d) => present(d.core.official_url) || hasUrl(d.sources) || hasUrl(json(d).sources),
   },
 ];
@@ -67,15 +68,24 @@ export const QUALITY_RULES: Record<string, Check[]> = {
     },
   ],
   experience: [
-    ...common,
-    atLeast("prices", "料金（amount > 0・currency）", (r) => num(r.amount) > 0 && present(r.currency)),
+    // 出どころの決まりは体験用に置き換える（booking_links も可）
+    ...common.filter((c) => c.path !== "/core/official_url"),
     { path: "/core/duration_minutes", message: "duration_minutes が要る", ok: (d) => num(d.core.duration_minutes) > 0 },
     {
-      path: "/core/official_url",
-      message: "ページへのリンクが要る（core.official_url か details.booking_links）",
-      ok: (d) => present(d.core.official_url) || rowsOf(d, "booking_links").some((r) => present(r.url)),
+      path: "/details/prices/items",
+      message: "料金（amount > 0・currency・per）が 1 つ以上要る",
+      ok: (d) => (json(d).prices?.items ?? []).some((r) => num(r.amount) > 0 && present(r.currency) && present(r.per)),
     },
-    atLeast("locations", "箱根・伊豆の範囲の座標を持つ集合場所（locations）", (r) => inArea(r.lat, r.lng)),
+    {
+      path: "/details/locations",
+      message: "箱根・伊豆の範囲の座標を持つ場所（locations）が 1 つ以上要る",
+      ok: (d) => (json(d).locations ?? []).some((r) => inArea(r.lat, r.lng)),
+    },
+    {
+      path: "/core/official_url",
+      message: "ページへのリンクが要る（core.official_url か details.booking_links か details.sources[].url）",
+      ok: (d) => present(d.core.official_url) || hasUrl(d.sources) || hasUrl(json(d).booking_links) || hasUrl(json(d).sources),
+    },
   ],
   building: [
     ...common,
@@ -92,7 +102,11 @@ export const QUALITY_RULES: Record<string, Check[]> = {
     atLeast("fees", "大人の料金（fee_kind: adult・amount）", (r) => r.fee_kind === "adult" && num(r.amount) >= 0),
     atLeast("baths", "泉質（spring_quality）のある浴槽（baths）", (r) => present(r.spring_quality)),
   ],
-  nature: [...common, coords, atLeast("access", "行き方（access）")],
+  nature: [
+    ...common,
+    coords,
+    { path: "/details/access", message: "行き方（details.access）が要る", ok: (d) => json(d).access !== undefined && json(d).access !== null },
+  ],
   village: [...common, coords, atLeast("access", "行き方（access）")],
 };
 

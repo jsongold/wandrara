@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseDestInput } from "./bundle.ts";
 import { coreByType } from "./cores.ts";
 import { planDestWrite, type DestRefs } from "./plan.ts";
-import { jsonDetailsCore, tableDetailsCore, withAccommodationQuality } from "./test-fixtures.ts";
+import { jsonDetailsCore, tableDetailsCore, withAccommodationQuality, withExperienceQuality, withNatureQuality } from "./test-fixtures.ts";
 
 const acc = coreByType("accommodation")!;
 // 詳細の表で受けるコア（入れ子の書き込みを確かめる）
@@ -101,6 +101,18 @@ describe("planDestWrite", () => {
 
   it("detailsSchema の無いコアの行に details の列は出ない", () => {
     expect(planDestWrite(tab, input(), refs(), ctx()).tables[0].rows[0]).not.toHaveProperty("details");
+  });
+
+  it.each([
+    ["experience", withExperienceQuality, ["experiences", "experience_texts", "dest_photos"]],
+    ["nature", withNatureQuality, ["natures", "nature_texts", "dest_photos"]],
+  ] as const)("%s は details をコアの行に入れ、旧い詳細の表を作らない", (type, make, tables) => {
+    const core = coreByType(type)!;
+    const r = parseDestInput(core, make({ ref: `WR-${type}-001`, core: { kind: type === "nature" ? "coast" : "tour" } }));
+    if (!r.ok) throw new Error(r.errors.join("\n"));
+    const p = planDestWrite(core, r.value, refs(), ctx());
+    expect(p.tables.map((t) => t.table)).toEqual(tables);
+    expect(p.tables[0].rows[0].details).toEqual(r.value.details);
   });
 
   it("宿は details を accommodations の行に入れ、accommodation_* の詳細の表を作らない", () => {

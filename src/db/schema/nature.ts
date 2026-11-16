@@ -1,6 +1,7 @@
-// 自然のコア：natures と詳細（見頃・時間と料金・アクセス・トレイル・立入規制・注意点）・texts。operator_id は持たない
+// 自然のコア：natures・texts。詳細は natures.details（JSON）に持つ。旧い詳細の表（nature_*）は集め直しが済むまで残す。operator_id は持たない
 import { sql } from "drizzle-orm";
-import { boolean, check, date, index, integer, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, date, index, integer, jsonb, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
+import { natureDetailsSchema } from "../../lib/nature/details.ts";
 import {
   currencyCheck,
   destChildColumns,
@@ -45,6 +46,8 @@ export const natures = pgTable(
     ...locationColumns(),
     /** 保護の区分 */
     protection: text("protection"),
+    /** 自然の詳細（見頃・時間と料金・アクセス・道・規制 など）。型つき JSON。null は新しい形でまだ入っていない自然 */
+    details: jsonb("details").$type<Record<string, unknown>>(),
   },
   (t) => [
     oneOf("natures_kind_check", t.kind, Object.keys(KIND_LABELS)),
@@ -158,6 +161,8 @@ export const natureCore: CoreDef = {
   texts: natureTexts,
   columns: { kind: "種類", protection: "保護の区分" },
   kindLabels: KIND_LABELS,
+  // 詳細は details の JSON 1 つ。下の表の一覧は、集め直しが済むまで画面が旧い行を読むために残す（取り込みでは使わない）
+  detailsSchema: natureDetailsSchema,
   details: [
     { key: "seasons", table: natureSeasons, label: "見頃", columns: { subject: "何が", monthFrom: "開始月", monthTo: "終了月" } },
     {
