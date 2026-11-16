@@ -73,10 +73,10 @@ test("未検証のラベルを出さない", async ({ page }) => {
   await expect(page.getByText("未検証")).toHaveCount(0);
 });
 
-// details の無い宿は、今までどおり「設備・条件」とアクセスを出す
-const PLAIN_SLUG = process.env.E2E_ACC_PLAIN_SLUG ?? "wr-ito-054";
+// 宿以外（details を持たないコア）は、今までどおり「設備・条件」とアクセスを出す。公開中の宿はすべて details を持つ
+const PLAIN_SLUG = process.env.E2E_PLAIN_SLUG ?? "wr-ashinoko-nat-001";
 
-test("details の無い宿は、設備・条件とアクセスの今の出し方のまま", async ({ page }) => {
+test("宿以外は、設備・条件とアクセスの今の出し方のまま", async ({ page }) => {
   await page.goto(`/ja/d/${PLAIN_SLUG}`);
   const main = page.locator("main").last();
   await expect(main.getByRole("heading", { level: 1 })).toBeVisible();
