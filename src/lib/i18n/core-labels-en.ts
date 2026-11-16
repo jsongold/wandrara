@@ -10,8 +10,6 @@ export type CoreLabelsEn = Record<
   }
 >;
 
-const CAUTIONS = { label: "Cautions", columns: { kind: "Type", note: "Details" } };
-
 export const CORE_LABELS_EN: CoreLabelsEn = {
   accommodation: {
     label: "Stay",
@@ -68,13 +66,8 @@ export const CORE_LABELS_EN: CoreLabelsEn = {
       temple_town: "Temple town",
       castle_town: "Castle town",
     },
-    details: {
-      walks: { label: "Walking area", columns: { area: "Area", durationMin: "Duration (min)" } },
-      shop_hours: { label: "Shop hours", columns: { opensAt: "Opens", closesAt: "Closes", note: "Note" } },
-      access: { label: "Getting there", columns: { kind: "Type", note: "Note" } },
-      events: { label: "Festivals and events", columns: { name: "Name", season: "Season", note: "Note" } },
-      cautions: { label: "Cautions", columns: { kind: "Type", note: "Note" } },
-    },
+    // 詳細は details の JSON に持つ（詳細の表は無い）
+    details: {},
   },
   building: {
     label: "Building",
@@ -87,31 +80,14 @@ export const CORE_LABELS_EN: CoreLabelsEn = {
       observatory: "Observation deck",
       historic_building: "Historic building",
     },
-    details: {
-      hours: { label: "Opening hours", columns: { openTime: "Opens", closeTime: "Closes", closedDays: "Closed on", note: "Note" } },
-      fees: { label: "Admission", columns: { label: "Type", amount: "Fee", amountMax: "Fee (max)", currency: "Currency", note: "Note" } },
-      access: {
-        label: "Getting there",
-        columns: { howToGet: "How to get there", hasParking: "Parking", parkingCapacity: "Parking spaces", parkingNote: "Parking note" },
-      },
-      events: {
-        label: "Exhibitions and events",
-        columns: { name: "Name", startDate: "Starts", endDate: "Ends", season: "Season", note: "Note" },
-      },
-      cautions: CAUTIONS,
-    },
+    // 詳細は details の JSON に持つ（詳細の表は無い）
+    details: {},
   },
   hotspring: {
     label: "Hot spring",
     columns: { kind: "Type", officialUrl: "Official website" },
     kindLabels: { day_use: "Day-use hot spring", public_bath: "Public bath", foot_bath: "Foot bath" },
-    details: {
-      baths: { label: "Bath", columns: { bathType: "Type", springHandling: "Hot spring water", springQuality: "Spring type", note: "Note" } },
-      hours: { label: "Opening hours", columns: { opensAt: "Opens", closesAt: "Closes", closedDays: "Closed on", note: "Note" } },
-      fees: { label: "Fees", columns: { feeKind: "Type", amount: "Amount", amountMax: "Amount (max)", currency: "Currency", note: "Note" } },
-      amenities: { label: "Amenities", columns: { towel: "Towels", restArea: "Rest area", meal: "Food", note: "Note" } },
-      access: { label: "Getting there", columns: { nearestStation: "Nearest station", parking: "Parking", parkingCapacity: "Parking spaces", note: "Note" } },
-      cautions: CAUTIONS,
-    },
+    // 詳細は details の JSON に持つ（詳細の表は無い）
+    details: {},
   },
 };
