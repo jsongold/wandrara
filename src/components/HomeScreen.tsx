@@ -272,7 +272,8 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
             <AreaMap
               current={query.area}
               labelOf={(id) => areaName(areas, id, id)}
-              onSelect={(id) => { go({ area: id }); setSheet(null); }}
+              // 地図では選んでもシートを閉じない（続けて寄ったり選び直したりできる）
+              onSelect={(id) => go({ area: id })}
             />
           )}
           {areaView === "list" && areas.map((g) => (
