@@ -106,6 +106,21 @@ describe("checkQuality", () => {
     expect(checkQuality("accommodation", d)).toEqual([]);
   });
 
+  it("experience: 施設の利用（facility_use）は所要時間が無くても、実施場所だけでも通る", () => {
+    const d = complete.experience();
+    d.core.kind = "facility_use";
+    delete d.core.duration_minutes;
+    (d.details as { locations: { kind: string }[] }).locations[0].kind = "activity";
+    expect(checkQuality("experience", d)).toEqual([]);
+  });
+
+  it("experience: 施設の利用でない体験は、実施場所だけでは通らない", () => {
+    const d = complete.experience();
+    d.core.kind = "tour";
+    (d.details as { locations: { kind: string }[] }).locations[0].kind = "activity";
+    expect(checkQuality("experience", d).some((e) => e.startsWith("/details/locations"))).toBe(true);
+  });
+
   it("experience: ページへのリンクは booking_links でもよい", () => {
     const d = complete.experience();
     d.sources = [];
