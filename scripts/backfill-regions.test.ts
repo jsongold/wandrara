@@ -25,7 +25,7 @@ describe("planBackfill", () => {
       ["a", "h", "h1"],
       ["e", null, "i2"],
     ]);
-    expect(p.changes[1]).toMatchObject({ lat: 0.5, lng: 6.5, geo_precision: "street" });
+    expect(p.changes[1]).toMatchObject({ lat: 0.5, lng: 6.5, geo_precision: "street", prefecture: null, municipality: null });
     expect(p.kept).toEqual([{ dest_id: "f", slug: "f", region_id: null, reason: "outside" }]);
   });
   it("差分を当てた後にもう一度出すと差分ゼロ", async () => {
@@ -42,5 +42,13 @@ describe("applyBackfill", () => {
     const plan = await planBackfill([row("a", "h", { lat: 0.5, lng: 0.5, geo_precision: "exact" }), row("x", "h", { lat: 0.5, lng: 1.5, geo_precision: "exact" })], resolve, M, exists);
     expect(await applyBackfill(db as never, plan)).toEqual({ updated: 1, skipped: 1, missing: 0 });
     expect(calls).toHaveLength(2);
+  });
+
+  it("座標の無い行は住所で決め、差分に住所も残す（書く直前の照合に使う）", async () => {
+    const named = row("g", null, { geo_precision: "municipality", prefecture: "架空県", municipality: "四市" });
+    const p = await planBackfill([named], resolve, M, exists);
+    expect(p.changes).toEqual([
+      { dest_id: "g", core_type: "accommodation", slug: "g", old_region_id: null, new_region_id: "i", lat: null, lng: null, geo_precision: "municipality", prefecture: "架空県", municipality: "四市" },
+    ]);
   });
 });

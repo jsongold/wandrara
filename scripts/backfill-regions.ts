@@ -1,6 +1,7 @@
 // 既存の宿・体験などの region_id を、位置から決め直す（取り込みと同じ規則。src/lib/region）。
-// 使い方: pnpm backfill:regions                → 差分を表示し、.cache/backfill-regions/<版>.json に保存する（書かない）
-//         pnpm backfill:regions --apply <file> → 保存した差分だけを 1 件ずつ書く。書く直前に位置と旧い値を照合し、変わっていれば飛ばす
+// 使い方: pnpm backfill:regions                → 差分を表示し、.cache/backfill-regions/<版>-<日時>.json に保存する（書かない。上書きしない）
+//         pnpm backfill:regions --apply <file> → 保存した差分だけを 1 件ずつ書く。書く直前に位置と旧い値を照合し、変わっていれば飛ばす。
+//                                               結果は <file> の隣に .applied.json で残す（旧い値は差分のファイルにある）
 // 決まらないものは今の値のまま。公開状態は変えない。本番に --apply するのは確認してから
 import fs from "node:fs";
 import path from "node:path";
@@ -23,6 +24,8 @@ export type Change = {
   lat: number | null;
   lng: number | null;
   geo_precision: string | null;
+  prefecture: string | null; // 座標の無い行は住所でエリアを決めるので、書く直前に住所も照合する
+  municipality: string | null;
 };
 export type Kept = { dest_id: string; slug: string; region_id: string | null; reason: string };
 export type BackfillPlan = { lookup_version: string; changes: Change[]; kept: Kept[] };
@@ -62,6 +65,8 @@ export async function planBackfill(
       lat: loc.lat,
       lng: loc.lng,
       geo_precision: loc.precision,
+      prefecture: loc.prefecture,
+      municipality: loc.municipality,
     });
   }
   return { lookup_version: manifest.version, changes, kept };
@@ -115,16 +120,19 @@ async function main(): Promise<number> {
       console.error(`差分の索引の版（${plan.lookup_version}）が今の索引（${lookupManifest.version}）と違う。差分を出し直す`);
       return 1;
     }
-    console.log(JSON.stringify(await applyBackfill(db, plan)));
+    const counts = await applyBackfill(db, plan);
+    fs.writeFileSync(file.replace(/\.json$/, "") + ".applied.json", JSON.stringify({ applied_at: new Date().toISOString(), counts }, null, 2) + "\n", { flag: "wx" });
+    console.log(JSON.stringify(counts));
     return 0;
   }
   const regions = await existingRegions(db);
   const plan = await planBackfill(await loadRows(db), resolveLocation, lookupManifest, (id) => regions.has(id));
   for (const c of plan.changes) console.log(`${c.slug}: ${c.old_region_id ?? "(なし)"} → ${c.new_region_id}`);
   for (const k of plan.kept) console.log(`そのまま（${k.reason}）: ${k.slug} ${k.region_id ?? "(なし)"}`);
-  const out = path.resolve(".cache/backfill-regions", `${lookupManifest.version}.json`);
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const out = path.resolve(".cache/backfill-regions", `${lookupManifest.version}-${stamp}.json`);
   fs.mkdirSync(path.dirname(out), { recursive: true });
-  fs.writeFileSync(out, JSON.stringify(plan, null, 2) + "\n");
+  fs.writeFileSync(out, JSON.stringify(plan, null, 2) + "\n", { flag: "wx" }); // 確かめた差分を後から上書きしない
   console.log(`変える ${plan.changes.length} 件・決まらずそのまま ${plan.kept.length} 件。差分: ${path.relative(process.cwd(), out)}`);
   return 0;
 }

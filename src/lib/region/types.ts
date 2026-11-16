@@ -23,7 +23,7 @@ export type RegionDef = {
   parts: RegionPart[];
 };
 
-/** 位置の索引（都道府県ごと）。判定用の形は簡略化・隙間埋めの前の形 */
+/** 位置の索引（都道府県ごと）。判定用の形は元データを 10m 間隔だけ簡略化したもの（表示用の簡略化・小島の削除・隙間埋めはしない。元の形と最大 10m ほどずれる） */
 export type LookupShard = {
   prefecture: string; // 都道府県コード 2 桁
   municipalities: { code: string; name: string; shape: MultiPolygon }[]; // 定義が使う市区町村の形（N03）

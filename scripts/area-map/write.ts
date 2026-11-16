@@ -1,4 +1,4 @@
-// 位置の索引（都道府県ごと）と manifest を作る（純関数）。判定用なので簡略化・隙間埋めはしない（座標は 5 桁に丸めるだけ）
+// 位置の索引（都道府県ごと）と manifest を作る（純関数）。入力は build.ts が 10m 間隔だけ簡略化した形。ここでは座標を 5 桁に丸めるだけ（表示用の簡略化・隙間埋めはしない）
 import { createHash } from "node:crypto";
 import type { BBox, LookupManifest, LookupShard, MultiPolygon, RegionDef } from "../../src/lib/region/types.ts";
 import type { Feature } from "./parts.ts";
