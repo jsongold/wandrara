@@ -16,10 +16,10 @@
 次が 1 つでも無いと、その bundle は通らない（`src/lib/ingest/quality.ts`）。
 - `texts` に `name` と `summary`（どの言語でもよい）
 - 写真 1 枚以上
-- `core.region_id`
+- （`core.region_id` は要らない。位置からエリアが自動で決まる。決まらないとき・大涌谷のような点のエリアを指すときだけ書く。無い id は 400。エリアは自動では作らない）
 - `core.duration_minutes`（0 より大きい）。`core.kind` が `facility_use`（施設の利用）なら任意
 - `details.prices.items` に `amount`（0 より大きい）・`currency`・`per` のある料金が 1 つ以上
-- `details.locations` に、箱根・伊豆の範囲（緯度 34.55〜35.35・経度 138.65〜139.25）の座標を持つ集合場所（`kind: "meeting"`）が 1 つ以上。`facility_use` は実施場所（`kind: "activity"`、施設そのもの）でもよい
+- `details.locations` に、日本の範囲（緯度 20〜46・経度 122〜154）の座標を持つ集合場所（`kind: "meeting"`）が 1 つ以上。`facility_use` は実施場所（`kind: "activity"`、施設そのもの）でもよい
 - ページへのリンク：`core.official_url` か `details.booking_links[].url`（`sources` だけでは足りない）
 
 **見つからない必須の値は推測しない。** 埋めずに報告する。その体験は送らない。

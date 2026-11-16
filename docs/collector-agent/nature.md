@@ -16,8 +16,8 @@
 次が 1 つでも無いと、その bundle は通らない（`src/lib/ingest/quality.ts`）。
 - `texts` に `name` と `summary`（どの言語でもよい）
 - 写真 1 枚以上
-- `core.region_id`
-- `core.lat`・`core.lng`（箱根・伊豆の範囲：緯度 34.55〜35.35・経度 138.65〜139.25）
+- （`core.region_id` は要らない。位置からエリアが自動で決まる。決まらないとき・大涌谷のような点のエリアを指すときだけ書く。無い id は 400。エリアは自動では作らない）
+- `core.lat`・`core.lng`（日本の範囲：緯度 20〜46・経度 122〜154）
 - `details.access`（行き方。オブジェクト 1 つ。分かる分だけ書く）
 - 出どころ：`details.sources[].url`（`core.official_url` の列は自然に無い。dest の `sources[].url` でもよい）
 
@@ -67,7 +67,7 @@ pnpm import:bundle --dry-run <bundle.json>
 - 出典どうしで値が食い違う
 
 ## チェックリスト
-- [ ] 座標が箱根・伊豆の範囲にある
+- [ ] 座標が正しい（エリアは座標から決まる）
 - [ ] `access` は配列でなく 1 つのオブジェクト
 - [ ] 入場料は `fees` に型のある料金として書いた（無料は `amount: 0`）
 - [ ] 種類の値は語彙の一覧にある

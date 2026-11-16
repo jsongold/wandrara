@@ -5,6 +5,18 @@ import { coreByType } from "./cores.ts";
 import { parseDestInput } from "./bundle.ts";
 import { contentHash } from "./hash.ts";
 import { withAccommodationQuality } from "./test-fixtures.ts";
+import { FIXTURE_MANIFEST, FIXTURE_SHARD } from "../region/fixtures.ts";
+import { resolveRegion } from "../region/resolve.ts";
+import { lookupManifest } from "../region/lookup.ts";
+import type { RepresentativeLocation } from "../region/types.ts";
+
+// 箱根・伊豆の外の架空のエリア（src/lib/region/fixtures.ts）で決める。fixture の座標は北海道（経度 141・緯度 42）を原点にずらして使う
+const at = (x: number, y: number) => ({ lng: 141 + x, lat: 42 + y });
+const fixtureDeps = {
+  resolve: async (loc: RepresentativeLocation) =>
+    resolveRegion({ ...loc, lng: loc.lng === null ? null : loc.lng - 141, lat: loc.lat === null ? null : loc.lat - 42 }, [FIXTURE_SHARD], FIXTURE_MANIFEST),
+  manifest: FIXTURE_MANIFEST,
+};
 
 const acc = coreByType("accommodation")!;
 const principal = { keyId: "k1", userId: "u1" };
@@ -20,15 +32,19 @@ const body = () => withAccommodationQuality({
 function mockDb(
   existing?: { dest_id: string; slug: string; core_type?: string; created_by?: string | null },
   last?: { content_hash: string | null; status: string },
+  regions: string[] = ["atami", "izu", "h", "h1", "hp", "i"],
 ) {
   const rpcCalls: { fn: string; args: { p: Record<string, unknown> } }[] = [];
   const chain = (table: string) => {
     const q: Record<string, unknown> = {};
+    let ids: string[] = [];
     const result = () => {
       if (table === "destinations") return { data: existing ?? null, error: null };
+      if (table === "regions") return { data: regions.filter((r) => ids.includes(r)).map((id) => ({ id })), error: null };
       return { data: [], error: null };
     };
-    for (const m of ["select", "eq", "like", "in", "limit"]) q[m] = () => q;
+    for (const m of ["select", "eq", "like", "limit"]) q[m] = () => q;
+    q.in = (_c: string, v: string[]) => ((ids = v), q);
     q.maybeSingle = async () => result();
     q.then = (res: (v: unknown) => unknown) => res(table === "destinations" ? { data: existing ? [existing] : [], error: null } : result());
     return q;
@@ -105,10 +121,11 @@ describe("registerDest", () => {
     expect(rpcCalls).toHaveLength(1);
   });
 
+  // body() の位置（熱海）は索引で izu に決まり、明示の atami（索引に無い）より優先される
   const hashOf = (b: unknown) => {
     const p = parseDestInput(acc, b);
     if (!p.ok) throw new Error(p.errors.join());
-    return contentHash(p.value);
+    return contentHash(p.value, { region_id: "izu", lookup_version: lookupManifest.version });
   };
 
   it("dest_imports に content_hash を渡す", async () => {
@@ -140,5 +157,57 @@ describe("registerDest", () => {
     const { db } = mockDb({ ...ex, created_by: "u2" }, { content_hash: hashOf(body()), status: "published" });
     const r = await registerDest(db, acc, body(), principal);
     expect(r).toMatchObject({ ok: false, status: 409 });
+  });
+
+  const coreRow = (calls: { args: { p: Record<string, unknown> } }[]) =>
+    (calls[0].args.p.tables as { table: string; rows: Record<string, unknown>[] }[])[0].rows[0];
+
+  it("region_id を省いても、位置から決めてコアの行に入れる。regions は作らない", async () => {
+    const { db, rpcCalls } = mockDb();
+    const b = body();
+    delete (b.core as Record<string, unknown>).region_id;
+    const r = await registerDest(db, acc, b, principal);
+    expect(r.ok).toBe(true);
+    expect(coreRow(rpcCalls).region_id).toBe("izu");
+    expect(rpcCalls[0].args.p.regions).toEqual([]);
+  });
+
+  it("箱根・伊豆の外のエリアでも、region_id なしで登録まで通る（fixture の索引）", async () => {
+    const { db, rpcCalls } = mockDb();
+    const b = { ...body(), core: { ...body().core, region_id: undefined, ...at(0.5, 0.5), geo_precision: "exact", check_in: "15:00", check_out: "10:00" } };
+    const r = await registerDest(db, acc, b, principal, fixtureDeps);
+    expect(r).toMatchObject({ ok: true });
+    expect(coreRow(rpcCalls).region_id).toBe("h1");
+  });
+
+  it("点のエリアの明示は、位置が同じ親の中なら残す", async () => {
+    const { db, rpcCalls } = mockDb();
+    const b = { ...body(), core: { ...body().core, region_id: "hp", ...at(0.5, 0.5), geo_precision: "exact", check_in: "15:00", check_out: "10:00" } };
+    await registerDest(db, acc, b, principal, fixtureDeps);
+    expect(coreRow(rpcCalls).region_id).toBe("hp");
+  });
+
+  it("位置から決まらず、明示が無い・DB に無いなら 400（自動で作らない）", async () => {
+    const outside = { ...body().core, region_id: undefined, ...at(0.5, 4.5), geo_precision: "exact", check_in: "15:00", check_out: "10:00" };
+    for (const core of [outside, { ...outside, region_id: "nowhere" }]) {
+      const { db, rpcCalls } = mockDb();
+      const r = await registerDest(db, acc, { ...body(), core }, principal, fixtureDeps);
+      expect(r).toMatchObject({ ok: false, status: 400 });
+      expect(rpcCalls).toHaveLength(0);
+    }
+  });
+
+  it("無い region を input.region で渡しても作らず 400", async () => {
+    const { db, rpcCalls } = mockDb();
+    const r = await registerDest(db, acc, { ...body(), region: { id: "newplace", name: { ja: "新" } } }, principal);
+    expect(r).toMatchObject({ ok: false, status: 400 });
+    expect(rpcCalls).toHaveLength(0);
+  });
+
+  it("決まったエリアが DB に無い（索引とずれている）なら 400", async () => {
+    const { db, rpcCalls } = mockDb(undefined, undefined, ["atami"]);
+    const r = await registerDest(db, acc, body(), principal);
+    expect(r).toMatchObject({ ok: false, status: 400 });
+    expect(rpcCalls).toHaveLength(0);
   });
 });

@@ -41,6 +41,13 @@ describe("contentHash", () => {
   });
 
   it("版の接頭辞つき", () => {
-    expect(contentHash(base())).toMatch(/^v1:[0-9a-f]{64}$/);
+    expect(contentHash(base())).toMatch(/^v2:[0-9a-f]{64}$/);
+  });
+
+  it("決めた region_id か索引の版が変われば、同じ入力でも別のハッシュ", () => {
+    const a = contentHash(base(), { region_id: "ito", lookup_version: "lookup-1" });
+    expect(contentHash(base(), { region_id: "ito", lookup_version: "lookup-2" })).not.toBe(a);
+    expect(contentHash(base(), { region_id: "izu", lookup_version: "lookup-1" })).not.toBe(a);
+    expect(contentHash(base(), { region_id: "ito", lookup_version: "lookup-1" })).toBe(a);
   });
 });

@@ -18,8 +18,8 @@
 - `details.rooms` に `capacity`（泊まれる最大人数。0 より大きい）のある部屋が 1 つ以上
 - `details.prices.items` に `kind: "room"`・`amount`（0 より大きい）・`currency` の料金が 1 つ以上
 - `texts[].address`（住所）
-- `core.lat`・`core.lng`（箱根・伊豆の範囲：緯度 34.55〜35.35・経度 138.65〜139.25）
-- `core.region_id`
+- `core.lat`・`core.lng`（日本の範囲：緯度 20〜46・経度 122〜154）
+- （`core.region_id` は要らない。位置からエリアが自動で決まる。決まらないとき・大涌谷のような点のエリアを指すときだけ書く。無い id は 400。エリアは自動では作らない）
 - `texts` に `name` と `summary`
 - 写真 1 枚以上。`photos[].room` を書くなら `details.rooms` にある key
 - `core.official_url` か `details.sources[].url`

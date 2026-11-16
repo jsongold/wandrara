@@ -74,12 +74,11 @@ describe("checkQuality", () => {
     ["accommodation", "/photos", (d) => (d.photos = [{ storage_key: "a.jpg", room: "annex" }])],
     ["accommodation", "/core/check_in", (d) => delete d.core.check_out],
     ["accommodation", "/texts", (d) => delete d.texts[0].address],
-    ["accommodation", "/core/lat", (d) => (d.core.lat = 26.2)], // 那覇：範囲の外
+    ["accommodation", "/core/lat", (d) => (d.core.lat = 10)], // 日本の外
     ["accommodation", "/photos", (d) => (d.photos = [])],
-    ["accommodation", "/core/region_id", (d) => delete d.core.region_id],
     ["accommodation", "/core/official_url", (d) => (d.sources = [])],
     ["experience", "/core/duration_minutes", (d) => delete d.core.duration_minutes],
-    ["experience", "/details/locations", (d) => (d.details!.locations = [{ kind: "meeting", lat: 40, lng: 140 }])],
+    ["experience", "/details/locations", (d) => (d.details!.locations = [{ kind: "meeting", lat: 0, lng: 140 }])],
     ["experience", "/details/locations", (d) => delete d.details!.locations],
     ["experience", "/details/locations", (d) => (d.details!.locations = [{ kind: "activity", ...loc }])], // 集合場所が無い
     ["experience", "/details/prices/items", (d) => delete d.details!.prices],
@@ -93,8 +92,7 @@ describe("checkQuality", () => {
     ["building", "/details/fees", (d) => delete d.details!.fees],
     ["building", "/details/hours", (d) => delete d.details!.hours],
     ["building", "/details/hours", (d) => (d.details!.hours = [{ open_time: "09:00" }])], // 旧い表の形
-    ["building", "/core/lat", (d) => (d.core.lat = 26.2)],
-    ["building", "/core/region_id", (d) => delete d.core.region_id],
+    ["building", "/core/lat", (d) => (d.core.lat = 10)],
     ["hotspring", "/details/fees", (d) => (d.details!.fees = [{ audience: "child", amount: 400, currency: "JPY" }])],
     ["hotspring", "/details/fees", (d) => (d.details!.fees = [{ amount: 800, currency: "JPY" }])], // 区分が無い
     ["hotspring", "/details/hours", (d) => delete d.details!.hours],
@@ -102,7 +100,7 @@ describe("checkQuality", () => {
     ["hotspring", "/details/baths", (d) => delete d.details!.baths],
     ["hotspring", "/core/lat", (d) => delete d.core.lng],
     ["nature", "/details/access", (d) => delete d.details!.access],
-    ["nature", "/core/lat", (d) => (d.core.lat = 26.2)],
+    ["nature", "/core/lat", (d) => (d.core.lat = 10)],
     ["village", "/core/lat", (d) => delete d.core.lng],
     ["village", "/details/access", (d) => delete d.details!.access],
     ["village", "/details/access", (d) => (d.details!.access = [{ note: "駅から徒歩" }])], // 旧い表の形
@@ -116,6 +114,13 @@ describe("checkQuality", () => {
       expect(errors[0].startsWith(`${path} `)).toBe(true);
     });
   }
+
+  it("region_id は要らず、箱根・伊豆の外（札幌）の座標でも通る（エリアは取り込みが位置から決める）", () => {
+    const d = complete.accommodation();
+    delete d.core.region_id;
+    Object.assign(d.core, { lat: 43.06, lng: 141.35 });
+    expect(checkQuality("accommodation", d)).toEqual([]);
+  });
 
   it("accommodation: 写真の room が rooms にあれば通る", () => {
     const d = complete.accommodation();

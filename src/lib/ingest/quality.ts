@@ -3,17 +3,17 @@
 // schema.org（営業時間・無料かどうか）、日帰り温泉の掲載（料金・営業時間・泉質）。言語は問わない（どれか 1 つの言語であればよい）
 import type { DestInput } from "./bundle.ts";
 
-/** 箱根・伊豆の範囲（伊豆諸島は含めない）。この外の座標は誤りとして弾く */
-export const AREA = { latMin: 34.55, latMax: 35.35, lngMin: 138.65, lngMax: 139.25 } as const;
+/** 日本の範囲。この外の座標は誤りとして弾く（どのエリアに入るかは取り込みが位置から決める。src/lib/region） */
+export const JAPAN = { latMin: 20, latMax: 46, lngMin: 122, lngMax: 154 } as const;
 
 type Row = Record<string, unknown>;
 type Check = { path: string; message: string; ok: (d: DestInput) => boolean };
 
 const present = (v: unknown) => v !== undefined && v !== null && String(v).trim() !== "";
 const num = (v: unknown) => (present(v) ? Number(v) : NaN);
-const inArea = (lat: unknown, lng: unknown) => {
+const inJapan = (lat: unknown, lng: unknown) => {
   const a = num(lat), o = num(lng);
-  return a >= AREA.latMin && a <= AREA.latMax && o >= AREA.lngMin && o <= AREA.lngMax;
+  return a >= JAPAN.latMin && a <= JAPAN.latMax && o >= JAPAN.lngMin && o <= JAPAN.lngMax;
 };
 const anyText = (d: DestInput, f: string) => d.texts.some((t) => present(t[f]));
 // details を JSON 1 つで持つコア（宿・体験・自然・建物・日帰り温泉・まち）の details
@@ -36,7 +36,6 @@ const hasUrl = (rows: unknown) => ((rows ?? []) as Row[]).some((s) => present(s.
 const common: Check[] = [
   { path: "/texts", message: "name と summary が要る（どの言語でもよい）", ok: (d) => d.texts.some((t) => present(t.name) && present(t.summary)) },
   { path: "/photos", message: "写真が 1 枚以上要る", ok: (d) => (d.photos ?? []).length > 0 },
-  { path: "/core/region_id", message: "region_id が要る", ok: (d) => present(d.core.region_id) },
   {
     path: "/core/official_url",
     message: "出どころが要る（core.official_url か sources[].url。宿・体験・自然・建物・日帰り温泉・まちは details.sources[].url も可）",
@@ -46,8 +45,8 @@ const common: Check[] = [
 const address: Check = { path: "/texts", message: "住所（texts[].address）が要る", ok: (d) => anyText(d, "address") };
 const coords: Check = {
   path: "/core/lat",
-  message: `lat / lng が要り、箱根・伊豆の範囲（緯度 ${AREA.latMin}〜${AREA.latMax}・経度 ${AREA.lngMin}〜${AREA.lngMax}）に入ること`,
-  ok: (d) => inArea(d.core.lat, d.core.lng),
+  message: `lat / lng が要り、日本の範囲（緯度 ${JAPAN.latMin}〜${JAPAN.latMax}・経度 ${JAPAN.lngMin}〜${JAPAN.lngMax}）に入ること`,
+  ok: (d) => inJapan(d.core.lat, d.core.lng),
 };
 
 /** 種類ごとの決まり。core_type → 確かめること */
@@ -88,10 +87,10 @@ export const QUALITY_RULES: Record<string, Check[]> = {
     },
     {
       path: "/details/locations",
-      message: "箱根・伊豆の範囲の座標を持つ集合場所（locations の kind: meeting。施設の利用は実施場所 activity でもよい）が 1 つ以上要る",
+      message: "日本の範囲の座標を持つ集合場所（locations の kind: meeting。施設の利用は実施場所 activity でもよい）が 1 つ以上要る",
       ok: (d) =>
         (json(d).locations ?? []).some(
-          (r) => (r.kind === "meeting" || (d.core.kind === "facility_use" && r.kind === "activity")) && inArea(r.lat, r.lng),
+          (r) => (r.kind === "meeting" || (d.core.kind === "facility_use" && r.kind === "activity")) && inJapan(r.lat, r.lng),
         ),
     },
     {
