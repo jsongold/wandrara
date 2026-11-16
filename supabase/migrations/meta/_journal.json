@@ -99,6 +99,34 @@
       "when": 1794802600090,
       "tag": "20261116041640_drop_building_hotspring_village_detail_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794804149052,
+      "tag": "20261116044229_region_parts",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794804332707,
+      "tag": "20261116044532_region_parts_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794805395479,
+      "tag": "20261116050315_backfill_region_apply",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794805845045,
+      "tag": "20261116051045_region_parts_grant",
+      "breakpoints": true
     }
   ]
 }

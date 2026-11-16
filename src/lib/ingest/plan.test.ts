@@ -46,7 +46,7 @@ describe("planDestWrite", () => {
     expect(t("dest_photos").map((r) => r.sort)).toEqual([0, 1]);
     expect(p.destination.slug).toBe("wr-atami-008");
     expect(p.categories).toEqual([{ id: "bbq", name: { ja: "bbq" } }]);
-    expect(p.regions).toEqual([{ id: "atami", name: { ja: "atami" } }]);
+    expect(p.regions).toEqual([]); // region は自動で作らない
     expect(p.dest_categories).toHaveLength(2);
     expect(p.import).toMatchObject({ ref: "WR-atami-008", collector_key_id: "k1" });
   });

@@ -46,7 +46,7 @@ export WANDRARA_API_KEY=wdr_...
 | `details` | JSON 1 つ。形は core ごと |
 | `categories` | カテゴリ id の配列 |
 | `photos` | 写真（後述） |
-| `region` | `{ id, name, parent_id }`。`core.region_id` がまだ無い地域のとき |
+| `region` | 使わない（互換のため受けるが、DB に無い id は 400。エリアは運営が足す） |
 | `sources`・`verification_status` | 任意。DB の列にならない記録。出典は `details.sources` に書くのを基本にする |
 
 - 知らないキーは弾かれる。`dest_id`・`id`・`sort`・`operator_id` は書かない。列のキーは snake_case。
@@ -63,7 +63,7 @@ export WANDRARA_API_KEY=wdr_...
   "dests": [{
     "core_type": "nature",
     "ref": "EX-ito-001",
-    "core": { "kind": "coast", "region_id": "ito", "lat": 34.9, "lng": 139.1, "geo_precision": "exact", "protection": "none" },
+    "core": { "kind": "coast", "lat": 34.9, "lng": 139.1, "geo_precision": "exact", "protection": "none" },
     "texts": [{ "lang": "ja", "name": "例の岬", "summary": "海に突き出た遊歩道のある岬" }],
     "details": {
       "hours": { "always_open": true },
@@ -71,8 +71,7 @@ export WANDRARA_API_KEY=wdr_...
       "access": { "station": { "ja": "○○駅" }, "mode": "walk", "minutes": 15 },
       "sources": [{ "name": "市の観光サイト", "url": "https://example.com/", "type": "official", "retrieved_at": "2026-11-16", "fields": ["access", "fees"] }]
     },
-    "photos": [{ "file": "images/001.jpg", "license": "none", "source_page_url": "https://example.com/", "subject": "landscape" }],
-    "region": { "id": "ito", "name": { "ja": "伊東" } }
+    "photos": [{ "file": "images/001.jpg", "license": "none", "source_page_url": "https://example.com/", "subject": "landscape" }]
   }]
 }
 ```
@@ -81,9 +80,9 @@ export WANDRARA_API_KEY=wdr_...
 1 件でも合わないと、bundle 全体が通らない。core ごとの必須は各指示書にある。
 - `texts` に `name` と `summary`（どの言語でもよい）
 - 写真 1 枚以上
-- `core.region_id`
+- （`core.region_id` は要らない。位置からエリアが自動で決まる。決まらないとき・大涌谷のような点のエリアを指すときだけ書く。無い id は 400。エリアは自動では作らない）
 - 出どころの URL：`core.official_url`・`details.sources[].url`・dest の `sources[].url` のどれか（体験は `core.official_url` か `details.booking_links[].url`）。`official_url` の列があるのは宿・体験・建物・日帰り温泉だけ。自然・まちは `details.sources[].url` を使う
-- 位置：宿・自然・建物・日帰り温泉・まちは `core.lat`・`core.lng` が箱根・伊豆の範囲（緯度 34.55〜35.35・経度 138.65〜139.25）。体験は `details.locations` の座標がこの範囲
+- 位置：宿・自然・建物・日帰り温泉・まちは `core.lat`・`core.lng` が日本の範囲（緯度 20〜46・経度 122〜154）。体験は `details.locations` の座標がこの範囲。エリア（region_id）は位置から決まる（体験は集合場所 meeting、無ければ先頭の場所）。`geo_precision` が municipality なら市区町村までの粗いエリアになる
 
 ## 共通の決まり
 ### 推測しない・報告する

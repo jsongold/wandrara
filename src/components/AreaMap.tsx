@@ -1,0 +1,156 @@
+"use client";
+
+// エリアを地図から選ぶ。全国 → 地方 → 箱根 と寄り、形か点を押すと onSelect(エリア id)
+import { useEffect, useState, type KeyboardEvent } from "react";
+import { AREA_MAP_CREDIT, AREA_MAP_START, type AreaMapData } from "@/lib/area-map";
+import { useLocale, useMessages } from "@/lib/i18n/use-locale";
+import { AREA_MAP_LOADERS } from "@/generated/area-map";
+import { Chip } from "./Chip";
+
+type Props = { current: string; labelOf: (id: string) => string; onSelect: (id: string) => void };
+
+const FILL = "#5b6455";
+const FILL_ON = "#f4f1ea";
+const FILL_LINK = "#6f7a66";
+
+function onKey(fn: () => void) {
+  return (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      fn();
+    }
+  };
+}
+
+export function AreaMap({ current, labelOf, onSelect }: Props) {
+  const locale = useLocale();
+  const m = useMessages();
+  const [trail, setTrail] = useState<string[]>([AREA_MAP_START]);
+  const mapId = trail[trail.length - 1];
+  const [data, setData] = useState<AreaMapData | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    AREA_MAP_LOADERS[mapId]?.().then((d) => {
+      if (alive) setData(d);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [mapId]);
+
+  const shown = data?.id === mapId ? data : null;
+  // 縦長の図は高さの上限で縮んで表示されるので、文字と点をその分大きくする
+  const k = shown ? Math.max(1, Number(shown.viewBox.split(" ")[3]) / 400) : 1;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex min-h-10 items-center gap-2">
+        {trail.length > 1 && (
+          <button
+            type="button"
+            onClick={() => setTrail(trail.slice(0, -1))}
+            className="h-10 cursor-pointer rounded-full border-0 bg-white/10 px-3.5 text-[13px] text-white"
+          >
+            ← {m.common.back}
+          </button>
+        )}
+        <h3 className="m-0 text-[15px] font-semibold">{shown ? shown.name[locale] : m.common.loading}</h3>
+      </div>
+      {shown && shown.wholes.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {shown.wholes.map((id) => (
+            <Chip key={id} on={current === id} onClick={() => onSelect(id)}>{m.home.areaWhole(labelOf(id))}</Chip>
+          ))}
+        </div>
+      )}
+      {shown ? (
+        <svg viewBox={shown.viewBox} role="group" aria-label={shown.name[locale]} className="block h-auto max-h-[52vh] w-full rounded-2xl bg-[#1f2a2e]">
+          <path d={shown.land} fill="#3b3f39" stroke="rgba(255,255,255,0.18)" strokeWidth={0.4} />
+          {shown.shapes.map((s) => (
+            <path
+              key={s.id}
+              d={s.d}
+              role="button"
+              tabIndex={0}
+              aria-label={labelOf(s.id)}
+              aria-pressed={current === s.id}
+              onClick={() => onSelect(s.id)}
+              onKeyDown={onKey(() => onSelect(s.id))}
+              fill={current === s.id ? FILL_ON : FILL}
+              stroke="rgba(255,255,255,0.55)"
+              strokeWidth={0.8}
+              className="cursor-pointer outline-none focus-visible:stroke-[#9cc3ff]"
+            />
+          ))}
+          {shown.links.map((l) =>
+            l.d ? (
+              <path
+                key={l.map}
+                d={l.d}
+                role="button"
+                tabIndex={0}
+                aria-label={m.home.mapZoom(l.name[locale])}
+                onClick={() => setTrail([...trail, l.map])}
+                onKeyDown={onKey(() => setTrail([...trail, l.map]))}
+                fill={FILL_LINK}
+                stroke="#ffffff"
+                strokeWidth={1.2}
+                strokeDasharray="3 2"
+                className="cursor-pointer outline-none"
+              />
+            ) : (
+              <circle
+                key={l.map}
+                cx={l.at[0]}
+                cy={l.at[1]}
+                r={9 * k}
+                role="button"
+                tabIndex={0}
+                aria-label={m.home.mapZoom(l.name[locale])}
+                onClick={() => setTrail([...trail, l.map])}
+                onKeyDown={onKey(() => setTrail([...trail, l.map]))}
+                fill={FILL_ON}
+                stroke="#141413"
+                strokeWidth={2}
+                className="cursor-pointer outline-none"
+              />
+            ),
+          )}
+          {shown.points.map((p) => (
+            <circle
+              key={p.id}
+              cx={p.at[0]}
+              cy={p.at[1]}
+              r={7 * k}
+              role="button"
+              tabIndex={0}
+              aria-label={labelOf(p.id)}
+              aria-pressed={current === p.id}
+              onClick={() => onSelect(p.id)}
+              onKeyDown={onKey(() => onSelect(p.id))}
+              fill={current === p.id ? FILL_ON : "#1b1b19"}
+              stroke="#ffffff"
+              strokeWidth={2}
+              className="cursor-pointer outline-none"
+            />
+          ))}
+          <g aria-hidden="true" fontSize={12 * k} textAnchor="middle" fill="#ffffff" stroke="rgba(0,0,0,0.7)" strokeWidth={3 * k} paintOrder="stroke" pointerEvents="none">
+            {shown.shapes.map((s) => (
+              <text key={s.id} x={s.label[0]} y={s.label[1] + 4 * k}>{labelOf(s.id)}</text>
+            ))}
+            {shown.links.map((l) => (
+              <text key={l.map} x={l.at[0]} y={l.d ? l.at[1] + 4 * k : l.at[1] - 14 * k} fontWeight={700}>{l.name[locale]}</text>
+            ))}
+            {shown.points.map((p) => (
+              <text key={p.id} x={p.at[0]} y={p.at[1] - 11 * k}>{labelOf(p.id)}</text>
+            ))}
+          </g>
+        </svg>
+      ) : (
+        <div className="aspect-[3/4] max-h-[52vh] w-full rounded-2xl bg-[#1f2a2e]" />
+      )}
+      <p className="m-0 text-[10px] leading-[1.5] text-white/50">{AREA_MAP_CREDIT[locale]}</p>
+    </div>
+  );
+}

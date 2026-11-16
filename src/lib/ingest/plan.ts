@@ -15,7 +15,8 @@ export type DestRefs = {
   categories: Set<string>;
 };
 
-export type PlanCtx = { userId: string; keyId: string; uuid: () => string };
+/** region：位置から決めた region_id（src/lib/region の decideRegion）と索引の版。無ければ入力の region_id のまま */
+export type PlanCtx = { userId: string; keyId: string; uuid: () => string; region?: { regionId: string; lookupVersion: string } };
 
 export type DestWritePlan = {
   destination: { dest_id: string; core_type: string; slug: string; ref: string | null; created_by: string };
@@ -57,6 +58,7 @@ export function planDestWrite(core: CoreDef, input: DestInput, refs: DestRefs, c
 
   // details を JSON 1 つで持つコアは、コアの行の details 列に書く（詳細の表は作らない）
   const coreRow: Row = { dest_id: destId, ...input.core };
+  if (ctx.region) coreRow.region_id = ctx.region.regionId;
   if (core.detailsSchema) coreRow.details = input.details ?? null;
   push(getTableName(core.table), [coreRow]);
   push(
@@ -98,24 +100,16 @@ export function planDestWrite(core: CoreDef, input: DestInput, refs: DestRefs, c
   }));
   push("dest_photos", photoRows);
 
-  // 足す region：input.region か、無い region_id なら id を名前にした行
-  const regions: Row[] = [];
-  const regionId = input.core.region_id as string | null | undefined;
-  if (input.region && !refs.regions.has(input.region.id)) {
-    regions.push({ id: input.region.id, name: input.region.name, parent_id: input.region.parent_id ?? null });
-  } else if (regionId && !refs.regions.has(regionId) && input.region?.id !== regionId) {
-    regions.push({ id: regionId, name: { ja: regionId } });
-  }
-
+  // region は自動で作らない（無い id は registerDest が 400 にする）
   const catIds = [...new Set(input.categories ?? [])];
   const categories = catIds.filter((c) => !refs.categories.has(c)).map((c) => ({ id: c, name: { ja: c } }));
 
   return {
     destination: { dest_id: destId, core_type: core.coreType, slug, ref, created_by: ctx.userId },
-    regions,
+    regions: [],
     categories,
     tables,
     dest_categories: catIds.map((c) => ({ dest_id: destId, category_id: c })),
-    import: { dest_id: destId, ref, collector_key_id: ctx.keyId, payload: input, content_hash: contentHash(input) },
+    import: { dest_id: destId, ref, collector_key_id: ctx.keyId, payload: input, content_hash: contentHash(input, ctx.region ? { region_id: ctx.region.regionId, lookup_version: ctx.region.lookupVersion } : {}) },
   };
 }
