@@ -1,16 +1,15 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
-const CHIP_ON: CSSProperties = { background: "#f4f1ea", color: "#141413", border: "1px solid #f4f1ea" };
-const CHIP_OFF: CSSProperties = { background: "transparent", color: "#ffffff", border: "1px solid rgba(255,255,255,0.28)" };
-
+// 選べる項目。ピル（枠・塗り）にせず文字だけ。選択中は明るい色・太字・下線
 export function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      className="h-10 cursor-pointer rounded-full px-3.5 text-[13px]"
-      style={on ? CHIP_ON : CHIP_OFF}
+      className={`h-10 cursor-pointer border-0 bg-transparent px-0 text-[14px] underline-offset-[6px] ${
+        on ? "font-bold text-[#f4f1ea] underline decoration-2" : "font-normal text-white/65"
+      }`}
     >
       {children}
     </button>

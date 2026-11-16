@@ -265,7 +265,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
               </button>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-x-5">
             <Chip on={query.area === "all"} onClick={() => { go({ area: "all" }); setSheet(null); }}>{m.home.allAreasChip}</Chip>
           </div>
           {areaView === "map" && (
@@ -279,7 +279,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
           {areaView === "list" && areas.map((g) => (
             <div key={g.id} className="flex flex-col gap-2.5">
               <h3 className="m-0 text-[13px] font-semibold text-white/85">{g.label}</h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-x-5">
                 <Chip on={query.area === g.id} onClick={() => { go({ area: g.id }); setSheet(null); }}>{m.home.areaWhole(g.label)}</Chip>
                 {g.subs.map((s) => (
                   <Chip key={s.id} on={query.area === s.id} onClick={() => { go({ area: s.id }); setSheet(null); }}>{s.label}</Chip>
@@ -296,7 +296,7 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
           <SheetHeader title={m.home.filter} onClose={() => setSheet(null)} />
           <div className="flex flex-col gap-2.5">
             <h3 className="m-0 text-[13px] font-semibold text-white/85">{m.home.sortHeading}</h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-x-5">
               {sorts(m).map((s) => (
                 <Chip key={s.id} on={query.sort === s.id} onClick={() => go({ sort: s.id })}>{s.label}</Chip>
               ))}

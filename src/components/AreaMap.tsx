@@ -56,12 +56,12 @@ export function AreaMap({ current, labelOf, onSelect }: Props) {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       {/* 戻る・地図の名前・「〇〇全体」を 1 行に並べ、地図に高さを残す */}
-      <div className="flex min-h-10 flex-wrap items-center gap-2">
+      <div className="flex min-h-10 flex-wrap items-center gap-x-5">
         {trail.length > 1 && (
           <button
             type="button"
             onClick={() => setTrail(trail.slice(0, -1))}
-            className="h-10 cursor-pointer rounded-full border-0 bg-white/10 px-3.5 text-[13px] text-white"
+            className="h-10 cursor-pointer border-0 bg-transparent p-0 text-[14px] text-white/65"
           >
             ← {m.common.back}
           </button>
