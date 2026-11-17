@@ -10,8 +10,9 @@ import { HotspringSections, HotspringSummaryPill } from "./hotspring/HotspringSe
 import { NatureSections, NatureSummaryPill } from "./nature/NatureSections";
 import { VillageSections, VillageSummaryPill } from "./village/VillageSections";
 import { BackButton } from "./BackButton";
-import { DestMap } from "./DestMap";
 import { FactRows } from "./FactRows";
+import { NearbyMap } from "./NearbyMap";
+import { nearbyMap } from "@/lib/nearby/spec";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
 
@@ -20,6 +21,9 @@ const GLASS: CSSProperties = {
   backdropFilter: "blur(14px)",
   WebkitBackdropFilter: "blur(14px)",
 };
+
+// 詳細ページの地図に載せるもの。足す・外すはメソッドで（src/lib/nearby/spec.ts）
+const DETAIL_MAP = nearbyMap({ span: 0.8 }).green().water().roads().rail().stations({ limit: 3 });
 
 // variant: page=全画面（共有リンク・再読み込み）、sheet=トップの上に重ねるシート
 // 宿の details があれば、設備・条件とアクセスの代わりに宿のトピックを並べる（地図はアクセスのカードの中）
@@ -34,8 +38,9 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
   const vil = dest.village;
   // 座標が無い dest は地図を出さない
   const loc = dest.location;
-  const mapOf = (className: string) => (loc ? <DestMap lat={loc.lat} lng={loc.lng} ariaLabel={m.detail.mapOf(dest.title)} className={className} /> : undefined);
-  const map = mapOf("h-[150px] rounded-[10px]");
+  const mapOf = (className: string) =>
+    loc ? <NearbyMap map={DETAIL_MAP} lat={loc.lat} lng={loc.lng} locale={locale} label={m.detail.mapOf(dest.title)} className={className} /> : undefined;
+  const map = mapOf("rounded-[10px]");
   return (
     <main className={`mx-auto w-full max-w-[480px] bg-[#f7f6f2] text-[#141413] ${variant === "page" ? "min-h-[100dvh]" : ""}`}>
       {/* 写真は横にスワイプで切り替える */}
@@ -124,7 +129,7 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
             {loc && (
               <section className="flex flex-col gap-3">
                 <h2 className="m-0 text-lg font-bold">{m.detail.access}</h2>
-                {mapOf("h-[180px] rounded-2xl")}
+                {mapOf("rounded-2xl")}
               </section>
             )}
           </>

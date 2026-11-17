@@ -49,6 +49,12 @@ const ja = {
     factsNote: "載っていない項目は、情報が無いことを示し、「無い」という意味ではありません。",
     access: "アクセス",
     mapOf: (name: string) => `${name}の場所の地図`,
+    // 地図の下に出す近くの場所の一覧。nearbyMap() の place（stations など）ごと
+    places: {
+      stations: { title: "近くの駅", name: (name: string) => (name.endsWith("駅") ? name : `${name}駅`) },
+    },
+    distanceM: (m: number) => `約 ${m}m`,
+    distanceKm: (km: string) => `約 ${km}km`,
     verified: "確認済み",
     unverified: "未検証",
     unknown: "不明",
@@ -448,6 +454,11 @@ const en: Messages = {
     factsNote: "An item that isn't listed means we have no information, not that it isn't there.",
     access: "Getting there",
     mapOf: (name: string) => `Map showing where ${name} is`,
+    places: {
+      stations: { title: "Nearby stations", name: (name: string) => (/station$/i.test(name) ? name : `${name} Station`) },
+    },
+    distanceM: (m: number) => `about ${m} m`,
+    distanceKm: (km: string) => `about ${km} km`,
     verified: "Verified",
     unverified: "Unverified",
     unknown: "Unknown",
