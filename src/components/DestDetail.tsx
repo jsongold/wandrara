@@ -10,6 +10,7 @@ import { HotspringSections, HotspringSummaryPill } from "./hotspring/HotspringSe
 import { NatureSections, NatureSummaryPill } from "./nature/NatureSections";
 import { VillageSections, VillageSummaryPill } from "./village/VillageSections";
 import { BackButton } from "./BackButton";
+import { DestMap } from "./DestMap";
 import { FactRows } from "./FactRows";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
@@ -19,19 +20,6 @@ const GLASS: CSSProperties = {
   backdropFilter: "blur(14px)",
   WebkitBackdropFilter: "blur(14px)",
 };
-
-// 地図の枠（準備中）。className で高さと角を変える
-function MapPlaceholder({ label, ariaLabel, className }: { label: string; ariaLabel: string; className: string }) {
-  return (
-    <div
-      role="img"
-      aria-label={ariaLabel}
-      className={`flex items-center justify-center border border-[#d0d5cf] bg-[#dfe3de] text-xs text-[#4a5048] ${className}`}
-    >
-      {label}
-    </div>
-  );
-}
 
 // variant: page=全画面（共有リンク・再読み込み）、sheet=トップの上に重ねるシート
 // 宿の details があれば、設備・条件とアクセスの代わりに宿のトピックを並べる（地図はアクセスのカードの中）
@@ -44,7 +32,10 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
   const bld = dest.building;
   const hot = dest.hotspring;
   const vil = dest.village;
-  const map = <MapPlaceholder label={m.detail.map} ariaLabel={m.detail.mapSoon} className="h-[150px] rounded-[10px]" />;
+  // 座標が無い dest は地図を出さない
+  const loc = dest.location;
+  const mapOf = (className: string) => (loc ? <DestMap lat={loc.lat} lng={loc.lng} ariaLabel={m.detail.mapOf(dest.title)} className={className} /> : undefined);
+  const map = mapOf("h-[150px] rounded-[10px]");
   return (
     <main className={`mx-auto w-full max-w-[480px] bg-[#f7f6f2] text-[#141413] ${variant === "page" ? "min-h-[100dvh]" : ""}`}>
       {/* 写真は横にスワイプで切り替える */}
@@ -130,10 +121,12 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
               </section>
             )}
 
-            <section className="flex flex-col gap-3">
-              <h2 className="m-0 text-lg font-bold">{m.detail.access}</h2>
-              <MapPlaceholder label={m.detail.map} ariaLabel={m.detail.mapSoon} className="h-[180px] rounded-2xl" />
-            </section>
+            {loc && (
+              <section className="flex flex-col gap-3">
+                <h2 className="m-0 text-lg font-bold">{m.detail.access}</h2>
+                {mapOf("h-[180px] rounded-2xl")}
+              </section>
+            )}
           </>
         )}
       </div>

@@ -38,6 +38,8 @@ export type DestDetailView = {
   hotspring: HotspringView | null;
   /** まちの新しい画面の形。details が無いか形が違うまちと、まちでない dest は null（facts を出す） */
   village: VillageView | null;
+  /** 地図に出す点。dest_cards の座標（体験は集合場所を優先）。座標が無ければ null */
+  location: { lat: number; lng: number } | null;
 };
 
 type Row = Record<string, unknown>;
@@ -138,16 +140,17 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
           : [];
   const coreCols = [...new Set(["region_id", ...names(core.table, core.columns), ...extraCols])];
 
-  const [coreRes, textsRes, photosRes, catalog, ...detailRes] = await Promise.all([
+  const [coreRes, textsRes, photosRes, placeRes, catalog, ...detailRes] = await Promise.all([
     db.from(getTableName(core.table)).select(coreCols.join(", ")).eq("dest_id", id).maybeSingle(),
     db.from(getTableName(core.texts)).select("lang, name, summary").eq("dest_id", id),
     db.from("dest_photos").select("storage_key, license, credit, subject_key").eq("dest_id", id).order("sort"),
+    db.from("dest_cards").select("lat, lng").eq("dest_id", id).maybeSingle(),
     getCatalog(),
     ...core.details.map((d) =>
       db.from(getTableName(d.table)).select(["id", ...names(d.table, d.columns)].join(", ")).eq("dest_id", id).order("sort"),
     ),
   ]);
-  for (const r of [coreRes, textsRes, photosRes, ...detailRes]) {
+  for (const r of [coreRes, textsRes, photosRes, placeRes, ...detailRes]) {
     if (r.error) throw new Error(`Supabase の読み込みに失敗しました: ${r.error.message}`);
   }
 
@@ -199,5 +202,11 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
     building,
     hotspring,
     village,
+    location: placeOf(placeRes.data as { lat: unknown; lng: unknown } | null),
   };
+}
+
+/** 緯度経度が両方とも数のときだけ点にする */
+export function placeOf(row: { lat: unknown; lng: unknown } | null): { lat: number; lng: number } | null {
+  return row && typeof row.lat === "number" && typeof row.lng === "number" ? { lat: row.lat, lng: row.lng } : null;
 }

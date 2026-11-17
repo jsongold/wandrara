@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { accommodationCore } from "../db/schema/accommodation";
 import { tableDetailsCore } from "./ingest/test-fixtures";
-import { buildFacts, columnMap, formatValue } from "./detail";
+import { buildFacts, columnMap, formatValue, placeOf } from "./detail";
 
 describe("formatValue", () => {
   it("null は null、boolean は あり / なし、時刻は秒を落とす", () => {
@@ -47,5 +47,16 @@ describe("buildFacts", () => {
       ["種類", "一棟貸し"],
       ["チェックアウト", "10:00"],
     ]);
+  });
+});
+
+describe("placeOf", () => {
+  it("緯度経度が両方とも数なら点にする", () => {
+    expect(placeOf({ lat: 35.1, lng: 139.2 })).toEqual({ lat: 35.1, lng: 139.2 });
+  });
+  it("行が無い・片方でも null なら地図を出さない", () => {
+    expect(placeOf(null)).toBeNull();
+    expect(placeOf({ lat: 35.1, lng: null })).toBeNull();
+    expect(placeOf({ lat: null, lng: null })).toBeNull();
   });
 });
