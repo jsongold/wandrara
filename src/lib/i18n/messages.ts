@@ -52,6 +52,10 @@ const ja = {
     mapControls: {
       zoomIn: "拡大",
       zoomOut: "縮小",
+      marker: "この場所",
+      toggleAttribution: "地図の出典を開く・閉じる",
+      failed: "地図を読み込めませんでした",
+      retry: "もう一度読み込む",
       mobileHelp: "2 本指で地図を動かせます",
       windowsHelp: "Ctrl を押しながらスクロールで拡大・縮小",
       macHelp: "⌘ を押しながらスクロールで拡大・縮小",
@@ -458,6 +462,10 @@ const en: Messages = {
     mapControls: {
       zoomIn: "Zoom in",
       zoomOut: "Zoom out",
+      marker: "This place",
+      toggleAttribution: "Show or hide map credits",
+      failed: "Couldn't load the map",
+      retry: "Try again",
       mobileHelp: "Use two fingers to move the map",
       windowsHelp: "Use Ctrl + scroll to zoom the map",
       macHelp: "Use ⌘ + scroll to zoom the map",
