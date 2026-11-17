@@ -1,76 +1,73 @@
-// 点のまわりの地図。何を載せるかは map（nearbyMap().green().roads()… のメソッドの足し引き）で決める。表示のみ。
-// ライブラリもタイル画像も使わず、サーバーで作った SVG だけを送る（src/lib/nearby）。
-import { Suspense } from "react";
-import { H, W } from "@/lib/nearby/build";
-import { getNearby } from "@/lib/nearby/fetch";
-import type { NearbyMapSpec } from "@/lib/nearby/spec";
+"use client";
+// 詳細ページの地図。拡大・縮小・移動できる。駅・お店などは地図の上に出す（一覧にはしない）。
+// 何を載せるかは spec（nearbyMap().green().roads()… のメソッドの足し引き）で決める。
+// MapLibre（約 270KB gzip）は地図が画面に近づいてから読む。ページを開いた時点では読まない。
+// 地図は OpenFreeMap（商用可・キー不要）。出典は右下の (i) に出る。
+import "maplibre-gl/dist/maplibre-gl.css";
+import { useEffect, useRef } from "react";
 import { messages } from "@/lib/i18n/messages";
+import type { NearbySpec } from "@/lib/nearby/spec";
+import { filterStyle, STYLE_URL, type Style } from "@/lib/nearby/style";
 import type { Locale } from "@/lib/types";
 
-type Props = { map: NearbyMapSpec; lat: number; lng: number; locale: Locale; label: string; className: string };
+type Props = { spec: NearbySpec; lat: number; lng: number; locale: Locale; label: string; className: string };
 
-export function NearbyMap(props: Props) {
-  return (
-    <Suspense fallback={<div className={`aspect-[632/300] bg-[#eceae3] ${props.className}`} />}>
-      <NearbyMapBody {...props} />
-    </Suspense>
-  );
-}
-
-/** 距離は 100m 単位（1km 以上は 0.1km 単位）に丸める */
-export function formatDistance(m: number, locale: Locale): string {
-  const t = messages(locale).detail;
-  return m < 1000 ? t.distanceM(Math.max(100, Math.round(m / 100) * 100)) : t.distanceKm((Math.round(m / 100) / 10).toFixed(1));
-}
-
-async function NearbyMapBody({ map, lat, lng, locale, label, className }: Props) {
-  const nearby = await getNearby(lat, lng, locale, map.spec);
-  if (!nearby) return null;
-  const t = messages(locale).detail;
-  return (
-    <div className="flex flex-col gap-2">
-      <div className={`relative overflow-hidden border border-[#d0d5cf] bg-[#eeede7] ${className}`}>
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} className="block h-auto w-full">
-          {nearby.paths.map((p) => (
-            <path
-              key={p.key}
-              d={p.d}
-              fill={p.fill ?? "none"}
-              fillRule="evenodd"
-              stroke={p.stroke ?? "none"}
-              strokeWidth={p.width}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          ))}
-          {nearby.places.flatMap((g) =>
-            g.items.filter((s) => s.inView).map((s) => (
-              <rect key={`${g.kind}:${s.name}`} x={s.x - 4} y={s.y - 4} width={8} height={8} rx={2} fill="#ffffff" stroke="#55524a" strokeWidth={2} />
-            )),
-          )}
-          <circle cx={nearby.point.x} cy={nearby.point.y} r={9} fill="#141413" stroke="#ffffff" strokeWidth={3} />
-        </svg>
-        <p className="absolute bottom-0 right-0 m-0 bg-[rgba(255,255,255,0.8)] px-1.5 py-0.5 text-[9px] text-[#55524a]">
-          <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer">OpenFreeMap</a>{" "}
-          <a href="https://www.openmaptiles.org/" target="_blank" rel="noopener noreferrer">© OpenMapTiles</a>{" "}
-          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap</a>
-        </p>
-      </div>
-      {nearby.places
-        .filter((g) => g.items.length > 0)
-        .map((g) => (
-          <ul key={g.kind} className="m-0 flex list-none flex-col gap-1 p-0 text-[13px]" aria-label={t.places[g.kind].title}>
-            {g.items.map((s) => (
-              <li key={s.name} className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2">
-                  <span aria-hidden="true" className="inline-block h-2 w-2 rounded-[2px] border-2 border-[#55524a] bg-white" />
-                  {t.places[g.kind].name(s.name)}
-                </span>
-                <span className="text-[#55524a]">{formatDistance(s.distanceM, locale)}</span>
-              </li>
-            ))}
-          </ul>
-        ))}
-    </div>
-  );
+export function NearbyMap({ spec, lat, lng, locale, label, className }: Props) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let map: import("maplibre-gl").Map | null = null;
+    let cancelled = false;
+    const t = messages(locale).detail.mapControls;
+    const open = async () => {
+      const [maplibre, style] = await Promise.all([
+        import("maplibre-gl"),
+        fetch(STYLE_URL).then((r) => r.json() as Promise<Style>),
+      ]);
+      if (cancelled) return;
+      map = new maplibre.Map({
+        container: el,
+        style: filterStyle(style, spec.groups, locale) as unknown as import("maplibre-gl").StyleSpecification,
+        center: [lng, lat],
+        zoom: spec.zoom,
+        minZoom: 5,
+        maxZoom: 18,
+        // ページのスクロールを邪魔しないよう、地図を動かすのは 2 本指（PC は Ctrl / ⌘ + ホイール）
+        cooperativeGestures: true,
+        dragRotate: false,
+        pitchWithRotate: false,
+        touchPitch: false,
+        attributionControl: { compact: true },
+        locale: {
+          "CooperativeGesturesHandler.MobileHelpText": t.mobileHelp,
+          "CooperativeGesturesHandler.WindowsHelpText": t.windowsHelp,
+          "CooperativeGesturesHandler.MacHelpText": t.macHelp,
+          "NavigationControl.ZoomIn": t.zoomIn,
+          "NavigationControl.ZoomOut": t.zoomOut,
+        },
+      });
+      map.touchZoomRotate.disableRotation();
+      map.addControl(new maplibre.NavigationControl({ showCompass: false }), "top-right");
+      new maplibre.Marker({ color: "#141413" }).setLngLat([lng, lat]).addTo(map);
+      // 出典は最初は (i) だけにしておく（押すと開く）。狭い枠だと開いたままで地図を隠すため
+      map.once("load", () => el.querySelector(".maplibregl-compact-show")?.classList.remove("maplibregl-compact-show"));
+    };
+    // 画面に近づいたら一度だけ開く
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        open().catch((e) => console.error("地図を開けませんでした", e));
+      },
+      { rootMargin: "300px" },
+    );
+    io.observe(el);
+    return () => {
+      cancelled = true;
+      io.disconnect();
+      map?.remove();
+    };
+  }, [spec, lat, lng, locale]);
+  return <div ref={ref} role="region" aria-label={label} className={`relative h-[240px] overflow-hidden border border-[#d0d5cf] bg-[#eeede7] ${className}`} />;
 }

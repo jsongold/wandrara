@@ -23,7 +23,7 @@ const GLASS: CSSProperties = {
 };
 
 // 詳細ページの地図に載せるもの。足す・外すはメソッドで（src/lib/nearby/spec.ts）
-const DETAIL_MAP = nearbyMap({ span: 0.8 }).green().water().roads().rail().stations({ limit: 3 });
+const DETAIL_MAP = nearbyMap({ zoom: 15 }).green().water().roads().rail().buildings().placeNames().stations().pois().spec;
 
 // variant: page=全画面（共有リンク・再読み込み）、sheet=トップの上に重ねるシート
 // 宿の details があれば、設備・条件とアクセスの代わりに宿のトピックを並べる（地図はアクセスのカードの中）
@@ -39,7 +39,7 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
   // 座標が無い dest は地図を出さない
   const loc = dest.location;
   const mapOf = (className: string) =>
-    loc ? <NearbyMap map={DETAIL_MAP} lat={loc.lat} lng={loc.lng} locale={locale} label={m.detail.mapOf(dest.title)} className={className} /> : undefined;
+    loc ? <NearbyMap spec={DETAIL_MAP} lat={loc.lat} lng={loc.lng} locale={locale} label={m.detail.mapOf(dest.title)} className={className} /> : undefined;
   const map = mapOf("rounded-[10px]");
   return (
     <main className={`mx-auto w-full max-w-[480px] bg-[#f7f6f2] text-[#141413] ${variant === "page" ? "min-h-[100dvh]" : ""}`}>
