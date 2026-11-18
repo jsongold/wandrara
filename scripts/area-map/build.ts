@@ -13,7 +13,7 @@ import type { BBox, RegionDef } from "../../src/lib/region/types.ts";
 import { loadDefinitions, mappable } from "./definitions.ts";
 import { citiesOf, fc, featuresOf, q, run, type Feature, type FeatureCollection, type Sources } from "./parts.ts";
 import { makeProjection, pathOf, type Geometry } from "./project.ts";
-import { fetchSources, type SourceFiles } from "./sources.ts";
+import { fetchSources, SOURCE_VERSIONS } from "./sources.ts";
 import { deriveMapTree, type MapDef } from "./tree.ts";
 import { bboxOf, buildLookup, toMulti } from "./write.ts";
 
@@ -21,12 +21,28 @@ const MAP_OUT = path.resolve("src/generated/area-map");
 const LOOKUP_OUT = path.resolve("src/generated/region-lookup");
 const WIDTH = 360;
 const LOOKUP_INTERVAL = 10;
+const LAND_INTERVAL = 100;
+const MAINLAND_KM2 = 500; // これより小さい島は地方の範囲に入れない
 const HEADER = "// 生成ファイル（pnpm area-map:build）。手で直さない\n";
 
 type Shapes = {
   cover: Map<string, Feature[]>; // エリア全体（自分＋子孫の材料）
   display: Map<string, Feature[]>; // 地図で押せる形：子のある親は子に入らない残り、ほかは全体
 };
+
+/**
+ * 背景の陸地と地方の形に使う、100m 間隔に簡略化した N03 全国（GeoJSON）。一度作って .cache に置き、地図ごとに読み直す元データを軽くする
+ * （全国のエリアでは地図が数百になり、毎回 450MB の shp を読むと終わらない）
+ */
+async function landBaseOf(n03: string): Promise<string> {
+  const out = path.resolve(".cache/area-map", `${SOURCE_VERSIONS.n03}-land-${LAND_INTERVAL}m.json`);
+  if (!fs.existsSync(out)) {
+    console.log(`land base ${path.basename(out)}`);
+    const fc = await run(`-i ${q(n03)} -each ${q("N03_007 = N03_007, N03_001 = N03_001")} -simplify interval=${LAND_INTERVAL} keep-shapes`);
+    fs.writeFileSync(out, JSON.stringify({ type: "FeatureCollection", features: fc.features.map((f) => ({ ...f, properties: { N03_001: f.properties.N03_001, N03_007: f.properties.N03_007 } })) }));
+  }
+  return out;
+}
 
 async function landOf(map: MapDef, n03: string): Promise<FeatureCollection> {
   const simp = `-simplify interval=${map.interval} keep-shapes`;
@@ -42,6 +58,18 @@ async function chihoShape(id: string, n03: string, interval: number): Promise<Fe
   if (!c) throw new Error(`地方がありません: ${id}`);
   const filter = `-filter ${q(`Number(N03_007.slice(0,2)) >= ${c.prefectures[0]} && Number(N03_007.slice(0,2)) <= ${c.prefectures[1]}`)}`;
   return run(`-i ${q(n03)} ${filter} -dissolve -simplify interval=${interval} keep-shapes -filter-islands min-area=5km2 remove-empty`);
+}
+
+/** 地方の本土の範囲（離島を除いた陸地の bbox）。地方の地図の範囲に使う（小笠原などで範囲が日本全体に広がらないように） */
+async function chihoViews(landBase: string): Promise<Map<string, BBox>> {
+  const out = new Map<string, BBox>();
+  for (const c of CHIHO) {
+    const filter = `-filter ${q(`Number(N03_007.slice(0,2)) >= ${c.prefectures[0]} && Number(N03_007.slice(0,2)) <= ${c.prefectures[1]}`)}`;
+    const fc = await run(`-i ${q(landBase)} ${filter} -dissolve -filter-islands min-area=${MAINLAND_KM2}km2 remove-empty`);
+    const b = bboxOf([toMulti(fc.features)]);
+    if (b) out.set(c.id, b);
+  }
+  return out;
 }
 
 async function buildShapes(defs: RegionDef[], src: Sources): Promise<Shapes> {
@@ -67,9 +95,9 @@ async function buildShapes(defs: RegionDef[], src: Sources): Promise<Shapes> {
   return { cover, display };
 }
 
-async function buildMap(map: MapDef, maps: MapDef[], defs: RegionDef[], shapes: Shapes, files: SourceFiles): Promise<AreaMapData> {
+async function buildMap(map: MapDef, maps: MapDef[], defs: RegionDef[], shapes: Shapes, landBase: string): Promise<AreaMapData> {
   const pr = makeProjection(map.bbox, WIDTH);
-  const land = await landOf(map, files.n03);
+  const land = await landOf(map, landBase);
   const byId = new Map(defs.map((d) => [d.id, d]));
 
   // 押せる形とリンクの形をまとめて簡略化する（キーは "s:<id>" か "l:<id>"）
@@ -95,7 +123,7 @@ async function buildMap(map: MapDef, maps: MapDef[], defs: RegionDef[], shapes: 
   }
   for (const l of map.links) {
     if (l.chiho) {
-      const c = await chihoShape(l.chiho, files.n03, map.interval);
+      const c = await chihoShape(l.chiho, landBase, map.interval);
       await addAll(fc(c.features.map((f) => ({ ...f, properties: { key: `c:${l.chiho}` } }))), (f) => String(f.properties.key));
     }
   }
@@ -154,6 +182,7 @@ async function main() {
   const src: Sources = { n03: await run(`-i ${q(files.n03)} ${n03Filter} ${fine}`), estat: {} };
   for (const c of cities.estat) src.estat[c] = await run(`-i ${q(files.estat[c])} encoding=sjis ${fine}`);
 
+  const landBase = await landBaseOf(files.n03);
   const shapes = await buildShapes(defs, src);
   const bbox = new Map<string, BBox>();
   const regionCities = new Map<string, string[]>();
@@ -164,12 +193,12 @@ async function main() {
     const kids = defs.filter((k) => k.parentId === d.id);
     regionCities.set(d.id, citiesOf([d, ...kids].flatMap((x) => x.parts)).all);
   }
-  const maps = deriveMapTree({ defs, bbox, cities: regionCities });
+  const maps = deriveMapTree({ defs, bbox, cities: regionCities, chihoView: await chihoViews(landBase) });
 
   // 画面用の地図
   fs.rmSync(MAP_OUT, { recursive: true, force: true });
   for (const map of maps) {
-    const json = JSON.stringify(await buildMap(map, maps, defs, shapes, files));
+    const json = JSON.stringify(await buildMap(map, maps, defs, shapes, landBase));
     write(path.join(MAP_OUT, `${map.id}.json`), json + "\n");
     console.log(`area-map/${map.id}.json  ${(json.length / 1024).toFixed(1)}KB (gzip ${(gzipSync(json).length / 1024).toFixed(1)}KB)`);
   }
@@ -182,17 +211,17 @@ async function main() {
   // 取り込み用の索引
   const { shards, manifest } = buildLookup({ defs, n03: src.n03.features, estat: Object.fromEntries(Object.entries(src.estat).map(([k, v]) => [k, v.features])) });
   fs.rmSync(LOOKUP_OUT, { recursive: true, force: true });
-  const typeImport = `import type { LookupManifest, LookupShard } from "../../lib/region/types.ts";\n\n`;
+  const typeImport = (t: string) => `import type { ${t} } from "../../lib/region/types.ts";\n\n`;
   for (const s of shards) {
-    const body = `${HEADER}${typeImport}const shard: LookupShard = ${JSON.stringify(s)};\nexport default shard;\n`;
+    const body = `${HEADER}${typeImport("LookupShard")}const shard: LookupShard = ${JSON.stringify(s)};\nexport default shard;\n`;
     write(path.join(LOOKUP_OUT, `${s.prefecture}.ts`), body);
     console.log(`region-lookup/${s.prefecture}.ts  ${(body.length / 1024).toFixed(1)}KB`);
   }
-  write(path.join(LOOKUP_OUT, "manifest.ts"), `${HEADER}${typeImport}export const LOOKUP_MANIFEST: LookupManifest = ${JSON.stringify(manifest, null, 2)};\n`);
+  write(path.join(LOOKUP_OUT, "manifest.ts"), `${HEADER}${typeImport("LookupManifest")}export const LOOKUP_MANIFEST: LookupManifest = ${JSON.stringify(manifest, null, 2)};\n`);
   const shardLoaders = shards.map((s) => `  ${JSON.stringify(s.prefecture)}: () => import("./${s.prefecture}.ts").then((m) => m.default),`).join("\n");
   write(
     path.join(LOOKUP_OUT, "index.ts"),
-    `${HEADER}${typeImport}export { LOOKUP_MANIFEST } from "./manifest.ts";\n\n/** 都道府県コード → 索引（必要な県だけ読む） */\nexport const LOOKUP_LOADERS: Record<string, () => Promise<LookupShard>> = {\n${shardLoaders}\n};\n`,
+    `${HEADER}${typeImport("LookupShard")}export { LOOKUP_MANIFEST } from "./manifest.ts";\n\n/** 都道府県コード → 索引（必要な県だけ読む） */\nexport const LOOKUP_LOADERS: Record<string, () => Promise<LookupShard>> = {\n${shardLoaders}\n};\n`,
   );
   // 同じ定義なら同じ出力になるように、生成物に日時は入れない
   console.log(`lookup ${manifest.version}`);

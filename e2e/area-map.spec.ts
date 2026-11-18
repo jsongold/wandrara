@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-// エリア選択シートの「地図」から、全国 → 地方（関東）→ 箱根 と寄ってエリアを選べる。
+// エリア選択シートの「地図」から、全国 → 地方（関東）→ 親エリア（伊豆・箱根）と寄ってエリアを選べる。
 // 地図の図形は拡大した表示の外にはみ出すので、押す位置が決まらない。図形はキーボード（Enter）で選ぶ
 test("地図からエリアを選ぶと ?area=<id> になり、シートは開いたまま続けて選べる", async ({ page }) => {
   await page.goto("/ja");
@@ -8,11 +8,13 @@ test("地図からエリアを選ぶと ?area=<id> になり、シートは開�
   await page.getByRole("button", { name: "地図", exact: true }).click();
 
   await page.getByRole("button", { name: "関東の地図を開く" }).press("Enter");
+  await page.getByRole("button", { name: "伊豆の地図を開く" }).press("Enter");
   await page.getByRole("button", { name: "伊東" }).press("Enter");
   await expect(page).toHaveURL(/[?&]area=ito/);
   await expect(page.getByRole("dialog", { name: "エリアを選ぶ" })).toBeVisible();
   await expect(page.getByRole("dialog", { name: "エリアを選ぶ" }).getByRole("button", { name: "伊東" })).toHaveAttribute("aria-pressed", "true");
 
+  await page.getByRole("button", { name: /戻る/ }).click();
   await page.getByRole("button", { name: "箱根の地図を開く" }).press("Enter");
   await page.getByRole("button", { name: "大涌谷" }).press("Enter");
   await expect(page).toHaveURL(/[?&]area=owakudani/);

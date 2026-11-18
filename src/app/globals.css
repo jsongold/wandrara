@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* 生成物（地図・位置の索引。全国分で数十 MB）はクラス名を含まないので読まない */
+@source not "../generated";
 
 :root {
   --background: #ffffff;
