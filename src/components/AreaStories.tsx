@@ -2,7 +2,7 @@
 
 // area-stories：エリアの一言（F 案「写真の丸＋ストーリー」）。ヘッダーの下に項目ごとの丸い写真を並べ、押すと全画面で候補を順に見せる
 // 見たかどうかは端末ごと（localStorage）に覚える。ログインした利用者ごとに覚えるかは未決定
-import { useEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 import type { HighlightGroup, HighlightKind } from "@/lib/area-highlights";
 import { messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/types";
@@ -81,10 +81,23 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
     setOpenState(next ? { area, pos: next } : null);
   };
 
+  // ストーリーはモーダルの <dialog> で開く。開いている間は後ろの画面にフォーカスが行かず、閉じたら押した丸に戻る
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const isOpen = open !== null;
+  useEffect(() => {
+    const d = dialogRef.current;
+    if (!d) return;
+    if (isOpen && !d.open) d.showModal();
+    if (!isOpen && d.open) {
+      d.close();
+      triggerRef.current?.focus();
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(null);
       if (e.key === "ArrowRight") setOpen(nextPos(groups, open));
       if (e.key === "ArrowLeft") setOpen(prevPos(groups, open));
     };
@@ -111,7 +124,10 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
             <button
               key={g.kind}
               type="button"
-              onClick={() => setOpen({ g: gi, i: 0 })}
+              onClick={(e) => {
+                triggerRef.current = e.currentTarget;
+                setOpen({ g: gi, i: 0 });
+              }}
               aria-label={m.open(m.kind[g.kind], g.items.length)}
               data-seen={isSeen}
               className="flex w-14 flex-none cursor-pointer flex-col items-center gap-1 border-0 bg-transparent p-0 text-white"
@@ -128,13 +144,20 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
         })}
       </nav>
 
+      {/* Esc はブラウザの cancel で閉じる。dialog は top layer に出るので、アプリの幅（480px）に合わせて置く */}
+      <dialog
+        ref={dialogRef}
+        aria-label={cur ? m.kind[cur.kind] : undefined}
+        onCancel={(e) => {
+          e.preventDefault();
+          setOpen(null);
+        }}
+        className="m-0 mx-auto h-[100dvh] max-h-none w-full max-w-[480px] border-0 bg-transparent p-0 text-white backdrop:bg-black/60"
+      >
       {open && cur && item && (
         <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={m.kind[cur.kind]}
           data-testid="area-story"
-          className="absolute inset-0 z-[20] flex flex-col text-white"
+          className="relative flex h-full flex-col text-white"
           style={photo(item.color)}
         >
           <span aria-hidden="true" className="absolute bottom-[200px] left-4 text-xs text-white/60">{m.photoDemo}</span>
@@ -182,6 +205,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
           </div>
         </div>
       )}
+      </dialog>
     </>
   );
 }
