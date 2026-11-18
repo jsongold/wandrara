@@ -41,3 +41,17 @@ export function pathOf(g: Geometry | null, pr: Projection): string {
   const polys = (g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : []) as LngLat[][][];
   return polys.map((poly) => poly.map((ring) => ringPath(ring, pr)).join("")).join("");
 }
+
+/** 投影した座標での面積（外周の和。穴は引かない。ラベルを出す順に使うだけ） */
+export function areaOf(g: Geometry | null, pr: Projection): number {
+  if (!g) return 0;
+  const polys = (g.type === "Polygon" ? [g.coordinates] : g.type === "MultiPolygon" ? g.coordinates : []) as LngLat[][][];
+  let s = 0;
+  for (const poly of polys) {
+    const r = (poly[0] ?? []).map(pr.project);
+    let a = 0;
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j][0] + r[i][0]) * (r[j][1] - r[i][1]);
+    s += Math.abs(a / 2);
+  }
+  return Math.round(s * 10) / 10;
+}

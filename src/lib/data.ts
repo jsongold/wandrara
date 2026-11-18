@@ -1,7 +1,10 @@
 // Supabase からコンテンツを読む。誰にでも同じ内容なので 'use cache' でまとめて持つ。
 import { createClient } from "@supabase/supabase-js";
 import { cacheLife } from "next/cache";
+import { areaTraitsOf, type RegionTraitRow, type TraitRow } from "./area-traits";
+import type { AreaTraits } from "./area-filter";
 import { resolveLocalizedText, type Catalog } from "./feed";
+import { selectAll } from "./supabase/select-all";
 import { MODES } from "./modes";
 import type { AreaGroupView, CategoryView, DestCard, Locale, LocalizedText, Mode, Photo } from "./types";
 
@@ -43,7 +46,9 @@ export async function getCatalog(): Promise<Catalog> {
   const { url } = env();
   const db = supabase();
   const [regions, categories, dests] = await Promise.all([
-    db.from("regions").select("id, parent_id, name, sort").order("sort"),
+    // regions は 1000 行を超える（Data API は黙って切る）のでページを送って読み切る
+    selectAll<{ id: string; parent_id: string | null; name: LocalizedText; sort: number | null }>(db, "regions", "id, parent_id, name, sort", ["sort", "id"])
+      .then((data) => ({ data, error: null }), (e: Error) => ({ data: null, error: e })),
     db.from("categories").select("id, parent_id, name, icon, sort").order("sort"),
     db.from("dest_cards").select("dest_id, core_type, slug, is_demo, created_at, published_at, region_id, name, summary, category_ids, photos"),
   ]);
@@ -55,7 +60,7 @@ export async function getCatalog(): Promise<Catalog> {
     url: photoUrl(url, p.storage_key), license: p.license, credit: p.credit, isDemo: false, placeholderSky: null, placeholderLand: null,
   });
   return {
-    regions: regions.data.map((r) => ({ id: r.id, parentId: r.parent_id, name: r.name, sort: r.sort ?? 0 })),
+    regions: regions.data!.map((r) => ({ id: r.id, parentId: r.parent_id, name: r.name, sort: r.sort ?? 0 })),
     categories: categories.data.map((c) => ({ id: c.id, parentId: c.parent_id, name: c.name, icon: c.icon, sort: c.sort ?? 0 })),
     dests: (dests.data as DestCardRow[]).map((d): DestCard => ({
       id: d.dest_id, coreType: d.core_type, slug: d.slug, regionId: d.region_id, name: d.name ?? {}, summary: d.summary,
@@ -84,4 +89,22 @@ export function listAreas(catalog: Catalog, locale: Locale): AreaGroupView[] {
       label: t(r.name, locale),
       subs: catalog.regions.filter((x) => x.parentId === r.id).map((x) => ({ id: x.id, label: t(x.name, locale) })),
     }));
+}
+
+/** エリアの特性（地図の絞り込み用）。特性のマスターと土地由来の値を読み、宿・体験の分類からの特性はカタログから数える */
+export async function getAreaTraits(catalog: Catalog, locale: Locale): Promise<AreaTraits> {
+  const { traits, regionTraits } = await loadTraitRows();
+  return areaTraitsOf(traits, regionTraits, catalog.dests, locale);
+}
+
+async function loadTraitRows(): Promise<{ traits: TraitRow[]; regionTraits: RegionTraitRow[] }> {
+  "use cache";
+  cacheLife("minutes");
+  const db = supabase();
+  const [traits, regionTraits] = await Promise.all([
+    db.from("traits").select("id, name, icon, sort, source, category_ids").order("sort"),
+    selectAll<RegionTraitRow>(db, "region_traits", "region_id, trait_id, value", ["region_id", "trait_id"]),
+  ]);
+  if (traits.error) throw new Error(`Supabase の読み込みに失敗しました: ${traits.error.message}`);
+  return { traits: traits.data as TraitRow[], regionTraits };
 }

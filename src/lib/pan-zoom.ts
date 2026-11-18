@@ -1,7 +1,8 @@
+import type { Box } from "./area-map.ts";
 // 地図の表示範囲（SVG の viewBox）を動かす・寄せる計算（純関数）。画面の px と viewBox の単位の換算は呼ぶ側が渡す
 export type View = { x: number; y: number; w: number; h: number };
 
-export const MAX_ZOOM = 12; // 全体の幅の 1/12 まで寄れる
+export const MAX_ZOOM = 200; // 全体の幅の 1/200 まで寄れる（全国の地図で 10km 級まで）
 
 export function parseView(s: string): View {
   const [x, y, w, h] = s.split(" ").map(Number);
@@ -37,4 +38,29 @@ export function toView(v: View, box: { w: number; h: number }, px: number, py: n
   const ox = (box.w - v.w / unit) / 2;
   const oy = (box.h - v.h / unit) / 2;
   return { x: v.x + (px - ox) * unit, y: v.y + (py - oy) * unit, unit };
+}
+
+/** toView の逆。viewBox の座標を、要素の中の px にする */
+export function toScreen(v: View, box: { w: number; h: number }, x: number, y: number): [number, number] {
+  const unit = Math.max(v.w / box.w, v.h / box.h);
+  const ox = (box.w - v.w / unit) / 2;
+  const oy = (box.h - v.h / unit) / 2;
+  return [ox + (x - v.x) / unit, oy + (y - v.y) / unit];
+}
+
+/** target の中心に寄せ、pad 倍の余白を付けた表示範囲。枠と同じ縦横比で、幅は maxW まで（小さいエリアは maxW まで寄る） */
+export function fitView(target: Box, box: { w: number; h: number }, maxW: number, pad = 1.25): View {
+  const [tx, ty, tw, th] = target;
+  const aspect = box.w / box.h;
+  const w = Math.min(maxW, Math.max(tw * pad, th * pad * aspect));
+  const h = w / aspect;
+  return { x: tx + tw / 2 - w / 2, y: ty + th / 2 - h / 2, w, h };
+}
+
+/** preserveAspectRatio="xMidYMid meet" で実際に見えている範囲（枠の縦横比が違うと viewBox の外も見える） */
+export function shownView(v: View, box: { w: number; h: number }): View {
+  if (box.w <= 0 || box.h <= 0) return v;
+  const unit = Math.max(v.w / box.w, v.h / box.h);
+  const w = box.w * unit, h = box.h * unit;
+  return { x: v.x - (w - v.w) / 2, y: v.y - (h - v.h) / 2, w, h };
 }

@@ -155,6 +155,13 @@
       "when": 1794894562032,
       "tag": "20261117054922_regions_nationwide",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795014232567,
+      "tag": "20261118150352_traits",
+      "breakpoints": true
     }
   ]
 }

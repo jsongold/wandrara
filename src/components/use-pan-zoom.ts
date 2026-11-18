@@ -1,8 +1,8 @@
 "use client";
 
 // SVG の地図を指・マウスで動かす（ドラッグ）・寄せる（ピンチ・ホイール）。動かした直後のタップは選択にしない
-import { useEffect, useRef, useState, type RefObject } from "react";
-import { panBy, parseView, toView, viewString, zoomAt, type View } from "@/lib/pan-zoom";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import { clampView, panBy, parseView, toView, viewString, zoomAt, type View } from "@/lib/pan-zoom";
 
 const DRAG_PX = 6; // これ以上動いたらタップではなくドラッグ
 
@@ -94,7 +94,18 @@ export function usePanZoom(svgRef: RefObject<SVGSVGElement | null>, full: string
     };
   }, [svgRef, full, start]);
 
+  // 表示範囲を外から決める（押したエリアへ寄るときなど）
+  const setView = useCallback((v: View) => {
+    if (full) setMoved({ key: full, view: clampView(v, parseView(full)) });
+  }, [full]);
+
+  // 枠の大きさをその場で測る（ResizeObserver がまだ返していない、開いた直後に使う）
+  const measure = useCallback((): { w: number; h: number } | null => {
+    const r = svgRef.current?.getBoundingClientRect();
+    return r && r.width > 0 ? { w: r.width, h: r.height } : null;
+  }, [svgRef]);
+
   // 文字と点が、寄せても同じ px に見えるようにする倍率（viewBox の 1px あたりの単位）
   const unit = view && box && box.w > 0 && box.h > 0 ? Math.max(view.w / box.w, view.h / box.h) : 1;
-  return { viewBox: view ? viewString(view) : (full ?? undefined), unit };
+  return { viewBox: view ? viewString(view) : (full ?? undefined), unit, view, box, setView, measure };
 }
