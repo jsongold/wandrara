@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import type { AreaMapBase, AreaMapChildren } from "@/lib/area-map";
 import { showChildren, visibleParents } from "@/lib/area-map-visible";
-import type { View } from "@/lib/pan-zoom";
+import { shownView, type View } from "@/lib/pan-zoom";
 import { AREA_MAP_CHILDREN, loadAreaMapBase } from "@/generated/area-map";
 
 export function useAreaMapBase(): AreaMapBase | null {
@@ -22,10 +22,10 @@ export function useAreaMapBase(): AreaMapBase | null {
 }
 
 /** 子を出す寄り方なら、見えている親の子（読み終わったもの）。zoomed は子を出す寄り方か */
-export function useAreaMapChildren(base: AreaMapBase | null, view: View | null, start: View | null): { zoomed: boolean; children: AreaMapChildren[] } {
+export function useAreaMapChildren(base: AreaMapBase | null, view: View | null, start: View | null, box: { w: number; h: number } | null): { zoomed: boolean; children: AreaMapChildren[] } {
   const [loaded, setLoaded] = useState<Record<string, AreaMapChildren>>({});
   const zoomed = !!(base && view && start && showChildren(view, start));
-  const want = zoomed ? visibleParents(base!.parents, view!).filter((id) => AREA_MAP_CHILDREN[id]) : [];
+  const want = zoomed ? visibleParents(base!.parents, box ? shownView(view!, box) : view!).filter((id) => AREA_MAP_CHILDREN[id]) : [];
   const key = want.join(",");
 
   useEffect(() => {

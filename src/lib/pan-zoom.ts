@@ -56,3 +56,11 @@ export function fitView(target: Box, box: { w: number; h: number }, maxW: number
   const h = w / aspect;
   return { x: tx + tw / 2 - w / 2, y: ty + th / 2 - h / 2, w, h };
 }
+
+/** preserveAspectRatio="xMidYMid meet" で実際に見えている範囲（枠の縦横比が違うと viewBox の外も見える） */
+export function shownView(v: View, box: { w: number; h: number }): View {
+  if (box.w <= 0 || box.h <= 0) return v;
+  const unit = Math.max(v.w / box.w, v.h / box.h);
+  const w = box.w * unit, h = box.h * unit;
+  return { x: v.x - (w - v.w) / 2, y: v.y - (h - v.h) / 2, w, h };
+}

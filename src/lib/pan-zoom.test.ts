@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { clampView, fitView, MAX_ZOOM, toScreen, panBy, parseView, toView, viewString, zoomAt } from "./pan-zoom.ts";
+import { clampView, fitView, MAX_ZOOM, toScreen, panBy, parseView, toView, viewString, zoomAt, shownView } from "./pan-zoom.ts";
 
 const full = parseView("0 0 360 520");
 
 describe("pan-zoom", () => {
+  it("枠の縦横比が viewBox と違うと、見えている範囲は viewBox より広い", () => {
+    expect(shownView({ x: 0, y: 0, w: 100, h: 100 }, { w: 200, h: 100 })).toEqual({ x: -50, y: 0, w: 200, h: 100 });
+    expect(shownView({ x: 0, y: 0, w: 100, h: 100 }, { w: 100, h: 100 })).toEqual({ x: 0, y: 0, w: 100, h: 100 });
+  });
   it("viewBox の文字列と行き来できる", () => {
     expect(viewString(parseView("1 2 3 4"))).toBe("1 2 3 4");
   });
