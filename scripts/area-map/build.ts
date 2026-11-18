@@ -1,28 +1,28 @@
 // エリア地図のデータと位置の索引を、ローカル DB のエリアの定義（regions・region_parts）から作る。
 // 元データは .cache/area-map/ に落とす（コミットしない）。出力はコミットする：
-//   src/generated/area-map/<地図 id>.json と index.ts（画面用。段ごとの SVG path）
+//   src/generated/area-map/base.json・children/<親 id>.json・index.ts（画面用。1 枚の地図の SVG path）
 //   src/generated/region-lookup/<県>.ts・manifest.ts・index.ts（取り込み用。判定用の形）
 // 使い方: supabase db reset → pnpm area-map:build
 
 import fs from "node:fs";
 import path from "node:path";
 import { gzipSync } from "node:zlib";
-import type { AreaMapData } from "../../src/lib/area-map.ts";
-import { CHIHO } from "../../src/lib/region/chiho.ts";
+import type { AreaMapBase, AreaMapChildren, Box, MapArea } from "../../src/lib/area-map.ts";
 import type { BBox, RegionDef } from "../../src/lib/region/types.ts";
 import { loadDefinitions, mappable } from "./definitions.ts";
-import { citiesOf, fc, featuresOf, q, run, type Feature, type FeatureCollection, type Sources } from "./parts.ts";
-import { makeProjection, pathOf, type Geometry } from "./project.ts";
+import { citiesOf, fc, featuresOf, q, run, type Feature, type Sources } from "./parts.ts";
+import { areaOf, makeProjection, pathOf, type Geometry, type Projection } from "./project.ts";
 import { fetchSources, SOURCE_VERSIONS } from "./sources.ts";
-import { deriveMapTree, type MapDef } from "./tree.ts";
+import { intervalFor, JAPAN_BBOX, JAPAN_START, pad, planSheet } from "./tree.ts";
 import { bboxOf, buildLookup, toMulti } from "./write.ts";
 
 const MAP_OUT = path.resolve("src/generated/area-map");
 const LOOKUP_OUT = path.resolve("src/generated/region-lookup");
-const WIDTH = 360;
+const WIDTH = 2000; // 全国の幅。座標は 0.1 単位に丸める（約 80m）
 const LOOKUP_INTERVAL = 10;
 const LAND_INTERVAL = 100;
-const MAINLAND_KM2 = 500; // これより小さい島は地方の範囲に入れない
+const LAND_DRAW_INTERVAL = 2500; // 背景の陸地（都道府県の輪郭）
+const PARENT_INTERVAL = 800; // 親エリアの形
 const HEADER = "// 生成ファイル（pnpm area-map:build）。手で直さない\n";
 
 type Shapes = {
@@ -40,34 +40,6 @@ async function landBaseOf(n03: string): Promise<string> {
     console.log(`land base ${path.basename(out)}`);
     const fc = await run(`-i ${q(n03)} -each ${q("N03_007 = N03_007, N03_001 = N03_001")} -simplify interval=${LAND_INTERVAL} keep-shapes`);
     fs.writeFileSync(out, JSON.stringify({ type: "FeatureCollection", features: fc.features.map((f) => ({ ...f, properties: { N03_001: f.properties.N03_001, N03_007: f.properties.N03_007 } })) }));
-  }
-  return out;
-}
-
-async function landOf(map: MapDef, n03: string): Promise<FeatureCollection> {
-  const simp = `-simplify interval=${map.interval} keep-shapes`;
-  if (map.land === "prefectures") {
-    return run(`-i ${q(n03)} -dissolve N03_001 ${simp} -filter-islands min-area=5km2 remove-empty`);
-  }
-  return run(`-i ${q(n03)} -clip bbox=${map.bbox.join(",")} -dissolve ${simp} -filter-islands min-area=0.3km2 remove-empty`);
-}
-
-/** 地方の形（都道府県をまとめたもの） */
-async function chihoShape(id: string, n03: string, interval: number): Promise<FeatureCollection> {
-  const c = CHIHO.find((x) => x.id === id);
-  if (!c) throw new Error(`地方がありません: ${id}`);
-  const filter = `-filter ${q(`Number(N03_007.slice(0,2)) >= ${c.prefectures[0]} && Number(N03_007.slice(0,2)) <= ${c.prefectures[1]}`)}`;
-  return run(`-i ${q(n03)} ${filter} -dissolve -simplify interval=${interval} keep-shapes -filter-islands min-area=5km2 remove-empty`);
-}
-
-/** 地方の本土の範囲（離島を除いた陸地の bbox）。地方の地図の範囲に使う（小笠原などで範囲が日本全体に広がらないように） */
-async function chihoViews(landBase: string): Promise<Map<string, BBox>> {
-  const out = new Map<string, BBox>();
-  for (const c of CHIHO) {
-    const filter = `-filter ${q(`Number(N03_007.slice(0,2)) >= ${c.prefectures[0]} && Number(N03_007.slice(0,2)) <= ${c.prefectures[1]}`)}`;
-    const fc = await run(`-i ${q(landBase)} ${filter} -dissolve -filter-islands min-area=${MAINLAND_KM2}km2 remove-empty`);
-    const b = bboxOf([toMulti(fc.features)]);
-    if (b) out.set(c.id, b);
   }
   return out;
 }
@@ -95,64 +67,66 @@ async function buildShapes(defs: RegionDef[], src: Sources): Promise<Shapes> {
   return { cover, display };
 }
 
-async function buildMap(map: MapDef, maps: MapDef[], defs: RegionDef[], shapes: Shapes, landBase: string): Promise<AreaMapData> {
-  const pr = makeProjection(map.bbox, WIDTH);
-  const land = await landOf(map, landBase);
-  const byId = new Map(defs.map((d) => [d.id, d]));
-
-  // 押せる形とリンクの形をまとめて簡略化する（キーは "s:<id>" か "l:<id>"）
-  const feats: Feature[] = [
-    ...map.shapes.flatMap((id) => (shapes.display.get(id) ?? []).map((f) => ({ ...f, properties: { key: `s:${id}` } }))),
-    ...map.links.flatMap((l) => (l.shape ? (shapes.cover.get(l.shape) ?? []).map((f) => ({ ...f, properties: { key: `l:${l.shape}` } })) : [])),
-  ];
-  const got = new Map<string, { d: string; label: [number, number] }>();
-  const addAll = async (fcIn: FeatureCollection, keyOf: (f: Feature) => string) => {
-    const labels = await run(`-i a.json -points inner`, { "a.json": JSON.stringify(fcIn) });
-    for (const f of fcIn.features) {
-      const key = keyOf(f);
-      const p = labels.features.find((l) => keyOf(l) === key)?.geometry as { coordinates: [number, number] } | undefined;
-      got.set(key, { d: pathOf(f.geometry as Geometry, pr), label: p ? pr.project(p.coordinates) : [0, 0] });
-    }
-  };
-  if (feats.length > 0) {
-    const dissolved = await run(
-      `-i a.json -dissolve key -simplify interval=${map.interval} keep-shapes -filter-islands min-area=0.05km2 remove-empty`,
-      { "a.json": JSON.stringify(fc(feats)) },
-    );
-    await addAll(dissolved, (f) => String(f.properties.key));
+/** 形をキーごとにまとめて簡略化し、path・ラベル位置・範囲・面積にする（キーは properties.key） */
+async function areasOf(feats: Feature[], interval: number, minIsland: string, pr: Projection): Promise<Map<string, Omit<MapArea, "id">>> {
+  const out = new Map<string, Omit<MapArea, "id">>();
+  if (feats.length === 0) return out;
+  const dissolved = await run(
+    `-i a.json -dissolve key -simplify interval=${interval} keep-shapes -filter-islands min-area=${minIsland} remove-empty`,
+    { "a.json": JSON.stringify(fc(feats)) },
+  );
+  const labels = await run(`-i a.json -points inner`, { "a.json": JSON.stringify(dissolved) });
+  for (const f of dissolved.features) {
+    const key = String(f.properties.key);
+    const g = f.geometry as Geometry;
+    const d = pathOf(g, pr);
+    if (!d) continue;
+    const p = labels.features.find((l) => String(l.properties.key) === key)?.geometry as { coordinates: [number, number] } | undefined;
+    const b = bboxOf([toMulti([f])]);
+    if (!b) continue;
+    const [x0, y0] = pr.project([b[0], b[3]]);
+    const [x1, y1] = pr.project([b[2], b[1]]);
+    const box: Box = [x0, y0, Math.round((x1 - x0) * 10) / 10, Math.round((y1 - y0) * 10) / 10];
+    out.set(key, { d, label: p ? pr.project(p.coordinates) : [x0 + box[2] / 2, y0 + box[3] / 2], box, size: areaOf(g, pr) });
   }
-  for (const l of map.links) {
-    if (l.chiho) {
-      const c = await chihoShape(l.chiho, landBase, map.interval);
-      await addAll(fc(c.features.map((f) => ({ ...f, properties: { key: `c:${l.chiho}` } }))), (f) => String(f.properties.key));
-    }
-  }
+  return out;
+}
 
-  const shape = (key: string) => {
-    const s = got.get(key);
-    if (!s || !s.d) throw new Error(`形を作れませんでした: ${map.id} ${key}`);
-    return s;
+const keyed = (fs: Feature[], key: string): Feature[] => fs.map((f) => ({ ...f, properties: { key } }));
+
+async function buildSheet(defs: RegionDef[], shapes: Shapes, landBase: string, bbox: Map<string, BBox>) {
+  const pr = makeProjection(JAPAN_BBOX, WIDTH);
+  const plan = planSheet(defs, (id) => (shapes.cover.get(id) ?? []).length > 0);
+  const land = await run(`-i ${q(landBase)} -dissolve N03_001 -simplify interval=${LAND_DRAW_INTERVAL} keep-shapes -filter-islands min-area=3km2 remove-empty`);
+  const parentAreas = await areasOf(plan.parents.flatMap((id) => keyed(shapes.cover.get(id) ?? [], id)), PARENT_INTERVAL, "1km2", pr);
+  const need = (m: Map<string, Omit<MapArea, "id">>, id: string) => {
+    const a = m.get(id);
+    if (!a) throw new Error(`形を作れませんでした: ${id}`);
+    return { id, ...a };
   };
-  return {
-    id: map.id,
-    name: map.name,
+  const base: AreaMapBase = {
     viewBox: pr.viewBox,
-    ...(map.start ? { start: viewOf(map.start, pr.project) } : {}),
+    start: viewOf(JAPAN_START, pr.project),
     land: land.features.map((f) => pathOf(f.geometry as Geometry, pr)).join(""),
-    shapes: map.shapes.map((id) => ({ id, ...shape(`s:${id}`) })),
-    points: map.points.map((id) => {
-      const p = byId.get(id)?.point;
-      if (!p) throw new Error(`点の位置がありません: ${id}`);
-      return { id, at: pr.project(p) };
-    }),
-    links: map.links.map((l) => {
-      const target = maps.find((m) => m.id === l.map);
-      if (!target) throw new Error(`寄る先の地図がありません: ${l.map}`);
-      const s = shape(l.shape ? `l:${l.shape}` : `c:${l.chiho}`);
-      return { map: l.map, name: target.name, d: s.d, at: s.label };
-    }),
-    wholes: map.wholes,
+    parents: plan.parents.filter((id) => parentAreas.has(id) || (console.warn(`地図に形を出せない（小さすぎる・範囲の外）: ${id}`), false)).map((id) => need(parentAreas, id)),
   };
+  const byId = new Map(defs.map((d) => [d.id, d]));
+  const children: AreaMapChildren[] = [];
+  for (const c of plan.children) {
+    const b = bbox.get(c.parent);
+    const interval = b ? intervalFor(pad(b, 0.08)) : 250;
+    const areas = await areasOf(c.shapes.flatMap((id) => keyed(shapes.display.get(id) ?? [], id)), interval, "0.05km2", pr);
+    children.push({
+      parent: c.parent,
+      shapes: c.shapes.filter((id) => areas.has(id)).map((id) => need(areas, id)),
+      points: c.points.map((id) => {
+        const p = byId.get(id)?.point;
+        if (!p) throw new Error(`点の位置がありません: ${id}`);
+        return { id, at: pr.project(p) };
+      }),
+    });
+  }
+  return { base, children };
 }
 
 /** 緯度経度の範囲を、SVG の viewBox（"x y w h"）にする */
@@ -185,27 +159,28 @@ async function main() {
   const landBase = await landBaseOf(files.n03);
   const shapes = await buildShapes(defs, src);
   const bbox = new Map<string, BBox>();
-  const regionCities = new Map<string, string[]>();
   for (const d of defs) {
     const b = bboxOf([toMulti(shapes.cover.get(d.id) ?? [])]);
     if (b) bbox.set(d.id, b);
     else if (d.point) bbox.set(d.id, [d.point[0], d.point[1], d.point[0], d.point[1]]);
-    const kids = defs.filter((k) => k.parentId === d.id);
-    regionCities.set(d.id, citiesOf([d, ...kids].flatMap((x) => x.parts)).all);
   }
-  const maps = deriveMapTree({ defs, bbox, cities: regionCities, chihoView: await chihoViews(landBase) });
+  const sheet = await buildSheet(defs, shapes, landBase, bbox);
 
   // 画面用の地図
   fs.rmSync(MAP_OUT, { recursive: true, force: true });
-  for (const map of maps) {
-    const json = JSON.stringify(await buildMap(map, maps, defs, shapes, landBase));
-    write(path.join(MAP_OUT, `${map.id}.json`), json + "\n");
-    console.log(`area-map/${map.id}.json  ${(json.length / 1024).toFixed(1)}KB (gzip ${(gzipSync(json).length / 1024).toFixed(1)}KB)`);
+  const report = (name: string, json: string) => console.log(`area-map/${name}  ${(json.length / 1024).toFixed(1)}KB (gzip ${(gzipSync(json).length / 1024).toFixed(1)}KB)`);
+  const baseJson = JSON.stringify(sheet.base);
+  write(path.join(MAP_OUT, "base.json"), baseJson + "\n");
+  report("base.json", baseJson);
+  for (const c of sheet.children) {
+    const json = JSON.stringify(c);
+    write(path.join(MAP_OUT, "children", `${c.parent}.json`), json + "\n");
+    report(`children/${c.parent}.json`, json);
   }
-  const loaders = maps.map((m) => `  ${JSON.stringify(m.id)}: () => import("./${m.id}.json").then((m) => m.default as unknown as AreaMapData),`).join("\n");
+  const loaders = sheet.children.map((c) => `  ${JSON.stringify(c.parent)}: () => import("./children/${c.parent}.json").then((m) => m.default as unknown as AreaMapChildren),`).join("\n");
   write(
     path.join(MAP_OUT, "index.ts"),
-    `${HEADER}import type { AreaMapData } from "@/lib/area-map";\n\nexport const AREA_MAP_LOADERS: Record<string, () => Promise<AreaMapData>> = {\n${loaders}\n};\n`,
+    `${HEADER}import type { AreaMapBase, AreaMapChildren } from "@/lib/area-map";\n\nexport const loadAreaMapBase = (): Promise<AreaMapBase> => import("./base.json").then((m) => m.default as unknown as AreaMapBase);\n\n/** 親エリア id → その子の形（寄せたときに読む） */\nexport const AREA_MAP_CHILDREN: Record<string, () => Promise<AreaMapChildren>> = {\n${loaders}\n};\n`,
   );
 
   // 取り込み用の索引

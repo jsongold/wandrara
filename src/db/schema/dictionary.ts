@@ -62,3 +62,50 @@ export const categories = pgTable(
     anyoneRead(),
   ],
 );
+
+// エリアの特性（温泉・海辺など）のマスター。地図で「この特性があるエリア」に絞るのに使う
+// source = items：公開中の宿・体験の分類（category_ids のどれか）から数える。geo：土地から計算した値を region_traits に入れる（今は行なし）
+export const TRAIT_VALUE_TYPES = ["flag", "number"] as const;
+export const TRAIT_SOURCES = ["items", "geo"] as const;
+
+export const traits = pgTable(
+  "traits",
+  {
+    id: text("id").primaryKey(),
+    name: jsonb("name").$type<LocalizedText>().notNull(),
+    icon: text("icon").notNull().default("tag"),
+    sort: integer("sort"),
+    valueType: text("value_type").notNull().default("flag"),
+    unit: text("unit"), // number のとき（例 m）
+    steps: jsonb("steps").$type<number[]>(), // number の絞り込みの段階（例 [300, 800]）
+    source: text("source").notNull(),
+    categoryIds: text("category_ids").array(), // source = items のとき、数える分類
+    method: text("method"), // source = geo のときの計算方法の名前（例 coast・elevation_mean）
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("traits_id_check", sql`${t.id} ~ '^[a-z0-9-]{1,40}$'`),
+    check("traits_value_type_check", sql`${t.valueType} in ('flag', 'number')`),
+    check("traits_source_check", sql`${t.source} in ('items', 'geo')`),
+    anyoneRead(),
+  ],
+);
+
+// 土地から計算した特性の値（エリア × 特性）。flag は 1
+export const regionTraits = pgTable(
+  "region_traits",
+  {
+    regionId: text("region_id")
+      .notNull()
+      .references(() => regions.id, { onDelete: "cascade" }),
+    traitId: text("trait_id")
+      .notNull()
+      .references(() => traits.id, { onDelete: "cascade" }),
+    value: doublePrecision("value").notNull(),
+    sourceVersion: text("source_version").notNull(), // 例 N03-2024
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ name: "region_traits_pkey", columns: [t.regionId, t.traitId] }), anyoneRead()],
+);

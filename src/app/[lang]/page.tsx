@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { HomeScreen } from "@/components/HomeScreen";
-import { getCatalog, listAreas, listCategories } from "@/lib/data";
+import { getAreaTraits, getCatalog, listAreas, listCategories } from "@/lib/data";
 import { parseDiscoverQuery } from "@/lib/discover-query";
 import { buildFeed } from "@/lib/feed";
 import { loadFeedStrategies } from "@/lib/feed-config";
@@ -20,6 +20,7 @@ async function Discover({ params, searchParams }: Pick<PageProps<"/[lang]">, "pa
   if (!isLocale(locale)) notFound();
   const query = parseDiscoverQuery(await searchParams);
   const catalog = await getCatalog();
+  const traits = await getAreaTraits(catalog, locale);
   const feed = buildFeed({ catalog, query, locale }, loadFeedStrategies());
   return (
     <HomeScreen
@@ -28,6 +29,7 @@ async function Discover({ params, searchParams }: Pick<PageProps<"/[lang]">, "pa
       feed={feed}
       categories={listCategories(catalog, query.mode, locale)}
       areas={listAreas(catalog, locale)}
+      traits={traits}
     />
   );
 }

@@ -3,13 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
 import { clickEventOf, trackFeedEvent, viewedEnough, type FeedEvent } from "@/lib/feed-events";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
 import { messages, type Messages } from "@/lib/i18n/messages";
 import { useMessages } from "@/lib/i18n/use-locale";
 import { otherMode } from "@/lib/modes";
+import type { AreaTraits } from "@/lib/area-filter";
 import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Locale, Photo, SortKey } from "@/lib/types";
 import { AccountButton } from "./AccountButton";
 import { AreaMap } from "./AreaMap";
@@ -19,7 +20,7 @@ import { Icon } from "./icons";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
 
-type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPage; categories: CategoryView[]; areas: AreaGroupView[] };
+type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPage; categories: CategoryView[]; areas: AreaGroupView[]; traits?: AreaTraits };
 type Sheet = null | "area" | "filter";
 type AreaView = "list" | "map";
 
@@ -61,13 +62,15 @@ function areaName(areas: AreaGroupView[], id: string, all: string): string {
   return all;
 }
 
-export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
+export function HomeScreen({ locale, query, feed, categories, areas, traits }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [sheet, setSheet] = useState<Sheet>(null);
   const [areaView, setAreaView] = useState<AreaView>("list");
   const m = messages(locale);
   const feedRef = useRef<HTMLDivElement>(null);
+  // 地図の絞り込みで、子に合うものがあれば親も残すための親子
+  const parentOf = useMemo(() => Object.fromEntries(areas.flatMap((g) => [[g.id, null], ...g.subs.map((s) => [s.id, g.id])])) as Record<string, string | null>, [areas]);
   const queryKey = serializeDiscoverQuery(query, locale);
 
   // 条件（カテゴリなど）が変わり新しい一覧が来たら、一覧の一番上から見せる
@@ -271,6 +274,8 @@ export function HomeScreen({ locale, query, feed, categories, areas }: Props) {
             <AreaMap
               current={query.area}
               labelOf={(id) => areaName(areas, id, id)}
+              parentOf={parentOf}
+              traits={traits}
               // 地図では選んでもシートを閉じない（続けて寄ったり選び直したりできる）
               onSelect={(id) => go({ area: id })}
             />
