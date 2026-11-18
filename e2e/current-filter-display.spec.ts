@@ -5,7 +5,8 @@ const mark = (page: import("@playwright/test").Page) => page.getByTestId("curren
 
 test("全エリアなら出さない", async ({ page }) => {
   await page.goto("/ja");
-  await expect(page.locator("[data-home]")).toBeVisible();
+  // 読み込み中は React の差し替えで一瞬 2 つになることがあるので、見えている 1 つを待つ
+  await expect(page.locator("[data-home]").filter({ visible: true })).toHaveCount(1);
   await expect(mark(page)).toHaveCount(0);
 });
 
