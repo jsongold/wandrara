@@ -406,6 +406,17 @@ const ja = {
     empty: "まだ保存したものはありません。気になる宿や体験のハートを押すと、ここに並びます",
     openList: "保存したもの",
   },
+  highlights: {
+    label: (area: string) => `${area}で知っておきたいこと`,
+    kind: { meisan: "名産", tokusan: "特産", shun: "旬", benri: "便利", ninki: "人気" },
+    open: (kind: string, n: number) => `${kind}を見る（${n} 件）`,
+    position: (area: string, i: number, n: number) => `${area} · ${i} / ${n}`,
+    prev: "前へ",
+    next: "次へ",
+    action: { shop: "買える店を見る", rent: "借りる", place: "詳しく見る" },
+    pr: "PR",
+    photoDemo: "写真（デモ）",
+  },
 };
 
 export type Messages = typeof ja;
@@ -806,6 +817,17 @@ const en: Messages = {
     title: "Saved",
     empty: "Nothing saved yet. Tap the heart on a stay or experience to keep it here.",
     openList: "Saved",
+  },
+  highlights: {
+    label: (area: string) => `Good to know in ${area}`,
+    kind: { meisan: "Local food", tokusan: "Specialty", shun: "In season", benri: "Handy", ninki: "Popular" },
+    open: (kind: string, n: number) => `See ${kind} (${n})`,
+    position: (area: string, i: number, n: number) => `${area} · ${i} / ${n}`,
+    prev: "Previous",
+    next: "Next",
+    action: { shop: "Where to buy", rent: "Rent", place: "See more" },
+    pr: "PR",
+    photoDemo: "Photo (demo)",
   },
 };
 
