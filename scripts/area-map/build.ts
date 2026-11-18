@@ -211,17 +211,17 @@ async function main() {
   // 取り込み用の索引
   const { shards, manifest } = buildLookup({ defs, n03: src.n03.features, estat: Object.fromEntries(Object.entries(src.estat).map(([k, v]) => [k, v.features])) });
   fs.rmSync(LOOKUP_OUT, { recursive: true, force: true });
-  const typeImport = `import type { LookupManifest, LookupShard } from "../../lib/region/types.ts";\n\n`;
+  const typeImport = (t: string) => `import type { ${t} } from "../../lib/region/types.ts";\n\n`;
   for (const s of shards) {
-    const body = `${HEADER}${typeImport}const shard: LookupShard = ${JSON.stringify(s)};\nexport default shard;\n`;
+    const body = `${HEADER}${typeImport("LookupShard")}const shard: LookupShard = ${JSON.stringify(s)};\nexport default shard;\n`;
     write(path.join(LOOKUP_OUT, `${s.prefecture}.ts`), body);
     console.log(`region-lookup/${s.prefecture}.ts  ${(body.length / 1024).toFixed(1)}KB`);
   }
-  write(path.join(LOOKUP_OUT, "manifest.ts"), `${HEADER}${typeImport}export const LOOKUP_MANIFEST: LookupManifest = ${JSON.stringify(manifest, null, 2)};\n`);
+  write(path.join(LOOKUP_OUT, "manifest.ts"), `${HEADER}${typeImport("LookupManifest")}export const LOOKUP_MANIFEST: LookupManifest = ${JSON.stringify(manifest, null, 2)};\n`);
   const shardLoaders = shards.map((s) => `  ${JSON.stringify(s.prefecture)}: () => import("./${s.prefecture}.ts").then((m) => m.default),`).join("\n");
   write(
     path.join(LOOKUP_OUT, "index.ts"),
-    `${HEADER}${typeImport}export { LOOKUP_MANIFEST } from "./manifest.ts";\n\n/** 都道府県コード → 索引（必要な県だけ読む） */\nexport const LOOKUP_LOADERS: Record<string, () => Promise<LookupShard>> = {\n${shardLoaders}\n};\n`,
+    `${HEADER}${typeImport("LookupShard")}export { LOOKUP_MANIFEST } from "./manifest.ts";\n\n/** 都道府県コード → 索引（必要な県だけ読む） */\nexport const LOOKUP_LOADERS: Record<string, () => Promise<LookupShard>> = {\n${shardLoaders}\n};\n`,
   );
   // 同じ定義なら同じ出力になるように、生成物に日時は入れない
   console.log(`lookup ${manifest.version}`);

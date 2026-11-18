@@ -1,5 +1,5 @@
 // 生成ファイル（pnpm area-map:build）。手で直さない
-import type { LookupManifest, LookupShard } from "../../lib/region/types.ts";
+import type { LookupShard } from "../../lib/region/types.ts";
 
 export { LOOKUP_MANIFEST } from "./manifest.ts";
 
