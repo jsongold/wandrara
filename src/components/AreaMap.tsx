@@ -48,7 +48,7 @@ export function AreaMap({ current, labelOf, parentOf, onSelect, traits }: Props)
   const m = useMessages();
   const base = useAreaMapBase();
   const svgRef = useRef<SVGSVGElement>(null);
-  const { viewBox, unit: k, view, box, setView } = usePanZoom(svgRef, base?.viewBox ?? null, base?.start ?? null);
+  const { viewBox, unit: k, view, box, setView, measure } = usePanZoom(svgRef, base?.viewBox ?? null, base?.start ?? null);
   const start = useMemo(() => (base ? parseView(base.start) : null), [base]);
   const { zoomed, children } = useAreaMapChildren(base, view, start, box);
 
@@ -58,9 +58,8 @@ export function AreaMap({ current, labelOf, parentOf, onSelect, traits }: Props)
 
   const flyTo = (a: MapArea) => {
     // 枠の大きさがまだ測れていない（開いた直後に押した）ときは、その場で測る
-    const r = svgRef.current?.getBoundingClientRect();
-    const frame = box ?? (r ? { w: r.width, h: r.height } : null);
-    if (!frame || frame.w <= 0 || !start) return;
+    const frame = box ?? measure();
+    if (!frame || !start) return;
     setView(fitView(a.box, frame, start.w / (CHILD_ZOOM * 1.1)));
   };
   const zoomBy = (f: number) => {

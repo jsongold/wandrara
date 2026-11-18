@@ -99,7 +99,13 @@ export function usePanZoom(svgRef: RefObject<SVGSVGElement | null>, full: string
     if (full) setMoved({ key: full, view: clampView(v, parseView(full)) });
   }, [full]);
 
+  // 枠の大きさをその場で測る（ResizeObserver がまだ返していない、開いた直後に使う）
+  const measure = useCallback((): { w: number; h: number } | null => {
+    const r = svgRef.current?.getBoundingClientRect();
+    return r && r.width > 0 ? { w: r.width, h: r.height } : null;
+  }, [svgRef]);
+
   // 文字と点が、寄せても同じ px に見えるようにする倍率（viewBox の 1px あたりの単位）
   const unit = view && box && box.w > 0 && box.h > 0 ? Math.max(view.w / box.w, view.h / box.h) : 1;
-  return { viewBox: view ? viewString(view) : (full ?? undefined), unit, view, box, setView };
+  return { viewBox: view ? viewString(view) : (full ?? undefined), unit, view, box, setView, measure };
 }
