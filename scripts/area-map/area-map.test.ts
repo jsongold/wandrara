@@ -99,15 +99,20 @@ describe("deriveMapTree", () => {
   const maps = deriveMapTree({ defs, bbox, cities });
   const byId = new Map(maps.map((m) => [m.id, m]));
 
-  it("日本 → エリアのある地方だけ。またぐ隣のエリアは両方の地方の地図に出る", () => {
+  it("日本 → エリアのある地方だけ。地方の地図は中心がその範囲に入る親を出し、子のある親は自分の地図へ寄る", () => {
     expect(byId.get("japan")?.links).toEqual([{ map: "chiho-kanto", chiho: "kanto" }, { map: "chiho-chubu", chiho: "chubu" }]);
-    for (const id of ["chiho-kanto", "chiho-chubu"]) expect(byId.get(id)?.wholes).toEqual(["hakone", "izu"]);
+    expect(byId.get("chiho-kanto")).toMatchObject({ links: [{ map: "hakone", shape: "hakone" }], shapes: [], wholes: [] });
+    expect(byId.get("chiho-chubu")).toMatchObject({ links: [{ map: "izu", shape: "izu" }], wholes: [] });
   });
-  it("小さい親は自分の地図に寄り、大きい親は子をその場で出す（残りの形も）", () => {
-    const k = byId.get("chiho-kanto")!;
-    expect(k.links).toEqual([{ map: "hakone", shape: "hakone" }]);
-    expect(k.shapes).toEqual(["ito", "izu"]);
-    expect(byId.get("hakone")).toMatchObject({ shapes: ["gora"], points: ["owakudani"], wholes: ["hakone"] });
+  it("親の地図には子と、親自身の材料（子に入らない残り）を出す", () => {
+    expect(byId.get("hakone")).toMatchObject({ shapes: ["gora", "hakone"], points: ["owakudani"], wholes: ["hakone"] });
+    expect(byId.get("izu")).toMatchObject({ shapes: ["ito", "izu"], wholes: ["izu"] });
+  });
+  it("地方の本土の範囲が渡されれば、それを使う（離島で広がらない）", () => {
+    const m = deriveMapTree({ defs, bbox, cities, chihoView: new Map([["kanto", [138.9, 34.5, 140.9, 37.0] as [number, number, number, number]]]) });
+    const k = m.find((x) => x.id === "chiho-kanto")!;
+    expect(k.bbox[0]).toBeLessThan(138.9);
+    expect(k.links.map((l) => l.map)).toEqual(["hakone", "izu"]); // 伊豆の中心も入る
   });
   it("範囲は幅ゼロにならず、間隔は範囲の幅で決まる", () => {
     const b = pad([139, 35, 139, 35], 0.1);

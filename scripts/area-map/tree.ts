@@ -21,8 +21,6 @@ export type MapDef = {
 export const JAPAN_BBOX: BBox = [127.5, 24.0, 146.0, 45.7];
 // 日本の地図は、開いたとき東京を中心に寄せて見せる（動かせば全国が見える）
 export const JAPAN_START: BBox = [136.9, 33.4, 141.9, 37.9];
-const SMALL_PARENT = 0.15; // 表示範囲に対する面積の比がこれより小さい親は、自分の地図に寄る
-const NEAR = 0.2; // 地方の範囲をこの割合だけ広げ、かかる親エリアも同じ地図に出す
 const INTERVALS = [100, 250, 500, 1000, 2500, 5000];
 
 /** 名前を ja・en の両方にする（無い言語は ja、ja も無ければ最初の言語・id） */
@@ -45,8 +43,6 @@ export function pad(b: BBox, ratio: number): BBox {
   const hw = (w * (1 + 2 * ratio)) / 2, hh = (h * (1 + 2 * ratio)) / 2;
   return [cx - hw, cy - hh, cx + hw, cy + hh];
 }
-const overlaps = (a: BBox, b: BBox) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3];
-const area = (b: BBox) => (b[2] - b[0]) * (b[3] - b[1]);
 
 /** 表示範囲の幅に合う簡略化の間隔 */
 export function intervalFor(b: BBox): number {
@@ -58,9 +54,10 @@ export type TreeInput = {
   defs: RegionDef[]; // 地図に出せる定義
   bbox: Map<string, BBox>; // エリア全体（自分＋子孫）の範囲。点だけのエリアは点
   cities: Map<string, string[]>; // エリア全体が使う市区町村コード
+  chihoView?: Map<string, BBox>; // 地方の本土の範囲（離島を除く）。無ければその地方のエリアの範囲の和
 };
 
-export function deriveMapTree({ defs, bbox, cities }: TreeInput): MapDef[] {
+export function deriveMapTree({ defs, bbox, cities, chihoView }: TreeInput): MapDef[] {
   const roots = defs.filter((d) => d.parentId === null && bbox.has(d.id));
   const childrenOf = (id: string) => defs.filter((d) => d.parentId === id);
   const boxOf = (id: string) => {
@@ -81,19 +78,25 @@ export function deriveMapTree({ defs, bbox, cities }: TreeInput): MapDef[] {
       bbox: b,
       interval: intervalFor(b),
       land: "clip",
-      shapes: kids.filter((k) => k.parts.length > 0).map((k) => k.id),
+      // 子と、親自身の材料があれば「子に入らない残り」（伊豆など）
+      shapes: [...kids.filter((k) => k.parts.length > 0).map((k) => k.id), ...(r.parts.length > 0 ? [r.id] : [])],
       points: kids.filter((k) => k.parts.length === 0 && k.point).map((k) => k.id),
       links: [],
       wholes: [r.id],
     };
   };
 
+  // 地方の地図：範囲は地方の本土（離島を除いた陸地）。中心がその範囲に入る親エリアを出す。
+  // 子のある親は自分の地図へ寄るリンクにする（全国では親が多いので、子をその場には並べない）
   const active = CHIHO.filter((c) => roots.some((r) => chihoIds(r.id).includes(c.id)));
   for (const c of active) {
     const own = roots.filter((r) => chihoIds(r.id).includes(c.id));
-    const near = pad(union(own.map((r) => boxOf(r.id))), NEAR);
-    const inView = roots.filter((r) => overlaps(boxOf(r.id), near));
-    const view = pad(union(inView.map((r) => boxOf(r.id))), 0.05);
+    const view = pad(chihoView?.get(c.id) ?? union(own.map((r) => boxOf(r.id))), 0.03);
+    const centerIn = (b: BBox) => {
+      const x = (b[0] + b[2]) / 2, y = (b[1] + b[3]) / 2;
+      return x >= view[0] && x <= view[2] && y >= view[1] && y <= view[3];
+    };
+    const inView = roots.filter((r) => centerIn(boxOf(r.id)));
     const m: MapDef = {
       id: `chiho-${c.id}`,
       name: c.name,
@@ -112,15 +115,8 @@ export function deriveMapTree({ defs, bbox, cities }: TreeInput): MapDef[] {
         else if (r.point) m.points.push(r.id);
         continue;
       }
-      m.wholes.push(r.id);
-      if (area(boxOf(r.id)) / area(view) < SMALL_PARENT) {
-        m.links.push({ map: r.id, shape: r.id });
-        if (!regionMaps.has(r.id)) regionMaps.set(r.id, regionMap(r));
-        continue;
-      }
-      m.shapes.push(...kids.filter((k) => k.parts.length > 0).map((k) => k.id));
-      m.points.push(...kids.filter((k) => k.parts.length === 0 && k.point).map((k) => k.id));
-      if (r.parts.length > 0) m.shapes.push(r.id);
+      m.links.push({ map: r.id, shape: r.id });
+      if (!regionMaps.has(r.id)) regionMaps.set(r.id, regionMap(r));
     }
     maps.push(m);
   }
