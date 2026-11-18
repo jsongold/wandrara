@@ -1,0 +1,211 @@
+"use client";
+
+// area-stories：エリアの一言（F 案「写真の丸＋ストーリー」）。ヘッダーの下に項目ごとの丸い写真を並べ、押すと全画面で候補を順に見せる
+// 見たかどうかは端末ごと（localStorage）に覚える。ログインした利用者ごとに覚えるかは未決定
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
+import type { HighlightGroup, HighlightKind } from "@/lib/area-highlights";
+import { messages } from "@/lib/i18n/messages";
+import type { Locale } from "@/lib/types";
+import { Icon } from "./icons";
+
+type Props = { locale: Locale; area: string; areaLabel: string; groups: HighlightGroup[] };
+type Open = { g: number; i: number };
+
+const seenKey = (area: string) => `wandrara:highlights-seen:${area}`;
+
+const SEEN_EVENT = "wandrara:highlights-seen";
+
+function readSeen(area: string): string {
+  try {
+    return localStorage.getItem(seenKey(area)) ?? "[]";
+  } catch {
+    return "[]";
+  }
+}
+
+function parseSeen(raw: string): HighlightKind[] {
+  try {
+    const v = JSON.parse(raw);
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+function markSeen(area: string, kind: HighlightKind) {
+  const cur = parseSeen(readSeen(area));
+  if (cur.includes(kind)) return;
+  try {
+    localStorage.setItem(seenKey(area), JSON.stringify([...cur, kind]));
+  } catch {
+    // 保存できない端末（プライベートモードなど）では、毎回まだ見ていない扱いにする
+  }
+  window.dispatchEvent(new Event(SEEN_EVENT));
+}
+
+function subscribeSeen(cb: () => void) {
+  window.addEventListener(SEEN_EVENT, cb);
+  window.addEventListener("storage", cb);
+  return () => {
+    window.removeEventListener(SEEN_EVENT, cb);
+    window.removeEventListener("storage", cb);
+  };
+}
+
+// 次の候補。項目の最後なら次の項目の最初、全部見たら null（閉じる）
+export function nextPos(groups: HighlightGroup[], p: Open): Open | null {
+  if (p.i + 1 < groups[p.g].items.length) return { g: p.g, i: p.i + 1 };
+  if (p.g + 1 < groups.length) return { g: p.g + 1, i: 0 };
+  return null;
+}
+
+// 前の候補。項目の最初なら前の項目の最後、いちばん最初ならそのまま
+export function prevPos(groups: HighlightGroup[], p: Open): Open {
+  if (p.i > 0) return { g: p.g, i: p.i - 1 };
+  if (p.g > 0) return { g: p.g - 1, i: groups[p.g - 1].items.length - 1 };
+  return p;
+}
+
+const photo = (color: string): CSSProperties => ({ background: `linear-gradient(160deg, ${color} 0%, #1b1b19 130%)` });
+
+export function AreaStories({ locale, area, areaLabel, groups }: Props) {
+  const m = messages(locale).highlights;
+  const common = messages(locale).common;
+  const seen = parseSeen(useSyncExternalStore(subscribeSeen, () => readSeen(area), () => "[]"));
+  const [openState, setOpenState] = useState<{ area: string; pos: Open } | null>(null);
+  // エリアが変わったら閉じる
+  const open = openState?.area === area ? openState.pos : null;
+  const setOpen = (next: Open | null) => {
+    // 開いた項目を「見た」にする
+    if (next && groups[next.g]) markSeen(area, groups[next.g].kind);
+    setOpenState(next ? { area, pos: next } : null);
+  };
+
+  // ストーリーはモーダルの <dialog> で開く。開いている間は後ろの画面にフォーカスが行かず、閉じたら押した丸に戻る
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const isOpen = open !== null;
+  useEffect(() => {
+    const d = dialogRef.current;
+    if (!d) return;
+    if (isOpen && !d.open) d.showModal();
+    if (!isOpen && d.open) {
+      d.close();
+      triggerRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") setOpen(nextPos(groups, open));
+      if (e.key === "ArrowLeft") setOpen(prevPos(groups, open));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  if (groups.length === 0) return null;
+
+  const cur = open ? groups[open.g] : null;
+  const item = open && cur ? cur.items[open.i] : null;
+
+  return (
+    <>
+      <nav
+        aria-label={m.label(areaLabel)}
+        data-testid="area-stories"
+        className="filter-mark-in absolute inset-x-0 top-[72px] z-[5] flex gap-3.5 overflow-x-auto px-4 pb-2 pt-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ background: "rgba(15,15,14,0.32)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}
+      >
+        {groups.map((g, gi) => {
+          const isSeen = seen.includes(g.kind);
+          return (
+            <button
+              key={g.kind}
+              type="button"
+              onClick={(e) => {
+                triggerRef.current = e.currentTarget;
+                setOpen({ g: gi, i: 0 });
+              }}
+              aria-label={m.open(m.kind[g.kind], g.items.length)}
+              data-seen={isSeen}
+              className="flex w-14 flex-none cursor-pointer flex-col items-center gap-1 border-0 bg-transparent p-0 text-white"
+            >
+              <span
+                className="flex h-[52px] w-[52px] items-center justify-center rounded-full"
+                style={{ border: `2px solid ${isSeen ? "rgba(255,255,255,0.35)" : "#f4f1ea"}` }}
+              >
+                <span aria-hidden="true" className="h-11 w-11 rounded-full" style={photo(g.items[0].color)} />
+              </span>
+              <span className={`text-[11px] ${isSeen ? "text-white/70" : "font-semibold"}`}>{m.kind[g.kind]}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Esc はブラウザの cancel で閉じる。dialog は top layer に出るので、アプリの幅（480px）に合わせて置く */}
+      <dialog
+        ref={dialogRef}
+        aria-label={cur ? m.kind[cur.kind] : undefined}
+        onCancel={(e) => {
+          e.preventDefault();
+          setOpen(null);
+        }}
+        className="m-0 mx-auto h-[100dvh] max-h-none w-full max-w-[480px] border-0 bg-transparent p-0 text-white backdrop:bg-black/60"
+      >
+      {open && cur && item && (
+        <div
+          data-testid="area-story"
+          className="relative flex h-full flex-col text-white"
+          style={photo(item.color)}
+        >
+          <span aria-hidden="true" className="absolute bottom-[200px] left-4 text-xs text-white/60">{m.photoDemo}</span>
+          <div className="relative z-[2] flex gap-1 px-3 pt-3">
+            {cur.items.map((_, i) => (
+              <span key={i} className="h-[3px] flex-1 rounded-full" style={{ background: i <= open.i ? "#ffffff" : "rgba(255,255,255,0.35)" }} />
+            ))}
+          </div>
+          <div className="relative z-[2] flex items-center justify-between px-4 pt-2">
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">{m.kind[cur.kind]}</span>
+              <span className="text-[11px] text-white/80">{m.position(areaLabel, open.i + 1, cur.items.length)}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOpen(null)}
+              aria-label={common.close}
+              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-white"
+            >
+              <Icon name="close" />
+            </button>
+          </div>
+
+          {/* 左 35% で前、残りで次 */}
+          <button type="button" aria-label={m.prev} onClick={() => setOpen(prevPos(groups, open))} className="absolute bottom-[180px] left-0 top-[80px] z-[1] w-[35%] cursor-pointer border-0 bg-transparent" />
+          <button type="button" aria-label={m.next} onClick={() => setOpen(nextPos(groups, open))} className="absolute bottom-[180px] right-0 top-[80px] z-[1] w-[65%] cursor-pointer border-0 bg-transparent" />
+
+          <div className="relative z-[2] mt-auto flex flex-col gap-2 px-5 pb-10" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.55) 30%)" }}>
+            <p className="m-0 pt-8 text-[28px] font-bold leading-tight">{item.name}</p>
+            <p className="m-0 text-sm text-white/90">{item.note}</p>
+            {item.action && (
+              <div className="flex items-center gap-2 pt-2">
+                {/* 行き先（店・貸し出し・dest）はまだ無いので押せない */}
+                <button
+                  type="button"
+                  disabled
+                  className="h-11 rounded-full border-0 px-5 text-sm font-semibold"
+                  style={{ background: "#f4f1ea", color: "#141413", opacity: 0.85 }}
+                >
+                  {m.action[item.action]}
+                </button>
+                {item.pr && <span className="rounded border border-white/60 px-1.5 py-0.5 text-[10px] font-semibold">{m.pr}</span>}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      </dialog>
+    </>
+  );
+}

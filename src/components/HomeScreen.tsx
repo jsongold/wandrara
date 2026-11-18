@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { areaHighlights } from "@/lib/area-highlights";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
 import { clickEventOf, trackFeedEvent, viewedEnough, type FeedEvent } from "@/lib/feed-events";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
@@ -14,6 +15,7 @@ import type { AreaTraits } from "@/lib/area-filter";
 import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Locale, Photo, SortKey } from "@/lib/types";
 import { AccountButton } from "./AccountButton";
 import { AreaMap } from "./AreaMap";
+import { AreaStories } from "./AreaStories";
 import { Chip } from "./Chip";
 import { CurrentFilterDisplay } from "./CurrentFilterDisplay";
 import { Icon } from "./icons";
@@ -159,6 +161,9 @@ export function HomeScreen({ locale, query, feed, categories, areas, traits }: P
           />
         </div>
       </header>
+
+      {/* エリアの一言。エリアに絞り込んだときだけ（全国・データの無いエリアでは出さない） */}
+      <AreaStories locale={locale} area={query.area} areaLabel={currentArea} groups={areaHighlights(query.area, locale)} />
 
       {/* Floating overlay */}
       {/* 横幅は画面の 80% まで、中央に置く */}
