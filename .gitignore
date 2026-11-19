@@ -49,3 +49,6 @@ next-env.d.ts
 
 # perf の出力
 /perf-out/
+
+# Claude Code の agent 用 worktree（リポジトリの中に作られる。Tailwind の走査からも外れる）
+/.claude/worktrees/
