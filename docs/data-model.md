@@ -157,6 +157,7 @@ dest_imports          投入された入力の原本（出典・確認の状態�
   - 案内言語：体験のガイドが話せる言語（details の courses[].languages）。値は languages のタグ。画面の言語とは関係ない
 - **言語タグの形**：BCP 47 の 言語[-文字][-地域]（ja・en・zh-Hant・pt-BR）。大文字小文字はこの形にそろえる（languages_tag_check）
 - **言語を確かめる場所**：*_texts.lang と users.locale は DB の外部キー。jsonb のキーと案内言語は、取り込み（registerDest）が languages 表と照らし、無ければ 400。DB に jsonb のキーを照らす check や trigger は作らない（languages を変えても確かめ直されないため）
+- **取り込みはその国の言語が必須**：その国の言語（日本は ja。`src/lib/ingest/quality.ts` の COUNTRY）の texts に name と summary が要る。ほかの言語は任意で、languages 表にあれば受ける
 - **表示の言語の選び方**：要求した言語 → ja → en → ある言語のどれか。空の文は訳が無いものとして飛ばす
 - **取り込みは全部入れ直す**：dest_apply はその dest の行を全部消して入れ直し、公開を draft に戻す。1 つの言語だけ送ると、ほかの言語は消える。送るときは全部の言語を入れる
 - **辞書は migration と seed で管理する**：取り込みは regions・categories を作り直さない（on conflict do nothing）。名前や訳を直すのは migration か seed

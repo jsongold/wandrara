@@ -1,11 +1,14 @@
 // 投入する dest の中身の決まり（v1）。形の検証（bundle.ts）を通った後に、種類ごとに「無いと載せられない」項目を確かめる。
 // 根拠：Google Hotel Center（名前・住所・座標）、Google Things to do / OCTO（価格・所要時間・ページへのリンク）、
-// schema.org（営業時間・無料かどうか）、日帰り温泉の掲載（料金・営業時間・泉質）。言語は問わない（どれか 1 つの言語であればよい）
+// schema.org（営業時間・無料かどうか）、日帰り温泉の掲載（料金・営業時間・泉質）。その国の言語（COUNTRY.language）の texts に name と summary が要る。ほかの言語は任意
 import type { DestInput } from "./bundle.ts";
 import { representativeLocation } from "../region/representative.ts";
 
 /** 日本の範囲。この外の座標は誤りとして弾く（どのエリアに入るかは取り込みが位置から決める。src/lib/region） */
 export const JAPAN = { latMin: 20, latMax: 46, lngMin: 122, lngMax: 154 } as const;
+
+/** 取り込める国と、その国の言語（必須）。今は日本だけ（座標は JAPAN の範囲で確かめる）。ほかの国を受けるときは、位置から国を決めてここから言語を引く */
+export const COUNTRY = { code: "JP", language: "ja" } as const;
 
 type Row = Record<string, unknown>;
 type Check = { path: string; message: string; ok: (d: DestInput) => boolean };
@@ -35,7 +38,11 @@ const hasUrl = (rows: unknown) => ((rows ?? []) as Row[]).some((s) => present(s.
 
 // 共通
 const common: Check[] = [
-  { path: "/texts", message: "name と summary が要る（どの言語でもよい）", ok: (d) => d.texts.some((t) => present(t.name) && present(t.summary)) },
+  {
+    path: "/texts",
+    message: `その国の言語（${COUNTRY.language}）の name と summary が要る`,
+    ok: (d) => d.texts.some((t) => t.lang === COUNTRY.language && present(t.name) && present(t.summary)),
+  },
   { path: "/photos", message: "写真が 1 枚以上要る", ok: (d) => (d.photos ?? []).length > 0 },
   {
     path: "/core/official_url",
