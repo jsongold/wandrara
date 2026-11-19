@@ -200,8 +200,11 @@ async function oneRun(base: string, c: Condition, browser: Browser): Promise<{ f
     s.setPhase("tap");
     const t0 = Date.now();
     await s.page.touchscreen.tap(Math.min(box.x + box.width / 2, 380), box.y + Math.min(box.height / 2, 200));
-    await s.page.waitForSelector("[role=dialog]", { timeout: 30_000 }).then(() => (flat["tap.sheetMs"] = Date.now() - t0), () => {});
-    await s.page.waitForSelector("[role=dialog] h1", { timeout: 30_000 }).then(() => (flat["tap.h1Ms"] = Date.now() - t0), () => {});
+    // 開かなかったら黙って欠けさせず失敗にする（回帰が改善に見えないように）
+    await s.page.waitForSelector("[role=dialog]", { timeout: 30_000 });
+    flat["tap.sheetMs"] = Date.now() - t0;
+    await s.page.waitForSelector("[role=dialog] h1", { timeout: 30_000 });
+    flat["tap.h1Ms"] = Date.now() - t0;
     await sleep(slow ? 4000 : 1500);
     summarizePhase("tap", s.reqs, "tap", flat);
     await s.context.close();
