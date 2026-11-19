@@ -46,6 +46,7 @@ const ja = {
     orderEditorial: "編集部のおすすめ順",
     relStay: "関連する体験",
     relDo: "近くの宿",
+    relNearby: "この近く",
   },
   photos: { open: (label: string) => `${label}の詳細を開く`, prev: "前の写真", next: "次の写真" },
   detail: {
@@ -483,6 +484,7 @@ const en: Messages = {
     orderEditorial: "Editor's picks",
     relStay: "Related experiences",
     relDo: "Stays nearby",
+    relNearby: "Nearby",
   },
   photos: { open: (label: string) => `Open details for ${label}`, prev: "Previous photo", next: "Next photo" },
   detail: {
