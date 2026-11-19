@@ -54,10 +54,11 @@ export async function getRegions(): Promise<Region[]> {
   return rows.map((r) => ({ id: r.id, parentId: r.parent_id, name: r.name, sort: r.sort ?? 0 }));
 }
 
-// 公開・非公開・投入で変わる。インスタンスをまたいで持ち、tag で捨てる（remote：Vercel の Runtime Cache。tag の無効化は全インスタンスに効く）。
-// 無効化を通らない更新（dest:status、backfill、migration）は revalidate の 15 分で追いつく。expire は 1 日（誰も来なければ次が取り直す）
+// 公開・非公開・投入で変わる。tag（catalog）を付け、更新経路が捨てる。ただしインスタンス内のキャッシュ（use cache）なので、
+// 捨てられるのは書き込みを受けたインスタンスだけ。ほかのインスタンスは revalidate の 15 分で追いつく。
+// remote（全インスタンスに効く）にしないのは、Catalog が大きく（/ja の RSC が展開後 1.6MB）、2MB の上限と読み取り課金が危ないため。MS2c で小さくして測ってから
 export async function getCatalog(): Promise<Catalog> {
-  "use cache: remote";
+  "use cache";
   // regions は中の getRegions と同じ内容。外側にも付けておく（入れ子の tag が外へ伝わるとは文書に無い）
   cacheTag(CATALOG_TAG, REGIONS_TAG);
   cacheLife({ stale: 300, revalidate: 900, expire: 86400 });

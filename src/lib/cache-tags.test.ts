@@ -26,7 +26,7 @@ describe("キャッシュの tag と寿命", () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "key");
   });
 
-  it("getCatalog は catalog（公開・非公開で捨てる）と regions を付け、15 分で取り直し・1 日で失効", async () => {
+  it("getCatalog は catalog（公開・非公開で捨てる）と regions を付け、15 分で取り直し・1 日で失効（remote ではなくインスタンス内）", async () => {
     const { getCatalog } = await import("./data");
     await getCatalog();
     const tags = cacheTag.mock.calls.flat();

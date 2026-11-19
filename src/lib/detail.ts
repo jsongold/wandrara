@@ -113,7 +113,7 @@ function supabase() {
 
 const names = (table: PgTable, columns: Record<string, string>) => columnMap(table, columns).map((c) => c.name);
 
-// slug ごとに全言語の詳細が同じ tag（destTag）を持ち、公開・非公開・投入で捨てる。remote の理由は getCatalog と同じ。
+// slug ごとに全言語の詳細が同じ tag（destTag）を持ち、公開・非公開・投入で捨てる。remote（全インスタンスに無効化が効く）にしたのは、1 件ぶんで小さい（数 KB〜数十 KB。2MB の上限・読み取り課金に余裕）から。
 // 見つからない（null）も入る。URL の slug は誰でも作れるので、null は短くして溜めない。公開されれば tag で捨てる
 export async function getDestDetail(slug: string, locale: Locale): Promise<DestDetailView | null> {
   "use cache: remote";
