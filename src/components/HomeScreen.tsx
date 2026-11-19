@@ -3,16 +3,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { areaHighlights } from "@/lib/area-highlights";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
 import { clickEventOf, trackFeedEvent, viewedEnough, type FeedEvent } from "@/lib/feed-events";
+import { apiFetchPage, FeedPager, nextPageHref } from "@/lib/feed-pager";
+import type { FeedPageResult } from "@/lib/feed-page";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
 import { messages, type Messages } from "@/lib/i18n/messages";
 import { useMessages } from "@/lib/i18n/use-locale";
 import { otherMode } from "@/lib/modes";
 import type { AreaTraits } from "@/lib/area-filter";
-import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Locale, Photo, SortKey } from "@/lib/types";
+import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, Locale, Photo, SortKey } from "@/lib/types";
 import { AccountButton } from "./AccountButton";
 import { AreaMap } from "./AreaMap";
 import { AreaStories } from "./area-stories/AreaStories";
@@ -22,7 +24,7 @@ import { Icon } from "./icons";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
 
-type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPage; categories: CategoryView[]; areas: AreaGroupView[]; traits?: AreaTraits };
+type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPageResult; categories: CategoryView[]; areas: AreaGroupView[]; traits?: AreaTraits };
 type Sheet = null | "area" | "filter";
 type AreaView = "list" | "map";
 
@@ -47,12 +49,8 @@ function placeholderStyle(photo: Photo | null): CSSProperties {
   return { background: `linear-gradient(180deg, ${sky} 0%, ${sky} 56%, ${land} 56%, ${land} 100%)` };
 }
 
-// 一度に描くカードの数。全部を一度に描くと、写真の展開で iOS がメモリ不足になりページを閉じる
 // トップのテキスト入力とフィルター。今は Off
 const SHOW_SEARCH_AND_FILTER = false;
-
-const FIRST_CARDS = 6;
-const MORE_CARDS = 6;
 
 function areaName(areas: AreaGroupView[], id: string, all: string): string {
   if (id === "all") return all;
@@ -74,11 +72,13 @@ export function HomeScreen({ locale, query, feed, categories, areas, traits }: P
   // 地図の絞り込みで、子に合うものがあれば親も残すための親子
   const parentOf = useMemo(() => Object.fromEntries(areas.flatMap((g) => [[g.id, null], ...g.subs.map((s) => [s.id, g.id])])) as Record<string, string | null>, [areas]);
   const queryKey = serializeDiscoverQuery(query, locale);
+  // 一覧の同一性：条件に加えて、サーバーが渡した最初のカード（?after= の続きから開いた・先頭に戻った、でも作り直す）
+  const feedKey = `${queryKey}|${feed.cards[0]?.destId ?? ""}`;
 
   // 条件（カテゴリなど）が変わり新しい一覧が来たら、一覧の一番上から見せる
   useEffect(() => {
     feedRef.current?.scrollTo({ top: 0 });
-  }, [queryKey]);
+  }, [feedKey]);
 
   // 全画面の詳細から戻るときのために、今の条件を控えておく
   useEffect(() => {
@@ -92,10 +92,12 @@ export function HomeScreen({ locale, query, feed, categories, areas, traits }: P
     (e: FeedEvent) => trackFeedEvent({ algorithm, mode, sort, area, cat, q }, e),
     [algorithm, mode, sort, area, cat, q],
   );
+  // 最初に出した枚数と総件数（続きを読んでも、この表示の feed_view は 1 回）
   const count = feed.cards.length;
+  const { total, totalIsLowerBound } = feed;
   useEffect(() => {
-    track({ name: "feed_view", count });
-  }, [track, count]);
+    track({ name: "feed_view", count, total, totalIsLowerBound });
+  }, [track, count, total, totalIsLowerBound]);
 
   function go(next: Partial<DiscoverQuery>) {
     // テキスト入力を出していない間は、URL に残った q を次の操作で外す（見えない絞り込みを残さない）
@@ -122,11 +124,13 @@ export function HomeScreen({ locale, query, feed, categories, areas, traits }: P
         ref={feedRef}
         data-feed
         data-feed-algorithm={feed.algorithm}
+        data-feed-total={feed.total ?? undefined}
+        data-feed-total-lower-bound={feed.totalIsLowerBound || undefined}
         className="absolute inset-0 overflow-y-auto pb-[120px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
       >
-        <FeedList key={queryKey} cards={feed.cards} track={track} />
+        <FeedList key={feedKey} feed={feed} query={query} locale={locale} track={track} />
         {feed.cards.length === 0 && (
           <div className="flex flex-col items-center gap-3.5 px-8 pt-[180px] text-center">
             <Icon name="search" size={40} />
@@ -313,7 +317,9 @@ export function HomeScreen({ locale, query, feed, categories, areas, traits }: P
             <p className="m-0 text-[11px] text-white/70">{m.home.filterLater}</p>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span role="status" className="text-[13px] text-white/85">{m.home.hits(feed.cards.length)}</span>
+            <span role="status" className="text-[13px] text-white/85">
+              {feed.total === null ? m.home.hits(feed.cards.length) : feed.totalIsLowerBound ? m.home.hitsAtLeast(feed.total) : m.home.hits(feed.total)}
+            </span>
             <button
               type="button"
               onClick={() => go({ sort: "editorial" })}
@@ -329,30 +335,53 @@ export function HomeScreen({ locale, query, feed, categories, areas, traits }: P
   );
 }
 
-// 最初は FIRST_CARDS 枚だけ描き、終わりに近づいたら MORE_CARDS 枚ずつ足す。条件が変わると key で最初に戻る
-function FeedList({ cards, track }: { cards: FeedCard[]; track: (e: FeedEvent) => void }) {
-  const [shown, setShown] = useState(FIRST_CARDS);
+// 最初のページはサーバーが渡し、終わりに近づいたら /api/feed で続きを足す（FeedPager）。条件が変わると key で作り直し、進行中の取得は止める。
+// 続きの枠は overflow-anchor: none（入った分だけブラウザが位置を補正すると、スクロールが送られて次の取得が連鎖する）。
+// 続きのリンクは検索エンジンがたどる普通の <a>（?after=cursor）。JS が動くときは押すと loadMore になり、失敗したときの再試行も兼ねる
+function FeedList({ feed, query, locale, track }: { feed: FeedPageResult; query: DiscoverQuery; locale: Locale; track: (e: FeedEvent) => void }) {
+  const m = messages(locale);
+  const [pager] = useState(() => new FeedPager(feed, apiFetchPage(query, locale)));
+  useEffect(() => () => pager.dispose(), [pager]);
+  const s = useSyncExternalStore(pager.subscribe, pager.getSnapshot, pager.getSnapshot);
   const sentinel = useRef<HTMLDivElement>(null);
+  const idle = s.status === "idle";
 
+  // 失敗したときは自動で再取得しない（押されたら loadMore）。取得のたびに観察し直すので、まだ見えていれば続けて取る
   useEffect(() => {
     const el = sentinel.current;
-    if (!el || shown >= cards.length) return;
+    if (!el || !s.nextCursor || !idle) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) setShown((n) => Math.min(cards.length, n + MORE_CARDS));
+        if (entries.some((e) => e.isIntersecting)) void pager.loadMore();
       },
       { root: el.closest("[data-feed]"), rootMargin: "0px 0px 1500px 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [shown, cards.length]);
+  }, [pager, s.nextCursor, s.cards.length, idle]);
 
   return (
     <>
-      {cards.slice(0, shown).map((card, i) => (
+      {s.cards.map((card, i) => (
         <FeedCardView key={card.key} card={card} position={i} track={track} />
       ))}
-      {shown < cards.length && <div ref={sentinel} aria-hidden="true" className="h-px" />}
+      {s.nextCursor && (
+        <div ref={sentinel} className="flex flex-col items-center gap-1 px-4 pb-6 pt-2 text-center text-[13px] text-white/80 [overflow-anchor:none]">
+          <a
+            href={nextPageHref(serializeDiscoverQuery(query, locale), s.nextCursor)}
+            rel="next"
+            aria-busy={s.status === "loading"}
+            onClick={(e) => {
+              e.preventDefault();
+              void pager.loadMore();
+            }}
+            className="text-white underline underline-offset-4"
+          >
+            {s.status === "error" ? m.home.moreFailed : s.status === "loading" ? m.home.moreLoading : m.home.more}
+          </a>
+          <span>{m.home.moreCount(s.cards.length, s.total, s.totalIsLowerBound)}</span>
+        </div>
+      )}
     </>
   );
 }

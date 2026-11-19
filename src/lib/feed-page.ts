@@ -3,15 +3,22 @@
 // 環境変数で戦略を差し替えている間は buildFeed を使うこと（この関数は既定の戦略しか持たない）。
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { env, photoUrl, supabase } from "./data";
-import { dedupeRelatedTiles, kindLabelOf, MAX_CARD_PHOTOS, resolveLocalizedText } from "./feed";
+import { dedupeRelatedTiles, kindLabelOf, MAX_CARD_PHOTOS, resolveLocalizedText, type Strategies } from "./feed";
 import { messages } from "./i18n/messages";
 import { MODES, otherMode } from "./modes";
 import type { DiscoverQuery, FeedCard, FeedPage, Locale, LocalizedText, Photo, Tile } from "./types";
 
 export const FEED_PAGE_SIZE = 12;
 export const FEED_PAGE_MAX = 24;
+// 画面が 1 回に出す枚数（トップの最初の描画・続きの取得とも）。写真の展開で iOS がメモリ不足にならない枚数（HomeScreen の従来の 6 枚ずつ）
+export const FEED_UI_PAGE = 6;
 const MAX_TILES = 6;
 export const FEED_ALGORITHM = "order=editorial@1 primary=by-mode@1 secondary=related-other-mode@1 paging=keyset@1";
+
+// この戦略なら DB 版で出せる（既定の 3 戦略）。環境変数で差し替えているときは false で、呼び出し側は buildFeed の全件版を使う
+export function dbFeedApplies(strategies: Strategies): boolean {
+  return `${strategies.id} paging=keyset@1` === FEED_ALGORITHM;
+}
 
 // ---- 結果 ----
 

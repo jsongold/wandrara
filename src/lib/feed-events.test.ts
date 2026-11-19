@@ -17,10 +17,10 @@ describe("trackFeedEvent", () => {
   });
   it("送り先が落ちても投げない", () => {
     setFeedEventSink(() => { throw new Error("down"); });
-    expect(() => trackFeedEvent(ctx, { name: "feed_view", count: 3 })).not.toThrow();
+    expect(() => trackFeedEvent(ctx, { name: "feed_view", count: 3, total: 194, totalIsLowerBound: false })).not.toThrow();
   });
   it("送り先が無いときは捨てる", () => {
-    expect(() => trackFeedEvent(ctx, { name: "feed_view", count: 0 })).not.toThrow();
+    expect(() => trackFeedEvent(ctx, { name: "feed_view", count: 0, total: 0, totalIsLowerBound: false })).not.toThrow();
   });
 });
 
