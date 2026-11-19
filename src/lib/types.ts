@@ -50,7 +50,7 @@ export type FeedCard = {
   title: string;
   areaLabel: string;   // 例：「箱根・芦ノ湖」
   kindLabel: string;   // 例：「宿」「温泉地」（コアのラベル）
-  relLabel: string;    // 例：「関連する体験」「近くの宿」
+  relLabel: string;    // 例：「この近く」
   photos: Photo[]; // 先頭がカードの最初の写真。横にスワイプして切り替える
   href: string;        // 詳細へのリンク
   tiles: Tile[];
@@ -59,7 +59,7 @@ export type FeedCard = {
 export type FeedPage = {
   cards: FeedCard[];
   orderLabel: string;              // 例：「編集部のおすすめ順」
-  algorithm: string;               // 使った戦略の名前と版。例：「order=editorial@1 primary=by-mode@1 secondary=related-other-mode@1」
+  algorithm: string;               // 使った戦略の名前と版。例：「order=editorial@1 primary=by-mode@2 secondary=related-any-kind@1」
   emptyReason: "no-match" | null;  // 0 件のときの理由
 };
 

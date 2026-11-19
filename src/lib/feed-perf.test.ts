@@ -49,7 +49,8 @@ describe("buildFeed（大きい catalog）", () => {
     // 関連タイルが実際に出ていること（空のまま一致して見えるのを防ぐ）
     expect(out[0].cards.some((c) => c.tiles.length > 0)).toBe(true);
     const hash = createHash("sha256").update(JSON.stringify(out)).digest("hex");
-    expect(hash).toBe("3aec121d5bd2dc50d3e6070cabaaae00c319300a630c07f5957d91826090b602");
+    // 関連タイルを全種類にした（secondary=related-any-kind@1）ときに出力が変わったので更新した
+    expect(hash).toBe("0239b40ea5cb00713967766cada39184b047984811658b7e888c13beacb1b588");
   });
 
   it("5 つの条件を組み立てても遅くならない（変更前は約 3.6 秒。しきい値は余裕を持たせてある）", () => {
