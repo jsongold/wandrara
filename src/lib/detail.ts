@@ -2,7 +2,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { getTableColumns, getTableName } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
+import { destTag, REGIONS_TAG } from "./cache-tags";
 import { toAccommodationView, type AccommodationView } from "./accommodation/view";
 import { toBuildingView, type BuildingView } from "./building/view";
 import { toExperienceView, type ExperienceView } from "./experience/view";
@@ -112,15 +113,20 @@ function supabase() {
 
 const names = (table: PgTable, columns: Record<string, string>) => columnMap(table, columns).map((c) => c.name);
 
+// slug ごとに全言語の詳細が同じ tag（destTag）を持ち、公開・非公開・投入で捨てる。remote（全インスタンスに無効化が効く）にしたのは、1 件ぶんで小さい（数 KB〜数十 KB。2MB の上限・読み取り課金に余裕）から。
+// 見つからない（null）も入る。URL の slug は誰でも作れるので、null は短くして溜めない。公開されれば tag で捨てる
 export async function getDestDetail(slug: string, locale: Locale): Promise<DestDetailView | null> {
-  "use cache";
-  cacheLife("minutes");
+  "use cache: remote";
+  cacheTag(destTag(slug), REGIONS_TAG);
   const { url, db } = supabase();
   const { data: dest, error } = await db.from("destinations").select("dest_id, core_type, is_demo").eq("slug", slug).maybeSingle();
   if (error) throw new Error(`Supabase の読み込みに失敗しました: ${error.message}`);
-  if (!dest) return null;
-  const core = coreByType(dest.core_type);
-  if (!core) return null;
+  const core = dest ? coreByType(dest.core_type) : undefined;
+  if (!dest || !core) {
+    cacheLife({ stale: 300, revalidate: 60, expire: 600 });
+    return null;
+  }
+  cacheLife({ stale: 300, revalidate: 900, expire: 86400 });
   const id: string = dest.dest_id;
   const isAcc = core.coreType === "accommodation";
   const isExp = core.coreType === "experience";

@@ -9,7 +9,7 @@ const { getRegions, getCatalog } = vi.hoisted(() => ({
   }),
 }));
 
-vi.mock("next/cache", () => ({ cacheLife: () => {} }));
+vi.mock("next/cache", () => ({ cacheLife: () => {}, cacheTag: () => {} }));
 vi.mock("./data", () => ({ getRegions, getCatalog, photoUrl: (base: string, key: string) => `${base}/${key}` }));
 
 // Supabase の代わり。destinations は宿 1 件、コアの行は region_id だけ、ほかは空
