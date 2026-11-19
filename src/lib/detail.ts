@@ -2,11 +2,12 @@
 import { createClient } from "@supabase/supabase-js";
 import { getTableColumns, getTableName } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
+import { destTag, REGIONS_TAG } from "./cache-tags";
 import { toAccommodationView, type AccommodationView } from "./accommodation/view";
 import { toBuildingView, type BuildingView } from "./building/view";
 import { toExperienceView, type ExperienceView } from "./experience/view";
-import { getCatalog, photoUrl } from "./data";
+import { getRegions, photoUrl } from "./data";
 import { toHotspringView, type HotspringView } from "./hotspring/view";
 import { areaLabel, resolveLocalizedText } from "./feed";
 import { coreLabels } from "./i18n/core-labels";
@@ -112,15 +113,20 @@ function supabase() {
 
 const names = (table: PgTable, columns: Record<string, string>) => columnMap(table, columns).map((c) => c.name);
 
+// slug ごとに全言語の詳細が同じ tag（destTag）を持ち、公開・非公開・投入で捨てる。remote（全インスタンスに無効化が効く）にしたのは、1 件ぶんで小さい（数 KB〜数十 KB。2MB の上限・読み取り課金に余裕）から。
+// 見つからない（null）も入る。URL の slug は誰でも作れるので、null は短くして溜めない。公開されれば tag で捨てる
 export async function getDestDetail(slug: string, locale: Locale): Promise<DestDetailView | null> {
-  "use cache";
-  cacheLife("minutes");
+  "use cache: remote";
+  cacheTag(destTag(slug), REGIONS_TAG);
   const { url, db } = supabase();
   const { data: dest, error } = await db.from("destinations").select("dest_id, core_type, is_demo").eq("slug", slug).maybeSingle();
   if (error) throw new Error(`Supabase の読み込みに失敗しました: ${error.message}`);
-  if (!dest) return null;
-  const core = coreByType(dest.core_type);
-  if (!core) return null;
+  const core = dest ? coreByType(dest.core_type) : undefined;
+  if (!dest || !core) {
+    cacheLife({ stale: 300, revalidate: 60, expire: 600 });
+    return null;
+  }
+  cacheLife({ stale: 300, revalidate: 900, expire: 86400 });
   const id: string = dest.dest_id;
   const isAcc = core.coreType === "accommodation";
   const isExp = core.coreType === "experience";
@@ -140,12 +146,12 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
           : [];
   const coreCols = [...new Set(["region_id", ...names(core.table, core.columns), ...extraCols])];
 
-  const [coreRes, textsRes, photosRes, placeRes, catalog, ...detailRes] = await Promise.all([
+  const [coreRes, textsRes, photosRes, placeRes, regions, ...detailRes] = await Promise.all([
     db.from(getTableName(core.table)).select(coreCols.join(", ")).eq("dest_id", id).maybeSingle(),
     db.from(getTableName(core.texts)).select("lang, name, summary").eq("dest_id", id),
     db.from("dest_photos").select("storage_key, license, credit, subject_key").eq("dest_id", id).order("sort"),
     db.from("dest_cards").select("lat, lng").eq("dest_id", id).maybeSingle(),
-    getCatalog(),
+    getRegions(),
     ...core.details.map((d) =>
       db.from(getTableName(d.table)).select(["id", ...names(d.table, d.columns)].join(", ")).eq("dest_id", id).order("sort"),
     ),
@@ -189,7 +195,7 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
   return {
     id,
     title: resolveLocalizedText(pick("name"), locale).text,
-    areaLabel: areaLabel((coreRow?.region_id as string | null) ?? null, catalog.regions, locale),
+    areaLabel: areaLabel((coreRow?.region_id as string | null) ?? null, regions, locale),
     // 新しい画面の宿・体験・自然・建物・日帰り温泉・まちは種類（一棟貸し・ツアー・海岸…）を出す。ほかは今どおりコアの名前
     kindLabel: ((accommodation ?? experience ?? nature ?? building ?? hotspring ?? village) && coreLabels(core, locale).kindLabels[str("kind") ?? ""]) || coreLabels(core, locale).label,
     summary: resolveLocalizedText(pick("summary"), locale).text || null,

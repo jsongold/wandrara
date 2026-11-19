@@ -1,58 +1,142 @@
 // area-highlights：エリアに絞り込んだときだけ出す「エリアの一言」（名産・特産・旬・便利・人気）の中身
-// 今は運営者が手で書くデモ。内容は未確認。写真が無いので色面で代える。DB に移すのは shops と「買えるもの」の表を決めてから
+// MS0（#113）のローカル試作：src/lib/area-local/<エリア>.json の実データから組み立てる。JSON の形は表の候補
+// （products・services・shops・shop_products / shop_services）と同じにしてあり、MS1（#114）で DB に移す
+import atami from "./area-local/atami.json";
 import type { Locale } from "./types";
 
 export type HighlightKind = "meisan" | "tokusan" | "shun" | "benri" | "ninki";
-export type HighlightAction = "shop" | "rent" | "place";
 
 type L10n = { ja: string; en: string };
-type ItemSrc = { name: L10n; note: L10n; color: string; action?: HighlightAction; pr?: boolean };
+type Season = { from: number; to: number };
+type PhotoSrc = { url: string; license: string; credit: string; source: string };
 
-export type HighlightItem = { name: string; note: string; color: string; action: HighlightAction | null; pr: boolean };
+// ローカルの JSON の形（= 表の候補）
+type ProductSrc = { id: string; kind: "meisan" | "tokusan"; name: L10n; summary: L10n; description?: L10n | null; season?: Season | null; photo?: PhotoSrc | null; sources: string[] };
+type ServiceSrc = { id: string; name: L10n; summary: L10n; description?: L10n | null; season?: Season | null; photo?: PhotoSrc | null; sources: string[] };
+type ShopSrc = { id: string; name: L10n; online: boolean; address?: string | null; lat?: number | null; lng?: number | null; hours?: L10n | null; closed?: L10n | null; url?: string | null; photos?: PhotoSrc[]; sources: string[] };
+type ShopItemSrc = { shop: string; product?: string | null; service?: string | null; price?: number | null; priceNote?: L10n | null; checkedAt?: string | null; url?: string | null; sources: string[] };
+export type AreaLocalData = { products: ProductSrc[]; services: ServiceSrc[]; shops: ShopSrc[]; shopItems: ShopItemSrc[]; popular?: string[] };
+
+export type HighlightPhoto = PhotoSrc;
+export type HighlightOffer = {
+  shopId: string;
+  shopName: string;
+  online: boolean;
+  address: string | null;
+  hours: string | null;
+  closed: string | null;
+  price: number | null;
+  priceNote: string | null;
+  checkedAt: string | null;
+  url: string | null;
+  photos: HighlightPhoto[];
+};
+export type HighlightItem = {
+  id: string;
+  type: "product" | "service";
+  name: string;
+  note: string;
+  description: string;
+  color: string;
+  photo: HighlightPhoto | null;
+  season: Season | null;
+  offers: HighlightOffer[];
+};
 export type HighlightGroup = { kind: HighlightKind; items: HighlightItem[] };
 
 export const HIGHLIGHT_KINDS: HighlightKind[] = ["meisan", "tokusan", "shun", "benri", "ninki"];
 
-const l = (ja: string, en: string): L10n => ({ ja, en });
+// Map で持つ（area=constructor のような名前で Object の性質を引かない）
+const DATA = new Map<string, AreaLocalData>([["atami", atami as AreaLocalData]]);
 
-const DATA: Record<string, Partial<Record<HighlightKind, ItemSrc[]>>> = {
-  atami: {
-    meisan: [
-      { name: l("干物", "Dried fish (himono)"), note: l("港町・熱海の定番みやげ", "The classic souvenir of this port town"), color: "#b07a4f", action: "shop" },
-      { name: l("温泉まんじゅう", "Onsen manju"), note: l("駅前の商店街で食べ歩き", "Eat as you stroll the station arcade"), color: "#a8865e", action: "shop" },
-      { name: l("熱海プリン", "Atami pudding"), note: l("瓶入りのレトロなプリン", "Retro pudding in a glass jar"), color: "#c9a65a", action: "shop" },
-    ],
-    tokusan: [
-      { name: l("橙（だいだい）", "Daidai orange"), note: l("正月飾りにも使われる柑橘", "A citrus also used in New Year decorations"), color: "#c98f3a", action: "shop" },
-      { name: l("ニューサマーオレンジ", "New summer orange"), note: l("春から初夏が旬", "In season from spring to early summer"), color: "#d0a640", action: "shop" },
-    ],
-    shun: [
-      { name: l("梅園の紅葉", "Autumn leaves at the plum garden"), note: l("11月下旬から12月上旬が見ごろ", "Best from late Nov to early Dec"), color: "#8c4a3c", action: "place" },
-      { name: l("冬の花火大会", "Winter fireworks"), note: l("海の上に上がる花火", "Fireworks over the bay"), color: "#3d4a6b", action: "place" },
-    ],
-    benri: [
-      { name: l("電動自転車を借りる", "Rent an e-bike"), note: l("坂の多い街を楽に回れる", "Get around the hilly town with ease"), color: "#4f6680", action: "rent", pr: true },
-      { name: l("SUP を借りる", "Rent a SUP"), note: l("穏やかな湾で初めてでも", "A calm bay, good for first-timers"), color: "#3f6f78", action: "rent", pr: true },
-    ],
-    ninki: [
-      { name: l("熱海サンビーチ", "Atami Sun Beach"), note: l("駅から歩ける砂浜", "A sandy beach within walking distance"), color: "#4f7a8a", action: "place" },
-      { name: l("来宮神社", "Kinomiya Shrine"), note: l("樹齢二千年の大楠", "A 2,000-year-old camphor tree"), color: "#5a6b4a", action: "place" },
-      { name: l("熱海城", "Atami Castle"), note: l("海を見下ろす展望", "A lookout over the sea"), color: "#6b5a4a", action: "place" },
-    ],
-  },
-};
+// 写真が無い候補の色面。id から決まった色を選ぶ
+const PALETTE = ["#b07a4f", "#c98f3a", "#8c4a3c", "#4f6680", "#3f6f78", "#4f7a8a", "#5a6b4a", "#6b5a4a", "#7a5a7a"];
+function colorOf(id: string): string {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+
+// 月（1〜12）が旬の期間に入るか。年をまたぐ期間（11〜2 月）も扱う
+export function inSeason(season: Season | null | undefined, month: number): boolean {
+  if (!season) return false;
+  return season.from <= season.to ? month >= season.from && month <= season.to : month >= season.from || month <= season.to;
+}
+
+// エリアの中なので、住所の「静岡県熱海市」までは省く
+export function shortAddress(a: string | null | undefined): string | null {
+  if (!a) return null;
+  return a.replace(/^(\S+?[都道府県])?\S+?[市郡]/, "").trim() || a;
+}
+
+function offersOf(data: AreaLocalData, key: "product" | "service", id: string, locale: Locale): HighlightOffer[] {
+  const shops = new Map(data.shops.map((s) => [s.id, s]));
+  return data.shopItems
+    .filter((x) => x[key] === id && shops.has(x.shop))
+    .map((x) => {
+      const s = shops.get(x.shop)!;
+      return {
+        shopId: s.id,
+        shopName: s.name[locale],
+        online: s.online,
+        address: shortAddress(s.address),
+        hours: s.hours?.[locale] ?? null,
+        closed: s.closed?.[locale] ?? null,
+        price: x.price ?? null,
+        priceNote: x.priceNote?.[locale] ?? null,
+        checkedAt: x.checkedAt ?? null,
+        url: x.url ?? s.url ?? null,
+        photos: s.photos ?? [],
+      };
+    })
+    // 実店舗を先に、通販を最後に
+    .sort((a, b) => Number(a.online) - Number(b.online));
+}
+
+function toItem(data: AreaLocalData, src: ProductSrc | ServiceSrc, type: "product" | "service", locale: Locale): HighlightItem {
+  return {
+    id: src.id,
+    type,
+    name: src.name[locale],
+    note: src.summary[locale],
+    description: src.description?.[locale] ?? src.summary[locale],
+    color: colorOf(src.id),
+    photo: src.photo ?? null,
+    season: src.season ?? null,
+    offers: offersOf(data, type, src.id, locale),
+  };
+}
+
+// Creative Commons のライセンス名から、ライセンスのページの URL を作る（CC BY・CC BY-SA などと CC0）。それ以外は null
+export function licenseUrl(license: string): string | null {
+  const cc = /^CC (BY(?:-NC)?(?:-SA|-ND)?) (\d\.\d)$/i.exec(license.trim());
+  if (cc) return `https://creativecommons.org/licenses/${cc[1].toLowerCase()}/${cc[2]}/`;
+  if (/^CC0( 1\.0)?$/i.test(license.trim())) return "https://creativecommons.org/publicdomain/zero/1.0/";
+  return null;
+}
+
+// 旬を決める月（1〜12）。サーバーとブラウザの時間帯の違いで月の変わり目がずれないよう、日本の時間で決める
+export function tokyoMonth(now: Date = new Date()): number {
+  return Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", month: "numeric" }).format(now));
+}
 
 // エリアの一言。全国（all）・データの無いエリアでは空の配列。候補の無い項目は出さない
-export function areaHighlights(area: string, locale: Locale): HighlightGroup[] {
+// month は旬を決める月（1〜12）。省略すると日本の今月
+export function areaHighlights(area: string, locale: Locale, month: number = tokyoMonth()): HighlightGroup[] {
   if (area === "all") return [];
-  const src = DATA[area];
-  if (!src) return [];
-  return HIGHLIGHT_KINDS.flatMap((kind) => {
-    const items = src[kind] ?? [];
-    if (items.length === 0) return [];
-    return [{
-      kind,
-      items: items.map((it) => ({ name: it.name[locale], note: it.note[locale], color: it.color, action: it.action ?? null, pr: !!it.pr })),
-    }];
-  });
+  const data = DATA.get(area);
+  if (!data) return [];
+  const products = data.products.map((p) => toItem(data, p, "product", locale));
+  const services = data.services.map((s) => toItem(data, s, "service", locale));
+  const all = [...products, ...services];
+  const byId = new Map(all.map((x) => [x.id, x]));
+  const kindOf = new Map(data.products.map((p) => [p.id, p.kind]));
+  const lists: Record<HighlightKind, HighlightItem[]> = {
+    meisan: products.filter((p) => kindOf.get(p.id) === "meisan"),
+    tokusan: products.filter((p) => kindOf.get(p.id) === "tokusan"),
+    shun: all.filter((x) => inSeason(x.season, month)),
+    benri: services,
+    ninki: (data.popular ?? []).flatMap((id) => byId.get(id) ?? []),
+  };
+  return HIGHLIGHT_KINDS.flatMap((kind) => (lists[kind].length === 0 ? [] : [{ kind, items: lists[kind] }]));
 }

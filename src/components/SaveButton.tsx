@@ -32,19 +32,17 @@ export function SaveButton({
   const router = useRouter();
   const locale = useLocale();
   const m = useMessages();
-  const { signedIn, ready, isSaved, toggle } = useSaves();
+  const { isSaved, toggle } = useSaves();
   const saved = isSaved(destId);
 
   function onClick(e: MouseEvent<HTMLButtonElement>) {
     e.preventDefault();
     e.stopPropagation();
-    if (!ready) return;
-    if (!signedIn) {
-      const next = encodeURIComponent(location.pathname + location.search);
-      router.push(withLocale(locale, `/login?next=${next}`));
-      return;
-    }
-    void toggle(destId);
+    // 押したときに Supabase を読み込み、ログインを確かめてから保存する。未ログインならログインへ送る
+    const next = encodeURIComponent(location.pathname + location.search);
+    void toggle(destId).then((r) => {
+      if (r === "login") router.push(withLocale(locale, `/login?next=${next}`));
+    });
   }
 
   return (

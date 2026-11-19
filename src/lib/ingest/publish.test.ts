@@ -69,4 +69,25 @@ describe("setStatus", () => {
     expect(r[0]).toMatchObject({ ok: true, status: "draft" });
     expect(updates[0].patch).toMatchObject({ status: "draft", published_at: null, approved_by: null });
   });
+
+  it("onWrite：書き込みを試みた dest の slug だけ知らせる（見つからない・別の登録者は呼ばない）", async () => {
+    const { db } = mockDb();
+    const slugs: string[] = [];
+    await setStatus(db, ["WR-zzz", "WR-b", "WR-a"], "draft", principal, (s) => slugs.push(s));
+    expect(slugs).toEqual(["a-slug"]);
+  });
+
+  it("onWrite：update が失敗しても、その前に slug を知らせてある", async () => {
+    const { db } = mockDb();
+    const slugs: string[] = [];
+    const failing = {
+      from: (t: string) =>
+        t === "destinations"
+          ? (db as unknown as { from: (t: string) => unknown }).from(t)
+          : { update: () => ({ eq: () => ({ select: async () => ({ data: null, error: { message: "boom" } }) }) }) },
+    } as unknown as SupabaseClient;
+    const r = await setStatus(failing, ["WR-a"], "published", principal, (s) => slugs.push(s));
+    expect(r[0]).toMatchObject({ ok: false, error: "boom" });
+    expect(slugs).toEqual(["a-slug"]);
+  });
 });

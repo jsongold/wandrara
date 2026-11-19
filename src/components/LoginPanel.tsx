@@ -5,7 +5,6 @@ import { useActionState } from "react";
 import { sendMagicLink, type EmailLoginState } from "../app/[lang]/login/actions";
 import { withLocale } from "../lib/i18n/locale";
 import { messages } from "../lib/i18n/messages";
-import { createClient } from "../lib/supabase/client";
 import type { Locale } from "../lib/types";
 import { LanguageSwitch } from "./LanguageSwitch";
 
@@ -18,7 +17,8 @@ export function LoginPanel({ locale, next, variant = "page" }: { locale: Locale;
   const m = messages(locale).login;
 
   async function google() {
-    const supabase = createClient();
+    // Supabase の JS はここで初めて読む（ログイン画面を先読みしただけでは読まない）
+    const supabase = (await import("../lib/supabase/client")).createClient();
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}` },

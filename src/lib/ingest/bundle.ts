@@ -5,6 +5,7 @@ import { getTableColumns } from "drizzle-orm/utils";
 import { getTableConfig, type PgColumn, type PgTable } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { areaContentSchema, type AreaContent } from "./area-content.ts";
 import { CORES } from "./cores.ts";
 import { checkQuality } from "./quality.ts";
 import type { CoreDef } from "../../db/schema/_shared.ts";
@@ -147,6 +148,8 @@ function bundleSchema() {
         else ctx.addIssue({ code: "custom", path: [i, "ref"], message: `ref ${d.ref} が /dests/${j} と重なっている。1 つの bundle に同じ ref は 1 回だけ` });
       });
     }),
+    // エリアに付く中身（名産・特産・便利・扱う店）。まだ DB に送れない（MS1 #114）。--area-local でローカルの JSON に書く
+    area_content: areaContentSchema.optional(),
   });
 }
 
@@ -164,6 +167,7 @@ export type Bundle = {
   collector: string;
   collected_at: string;
   dests: (DestInput & { core_type: string })[];
+  area_content?: AreaContent;
 };
 
 /** bundle ファイル用（photos は file / url）。1 件でも中身の決まりに合わなければ bundle 全体を通さない */
