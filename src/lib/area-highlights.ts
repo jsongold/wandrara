@@ -23,6 +23,8 @@ export type HighlightOffer = {
   shopName: string;
   online: boolean;
   address: string | null;
+  // 省く前の住所（地図の検索に使う）
+  fullAddress: string | null;
   hours: string | null;
   closed: string | null;
   price: number | null;
@@ -80,6 +82,7 @@ function offersOf(data: AreaLocalData, key: "product" | "service", id: string, l
         shopName: s.name[locale],
         online: s.online,
         address: shortAddress(s.address),
+        fullAddress: s.address ?? null,
         hours: s.hours?.[locale] ?? null,
         closed: s.closed?.[locale] ?? null,
         price: x.price ?? null,

@@ -15,7 +15,7 @@ import type { AreaTraits } from "@/lib/area-filter";
 import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, FeedPage, Locale, Photo, SortKey } from "@/lib/types";
 import { AccountButton } from "./AccountButton";
 import { AreaMap } from "./AreaMap";
-import { AreaStories } from "./AreaStories";
+import { AreaStories } from "./area-stories/AreaStories";
 import { Chip } from "./Chip";
 import { CurrentFilterDisplay } from "./CurrentFilterDisplay";
 import { Icon } from "./icons";
