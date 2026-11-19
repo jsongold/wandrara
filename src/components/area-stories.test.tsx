@@ -93,3 +93,13 @@ describe("時間帯と言語", () => {
     for (const o of offers) for (const v of [o.hours, o.closed, o.priceNote]) if (v) expect(v).not.toMatch(ja);
   });
 });
+
+describe("写真のライセンス", () => {
+  it("CC のライセンス名からページの URL を作る", async () => {
+    const { licenseUrl } = await import("@/lib/area-highlights");
+    expect(licenseUrl("CC BY-SA 4.0")).toBe("https://creativecommons.org/licenses/by-sa/4.0/");
+    expect(licenseUrl("CC BY 4.0")).toBe("https://creativecommons.org/licenses/by/4.0/");
+    expect(licenseUrl("CC0")).toBe("https://creativecommons.org/publicdomain/zero/1.0/");
+    expect(licenseUrl("Public domain")).toBeNull();
+  });
+});

@@ -106,6 +106,14 @@ function toItem(data: AreaLocalData, src: ProductSrc | ServiceSrc, type: "produc
   };
 }
 
+// Creative Commons のライセンス名から、ライセンスのページの URL を作る（CC BY・CC BY-SA などと CC0）。それ以外は null
+export function licenseUrl(license: string): string | null {
+  const cc = /^CC (BY(?:-NC)?(?:-SA|-ND)?) (\d\.\d)$/i.exec(license.trim());
+  if (cc) return `https://creativecommons.org/licenses/${cc[1].toLowerCase()}/${cc[2]}/`;
+  if (/^CC0( 1\.0)?$/i.test(license.trim())) return "https://creativecommons.org/publicdomain/zero/1.0/";
+  return null;
+}
+
 // 旬を決める月（1〜12）。サーバーとブラウザの時間帯の違いで月の変わり目がずれないよう、日本の時間で決める
 export function tokyoMonth(now: Date = new Date()): number {
   return Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", month: "numeric" }).format(now));

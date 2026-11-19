@@ -3,7 +3,7 @@
 // area-stories：エリアの一言（F 案「写真の丸＋ストーリー」）。ヘッダーの下に項目ごとの丸い写真を並べ、押すと全画面で候補を順に見せる
 // 見たかどうかは端末ごと（localStorage）に覚える。ログインした利用者ごとに覚えるかは未決定
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
-import type { HighlightGroup, HighlightItem, HighlightKind, HighlightOffer } from "@/lib/area-highlights";
+import { licenseUrl, type HighlightGroup, type HighlightItem, type HighlightKind, type HighlightOffer, type HighlightPhoto } from "@/lib/area-highlights";
 import { messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/types";
 import { Icon } from "./icons";
@@ -215,7 +215,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
           <div className="relative z-[2] mt-auto flex flex-col gap-2 px-5 pb-10" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.55) 30%)" }}>
             <p className="m-0 pt-8 text-[28px] font-bold leading-tight">{item.name}</p>
             <p className="m-0 text-sm text-white/90">{item.note}</p>
-            {item.photo && <span className="text-[10px] text-white/60">{m.photoCredit(item.photo.credit, item.photo.license)}</span>}
+            {item.photo && <PhotoCredit photo={item.photo} m={m} />}
             {item.offers.length > 0 && (
               <div className="flex items-center gap-2 pt-2">
                 <button
@@ -359,4 +359,18 @@ function colorOfName(name: string): string {
   let h = 0;
   for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return THUMB_COLORS[h % THUMB_COLORS.length];
+}
+
+// 写真の権利。作者は元のページへ、ライセンスはライセンスのページへつなぐ（CC BY・CC BY-SA の表示の決まり）
+function PhotoCredit({ photo: ph, m }: { photo: HighlightPhoto; m: HM }) {
+  const lic = licenseUrl(ph.license);
+  const link = "text-white/60 underline decoration-white/30 underline-offset-2";
+  return (
+    <span className="text-[10px] text-white/60">
+      {m.photoLabel}
+      <a href={ph.source} target="_blank" rel="noopener" className={link}>{ph.credit}</a>
+      {" · "}
+      {lic ? <a href={lic} target="_blank" rel="noopener license" className={link}>{ph.license}</a> : ph.license}
+    </span>
+  );
 }
