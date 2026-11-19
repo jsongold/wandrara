@@ -109,6 +109,13 @@ test.describe("Save-Data に対応しないブラウザ（cookie で選ぶ）", 
   });
 });
 
+// サーバーが Save-Data を知らない静的な詳細ページ：水和の前にブラウザが前後 1 枚を取ってしまわないよう、サーバーの HTML には 1 枚目だけを入れる
+test("詳細のサーバー描画（HTML）には 1 枚目の写真だけ入る", async ({ page, request }) => {
+  const html = await (await request.get(await detailPath(page))).text();
+  expect(html).toContain('data-index="0"');
+  expect(html).not.toContain('data-index="1"');
+});
+
 test.describe("Save-Data なし（通常の利用者は変わらない）", () => {
   test("詳細を先読みし、写真は前後 1 枚まで先に持つ", async ({ page, browserName }) => {
     const prefetches: string[] = [];
