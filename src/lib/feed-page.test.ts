@@ -112,11 +112,20 @@ describe("点数の順（#156）", () => {
     expect(r.orderLabel).toBe("新着順");
   });
 
-  it("編集部の順の cursor は点数の順では使えない（並びの値の形が違う）", async () => {
-    const cursor = encodeCursor({ v: 1, q: feedQueryKey(DEFAULT_QUERY, "ja"), k: "2026-01-01T00:00:00+00:00", i: id(1), p: [] });
-    await expect(fetchFeedPage(fake({}).db, "u", { ...args, cursor, plan })).rejects.toThrow(FeedCursorError);
+  const codeOf = async (p: Promise<unknown>) => p.then(() => null, (e) => (e as FeedCursorError).code);
+
+  it("並べ方を切り替えた直後の古い cursor は、どちら向きでも query-mismatch（409 で先頭から取り直させる）", async () => {
+    const editorialCursor = encodeCursor({ v: 1, q: feedQueryKey(DEFAULT_QUERY, "ja"), k: "2026-01-01T00:00:00+00:00", i: id(1), p: [] });
+    expect(await codeOf(fetchFeedPage(fake({}).db, "u", { ...args, cursor: editorialCursor, plan }))).toBe("query-mismatch");
+    const scoreCursor = encodeCursor({ v: 1, q: feedQueryKey(DEFAULT_QUERY, "ja", "score"), k: "0.25", i: id(1), p: [] });
+    expect(await codeOf(fetchFeedPage(fake({}).db, "u", { ...args, cursor: scoreCursor }))).toBe("query-mismatch");
+  });
+
+  it("同じ条件で並びの値の形が違うものは invalid", () => {
     const scoreKey = feedQueryKey(DEFAULT_QUERY, "ja", "score");
-    expect(() => decodeCursor(encodeCursor({ v: 1, q: scoreKey, k: "2026-01-01T00:00:00+00:00", i: id(1), p: [] }), scoreKey, "score")).toThrow(FeedCursorError);
+    expect(() => decodeCursor(encodeCursor({ v: 1, q: scoreKey, k: "2026-01-01T00:00:00+00:00", i: id(1), p: [] }), scoreKey, "score")).toThrow(
+      expect.objectContaining({ code: "invalid" }),
+    );
   });
 });
 

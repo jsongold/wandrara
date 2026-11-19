@@ -83,10 +83,12 @@ export function decodeCursor(raw: string, queryKey: string, sort: DbSort = "edit
   } catch {
     throw new FeedCursorError("invalid");
   }
-  const ok = c && c.v === 1 && typeof c.q === "string" && typeof c.k === "string" && (sort === "score" ? SCORE_KEY : KEY).test(c.k) && typeof c.i === "string" && UUID.test(c.i) &&
+  const ok = c && c.v === 1 && typeof c.q === "string" && typeof c.k === "string" && typeof c.i === "string" && UUID.test(c.i) &&
     Array.isArray(c.p) && c.p.length <= MAX_TILES && c.p.every((x) => typeof x === "string" && UUID.test(x));
   if (!ok) throw new FeedCursorError("invalid");
+  // 条件の違いを並びの値の形より先に見る。並べ方が変わった直後の古い cursor は値の形も違うが、query-mismatch（409）にして先頭から取り直させる
   if (c.q !== queryKey) throw new FeedCursorError("query-mismatch");
+  if (!(sort === "score" ? SCORE_KEY : KEY).test(c.k)) throw new FeedCursorError("invalid");
   return c;
 }
 
