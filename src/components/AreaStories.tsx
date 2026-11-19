@@ -3,13 +3,14 @@
 // area-stories：エリアの一言（F 案「写真の丸＋ストーリー」）。ヘッダーの下に項目ごとの丸い写真を並べ、押すと全画面で候補を順に見せる
 // 見たかどうかは端末ごと（localStorage）に覚える。ログインした利用者ごとに覚えるかは未決定
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
-import type { HighlightGroup, HighlightKind } from "@/lib/area-highlights";
+import { licenseUrl, type HighlightGroup, type HighlightItem, type HighlightKind, type HighlightOffer, type HighlightPhoto } from "@/lib/area-highlights";
 import { messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/types";
 import { Icon } from "./icons";
 
 type Props = { locale: Locale; area: string; areaLabel: string; groups: HighlightGroup[] };
 type Open = { g: number; i: number };
+type PeekView = "shops";
 
 const seenKey = (area: string) => `wandrara:highlights-seen:${area}`;
 
@@ -68,21 +69,30 @@ export function prevPos(groups: HighlightGroup[], p: Open): Open {
 
 const photo = (color: string): CSSProperties => ({ background: `linear-gradient(160deg, ${color} 0%, #1b1b19 130%)` });
 
+// 候補の写真。写真が無ければ色面（試作。MS1 で next/image と丸用の小さい画像にする）
+function ItemPhoto({ item, className }: { item: HighlightItem; className: string }) {
+  if (!item.photo) return <span aria-hidden="true" className={`block ${className}`} style={photo(item.color)} />;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={item.photo.url} alt="" className={`block object-cover ${className}`} />;
+}
+
 export function AreaStories({ locale, area, areaLabel, groups }: Props) {
   const m = messages(locale).highlights;
   const common = messages(locale).common;
   const seen = parseSeen(useSyncExternalStore(subscribeSeen, () => readSeen(area), () => "[]"));
-  const [openState, setOpenState] = useState<{ area: string; pos: Open; peek: boolean } | null>(null);
+  // peek：null は閉じている、shops は「探す」で開く扱う店の一覧
+  const [openState, setOpenState] = useState<{ area: string; pos: Open; peek: PeekView | null } | null>(null);
   // エリアが変わったら閉じる
   const open = openState?.area === area ? openState.pos : null;
   // 「軽く見る」のシートを開いているか。候補を移ると閉じる
-  const peek = open !== null && openState?.peek === true;
+  const peekView = open !== null ? (openState?.peek ?? null) : null;
+  const peek = peekView !== null;
   const setOpen = (next: Open | null) => {
     // 開いた項目を「見た」にする
     if (next && groups[next.g]) markSeen(area, groups[next.g].kind);
-    setOpenState(next ? { area, pos: next, peek: false } : null);
+    setOpenState(next ? { area, pos: next, peek: null } : null);
   };
-  const setPeek = (v: boolean) => setOpenState((s) => (s ? { ...s, peek: v } : s));
+  const setPeekView = (v: PeekView | null) => setOpenState((s) => (s ? { ...s, peek: v } : s));
   const peekCloseRef = useRef<HTMLButtonElement>(null);
   const peekOpenRef = useRef<HTMLButtonElement>(null);
   // 開いたらシートの閉じるへ、閉じたら「軽く見る」へフォーカスを移す。閉じた直後は inert が外れてから移す
@@ -92,7 +102,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
     else if (wasPeek.current) peekOpenRef.current?.focus();
     wasPeek.current = peek;
   }, [peek]);
-  const closePeek = () => setPeek(false);
+  const closePeek = () => setPeekView(null);
 
   // ストーリーはモーダルの <dialog> で開く。開いている間は後ろの画面にフォーカスが行かず、閉じたら押した丸に戻る
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -149,7 +159,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                 className="flex h-[52px] w-[52px] items-center justify-center rounded-full"
                 style={{ border: `2px solid ${isSeen ? "rgba(255,255,255,0.35)" : "#f4f1ea"}` }}
               >
-                <span aria-hidden="true" className="h-11 w-11 rounded-full" style={photo(g.items[0].color)} />
+                <ItemPhoto item={g.items[0]} className="h-11 w-11 rounded-full" />
               </span>
               <span className={`text-[11px] ${isSeen ? "text-white/70" : "font-semibold"}`}>{m.kind[g.kind]}</span>
             </button>
@@ -175,10 +185,10 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
           className="relative flex h-full flex-col text-white"
           style={photo(item.color)}
         >
+          {item.photo && <ItemPhoto item={item} className="absolute inset-0 h-full w-full" />}
           {/* 「軽く見る」を開いている間は、後ろのストーリーの操作を inert にしてフォーカスを入れない */}
           <div className="contents" inert={peek}>
-          <span aria-hidden="true" className="absolute bottom-[200px] left-4 text-xs text-white/60">{m.photoDemo}</span>
-          <div className="relative z-[2] flex gap-1 px-3 pt-3">
+          <div className="relative z-[2] flex gap-1 px-3 pt-3" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0))" }}>
             {cur.items.map((_, i) => (
               <span key={i} className="h-[3px] flex-1 rounded-full" style={{ background: i <= open.i ? "#ffffff" : "rgba(255,255,255,0.35)" }} />
             ))}
@@ -192,7 +202,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
               type="button"
               onClick={() => setOpen(null)}
               aria-label={common.close}
-              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-white"
+              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border-0 bg-transparent text-white"
             >
               <Icon name="close" />
             </button>
@@ -205,23 +215,27 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
           <div className="relative z-[2] mt-auto flex flex-col gap-2 px-5 pb-10" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.55) 30%)" }}>
             <p className="m-0 pt-8 text-[28px] font-bold leading-tight">{item.name}</p>
             <p className="m-0 text-sm text-white/90">{item.note}</p>
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                ref={peekOpenRef}
-                type="button"
-                onClick={() => setPeek(true)}
-                aria-expanded={peek}
-                className="h-11 cursor-pointer rounded-full border-0 px-5 text-sm font-semibold"
-                style={{ background: "#f4f1ea", color: "#141413" }}
-              >
-                {m.peek}
-              </button>
-              {item.pr && <span className="rounded border border-white/60 px-1.5 py-0.5 text-[10px] font-semibold">{m.pr}</span>}
-            </div>
+            {item.photo && <PhotoCredit photo={item.photo} m={m} />}
+            {item.offers.length > 0 && (
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  ref={peekOpenRef}
+                  type="button"
+                  onClick={() => setPeekView("shops")}
+                  aria-expanded={peek}
+                  aria-label={m.findWithCount(item.offers.length)}
+                  className="flex h-11 cursor-pointer items-center gap-2 rounded-xl border-0 px-4 text-sm font-semibold"
+                  style={{ background: "#f4f1ea", color: "#141413" }}
+                >
+                  {m.find}
+                  <span aria-hidden="true" className="text-xs font-normal text-[#141413]/70">{m.shopCount(item.offers.length)}</span>
+                </button>
+              </div>
+            )}
           </div>
           </div>
 
-          {/* 軽く見る：ストーリーの上に出す小さなシート。後で店・借りる先・dest への行き先を足す */}
+          {/* 探す：ストーリーの上に、扱う店の一覧のシートを出す */}
           {peek && (
             <>
               <button type="button" tabIndex={-1} aria-hidden="true" onClick={closePeek} className="absolute inset-0 z-[3] cursor-pointer border-0 bg-black/40" />
@@ -232,7 +246,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-col gap-1">
-                    <span className="text-[11px] text-white/70">{m.kind[cur.kind]} · {areaLabel}</span>
+                    <span className="text-[11px] text-white/70">{m.shopsOf}</span>
                     <p className="m-0 text-[20px] font-bold leading-snug">{item.name}</p>
                   </div>
                   <button
@@ -240,14 +254,12 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                     type="button"
                     onClick={closePeek}
                     aria-label={common.close}
-                    className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-full border-0 bg-white/[0.08] text-white"
+                    className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl border-0 bg-white/[0.08] text-white"
                   >
                     <Icon name="close" />
                   </button>
                 </div>
-                <span aria-hidden="true" className="block h-36 w-full flex-none rounded-2xl" style={photo(item.color)} />
-                <p className="m-0 text-sm leading-relaxed text-white/90">{item.note}</p>
-                {item.pr && <span className="self-start rounded border border-white/60 px-1.5 py-0.5 text-[10px] font-semibold">{m.pr}</span>}
+                <PeekShops item={item} m={m} />
               </section>
             </>
           )}
@@ -255,5 +267,110 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
       )}
       </dialog>
     </>
+  );
+}
+
+type HM = ReturnType<typeof messages>["highlights"];
+
+// 探す：扱う店の一覧。1 行に「店のサイトへ」（外部）と「ここで買う」（自社購入。試作ではまだ使えない）
+function PeekShops({ item, m }: { item: HighlightItem; m: HM }) {
+  return (
+    <>
+      <div className="-mt-1 flex flex-wrap items-center gap-2">
+        {item.season && <span className="rounded-md bg-white/[0.08] px-2 py-1 text-[11px]">{m.season(item.season.from, item.season.to)}</span>}
+        <span className="text-xs text-white/75">{item.note}</span>
+      </div>
+      <ul className="m-0 flex list-none flex-col gap-5 p-0 pt-1" data-testid="area-story-shops">
+        {item.offers.map((o) => (
+          <OfferRow key={o.shopId} o={o} m={m} />
+        ))}
+      </ul>
+    </>
+  );
+}
+
+// Google マップで店を開く（Maps URLs。API キーは要らない）。MS1 で place_id を持てば query_place_id も付ける
+export function mapsUrl(o: Pick<HighlightOffer, "shopName" | "address">): string {
+  const q = [o.shopName, o.address].filter(Boolean).join(" ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
+
+// 行動ボタンはアイコンだけの角丸の四角（アプリ全体のボタンと同じ形）
+const ICON_BTN = "flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white/[0.08] text-white";
+
+function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
+  const where = o.online ? m.online : o.address;
+  const when = [o.hours, o.closed && m.closedOn(o.closed)].filter(Boolean).join(" · ");
+  return (
+    <li className="flex gap-3">
+      <ShopThumbs o={o} />
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className="truncate text-[14px] font-semibold">{o.shopName}</span>
+          {(where || when) && <span className="text-[11px] leading-snug text-white/65">{[where, when].filter(Boolean).join(" · ")}</span>}
+          {(o.price != null || o.priceNote) && (
+            <span className="text-[11px] leading-snug text-white/85">
+              {o.price != null && m.price(o.price)}
+              {o.priceNote && <span className="text-white/60">{`${o.price != null ? " · " : ""}${o.priceNote}`}</span>}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          {!o.online && (
+            <a href={mapsUrl(o)} target="_blank" rel="noopener" aria-label={m.openMapOf(o.shopName)} title={m.openMapOf(o.shopName)} className={ICON_BTN}>
+              <Icon name="pin" size={18} />
+            </a>
+          )}
+          {o.url && (
+            <a href={o.url} target="_blank" rel="noopener" aria-label={m.openSiteOf(o.shopName)} title={m.openSiteOf(o.shopName)} className={ICON_BTN}>
+              <Icon name="external" size={18} />
+            </a>
+          )}
+          <button type="button" disabled aria-label={`${m.buyHere}（${m.buyHereSoon}）`} title={`${m.buyHere}（${m.buyHereSoon}）`} className={`${ICON_BTN} cursor-not-allowed opacity-50`}>
+            <Icon name="wallet" size={18} />
+          </button>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+// 店のサムネイル。横にめくれるカルーセル（今は写真が無いので 1 枚の仮の枠）
+function ShopThumbs({ o }: { o: HighlightOffer }) {
+  const frames = o.photos.length > 0 ? o.photos : [null];
+  return (
+    <div className="flex h-[76px] w-[76px] flex-none snap-x snap-mandatory overflow-x-auto rounded-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-hidden="true">
+      {frames.map((ph, i) =>
+        ph ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={ph.url} src={ph.url} alt="" className="h-full w-full flex-none snap-start object-cover" />
+        ) : (
+          <span key={i} className="flex h-full w-full flex-none snap-start items-center justify-center text-lg font-semibold text-white/80" style={photo(colorOfName(o.shopName))}>
+            {o.shopName.slice(0, 1)}
+          </span>
+        ),
+      )}
+    </div>
+  );
+}
+
+const THUMB_COLORS = ["#5a4a3c", "#3f5560", "#4f4a62", "#4a5a45", "#62453f"];
+function colorOfName(name: string): string {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return THUMB_COLORS[h % THUMB_COLORS.length];
+}
+
+// 写真の権利。作者は元のページへ、ライセンスはライセンスのページへつなぐ（CC BY・CC BY-SA の表示の決まり）
+function PhotoCredit({ photo: ph, m }: { photo: HighlightPhoto; m: HM }) {
+  const lic = licenseUrl(ph.license);
+  const link = "text-white/60 underline decoration-white/30 underline-offset-2";
+  return (
+    <span className="text-[10px] text-white/60">
+      {m.photoLabel}
+      <a href={ph.source} target="_blank" rel="noopener" className={link}>{ph.credit}</a>
+      {" · "}
+      {lic ? <a href={lic} target="_blank" rel="noopener license" className={link}>{ph.license}</a> : ph.license}
+    </span>
   );
 }
