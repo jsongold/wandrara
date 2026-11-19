@@ -1,222 +1,464 @@
-id	名前	分類	対象	型	作り方	参考	2周目との相性
-near_sea	海が近い	立地・地形	全部	flag	位置	OSM・Google(beachFront)	○
-sea_view	海が見える	立地・地形	宿	flag	紹介文	Airbnb・Booking	○
-beach_walk	歩いて浜へ行ける	立地・地形	宿	flag	位置	Google(beachAccess)	○
-near_river	川沿い	立地・地形	全部	flag	位置	OSM(waterway)	◎
-near_lake	湖畔	立地・地形	全部	flag	位置	OSM(natural=water)	◎
-near_waterfall	滝が近い	立地・地形	全部	flag	位置	OSM(waterway=waterfall)	◎
-near_gorge	渓谷の中	立地・地形	全部	flag	位置	OSM(natural=gorge)	◎
-mountain_area	山あい	立地・地形	全部	flag	位置	OSM・標高データ	◎
-plateau	高原	立地・地形	全部	flag	位置	既存 traits	○
-elevation_m	標高	立地・地形	全部	number(m)	位置	標高データ	○
-forest	森の中	立地・地形	全部	flag	位置	OSM(landuse=forest)	◎
-satoyama	里山・棚田	立地・地形	全部	flag	位置	OSM(landuse=farmland)	◎
-island	島	立地・地形	全部	flag	位置	OSM(place=island)	◎
-cape	岬・半島の先	立地・地形	全部	flag	位置	OSM(natural=cape)	○
-coast_cliff	断崖の海岸	立地・地形	全部	flag	位置	OSM(natural=cliff)	○
-volcano_area	火山の近く	立地・地形	全部	flag	位置	OSM(natural=volcano)	○
-national_park	国立・国定公園の中	立地・地形	全部	flag	位置	環境省の区域データ	○
-geopark	ジオパーク	立地・地形	全部	flag	位置	日本ジオパーク委員会	◎
-dist_station_km	最寄り駅までの距離	立地・地形	全部	number(km)	位置	OSM(railway=station)	○
-dist_town_km	町なかからの距離	立地・地形	全部	number(km)	位置	OSM(place=town)	○
-remote	秘境（周りに何もない）	立地・地形	全部	level(0-3)	位置	周りの dest・建物の密度	◎
-dark_sky	夜空が暗い	立地・地形	全部	level(0-3)	外部データ	光害マップ	◎
-peak_view	名峰が見える	立地・地形	宿	flag	紹介文	じゃらん・一休の紹介文	○
-sunset_view	夕日が見える	立地・地形	全部	flag	紹介文	Airbnb(scenic views)	○
-sunrise_view	朝日が見える	立地・地形	全部	flag	紹介文	Airbnb(scenic views)	○
-cloud_sea	雲海が出る	立地・地形	全部	flag	紹介文	観光協会の紹介	◎
-river_sound	川の音が聞こえる	立地・地形	宿	flag	紹介文	紹介文の定番表現	◎
-autumn_leaves	紅葉	自然・景観	全部	flag	紹介文	じゃらん・季節特集	○
-cherry_blossom	桜	自然・景観	全部	flag	紹介文	季節特集	△
-flower_field	花畑	自然・景観	全部	flag	紹介文	季節特集	○
-fresh_green	新緑	自然・景観	全部	flag	紹介文	季節特集	◎
-snow_scenery	雪景色	自然・景観	全部	flag	紹介文	季節特集	◎
-fireflies	ホタル	自然・景観	全部	flag	紹介文	いこーよ・季節特集	◎
-wildlife	野生動物に会える	自然・景観	全部	flag	紹介文	Viator(wildlife)	◎
-birdwatching	野鳥	自然・景観	全部	flag	紹介文	OSM(leisure=bird_hide)	◎
-moss	苔の景色	自然・景観	全部	flag	紹介文	観光協会の紹介	◎
-giant_tree	巨木	自然・景観	全部	flag	位置	OSM(natural=tree・denotation)	◎
-spring_water	湧き水	自然・景観	全部	flag	位置	OSM(natural=spring)	◎
-viewpoint_near	展望地が近い	自然・景観	全部	flag	位置	OSM(tourism=viewpoint)	○
-trail_near	散策路が近い	自然・景観	全部	flag	位置	OSM(route=hiking)	◎
-cave	洞窟・鍾乳洞	自然・景観	全部	flag	位置	OSM(natural=cave_entrance)	○
-wetland	湿原	自然・景観	全部	flag	位置	OSM(natural=wetland)	◎
-clear_sea	透明な海	自然・景観	全部	flag	紹介文	観光協会の紹介	○
-steam_landscape	湯けむりの景色（湯畑・地獄）	自然・景観	全部	flag	紹介文	温泉地の紹介	○
-natural_monument	天然記念物	自然・景観	自然	flag	外部データ	文化庁の文化遺産データベース	○
-onsen	温泉	温泉・風呂	宿・温泉	flag	列	既存 traits・じゃらん・楽天	○
-kakenagashi	源泉かけ流し	温泉・風呂	宿・温泉	flag	紹介文	じゃらん・日本温泉協会	◎
-no_water_added	加水なし	温泉・風呂	宿・温泉	flag	紹介文	温泉法の掲示	◎
-no_heating	加温なし	温泉・風呂	宿・温泉	flag	紹介文	温泉法の掲示	○
-no_circulation	循環なし	温泉・風呂	宿・温泉	flag	紹介文	温泉法の掲示	○
-spring_quality	泉質	温泉・風呂	宿・温泉	enum	紹介文	温泉分析書	○
-nigori	にごり湯	温泉・風呂	宿・温泉	flag	紹介文	じゃらん	○
-own_source	自家源泉	温泉・風呂	宿・温泉	flag	紹介文	一休・紹介文	◎
-rotenburo	露天風呂	温泉・風呂	宿・温泉	flag	紹介文	じゃらん	○
-room_rotenburo	客室露天風呂	温泉・風呂	宿	flag	紹介文	じゃらん・楽天・一休	○
-private_bath	貸切風呂	温泉・風呂	宿・温泉	flag	紹介文	じゃらん・楽天・一休	◎
-private_bath_free	貸切風呂が無料	温泉・風呂	宿	flag	紹介文	じゃらん(条件無し)	○
-large_bath	大浴場	温泉・風呂	宿・温泉	flag	紹介文	じゃらん	△
-sauna	サウナ	温泉・風呂	宿・温泉	flag	紹介文	Google(sauna)	○
-cold_plunge	水風呂	温泉・風呂	宿・温泉	flag	紹介文	サウナ施設の紹介	○
-outdoor_rest	外気浴の場所	温泉・風呂	宿・温泉	flag	紹介文	サウナ施設の紹介	○
-day_bath	日帰り入浴ができる	温泉・風呂	宿・温泉	flag	列	楽天(日帰り)	○
-bath_24h	24時間入れる	温泉・風呂	宿	flag	紹介文	一休・紹介文	○
-view_bath	景色の良い風呂	温泉・風呂	宿・温泉	flag	紹介文	一休・紹介文	◎
-foot_bath	足湯	温泉・風呂	全部	flag	位置	OSM(amenity=foot_bath)	△
-kind_ryokan	旅館	宿の形・建物	宿	flag	列	既存 kind	○
-kind_private_rental	一棟貸し	宿の形・建物	宿	flag	列	既存 kind・Airbnb	◎
-kind_minshuku	民宿	宿の形・建物	宿	flag	列	既存 kind	◎
-kind_pension	ペンション	宿の形・建物	宿	flag	列	既存 kind	○
-kind_glamping	グランピング	宿の形・建物	宿	flag	列	既存 kind	○
-kind_campsite	キャンプ場	宿の形・建物	宿	flag	列	既存 kind・OSM	◎
-kind_auberge	オーベルジュ	宿の形・建物	宿	flag	紹介文	一休・紹介文	◎
-kind_shukubo	宿坊	宿の形・建物	宿	flag	紹介文	寺院の紹介	◎
-kind_farm_stay	農泊・農家民宿	宿の形・建物	宿	flag	紹介文	農泊の紹介	◎
-kominka	古民家	宿の形・建物	宿	flag	紹介文	Airbnb・一休	◎
-rooms_count	客室数	宿の形・建物	宿	number	列	Google(roomsCount)	○
-small_inn	小さな宿（10室以下）	宿の形・建物	宿	flag	計算（客室数）	一休・紹介文	◎
-hanare	離れ	宿の形・建物	宿	flag	紹介文	一休	◎
-one_group	1日1組	宿の形・建物	宿	flag	紹介文	Airbnb(entire place)	◎
-built_year	建てた年	宿の形・建物	宿・建物	number	紹介文	Google(builtYear)	△
-historic_building	歴史ある建物（登録有形文化財など）	宿の形・建物	宿・建物	flag	外部データ	文化庁の文化遺産データベース	◎
-renovated	古い建物を改装	宿の形・建物	宿・建物	flag	紹介文	Google(lastRenovatedYear)	◎
-architect	建築家の設計	宿の形・建物	宿・建物	flag	紹介文	紹介文	○
-wooden	木造	宿の形・建物	宿・建物	flag	紹介文	紹介文	○
-garden	庭園	宿の形・建物	宿・建物	flag	紹介文	Airbnb(garden)	○
-kitchen	キッチン	客室・設備	宿	flag	紹介文	Airbnb・Google	○
-fireplace	暖炉	客室・設備	宿	flag	紹介文	Google(fireplace)・Airbnb	◎
-irori	囲炉裏	客室・設備	宿	flag	紹介文	紹介文	◎
-wood_stove	薪ストーブ	客室・設備	宿	flag	紹介文	紹介文	◎
-tatami	和室	客室・設備	宿	flag	紹介文	一休(部屋のこだわり)	○
-beds	ベッドの部屋	客室・設備	宿	flag	紹介文	一休(ベッドタイプ)	△
-terrace	テラス・バルコニー	客室・設備	宿	flag	紹介文	Google(patio・balcony)	○
-room_size_m2	客室の広さ	客室・設備	宿	number(m2)	紹介文	Google(livingAreaSqMeters)	○
-max_guests	最大人数	客室・設備	宿	number	列	Airbnb	○
-wifi	Wi-Fi	客室・設備	宿	flag	紹介文	Google(freeWifi)	△
-workspace	仕事ができる机	客室・設備	宿	flag	紹介文	Airbnb(dedicated workspace)	○
-washer	洗濯機	客室・設備	宿	flag	紹介文	Airbnb・Google(washer)	○
-ev_charger	EV 充電	客室・設備	宿	flag	紹介文	Google(electricCarChargingStations)	○
-free_parking	無料駐車場	客室・設備	宿	flag	紹介文	Google(freeParking)	△
-bbq	BBQ の設備	客室・設備	宿	flag	紹介文	OSM(bbq)・Airbnb	○
-private_garden	専用の庭	客室・設備	宿	flag	紹介文	Airbnb(outdoor)	○
-library	本棚・ライブラリー	客室・設備	宿	flag	紹介文	紹介文	◎
-no_tv	テレビを置かない	客室・設備	宿	flag	紹介文	紹介文	◎
-dinner	夕食つき	食	宿	flag	紹介文	じゃらん・楽天(食事)	○
-breakfast	朝食つき	食	宿	flag	紹介文	Google(breakfastAvailable)	○
-room_dining	部屋食	食	宿	flag	紹介文	楽天・一休	○
-private_dining	個室で食事	食	宿	flag	紹介文	一休(食事場所)	○
-self_catering	素泊まり・自炊	食	宿	flag	紹介文	じゃらん(食事なし)	○
-local_food	地元の食材	食	宿・体験	flag	紹介文	Google(locallySourcedFoodAndBeverages)	◎
-own_farm	自家農園の食材	食	宿	flag	紹介文	紹介文	◎
-seafood	海の幸	食	宿・体験	flag	紹介文	紹介文	○
-mountain_food	山の幸・ジビエ	食	宿・体験	flag	紹介文	紹介文	◎
-kaiseki	会席料理	食	宿	flag	紹介文	一休	△
-robata	炉端焼き	食	宿	flag	紹介文	紹介文	◎
-vegetarian	菜食に対応	食	宿・体験	flag	紹介文	Google(vegetarianMeals)	○
-vegan	ヴィーガンに対応	食	宿・体験	flag	紹介文	Google(veganMeals)	○
-allergy	アレルギーに対応	食	宿・体験	flag	紹介文	紹介文	○
-halal	ハラールに対応	食	宿・体験	flag	紹介文	紹介文	△
-local_sake	地酒	食	宿・体験	flag	紹介文	紹介文	○
-brewery_near	酒蔵・ワイナリーが近い	食	全部	flag	位置	OSM(craft=brewery・winery)	○
-hiking	山歩き	過ごし方	全部	flag	位置	既存 traits・OSM	◎
-walking	散策	過ごし方	全部	flag	紹介文	紹介文	◎
-cycling	サイクリング・自転車貸出	過ごし方	全部	flag	紹介文	Google(bicycleRental)	○
-canoe	カヌー・カヤック	過ごし方	全部	flag	紹介文	Google(watercraftRental)	◎
-sup	SUP	過ごし方	全部	flag	紹介文	体験サイト	○
-fishing	釣り	過ごし方	全部	flag	紹介文	体験サイト	○
-snorkeling	シュノーケル	過ごし方	全部	flag	紹介文	Google(snorkeling)	○
-river_play	川遊び	過ごし方	全部	flag	紹介文	いこーよ	◎
-sea_swim	海水浴	過ごし方	全部	flag	位置	OSM(leisure=beach_resort)	△
-ski	スキー	過ごし方	全部	flag	位置	OSM(landuse=winter_sports)	○
-snowshoe	スノーシュー	過ごし方	全部	flag	紹介文	体験サイト	◎
-stargazing	星空観察	過ごし方	全部	flag	紹介文	体験サイト	◎
-bonfire	焚き火	過ごし方	全部	flag	紹介文	OSM(openfire)	◎
-camping	テント泊	過ごし方	宿	flag	列	OSM(tents)	◎
-horse_riding	乗馬	過ごし方	全部	flag	紹介文	Google(horsebackRiding)	○
-farming	農業体験	過ごし方	全部	flag	紹介文	農泊の紹介	◎
-fruit_picking	果物狩り	過ごし方	全部	flag	紹介文	体験サイト	○
-yoga	ヨガ・瞑想	過ごし方	全部	flag	紹介文	体験サイト	◎
-zazen	座禅・写経	過ごし方	全部	flag	紹介文	寺院の紹介	◎
-foraging	山菜・きのこ採り	過ごし方	全部	flag	紹介文	体験サイト	◎
-duration_min	所要時間	体験の性質	体験	number(分)	列	Viator・GetYourGuide	○
-half_day	半日	体験の性質	体験	flag	計算（所要時間）	Viator	○
-full_day	1日	体験の性質	体験	flag	計算（所要時間）	Viator	○
-private_tour	貸切・プライベート	体験の性質	体験	flag	紹介文	Viator・GetYourGuide	◎
-small_group	少人数	体験の性質	体験	flag	紹介文	GetYourGuide	◎
-guided	ガイドつき	体験の性質	体験	flag	紹介文	Viator	○
-hands_on	手を動かす（ものづくり）	体験の性質	体験	flag	紹介文	体験サイト	◎
-take_home	作ったものを持ち帰れる	体験の性質	体験	flag	紹介文	体験サイト	○
-beginner_ok	初心者向け	体験の性質	体験	flag	紹介文	体験サイト	○
-physical_level	体力の目安	体験の性質	体験・自然	level(0-3)	紹介文	OSM(sac_scale)	○
-rain_ok	雨でもできる	体験の性質	体験	flag	紹介文	いこーよ(雨の日OK)	○
-indoor	屋内	体験の性質	体験	flag	紹介文	いこーよ	△
-english_ok	英語で対応	体験の性質	全部	flag	紹介文	Google(languagesSpoken)	○
-free_cancel	無料キャンセル	体験の性質	体験	flag	紹介文	Viator・GetYourGuide	△
-same_day	当日予約できる	体験の性質	体験	flag	紹介文	体験サイト	△
-min_age	年齢の下限	体験の性質	体験	number(歳)	紹介文	OSM(min_age)	○
-price_from	料金の目安	体験の性質	体験	number(円)	列	Viator(price)	△
-early_morning	早朝の体験	体験の性質	体験	flag	紹介文	体験サイト	◎
-night_activity	夜の体験	体験の性質	体験	flag	紹介文	体験サイト	◎
-seasonal_only	季節限定	体験の性質	体験	flag	紹介文	体験サイト	◎
-kids_ok	子連れ歓迎	誰と	全部	flag	紹介文	Google(kidsFriendly)	○
-baby_ok	乳幼児と泊まれる	誰と	宿	flag	紹介文	じゃらん・楽天	○
-adults_only	大人だけ	誰と	宿・体験	flag	紹介文	OSM(min_age)・一休	◎
-solo_ok	ひとりで泊まれる	誰と	宿	flag	紹介文	楽天(一人旅)	◎
-couples	ふたり向け	誰と	宿	flag	紹介文	一休	○
-large_group	大人数で泊まれる	誰と	宿	flag	計算（最大人数）	Airbnb	○
-pets_ok	ペットと泊まれる	誰と	宿・体験	flag	紹介文	Google(petsAllowed)・OSM(dog)	○
-dogs_ok	犬と泊まれる	誰と	宿・体験	flag	紹介文	Google(dogsAllowed)	○
-multi_generation	三世代で泊まれる	誰と	宿	flag	紹介文	楽天	○
-long_stay	長く滞在できる	誰と	宿	flag	紹介文	Airbnb(monthly stays)	◎
-workation	ワーケーション	誰と	宿	flag	紹介文	Airbnb	○
-best_spring	春が良い	季節	全部	flag	紹介文	季節特集	○
-best_summer	夏が良い	季節	全部	flag	紹介文	季節特集	○
-best_autumn	秋が良い	季節	全部	flag	紹介文	季節特集	○
-best_winter	冬が良い	季節	全部	flag	紹介文	季節特集	○
-autumn_peak_month	紅葉の見頃（月）	季節	全部	number(月)	外部データ	気象会社の紅葉情報	○
-cherry_peak_month	桜の見頃（月）	季節	全部	number(月)	外部データ	気象会社の桜情報	△
-snow_depth_cm	積雪	季節	全部	number(cm)	外部データ	気象庁の平年値	◎
-summer_cool	夏に涼しい（避暑）	季節	全部	flag	外部データ	気象庁の平年値	◎
-winter_mild	冬に暖かい	季節	全部	flag	外部データ	気象庁の平年値	○
-open_season	営業する季節	季節	全部	enum	紹介文	OSM(opening_hours)	○
-festival_season	祭りの時期がある	季節	全部	flag	紹介文	観光協会の紹介	○
-onsen_town	温泉街の中	文化・土地	全部	flag	位置	既存 village	○
-old_townscape	古い町並み（重伝建など）	文化・土地	全部	flag	外部データ	文化庁(重要伝統的建造物群保存地区)	◎
-shrine_temple_near	寺社が近い	文化・土地	全部	flag	位置	OSM(amenity=place_of_worship)	○
-world_heritage	世界遺産の中・近く	文化・土地	全部	flag	外部データ	ユネスコ・文化庁	△
-craft	伝統工芸	文化・土地	全部	flag	紹介文	経済産業省の伝統的工芸品	◎
-local_festival	地元の祭り	文化・土地	全部	flag	紹介文	観光協会の紹介	◎
-old_road	古道・巡礼の道	文化・土地	全部	flag	位置	OSM(route=hiking・historic)	◎
-castle_ruins	城・史跡	文化・土地	全部	flag	位置	OSM(historic=*)	○
-museum_near	美術館・博物館が近い	文化・土地	全部	flag	位置	OSM(tourism=museum)	○
-morning_market	朝市	文化・土地	全部	flag	紹介文	観光協会の紹介	◎
-host_story	宿の人の話が聞ける	文化・土地	宿・体験	flag	紹介文	紹介文	◎
-in_village	集落の中（暮らしに近い）	文化・土地	全部	flag	位置	OSM(place=hamlet・village)	◎
-specialty	名産	文化・土地	全部	enum	紹介文	既存 エリアの一言	○
-train_access	電車で行ける	アクセス	全部	flag	位置	OSM(railway=station)	○
-walk_from_station	駅から歩ける	アクセス	全部	flag	計算（駅までの距離）	OSM	○
-pickup	送迎あり	アクセス	宿	flag	紹介文	Google(localShuttle)	○
-car_needed	車が要る	アクセス	全部	flag	位置	OSM・バス路線	○
-bus_access	バスで行ける	アクセス	全部	flag	外部データ	GTFS(公共交通の時刻表データ)	○
-parking	駐車場	アクセス	全部	flag	紹介文	Google(parkingAvailable)	△
-ferry	船で渡る	アクセス	全部	flag	位置	OSM(route=ferry)	◎
-from_tokyo_min	東京からの所要時間	アクセス	全部	number(分)	外部データ	経路検索	○
-quiet	静か	静けさ	全部	flag	紹介文	紹介文	◎
-crowd_level	混み具合	静けさ	全部	level(0-3)	外部データ	人流データ・記録	◎
-lone_inn	一軒宿	静けさ	宿	flag	位置	周りの宿の数	◎
-few_tourists	観光客が少ない	静けさ	全部	level(0-3)	位置	周りの観光地の密度	◎
-off_beaten	定番から外れる	静けさ	全部	level(0-3)	計算（知名度・記録）	wandrara 独自	◎
-hidden_gem	知る人ぞ知る	静けさ	全部	level(0-3)	計算（評価と知名度の差）	wandrara 独自	◎
-eco_cert	環境の認証	持続可能性	宿	flag	紹介文	Google(sustainability)	○
-renewable	再生可能エネルギー	持続可能性	宿	flag	紹介文	Google(carbonFreeEnergySources)	○
-less_plastic	使い捨てを減らす	持続可能性	宿	flag	紹介文	Google(wasteReduction)	○
-community_run	地域で運営	持続可能性	宿・体験	flag	紹介文	紹介文	◎
-conservation	自然を守る活動に参加	持続可能性	体験	flag	紹介文	紹介文	◎
-step_free	段差が少ない	アクセシビリティ	全部	flag	紹介文	Google(mobilityAccessible)	○
-wheelchair	車いすで使える	アクセシビリティ	全部	flag	紹介文	Google(mobilityAccessible)・OSM(wheelchair)	○
-accessible_bath	入りやすい風呂	アクセシビリティ	宿・温泉	flag	紹介文	紹介文	○
-elevator	エレベーター	アクセシビリティ	宿	flag	紹介文	Google(elevator)	△
-accessible_parking	車いす用の駐車場	アクセシビリティ	全部	flag	紹介文	Google(mobilityAccessibleParking)	△
-price_level	価格帯	料金	宿・体験	level(0-3)	列	一休(宿泊予算)	△
-all_inclusive	オールインクルーシブ	料金	宿	flag	紹介文	Google(allInclusiveAvailable)	○
+id	名前	大分類	分類	対象	型	作り方	参考	2周目との相性
+near_river	川沿い	立地	水辺	全部	flag	位置	OSM(waterway)	◎
+near_lake	湖畔	立地	水辺	全部	flag	位置	OSM(natural=water)	◎
+near_waterfall	滝が近い	立地	水辺	全部	flag	位置	OSM(waterway=waterfall)	◎
+pond	池・沼	立地	水辺	全部	flag	位置	OSM(water=pond)	○
+river_distance_m	川までの距離	立地	水辺	全部	number(m)	位置	OSM(waterway=river)	○
+lake_distance_m	湖までの距離	立地	水辺	全部	number(m)	位置	OSM(natural=water)	○
+river_sound	川の音が聞こえる	立地	水辺	宿	flag	紹介文	紹介文の定番表現	◎
+near_sea	海が近い	立地	海岸	全部	flag	位置	OSM・Google(beachFront)	○
+beach_walk	歩いて浜へ行ける	立地	海岸	宿	flag	位置	Google(beachAccess)	○
+coast_cliff	断崖の海岸	立地	海岸	全部	flag	位置	OSM(natural=cliff)	○
+sea_distance_m	海までの距離	立地	海岸	全部	number(m)	位置	OSM(natural=coastline)	○
+bay	入り江	立地	海岸	全部	flag	位置	OSM(natural=bay)	◎
+sandy_beach	砂浜	立地	海岸	全部	flag	位置	OSM(natural=beach・surface=sand)	○
+rocky_shore	磯	立地	海岸	全部	flag	位置	OSM(natural=bare_rock・shingle)	◎
+mountain_area	山あい	立地	山・地形	全部	flag	位置	OSM・標高データ	◎
+plateau	高原	立地	山・地形	全部	flag	位置	既存 traits	○
+elevation_m	標高	立地	山・地形	全部	number(m)	位置	標高データ	○
+near_gorge	渓谷の中	立地	山・地形	全部	flag	位置	OSM(natural=gorge)	◎
+hillside	斜面に建つ（見晴らし）	立地	山・地形	宿	flag	位置	標高データ	○
+valley_floor	谷底	立地	山・地形	全部	flag	位置	標高データ	◎
+ridge	尾根・山頂の近く	立地	山・地形	全部	flag	位置	OSM(natural=peak・ridge)	◎
+caldera	カルデラの中	立地	山・地形	全部	flag	位置	地形データ	○
+dune	砂丘	立地	山・地形	全部	flag	位置	OSM(natural=dune)	○
+forest	森の中	立地	森・里	全部	flag	位置	OSM(landuse=forest)	◎
+satoyama	里山・棚田	立地	森・里	全部	flag	位置	OSM(landuse=farmland)	◎
+island	島	立地	島・半島	全部	flag	位置	OSM(place=island)	◎
+cape	岬・半島の先	立地	島・半島	全部	flag	位置	OSM(natural=cape)	○
+volcano_area	火山の近く	立地	火山・地熱	全部	flag	位置	OSM(natural=volcano)	○
+geothermal	噴気・地熱の地帯	立地	火山・地熱	全部	flag	位置	OSM(natural=fumarole)	○
+national_park	国立・国定公園の中	立地	保護された地域	全部	flag	位置	環境省の区域データ	○
+geopark	ジオパーク	立地	保護された地域	全部	flag	位置	日本ジオパーク委員会	◎
+dist_station_km	最寄り駅までの距離	立地	位置と距離	全部	number(km)	位置	OSM(railway=station)	○
+dist_town_km	町なかからの距離	立地	位置と距離	全部	number(km)	位置	OSM(place=town)	○
+remote	秘境（周りに何もない）	立地	位置と距離	全部	level(0-3)	位置	周りの dest・建物の密度	◎
+sea_view	海が見える	立地	眺め	宿	flag	紹介文	Airbnb・Booking	○
+peak_view	名峰が見える	立地	眺め	宿	flag	紹介文	じゃらん・一休の紹介文	○
+sunset_view	夕日が見える	立地	眺め	全部	flag	紹介文	Airbnb(scenic views)	○
+sunrise_view	朝日が見える	立地	眺め	全部	flag	紹介文	Airbnb(scenic views)	○
+cloud_sea	雲海が出る	立地	眺め	全部	flag	紹介文	観光協会の紹介	◎
+dark_sky	夜空が暗い	立地	眺め	全部	level(0-3)	外部データ	光害マップ	◎
+cherry_blossom	桜	自然	花	全部	flag	紹介文	季節特集	△
+flower_field	花畑	自然	花	全部	flag	紹介文	季節特集	○
+plum_blossom	梅	自然	花	全部	flag	紹介文	季節特集	○
+hydrangea	紫陽花	自然	花	全部	flag	紹介文	季節特集	○
+lavender	ラベンダー	自然	花	全部	flag	紹介文	季節特集	○
+sunflower	ひまわり	自然	花	全部	flag	紹介文	季節特集	△
+lotus	蓮	自然	花	全部	flag	紹介文	季節特集	◎
+alpine_flowers	高山植物	自然	花	全部	flag	紹介文	観光協会の紹介	◎
+autumn_leaves	紅葉	自然	木と森	全部	flag	紹介文	じゃらん・季節特集	○
+fresh_green	新緑	自然	木と森	全部	flag	紹介文	季節特集	◎
+moss	苔の景色	自然	木と森	全部	flag	紹介文	観光協会の紹介	◎
+giant_tree	巨木	自然	木と森	全部	flag	位置	OSM(natural=tree・denotation)	◎
+primeval_forest	原生林	自然	木と森	全部	flag	紹介文	環境省の植生データ	◎
+beech_forest	ブナ林	自然	木と森	全部	flag	紹介文	環境省の植生データ	◎
+cedar_avenue	杉並木	自然	木と森	全部	flag	紹介文	観光協会の紹介	◎
+snow_scenery	雪景色	自然	雪と氷	全部	flag	紹介文	季節特集	◎
+rime_ice	樹氷	自然	雪と氷	全部	flag	紹介文	観光協会の紹介	◎
+drift_ice	流氷	自然	雪と氷	全部	flag	紹介文	観光協会の紹介	◎
+fireflies	ホタル	自然	生きもの	全部	flag	紹介文	いこーよ・季節特集	◎
+wildlife	野生動物に会える	自然	生きもの	全部	flag	紹介文	Viator(wildlife)	◎
+birdwatching	野鳥	自然	生きもの	全部	flag	紹介文	OSM(leisure=bird_hide)	◎
+spring_water	湧き水	自然	水の景色	全部	flag	位置	OSM(natural=spring)	◎
+clear_sea	透明な海	自然	水の景色	全部	flag	紹介文	観光協会の紹介	○
+waterfall_height_m	滝の落差	自然	水の景色	自然	number(m)	位置	OSM(height)	○
+wetland	湿原	自然	水の景色	全部	flag	位置	OSM(natural=wetland)	◎
+tidal_flat	干潟	自然	水の景色	全部	flag	位置	OSM(wetland=tidalflat)	◎
+reflection	水面に映る景色	自然	水の景色	全部	flag	紹介文	観光協会の紹介	○
+cave	洞窟・鍾乳洞	自然	地形の見どころ	全部	flag	位置	OSM(natural=cave_entrance)	○
+sea_cave	海の洞窟	自然	地形の見どころ	全部	flag	位置	OSM(natural=cave_entrance)	◎
+steam_landscape	湯けむりの景色（湯畑・地獄）	自然	地形の見どころ	全部	flag	紹介文	温泉地の紹介	○
+viewpoint_near	展望地が近い	自然	地形の見どころ	全部	flag	位置	OSM(tourism=viewpoint)	○
+trail_near	散策路が近い	自然	地形の見どころ	全部	flag	位置	OSM(route=hiking)	◎
+natural_monument	天然記念物	自然	指定・登録	自然	flag	外部データ	文化庁の文化遺産データベース	○
+onsen	温泉	温泉・風呂	湯の質	宿・温泉	flag	列	既存 traits・じゃらん・楽天	○
+spring_quality	泉質	温泉・風呂	湯の質	宿・温泉	enum	紹介文	温泉分析書	○
+nigori	にごり湯	温泉・風呂	湯の質	宿・温泉	flag	紹介文	じゃらん	○
+spring_temp_c	源泉の温度	温泉・風呂	湯の質	宿・温泉	number(℃)	紹介文	温泉分析書	○
+own_source	自家源泉	温泉・風呂	湯の質	宿・温泉	flag	紹介文	一休・紹介文	◎
+kakenagashi	源泉かけ流し	温泉・風呂	湯の使い方	宿・温泉	flag	紹介文	じゃらん・日本温泉協会	◎
+no_water_added	加水なし	温泉・風呂	湯の使い方	宿・温泉	flag	紹介文	温泉法の掲示	◎
+no_heating	加温なし	温泉・風呂	湯の使い方	宿・温泉	flag	紹介文	温泉法の掲示	○
+no_circulation	循環なし	温泉・風呂	湯の使い方	宿・温泉	flag	紹介文	温泉法の掲示	○
+rotenburo	露天風呂	温泉・風呂	風呂の種類	宿・温泉	flag	紹介文	じゃらん	○
+large_bath	大浴場	温泉・風呂	風呂の種類	宿・温泉	flag	紹介文	じゃらん	△
+hinoki_bath	檜風呂	温泉・風呂	風呂の種類	宿・温泉	flag	紹介文	一休・紹介文	○
+rock_bath	岩風呂	温泉・風呂	風呂の種類	宿・温泉	flag	紹介文	紹介文	○
+riverside_bath	川沿いの露天	温泉・風呂	風呂の種類	宿・温泉	flag	紹介文	紹介文	◎
+view_bath	景色の良い風呂	温泉・風呂	風呂の種類	宿・温泉	flag	紹介文	一休・紹介文	◎
+foot_bath	足湯	温泉・風呂	風呂の種類	全部	flag	位置	OSM(amenity=foot_bath)	△
+sand_mud_bath	砂むし・泥湯	温泉・風呂	風呂の種類	温泉	flag	紹介文	紹介文	◎
+ganbanyoku	岩盤浴	温泉・風呂	風呂の種類	宿・温泉	flag	紹介文	紹介文	△
+communal_bath	共同浴場	温泉・風呂	風呂の種類	温泉	flag	列	既存 hotspring	◎
+room_rotenburo	客室露天風呂	温泉・風呂	貸切・ひとり占め	宿	flag	紹介文	じゃらん・楽天・一休	○
+private_bath	貸切風呂	温泉・風呂	貸切・ひとり占め	宿・温泉	flag	紹介文	じゃらん・楽天・一休	◎
+private_bath_free	貸切風呂が無料	温泉・風呂	貸切・ひとり占め	宿	flag	紹介文	じゃらん(条件無し)	○
+bath_to_self	湯船をひとり占め（少人数）	温泉・風呂	貸切・ひとり占め	宿・温泉	flag	紹介文	紹介文	◎
+sauna	サウナ	温泉・風呂	サウナ	宿・温泉	flag	紹介文	Google(sauna)	○
+cold_plunge	水風呂	温泉・風呂	サウナ	宿・温泉	flag	紹介文	サウナ施設の紹介	○
+outdoor_rest	外気浴の場所	温泉・風呂	サウナ	宿・温泉	flag	紹介文	サウナ施設の紹介	○
+day_bath	日帰り入浴ができる	温泉・風呂	入浴の決まり	宿・温泉	flag	列	楽天(日帰り)	○
+bath_24h	24時間入れる	温泉・風呂	入浴の決まり	宿	flag	紹介文	一休・紹介文	○
+mixed_bathing	混浴	温泉・風呂	入浴の決まり	宿・温泉	flag	紹介文	紹介文	○
+tattoo_ok	タトゥーがあっても入れる	温泉・風呂	入浴の決まり	宿・温泉	flag	紹介文	観光庁の案内	○
+bath_swap	男女の入れ替え	温泉・風呂	入浴の決まり	宿・温泉	flag	紹介文	じゃらん・紹介文	△
+kind_ryokan	旅館	宿の形	宿の種類	宿	flag	列	既存 kind	○
+kind_private_rental	一棟貸し	宿の形	宿の種類	宿	flag	列	既存 kind・Airbnb	◎
+kind_minshuku	民宿	宿の形	宿の種類	宿	flag	列	既存 kind	◎
+kind_pension	ペンション	宿の形	宿の種類	宿	flag	列	既存 kind	○
+kind_glamping	グランピング	宿の形	宿の種類	宿	flag	列	既存 kind	○
+kind_campsite	キャンプ場	宿の形	宿の種類	宿	flag	列	既存 kind・OSM	◎
+kind_auberge	オーベルジュ	宿の形	宿の種類	宿	flag	紹介文	一休・紹介文	◎
+kind_shukubo	宿坊	宿の形	宿の種類	宿	flag	紹介文	寺院の紹介	◎
+kind_farm_stay	農泊・農家民宿	宿の形	宿の種類	宿	flag	紹介文	農泊の紹介	◎
+kind_hostel	ゲストハウス	宿の形	宿の種類	宿	flag	列	既存 kind・OSM(tourism=hostel)	◎
+kind_cottage	コテージ・バンガロー	宿の形	宿の種類	宿	flag	紹介文	OSM(tourism=chalet)	○
+kind_treehouse	ツリーハウス	宿の形	宿の種類	宿	flag	紹介文	Airbnb(categories)	◎
+kind_mountain_hut	山小屋	宿の形	宿の種類	宿	flag	紹介文	OSM(tourism=alpine_hut)	◎
+kind_resort	リゾートホテル	宿の形	宿の種類	宿	flag	列	既存 kind	△
+rooms_count	客室数	宿の形	規模・貸切	宿	number	列	Google(roomsCount)	○
+small_inn	小さな宿（10室以下）	宿の形	規模・貸切	宿	flag	計算（客室数）	一休・紹介文	◎
+hanare	離れ	宿の形	規模・貸切	宿	flag	紹介文	一休	◎
+one_group	1日1組	宿の形	規模・貸切	宿	flag	紹介文	Airbnb(entire place)	◎
+floors	階数	宿の形	規模・貸切	宿・建物	number	紹介文	Google(floorsCount)	△
+kominka	古民家	宿の形	建物の歴史	宿	flag	紹介文	Airbnb・一休	◎
+built_year	建てた年	宿の形	建物の歴史	宿・建物	number	紹介文	Google(builtYear)	△
+historic_building	歴史ある建物（登録有形文化財など）	宿の形	建物の歴史	宿・建物	flag	外部データ	文化庁の文化遺産データベース	◎
+renovated	古い建物を改装	宿の形	建物の歴史	宿・建物	flag	紹介文	Google(lastRenovatedYear)	◎
+old_inn	老舗（創業100年以上）	宿の形	建物の歴史	宿	flag	紹介文	紹介文	○
+founded_year	創業した年	宿の形	建物の歴史	宿	number	紹介文	紹介文	○
+thatched	茅葺き・合掌造り	宿の形	建物の歴史	宿・建物	flag	紹介文	紹介文	◎
+machiya	町家	宿の形	建物の歴史	宿・建物	flag	紹介文	紹介文	◎
+kura	蔵を改装	宿の形	建物の歴史	宿・建物	flag	紹介文	紹介文	◎
+architect	建築家の設計	宿の形	建築・庭	宿・建物	flag	紹介文	紹介文	○
+wooden	木造	宿の形	建築・庭	宿・建物	flag	紹介文	紹介文	○
+garden	庭園	宿の形	建築・庭	宿・建物	flag	紹介文	Airbnb(garden)	○
+interior_design	家具・内装にこだわり	宿の形	建築・庭	宿	flag	紹介文	紹介文	○
+tatami	和室	部屋	部屋のつくり	宿	flag	紹介文	一休(部屋のこだわり)	○
+beds	ベッドの部屋	部屋	部屋のつくり	宿	flag	紹介文	一休(ベッドタイプ)	△
+room_size_m2	客室の広さ	部屋	部屋のつくり	宿	number(m2)	紹介文	Google(livingAreaSqMeters)	○
+max_guests	最大人数	部屋	部屋のつくり	宿	number	列	Airbnb	○
+loft	ロフト	部屋	部屋のつくり	宿	flag	紹介文	Google(loft)	○
+lounge	共用のラウンジ	部屋	部屋のつくり	宿	flag	紹介文	Google(commonLivingArea)	○
+room_bath	客室に風呂	部屋	水回り	宿	flag	紹介文	Google(bathtub)	○
+room_toilet	客室にトイレ	部屋	水回り	宿	flag	紹介文	Google(privateBathroom)	○
+kitchen	キッチン	部屋	水回り	宿	flag	紹介文	Airbnb・Google	○
+washer	洗濯機	部屋	水回り	宿	flag	紹介文	Airbnb・Google(washer)	○
+dryer	乾燥機	部屋	水回り	宿	flag	紹介文	Google(dryer)	△
+fireplace	暖炉	部屋	火と暖	宿	flag	紹介文	Google(fireplace)・Airbnb	◎
+irori	囲炉裏	部屋	火と暖	宿	flag	紹介文	紹介文	◎
+wood_stove	薪ストーブ	部屋	火と暖	宿	flag	紹介文	紹介文	◎
+floor_heating	床暖房	部屋	火と暖	宿	flag	紹介文	紹介文	○
+kotatsu	こたつ	部屋	火と暖	宿	flag	紹介文	紹介文	◎
+terrace	テラス・バルコニー	部屋	外の場所	宿	flag	紹介文	Google(patio・balcony)	○
+private_garden	専用の庭	部屋	外の場所	宿	flag	紹介文	Airbnb(outdoor)	○
+outdoor_seating	外で座れる場所（縁側・デッキ）	部屋	外の場所	宿	flag	紹介文	Airbnb(outdoor)	◎
+bbq	BBQ の設備	部屋	外の場所	宿	flag	紹介文	OSM(bbq)・Airbnb	○
+hammock	ハンモック	部屋	外の場所	宿	flag	紹介文	Airbnb	○
+library	本棚・ライブラリー	部屋	備品	宿	flag	紹介文	紹介文	◎
+no_tv	テレビを置かない	部屋	備品	宿	flag	紹介文	紹介文	◎
+crib	ベビーベッド	部屋	備品	宿	flag	紹介文	Airbnb(family)	○
+yukata	浴衣・作務衣	部屋	備品	宿	flag	紹介文	紹介文	○
+gear_drying	濡れた道具を干せる	部屋	備品	宿	flag	紹介文	紹介文	◎
+private_sauna	専用サウナ	部屋	備品	宿	flag	紹介文	紹介文	○
+free_bicycle	自転車を無料で貸す	部屋	備品	宿	flag	紹介文	Google(freeBicycleRental)	○
+ev_charger	EV 充電	部屋	車	宿	flag	紹介文	Google(electricCarChargingStations)	○
+free_parking	無料駐車場	部屋	車	宿	flag	紹介文	Google(freeParking)	△
+dinner	夕食つき	食	食事の出し方	宿	flag	紹介文	じゃらん・楽天(食事)	○
+breakfast	朝食つき	食	食事の出し方	宿	flag	紹介文	Google(breakfastAvailable)	○
+room_dining	部屋食	食	食事の出し方	宿	flag	紹介文	楽天・一休	○
+private_dining	個室で食事	食	食事の出し方	宿	flag	紹介文	一休(食事場所)	○
+self_catering	素泊まり・自炊	食	食事の出し方	宿	flag	紹介文	じゃらん(食事なし)	○
+late_dinner	遅い時間の夕食	食	食事の出し方	宿	flag	紹介文	紹介文	○
+chef_counter	料理人の前で食べる	食	食事の出し方	宿	flag	紹介文	一休	○
+japanese_breakfast	和朝食	食	食事の出し方	宿	flag	紹介文	一休	○
+western_breakfast	洋朝食	食	食事の出し方	宿	flag	紹介文	一休	△
+local_food	地元の食材	食	食材	宿・体験	flag	紹介文	Google(locallySourcedFoodAndBeverages)	◎
+own_farm	自家農園の食材	食	食材	宿	flag	紹介文	紹介文	◎
+seafood	海の幸	食	食材	宿・体験	flag	紹介文	紹介文	○
+mountain_food	山の幸・ジビエ	食	食材	宿・体験	flag	紹介文	紹介文	◎
+fermented_food	発酵・保存食	食	食材	全部	flag	紹介文	紹介文	◎
+kaiseki	会席料理	食	料理	宿	flag	紹介文	一休	△
+robata	炉端焼き	食	料理	宿	flag	紹介文	紹介文	◎
+homemade_bread	自家製のパン	食	料理	宿	flag	紹介文	紹介文	○
+coffee	こだわりのコーヒー	食	料理	宿	flag	紹介文	紹介文	○
+cooking_lesson	料理を教わる	食	料理	宿・体験	flag	紹介文	体験サイト	◎
+vegetarian	菜食に対応	食	食の配慮	宿・体験	flag	紹介文	Google(vegetarianMeals)	○
+vegan	ヴィーガンに対応	食	食の配慮	宿・体験	flag	紹介文	Google(veganMeals)	○
+allergy	アレルギーに対応	食	食の配慮	宿・体験	flag	紹介文	紹介文	○
+halal	ハラールに対応	食	食の配慮	宿・体験	flag	紹介文	紹介文	△
+local_sake	地酒	食	飲み物	宿・体験	flag	紹介文	紹介文	○
+inn_bar	宿のバー	食	飲み物	宿	flag	紹介文	Google(bar)	○
+free_drinks	飲み物が無料	食	飲み物	宿	flag	紹介文	一休	○
+brewery_near	酒蔵・ワイナリーが近い	食	飲み物	全部	flag	位置	OSM(craft=brewery・winery)	○
+restaurant_near	歩いて行ける飲食店	食	周りの店	全部	flag	位置	OSM(amenity=restaurant)	○
+convenience_near	コンビニが近い	食	周りの店	全部	flag	位置	OSM(shop=convenience)	△
+grocery_near	食材を買える店が近い	食	周りの店	全部	flag	位置	OSM(shop=supermarket)	○
+hiking	山歩き	過ごし方	山・陸	全部	flag	位置	既存 traits・OSM	◎
+walking	散策	過ごし方	山・陸	全部	flag	紹介文	紹介文	◎
+cycling	サイクリング・自転車貸出	過ごし方	山・陸	全部	flag	紹介文	Google(bicycleRental)	○
+e_bike	電動アシスト自転車で回る	過ごし方	山・陸	全部	flag	紹介文	体験サイト	○
+horse_riding	乗馬	過ごし方	山・陸	全部	flag	紹介文	Google(horsebackRiding)	○
+climbing	クライミング	過ごし方	山・陸	全部	flag	紹介文	OSM(sport=climbing)	○
+trail_running	トレイルラン	過ごし方	山・陸	全部	flag	紹介文	体験サイト	○
+caving	ケイビング	過ごし方	山・陸	全部	flag	紹介文	体験サイト	◎
+photo_walk	写真を撮りに歩く	過ごし方	山・陸	全部	flag	紹介文	体験サイト	○
+canoe	カヌー・カヤック	過ごし方	川・湖	全部	flag	紹介文	Google(watercraftRental)	◎
+sup	SUP	過ごし方	川・湖	全部	flag	紹介文	体験サイト	○
+fishing	釣り	過ごし方	川・湖	全部	flag	紹介文	体験サイト	○
+river_play	川遊び	過ごし方	川・湖	全部	flag	紹介文	いこーよ	◎
+rafting	ラフティング	過ごし方	川・湖	全部	flag	紹介文	体験サイト	○
+canyoning	キャニオニング	過ごし方	川・湖	全部	flag	紹介文	体験サイト	◎
+smelt_fishing	ワカサギ釣り	過ごし方	川・湖	全部	flag	紹介文	体験サイト	◎
+snorkeling	シュノーケル	過ごし方	海	全部	flag	紹介文	Google(snorkeling)	○
+sea_swim	海水浴	過ごし方	海	全部	flag	位置	OSM(leisure=beach_resort)	△
+diving	ダイビング	過ごし方	海	全部	flag	紹介文	Google(scuba)	○
+surfing	サーフィン	過ごし方	海	全部	flag	紹介文	体験サイト	○
+whale_watching	ホエールウォッチング	過ごし方	海	全部	flag	紹介文	体験サイト	◎
+ski	スキー	過ごし方	雪	全部	flag	位置	OSM(landuse=winter_sports)	○
+snowshoe	スノーシュー	過ごし方	雪	全部	flag	紹介文	体験サイト	◎
+paragliding	パラグライダー	過ごし方	空	全部	flag	紹介文	体験サイト	○
+balloon	熱気球	過ごし方	空	全部	flag	紹介文	体験サイト	○
+farming	農業体験	過ごし方	農と採集	全部	flag	紹介文	農泊の紹介	◎
+fruit_picking	果物狩り	過ごし方	農と採集	全部	flag	紹介文	体験サイト	○
+foraging	山菜・きのこ採り	過ごし方	農と採集	全部	flag	紹介文	体験サイト	◎
+yoga	ヨガ・瞑想	過ごし方	心と体	全部	flag	紹介文	体験サイト	◎
+zazen	座禅・写経	過ごし方	心と体	全部	flag	紹介文	寺院の紹介	◎
+forest_therapy	森林浴・森林セラピー	過ごし方	心と体	全部	flag	外部データ	森林セラピー基地の一覧	◎
+stargazing	星空観察	過ごし方	夜と火	全部	flag	紹介文	体験サイト	◎
+bonfire	焚き火	過ごし方	夜と火	全部	flag	紹介文	OSM(openfire)	◎
+camping	テント泊	過ごし方	夜と火	宿	flag	列	OSM(tents)	◎
+night_wildlife	夜の生きもの観察	過ごし方	夜と火	全部	flag	紹介文	体験サイト	◎
+duration_min	所要時間	体験の形	時間	体験	number(分)	列	Viator・GetYourGuide	○
+half_day	半日	体験の形	時間	体験	flag	計算（所要時間）	Viator	○
+full_day	1日	体験の形	時間	体験	flag	計算（所要時間）	Viator	○
+early_morning	早朝の体験	体験の形	時間	体験	flag	紹介文	体験サイト	◎
+night_activity	夜の体験	体験の形	時間	体験	flag	紹介文	体験サイト	◎
+multi_day	泊まりがけ	体験の形	時間	体験	flag	紹介文	Viator(multi-day)	◎
+seasonal_only	季節限定	体験の形	時間	体験	flag	紹介文	体験サイト	◎
+private_tour	貸切・プライベート	体験の形	人数・形式	体験	flag	紹介文	Viator・GetYourGuide	◎
+small_group	少人数	体験の形	人数・形式	体験	flag	紹介文	GetYourGuide	◎
+max_participants	定員	体験の形	人数・形式	体験	number	列	Viator	○
+min_participants	最少催行人数	体験の形	人数・形式	体験	number	紹介文	体験サイト	△
+guided	ガイドつき	体験の形	案内	体験	flag	紹介文	Viator	○
+local_guide	地元の人が案内	体験の形	案内	体験	flag	紹介文	体験サイト	◎
+expert_guide	専門家が案内（研究者・猟師など）	体験の形	案内	体験	flag	紹介文	紹介文	◎
+certified_guide	資格のあるガイド	体験の形	案内	体験	flag	紹介文	日本山岳ガイド協会	○
+english_ok	英語で対応	体験の形	案内	全部	flag	紹介文	Google(languagesSpoken)	○
+physical_level	体力の目安	体験の形	体力・難しさ	体験・自然	level(0-3)	紹介文	OSM(sac_scale)	○
+beginner_ok	初心者向け	体験の形	体力・難しさ	体験	flag	紹介文	体験サイト	○
+min_age	年齢の下限	体験の形	体力・難しさ	体験	number(歳)	紹介文	OSM(min_age)	○
+reservation_required	予約が要る	体験の形	予約・取消	体験・自然	flag	紹介文	OSM(reservation)	○
+walk_in_ok	予約なしで行ける	体験の形	予約・取消	体験・自然	flag	紹介文	OSM(reservation=no)	○
+same_day	当日予約できる	体験の形	予約・取消	体験	flag	紹介文	体験サイト	△
+free_cancel	無料キャンセル	体験の形	予約・取消	体験	flag	紹介文	Viator・GetYourGuide	△
+rain_ok	雨でもできる	体験の形	天候・場所	体験	flag	紹介文	いこーよ(雨の日OK)	○
+indoor	屋内	体験の形	天候・場所	体験	flag	紹介文	いこーよ	△
+weather_cancel	天候で中止がある	体験の形	天候・場所	体験	flag	紹介文	体験サイト	○
+meet_at_station	集合場所が駅	体験の形	天候・場所	体験	flag	位置	体験サイト	○
+gear_rental	道具を貸す	体験の形	道具・持ち物	体験	flag	紹介文	体験サイト	○
+change_clothes	着替えが要る	体験の形	道具・持ち物	体験	flag	紹介文	体験サイト	○
+hands_on	手を動かす（ものづくり）	体験の形	道具・持ち物	体験	flag	紹介文	体験サイト	◎
+take_home	作ったものを持ち帰れる	体験の形	道具・持ち物	体験	flag	紹介文	体験サイト	○
+photo_service	写真をもらえる	体験の形	道具・持ち物	体験	flag	紹介文	体験サイト	△
+exp_nature_guide	自然を案内してもらう	体験の種類	体験の種類	体験	flag	列	既存 categories	◎
+exp_food	食の体験	体験の種類	体験の種類	体験	flag	列	既存 categories	○
+exp_culture	文化の体験	体験の種類	体験の種類	体験	flag	列	既存 categories	○
+exp_water	水の遊び	体験の種類	体験の種類	体験	flag	列	既存 categories	○
+exp_snow	雪の遊び	体験の種類	体験の種類	体験	flag	列	既存 categories	◎
+exp_animal	動物とふれあう	体験の種類	体験の種類	体験	flag	紹介文	体験サイト	○
+exp_town_walk	まち歩き	体験の種類	体験の種類	体験	flag	紹介文	体験サイト	○
+exp_learning	学ぶ体験（地質・歴史）	体験の種類	体験の種類	体験	flag	紹介文	ジオパークの案内	◎
+exp_making	ものづくり	体験の種類	体験の種類	体験	flag	列	既存 categories	○
+exp_volunteer	手伝う体験（保全・農作業）	体験の種類	体験の種類	体験	flag	紹介文	紹介文	◎
+kids_ok	子連れ歓迎	誰と	子ども	全部	flag	紹介文	Google(kidsFriendly)	○
+baby_ok	乳幼児と泊まれる	誰と	子ども	宿	flag	紹介文	じゃらん・楽天	○
+multi_generation	三世代で泊まれる	誰と	子ども	宿	flag	紹介文	楽天	○
+pets_ok	ペットと泊まれる	誰と	ペット	宿・体験	flag	紹介文	Google(petsAllowed)・OSM(dog)	○
+dogs_ok	犬と泊まれる	誰と	ペット	宿・体験	flag	紹介文	Google(dogsAllowed)	○
+solo_ok	ひとりで泊まれる	誰と	ひとり	宿	flag	紹介文	楽天(一人旅)	◎
+women_solo	女性ひとりでも安心	誰と	ひとり	宿	flag	紹介文	楽天(女性一人旅)	○
+couples	ふたり向け	誰と	ふたり・仲間	宿	flag	紹介文	一休	○
+anniversary	記念日	誰と	ふたり・仲間	宿	flag	紹介文	一休	○
+friends	友だち同士	誰と	ふたり・仲間	宿・体験	flag	紹介文	楽天	○
+large_group	大人数で泊まれる	誰と	ふたり・仲間	宿	flag	計算（最大人数）	Airbnb	○
+adults_only	大人だけ	誰と	年代	宿・体験	flag	紹介文	OSM(min_age)・一休	◎
+seniors	年配の方も楽に	誰と	年代	宿・体験	flag	紹介文	紹介文	○
+foreign_guests	外国の方に慣れている	誰と	言葉・国	全部	flag	紹介文	Google(languagesSpoken)	○
+lgbtq_friendly	LGBTQ+ に配慮	誰と	言葉・国	宿	flag	紹介文	Booking(Travel Proud)	○
+no_talk	人と話さずに過ごせる	誰と	人との距離	宿	flag	紹介文	紹介文	◎
+self_checkin	セルフチェックイン	誰と	人との距離	宿	flag	紹介文	Google(contactlessCheckinCheckout)	○
+no_other_guests	ほかの客と会わない	誰と	人との距離	宿	flag	紹介文	Airbnb(entire place)	◎
+best_spring	春が良い	季節	見頃	全部	flag	紹介文	季節特集	○
+best_summer	夏が良い	季節	見頃	全部	flag	紹介文	季節特集	○
+best_autumn	秋が良い	季節	見頃	全部	flag	紹介文	季節特集	○
+best_winter	冬が良い	季節	見頃	全部	flag	紹介文	季節特集	○
+autumn_peak_month	紅葉の見頃（月）	季節	見頃	全部	number(月)	外部データ	気象会社の紅葉情報	○
+cherry_peak_month	桜の見頃（月）	季節	見頃	全部	number(月)	外部データ	気象会社の桜情報	△
+early_spring	春先（2〜3月）が良い	季節	見頃	全部	flag	紹介文	季節特集	◎
+harvest	収穫の時期	季節	見頃	全部	flag	紹介文	紹介文	◎
+snow_depth_cm	積雪	季節	気候	全部	number(cm)	外部データ	気象庁の平年値	◎
+summer_cool	夏に涼しい（避暑）	季節	気候	全部	flag	外部データ	気象庁の平年値	◎
+winter_mild	冬に暖かい	季節	気候	全部	flag	外部データ	気象庁の平年値	○
+rainy_season_ok	梅雨でも楽しめる	季節	気候	全部	flag	紹介文	紹介文	○
+first_snow_month	初雪（月）	季節	気候	全部	number(月)	外部データ	気象庁の平年値	○
+temp_aug_c	8月の平均気温	季節	気候	全部	number(℃)	外部データ	気象庁の平年値	○
+temp_jan_c	1月の平均気温	季節	気候	全部	number(℃)	外部データ	気象庁の平年値	○
+festival_season	祭りの時期がある	季節	行事	全部	flag	紹介文	観光協会の紹介	○
+new_year	年末年始の行事	季節	行事	全部	flag	紹介文	観光協会の紹介	○
+fireworks	花火	季節	行事	全部	flag	紹介文	観光協会の紹介	△
+illumination	ライトアップ	季節	行事	全部	flag	紹介文	観光協会の紹介	△
+open_season	営業する季節	季節	営業	全部	enum	紹介文	OSM(opening_hours)	○
+old_townscape	古い町並み（重伝建など）	文化	歴史・遺産	全部	flag	外部データ	文化庁(重要伝統的建造物群保存地区)	◎
+world_heritage	世界遺産の中・近く	文化	歴史・遺産	全部	flag	外部データ	ユネスコ・文化庁	△
+castle_ruins	城・史跡	文化	歴史・遺産	全部	flag	位置	OSM(historic=*)	○
+old_road	古道・巡礼の道	文化	歴史・遺産	全部	flag	位置	OSM(route=hiking・historic)	◎
+shrine_temple_near	寺社が近い	文化	信仰	全部	flag	位置	OSM(amenity=place_of_worship)	○
+mountain_worship	山岳信仰・修験道	文化	信仰	全部	flag	紹介文	紹介文	◎
+craft	伝統工芸	文化	工芸	全部	flag	紹介文	経済産業省の伝統的工芸品	◎
+pottery_town	焼き物の産地	文化	工芸	全部	flag	外部データ	経済産業省の伝統的工芸品	◎
+textile	織物・染め物	文化	工芸	全部	flag	紹介文	経済産業省の伝統的工芸品	◎
+local_festival	地元の祭り	文化	芸能・祭り	全部	flag	紹介文	観光協会の紹介	◎
+folk_performance	郷土芸能（神楽など）	文化	芸能・祭り	全部	flag	紹介文	文化庁の文化遺産データベース	◎
+in_village	集落の中（暮らしに近い）	文化	暮らし・生業	全部	flag	位置	OSM(place=hamlet・village)	◎
+fishing_village	漁村	文化	暮らし・生業	全部	flag	位置	OSM(harbour)	◎
+morning_market	朝市	文化	暮らし・生業	全部	flag	紹介文	観光協会の紹介	◎
+onsen_town	温泉街の中	文化	暮らし・生業	全部	flag	位置	既存 village	○
+toji_culture	湯治場	文化	暮らし・生業	宿・温泉	flag	紹介文	紹介文	◎
+specialty	名産	文化	食文化	全部	enum	紹介文	既存 エリアの一言	○
+sake_region	酒どころ	文化	食文化	全部	flag	外部データ	国税庁の地理的表示	○
+museum_near	美術館・博物館が近い	文化	芸術	全部	flag	位置	OSM(tourism=museum)	○
+art_festival	芸術祭の舞台	文化	芸術	全部	flag	紹介文	紹介文	◎
+tea_ceremony	茶の湯	文化	和の体験	全部	flag	紹介文	体験サイト	○
+kimono	着物で過ごす	文化	和の体験	全部	flag	紹介文	体験サイト	△
+indigenous	アイヌ・琉球の文化	文化	先住の文化	全部	flag	紹介文	紹介文	◎
+host_story	宿の人の話が聞ける	文化	人	宿・体験	flag	紹介文	紹介文	◎
+local_people	地元の人と話せる	文化	人	宿・体験	flag	紹介文	紹介文	◎
+train_access	電車で行ける	アクセス	鉄道	全部	flag	位置	OSM(railway=station)	○
+walk_from_station	駅から歩ける	アクセス	鉄道	全部	flag	計算（駅までの距離）	OSM	○
+shinkansen_near	新幹線の駅から近い	アクセス	鉄道	全部	flag	位置	OSM(railway=station)	○
+walk_min_station	駅から歩く時間	アクセス	鉄道	全部	number(分)	位置	OSM・経路検索	○
+car_needed	車が要る	アクセス	車	全部	flag	位置	OSM・バス路線	○
+parking	駐車場	アクセス	車	全部	flag	紹介文	Google(parkingAvailable)	△
+highway_ic_near	高速のインターから近い	アクセス	車	全部	flag	位置	OSM(highway=motorway_junction)	○
+narrow_road	細い山道を通る	アクセス	車	全部	flag	位置	OSM(highway=track・width)	○
+winter_tires	冬は冬用タイヤが要る	アクセス	車	全部	flag	外部データ	気象庁・道路情報	○
+bus_access	バスで行ける	アクセス	バス・送迎	全部	flag	外部データ	GTFS(公共交通の時刻表データ)	○
+bus_per_day	バスの1日の本数	アクセス	バス・送迎	全部	number	外部データ	GTFS(公共交通の時刻表データ)	○
+pickup	送迎あり	アクセス	バス・送迎	宿	flag	紹介文	Google(localShuttle)	○
+ferry	船で渡る	アクセス	船・空	全部	flag	位置	OSM(route=ferry)	◎
+airport_near	空港から近い	アクセス	船・空	全部	flag	位置	OSM(aeroway=aerodrome)	△
+from_tokyo_min	東京からの所要時間	アクセス	所要時間	全部	number(分)	外部データ	経路検索	○
+crowd_level	混み具合	静けさ	人の少なさ	全部	level(0-3)	外部データ	人流データ・記録	◎
+few_tourists	観光客が少ない	静けさ	人の少なさ	全部	level(0-3)	位置	周りの観光地の密度	◎
+lone_inn	一軒宿	静けさ	人の少なさ	宿	flag	位置	周りの宿の数	◎
+weekday_empty	平日はほぼ貸切	静けさ	人の少なさ	全部	level(0-3)	外部データ	記録	◎
+off_season_best	閑散期がおすすめ	静けさ	人の少なさ	全部	flag	紹介文	紹介文	◎
+holiday_quiet	連休でも静か	静けさ	人の少なさ	全部	level(0-3)	外部データ	人流データ・記録	◎
+quiet	静か	静けさ	音と近所	全部	flag	紹介文	紹介文	◎
+no_neighbors	隣の建物が見えない	静けさ	音と近所	宿	flag	位置	OSM(building)	◎
+far_from_road	車の音が届かない	静けさ	音と近所	全部	flag	位置	OSM(highway=primary)	◎
+nearest_house_m	いちばん近い家までの距離	静けさ	音と近所	宿	number(m)	位置	OSM(building)	◎
+quiet_rules	静かに過ごす決まりがある	静けさ	音と近所	宿	flag	紹介文	紹介文	○
+weak_signal	携帯の電波が弱い	静けさ	つながらない	全部	flag	外部データ	携帯各社のエリアマップ	◎
+digital_detox	デジタルデトックス	静けさ	つながらない	宿	flag	紹介文	紹介文	◎
+off_beaten	定番から外れる	静けさ	定番からの距離	全部	level(0-3)	計算（知名度・記録）	wandrara 独自	◎
+hidden_gem	知る人ぞ知る	静けさ	定番からの距離	全部	level(0-3)	計算（評価と知名度の差）	wandrara 独自	◎
+eco_cert	環境の認証	持続可能性	環境	宿	flag	紹介文	Google(sustainability)	○
+renewable	再生可能エネルギー	持続可能性	環境	宿	flag	紹介文	Google(carbonFreeEnergySources)	○
+less_plastic	使い捨てを減らす	持続可能性	環境	宿	flag	紹介文	Google(wasteReduction)	○
+solar	太陽光の電気	持続可能性	環境	宿	flag	紹介文	Google(carbonFreeEnergySources)	○
+food_waste	食べ残しを減らす	持続可能性	環境	宿	flag	紹介文	Google(foodWasteReductionProgram)	○
+refill_water	給水できる	持続可能性	環境	全部	flag	紹介文	Google(waterBottleFillingStations)	○
+wildlife_care	生きものに配慮	持続可能性	環境	体験・自然	flag	紹介文	紹介文	◎
+conservation	自然を守る活動に参加	持続可能性	環境	体験	flag	紹介文	紹介文	◎
+community_run	地域で運営	持続可能性	地域	宿・体験	flag	紹介文	紹介文	◎
+local_staff	地元の人が働く	持続可能性	地域	宿・体験	flag	紹介文	紹介文	◎
+local_materials	地元の木・素材で建てた	持続可能性	地域	宿・建物	flag	紹介文	紹介文	◎
+money_stays_local	地域にお金が回る	持続可能性	地域	全部	flag	紹介文	紹介文	◎
+step_free	段差が少ない	アクセシビリティ	移動	全部	flag	紹介文	Google(mobilityAccessible)	○
+wheelchair	車いすで使える	アクセシビリティ	移動	全部	flag	紹介文	Google(mobilityAccessible)・OSM(wheelchair)	○
+elevator	エレベーター	アクセシビリティ	移動	宿	flag	紹介文	Google(elevator)	△
+accessible_parking	車いす用の駐車場	アクセシビリティ	移動	全部	flag	紹介文	Google(mobilityAccessibleParking)	△
+handrails	手すり	アクセシビリティ	移動	宿	flag	紹介文	紹介文	○
+ground_floor_room	1階の部屋	アクセシビリティ	移動	宿	flag	紹介文	紹介文	○
+wheelchair_rental	車いすを貸す	アクセシビリティ	移動	全部	flag	紹介文	紹介文	○
+stroller_ok	ベビーカーで回れる	アクセシビリティ	移動	全部	flag	紹介文	いこーよ	○
+flat_path	平らな道で歩きやすい	アクセシビリティ	移動	自然	flag	位置	OSM(surface・incline)	○
+accessible_bath	入りやすい風呂	アクセシビリティ	入浴	宿・温泉	flag	紹介文	紹介文	○
+shower_chair	シャワーチェア	アクセシビリティ	入浴	宿・温泉	flag	紹介文	紹介文	○
+hearing_support	耳の聞こえにくい方への配慮	アクセシビリティ	感覚・補助	全部	flag	紹介文	紹介文	○
+assist_dog	補助犬と入れる	アクセシビリティ	感覚・補助	全部	flag	紹介文	厚生労働省の補助犬の案内	○
+price_level	価格帯	料金	価格	宿・体験	level(0-3)	列	一休(宿泊予算)	△
+price_per_person	1人あたりの料金	料金	価格	宿・体験	number(円)	列	一休・楽天	△
+price_from	料金の目安	料金	価格	体験	number(円)	列	Viator(price)	△
+weekday_discount	平日が安い	料金	割引・込み	宿	flag	紹介文	楽天	○
+long_stay_discount	連泊が安い	料金	割引・込み	宿	flag	紹介文	Airbnb(weekly discount)	◎
+kids_free	子どもは無料	料金	割引・込み	宿・体験	flag	紹介文	Google(kidsStayFree)	○
+all_inclusive	オールインクルーシブ	料金	割引・込み	宿	flag	紹介文	Google(allInclusiveAvailable)	○
+free_entry	無料で入れる	料金	割引・込み	自然・体験	flag	紹介文	OSM(fee=no)	○
+cash_only	現金だけ	料金	支払い	全部	flag	紹介文	Google(paymentOptions)	○
+mood_minimal	余白のある設え	雰囲気	設え	宿	flag	紹介文	紹介文	◎
+mood_traditional	和の設え	雰囲気	設え	宿	flag	紹介文	紹介文	○
+mood_modern	モダンな建築	雰囲気	設え	宿・建物	flag	紹介文	紹介文	○
+mood_scandinavian	北欧風	雰囲気	設え	宿	flag	紹介文	紹介文	○
+mood_retro	昭和レトロ	雰囲気	設え	宿・建物	flag	紹介文	紹介文	○
+mood_luxury	上質・贅沢	雰囲気	設え	宿	flag	紹介文	一休	○
+mood_rustic	素朴	雰囲気	空気感	宿・体験	flag	紹介文	紹介文	◎
+mood_homey	家に招かれたような	雰囲気	空気感	宿	flag	紹介文	紹介文	◎
+mood_wild	野趣あふれる	雰囲気	空気感	宿・体験	flag	紹介文	紹介文	◎
+mood_cozy	こぢんまり	雰囲気	空気感	宿	flag	紹介文	紹介文	◎
+mood_calm_light	灯りを落とした静かな夜	雰囲気	空気感	宿	flag	紹介文	紹介文	◎
+massage	マッサージ	ウェルネス	手当て	宿	flag	紹介文	Google(massage)	○
+spa	スパ・エステ	ウェルネス	手当て	宿	flag	紹介文	Google(spa)	△
+healthy_food	体にやさしい食事	ウェルネス	食と眠り	宿	flag	紹介文	紹介文	◎
+sleep_focus	眠りにこだわる	ウェルネス	食と眠り	宿	flag	紹介文	紹介文	◎
+fasting	ファスティング	ウェルネス	食と眠り	宿	flag	紹介文	紹介文	○
+herbs	ハーブ・薬草	ウェルネス	食と眠り	宿・体験	flag	紹介文	紹介文	◎
+retreat	滞在プログラム（リトリート）	ウェルネス	プログラム	宿	flag	紹介文	紹介文	◎
+breathing_walk	歩く瞑想	ウェルネス	プログラム	体験	flag	紹介文	紹介文	◎
+trail_length_km	道のりの長さ	自然の道のり	道	自然	number(km)	位置	OSM(route=hiking)	○
+elevation_gain_m	登りの高さ	自然の道のり	道	自然	number(m)	位置	OSM・標高データ	○
+loop_trail	ぐるっと回れる	自然の道のり	道	自然	flag	位置	OSM(route=hiking)	○
+trail_surface	道の状態（舗装・土・岩）	自然の道のり	道	自然	enum	位置	OSM(surface)	○
+toilet_on_trail	途中にトイレ	自然の道のり	設備	自然	flag	位置	OSM(amenity=toilets)	○
+trailhead_parking	登り口の駐車場	自然の道のり	設備	自然	flag	位置	OSM(amenity=parking)	○
+entry_fee	入場料がかかる	自然の道のり	決まり・危険	自然	flag	紹介文	OSM(fee)	△
+viewing_hours	見られる時間	自然の道のり	決まり・危険	自然	enum	紹介文	OSM(opening_hours)	○
+bear_area	クマが出る地域	自然の道のり	決まり・危険	自然	flag	外部データ	自治体の出没情報	○
+permit_needed	入るのに許可が要る	自然の道のり	決まり・危険	自然	flag	紹介文	環境省の利用調整地区	○
+winter_road_closed	冬は道が閉まる	自然の道のり	決まり・危険	自然	flag	外部データ	道路情報	○
+wifi	Wi-Fi	働く	働く	宿	flag	紹介文	Google(freeWifi)	△
+workspace	仕事ができる机	働く	働く	宿	flag	紹介文	Airbnb(dedicated workspace)	○
+workation	ワーケーション	働く	働く	宿	flag	紹介文	Airbnb	○
+long_stay	長く滞在できる	働く	働く	宿	flag	紹介文	Airbnb(monthly stays)	◎
+tsunami_zone	津波の浸水想定区域	安全	土砂・水の災害	全部	flag	外部データ	国土交通省 ハザードマップ	○
+landslide_zone	土砂災害の警戒区域	安全	土砂・水の災害	全部	flag	外部データ	国土交通省 ハザードマップ	○
+flood_zone	洪水の浸水想定区域	安全	土砂・水の災害	全部	flag	外部データ	国土交通省 ハザードマップ	○
+hospital_km	病院までの距離	安全	医療	全部	number(km)	位置	OSM(amenity=hospital)	○
+aed	AED がある	安全	医療	全部	flag	紹介文	日本救急医療財団 AED マップ	○
+evacuation_site_near	避難場所が近い	安全	避難	全部	flag	外部データ	国土地理院 指定緊急避難場所	○
+night_lighting	夜道が明るい	安全	夜	全部	level(0-3)	位置	OSM(lit)	○
+family_run	家族で営む	宿の運営	営む人	宿	flag	紹介文	紹介文	◎
+host_lives_onsite	宿の人が同じ敷地に住む	宿の運営	営む人	宿	flag	紹介文	Airbnb(ホストの紹介)	◎
+newcomer_host	移住してきた人が営む	宿の運営	営む人	宿・体験	flag	紹介文	紹介文	◎
+chef_owner	料理人が営む	宿の運営	営む人	宿	flag	紹介文	紹介文	◎
+generations	代々続く	宿の運営	営む人	宿・体験	number(代)	紹介文	紹介文	○
+direct_booking	直接予約できる	宿の運営	予約	宿・体験	flag	列	公式サイト	○
+ota_listed	予約サイトに載っている	宿の運営	予約	宿・体験	flag	外部データ	予約サイト	△
+review_score	口コミの評価	評価・実績	口コミ	全部	number	外部データ	Google・予約サイト	○
+review_count	口コミの数	評価・実績	口コミ	全部	number	外部データ	Google・予約サイト	○
+award	受賞・認定	評価・実績	認定	全部	enum	紹介文	ミシュラン・グッドデザイン賞など	○
+media_featured	雑誌・番組で紹介された	評価・実績	掲載	全部	flag	紹介文	紹介文	△
+save_rate	保存された割合	評価・実績	wandrara の記録	全部	number	計算（記録）	wandrara 独自	◎
+revisit_rate	また来た人の割合	評価・実績	wandrara の記録	全部	number	計算（記録）	wandrara 独自	◎
+checkin_time	チェックインの時刻	決まりごと	時刻	宿	number(時)	列	Google(checkinTime)	○
+checkout_time	チェックアウトの時刻	決まりごと	時刻	宿	number(時)	列	Google(checkoutTime)	○
+curfew	門限	決まりごと	時刻	宿	flag	紹介文	紹介文	○
+min_nights	最低の泊数	決まりごと	泊数	宿	number(泊)	紹介文	Airbnb(minimum nights)	○
+smoking	たばこを吸える場所	決まりごと	たばこ	宿	enum	紹介文	Google(smokeFreeProperty)	○
+child_age_limit	子どもの年齢の決まり	決まりごと	年齢	宿・体験	number(歳)	紹介文	Google(maxChildAge)	○
+internet_speed_mbps	通信の速さ	働く	働く	宿	number(Mbps)	紹介文	Airbnb(Wi-Fi speed)	○
+meeting_space	話し合える場所	働く	働く	宿	flag	紹介文	Google(meetingRooms)	△
+print_scan	印刷・スキャン	働く	働く	宿	flag	紹介文	Google(businessCenter)	△
