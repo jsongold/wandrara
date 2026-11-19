@@ -92,9 +92,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
         className="m-0 mx-auto h-[100dvh] max-h-none w-full max-w-[480px] border-0 bg-transparent p-0 text-white backdrop:bg-black/60"
       >
         {open && group && item && (
-          // 候補ごとに作り直す（閉じる途中の引く動きや待ちを、次の候補に持ち越さない）
           <StoryView
-            key={`${open.g}-${open.i}`}
             group={group}
             item={item}
             pos={open}

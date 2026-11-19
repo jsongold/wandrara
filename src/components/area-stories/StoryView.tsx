@@ -28,7 +28,8 @@ type Props = {
 };
 
 export function StoryView({ group, item, pos, areaLabel, m, closeLabel, sheetOpen, findRef, onClose, onPrev, onNext, onFind, onCloseSheet }: Props) {
-  const { style, attach } = useSwipeDown<HTMLDivElement>(onClose, { enabled: !sheetOpen });
+  // resetKey：閉じる途中で次の候補へ移ったら、その閉じる動きを取り消す（ボタンは作り直さないのでフォーカスは残る）
+  const { style, attach } = useSwipeDown<HTMLDivElement>(onClose, { enabled: !sheetOpen, resetKey: `${pos.g}-${pos.i}` });
   return (
     <div ref={attach} data-testid="area-story" className="relative flex h-full flex-col text-white" style={{ ...colorFill(item.color), ...style }}>
       {item.photo && <ItemPhoto item={item} className="absolute inset-0 h-full w-full" />}

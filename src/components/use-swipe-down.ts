@@ -27,18 +27,22 @@ type Options = {
   enabled?: boolean;
   // 引き始めてよいか（例：中身がいちばん上までスクロールされているときだけ）
   canStart?: (el: HTMLElement) => boolean;
+  // 中身が替わったことを表す値（例：ストーリーの位置）。閉じる途中で替わったら、その閉じる動きと onClose を取り消す
+  resetKey?: unknown;
 };
 
 type Drag = { x: number; y: number; axis: "y" | null; lastY: number; lastT: number; v: number };
 
-export function useSwipeDown<T extends HTMLElement>(onClose: () => void, { enabled = true, canStart }: Options = {}) {
+export function useSwipeDown<T extends HTMLElement>(onClose: () => void, { enabled = true, canStart, resetKey }: Options = {}) {
   const [el, setEl] = useState<T | null>(null);
   const [dy, setDy] = useState(0);
   const [dragging, setDragging] = useState(false);
-  const [closing, setClosing] = useState(false);
-  const latest = useRef({ onClose, enabled, canStart });
+  // 閉じる動きを始めたときの resetKey（{ key } で包む。null は閉じていない）。中身が替わったら閉じる動きは無効になる
+  const [closingFor, setClosingFor] = useState<{ key: unknown } | null>(null);
+  const closing = closingFor !== null && Object.is(closingFor.key, resetKey);
+  const latest = useRef({ onClose, enabled, canStart, resetKey });
   useEffect(() => {
-    latest.current = { onClose, enabled, canStart };
+    latest.current = { onClose, enabled, canStart, resetKey };
   });
 
   useEffect(() => {
@@ -88,14 +92,16 @@ export function useSwipeDown<T extends HTMLElement>(onClose: () => void, { enabl
       if (!d || d.axis !== "y") return;
       suppressUntil = Date.now() + SUPPRESS_MS;
       if (swipeDecision(cur, d.v, performance.now() - d.lastT)) {
+        const key = latest.current.resetKey;
         closingNow = true;
-        setClosing(true);
+        setClosingFor({ key });
+        move(0);
         timer = window.setTimeout(() => {
           timer = undefined;
           closingNow = false;
-          setClosing(false);
-          move(0);
-          latest.current.onClose();
+          setClosingFor(null);
+          // 閉じる途中で中身が替わっていたら閉じない
+          if (Object.is(latest.current.resetKey, key)) latest.current.onClose();
         }, CLOSE_MS);
       } else {
         move(0);
@@ -163,7 +169,7 @@ export function useSwipeDown<T extends HTMLElement>(onClose: () => void, { enabl
       window.removeEventListener("pointercancel", onWindowUp);
       // 閉じる途中で要素が消えたら（Esc で閉じた・別の候補へ移った）、待っている onClose を取り消して戻す
       if (timer !== undefined) window.clearTimeout(timer);
-      setClosing(false);
+      setClosingFor(null);
       setDragging(false);
       setDy(0);
       el.removeEventListener("click", onClick, true);
