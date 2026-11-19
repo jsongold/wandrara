@@ -1,17 +1,19 @@
 // フィードの 1 ページ分を DB（feed_page）から読む（MS2b #109）。buildFeed の「全件を読んでから切り出す」を置き換える。
-// 並び・メイン・関連タイルは buildFeed の既定（order=editorial・primary=by-mode・secondary=related-other-mode）と同じ。
+// 並び・メイン・関連タイルは buildFeed の既定（order=editorial・primary=by-mode・secondary=related-any-kind）と同じ。
 // 環境変数で戦略を差し替えている間は buildFeed を使うこと（この関数は既定の戦略しか持たない）。
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { env, photoUrl, supabase } from "./data";
 import { dedupeRelatedTiles, kindLabelOf, MAX_CARD_PHOTOS, resolveLocalizedText } from "./feed";
 import { messages } from "./i18n/messages";
-import { MODES, otherMode } from "./modes";
+import { MODES } from "./modes";
 import type { DiscoverQuery, FeedCard, FeedPage, Locale, LocalizedText, Photo, Tile } from "./types";
 
 export const FEED_PAGE_SIZE = 12;
 export const FEED_PAGE_MAX = 24;
 const MAX_TILES = 6;
-export const FEED_ALGORITHM = "order=editorial@1 primary=by-mode@1 secondary=related-other-mode@1 paging=keyset@1";
+export const FEED_ALGORITHM = "order=editorial@1 primary=by-mode@2 secondary=related-any-kind@1 paging=keyset@1";
+// 関連タイルは全種類から選ぶ（related-any-kind）
+const ALL_CORE_TYPES: string[] = Object.values(MODES).flat();
 
 // ---- 結果 ----
 
@@ -104,7 +106,7 @@ export async function fetchFeedPage(db: SupabaseClient, baseUrl: string, args: F
 
   const { data, error } = await db.rpc("feed_page", {
     p_core_types: [...MODES[query.mode]],
-    p_related_core_types: [...MODES[otherMode(query.mode)]],
+    p_related_core_types: ALL_CORE_TYPES,
     p_area: query.area,
     p_cat: query.cat,
     p_q: query.q,
@@ -126,7 +128,7 @@ export async function fetchFeedPage(db: SupabaseClient, baseUrl: string, args: F
     title: t(c.name, locale),
     areaLabel: areaLabelOf(c, locale),
     kindLabel: kindLabelOf(c.core_type, locale),
-    relLabel: query.mode === "stay" ? m.relStay : m.relDo,
+    relLabel: m.relNearby,
     photos: c.photos.slice(0, MAX_CARD_PHOTOS).map((p) => toPhoto(baseUrl, p)),
     href: `/${locale}/d/${c.slug}`,
     tiles: tiles[i],

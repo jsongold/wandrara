@@ -25,7 +25,7 @@ describe("fetchFeedPage", () => {
     const { db, rpc } = fake({ cards: [card(1, [10, 11])], has_more: true, total: 1000, total_capped: true });
     const r = await fetchFeedPage(db, "https://x.supabase.co", { ...args, query: { ...DEFAULT_QUERY, area: "tokyo", cat: "onsen", q: "湯" }, limit: 99 });
     expect(rpc).toHaveBeenCalledWith("feed_page", expect.objectContaining({
-      p_core_types: ["accommodation"], p_related_core_types: ["experience", "nature", "village", "building", "hotspring"],
+      p_core_types: ["accommodation"], p_related_core_types: ["accommodation", "experience", "nature", "village", "building", "hotspring"],
       p_area: "tokyo", p_cat: "onsen", p_q: "湯", p_sort: "editorial", p_limit: FEED_PAGE_MAX, p_after_key: null, p_after_id: null, p_with_total: true,
     }));
     expect(r.cards[0]).toMatchObject({
