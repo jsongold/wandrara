@@ -1,9 +1,12 @@
 // 表示の速さと通信量を測る（docs/perf/README.md の MS0、docs/perf/baseline.md に結果）。
 //   pnpm perf                      ローカルで pnpm build → next start --port $PERF_PORT（既定 3127）を立てて測る
 //   pnpm perf https://wandrara.vercel.app   指定の URL を測る（build しない。本番には軽く：1 条件 3 回 + 計測の補助）
-// 環境変数: PERF_RUNS（既定 3）/ PERF_CONDITIONS（既定 "none,slow4g-cpu4x"）/ PERF_OUT（既定 perf-out/result.json）
+// 環境変数: PERF_RUNS（既定 3）/ PERF_CONDITIONS（既定 "none,slow4g-cpu4x"。overseas-emulated も選べる）/ PERF_OUT（既定 perf-out/result.json）
+//           PERF_DPR（既定 2。3 で DPR3）
+//           PERF_ONLY=saveData|tap で Save-Data の初回表示だけ・詳細のタップだけ測る（他を省く）
+//           PERF_REPEAT_DELAY_MS=65000 で、2 回目の訪問の前に待つ（max-age=60 のキャッシュが切れた再訪を測る。既定 0）
 //           PERF_WARMUP=0 で最初の「サーバー・画像 CDN を温める 1 回」を省く / PERF_SKIP_BUILD=1 で build を省く
-// 条件: Chromium・幅 390・DPR 2・モバイル。none = 制限なし、slow4g-cpu4x = 1.6Mbps・RTT 150ms・CPU 4x。
+// 条件: Chromium・幅 390・DPR 2（PERF_DPR で変更）・モバイル。none = 制限なし、slow4g-cpu4x = 1.6Mbps・RTT 150ms・CPU 4x。
 // 1 回 = ブラウザキャッシュ空（cold）の context で 初回表示 → 10 枚スクロール → 2 回目の訪問（warm）。
 //        別の cold context で詳細のタップ、さらに別の cold context で Save-Data の初回表示。
 
@@ -19,13 +22,17 @@ const PATHNAME = "/ja";
 const RUNS = Number(process.env.PERF_RUNS ?? 3);
 const OUT = process.env.PERF_OUT ?? "perf-out/result.json";
 const PORT = Number(process.env.PERF_PORT ?? 3127);
+const DPR = Number(process.env.PERF_DPR ?? 2);
 const SCROLL_CARDS = 10;
+const REPEAT_DELAY_MS = Number(process.env.PERF_REPEAT_DELAY_MS ?? 0);
 const UA = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36";
 
 type Condition = { name: string; net: { latency: number; down: number; up: number } | null; cpu: number };
 const CONDITIONS: Record<string, Condition> = {
   none: { name: "none", net: null, cpu: 1 },
   "slow4g-cpu4x": { name: "slow4g-cpu4x", net: { latency: 150, down: (1.6 * 1024 * 1024) / 8, up: (0.75 * 1024 * 1024) / 8 }, cpu: 4 },
+  // 海外の利用者のエミュレーション（実測ではない）：RTT 200ms・下り 3Mbps・CPU は絞らない。ネットワークの遠さだけを見る
+  "overseas-emulated": { name: "overseas-emulated", net: { latency: 200, down: (3 * 1024 * 1024) / 8, up: (1 * 1024 * 1024) / 8 }, cpu: 1 },
 };
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -49,7 +56,7 @@ const pathOf = (r: Req) => new URL(r.url).pathname + (r.headers["next-router-seg
 
 // ページに CDP をつないで、リクエストをフェーズごとに集める
 async function open(browser: Browser, c: Condition, opts: { saveData?: boolean } = {}) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: UA });
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: DPR, isMobile: true, hasTouch: true, userAgent: UA });
   const page = await context.newPage();
   await page.addInitScript(() => {
     (window as unknown as { __feedAt: number | null }).__feedAt = null;
@@ -127,8 +134,10 @@ async function oneRun(base: string, c: Condition, browser: Browser): Promise<{ f
   const meta: Meta = {};
   const slow = c.net !== null;
 
+  const only = process.env.PERF_ONLY ?? "";
+
   // 1. 初回表示（cold）→ 2. 10 枚スクロール → 3. 2 回目の訪問（warm）
-  {
+  if (!only) {
     const s = await open(browser, c);
     await s.page.goto(base + PATHNAME, { waitUntil: "load", timeout: 120_000 });
     await s.page.waitForSelector("[data-feed] article", { timeout: 120_000 });
@@ -175,6 +184,7 @@ async function oneRun(base: string, c: Condition, browser: Browser): Promise<{ f
     // 詳細の先読み（/d/）が初回〜スクロールで使った転送バイト
     flat["detailPrefetch.bytes"] = [...s.reqs.values()].filter((r) => isPrefetch(r) && /\/d\//.test(r.url)).reduce((a, r) => a + r.bytes, 0);
 
+    if (REPEAT_DELAY_MS > 0) await sleep(REPEAT_DELAY_MS);
     s.setPhase("repeat");
     await s.page.evaluate(() => document.querySelector("[data-feed]")!.scrollTo(0, 0));
     await s.page.goto(base + PATHNAME, { waitUntil: "load", timeout: 120_000 });
@@ -187,7 +197,7 @@ async function oneRun(base: string, c: Condition, browser: Browser): Promise<{ f
   }
 
   // 4. 詳細を開く：cold の context で 1 枚目のカードをタップ（タップから表示まで・転送バイト）
-  {
+  if (!only || only === "tap") {
     const s = await open(browser, c);
     await s.page.goto(base + PATHNAME, { waitUntil: "load", timeout: 120_000 });
     await s.page.waitForSelector("[data-feed] article", { timeout: 120_000 });
@@ -211,7 +221,7 @@ async function oneRun(base: string, c: Condition, browser: Browser): Promise<{ f
   }
 
   // 5. Save-Data の初回表示（cold）
-  {
+  if (!only || only === "saveData") {
     const s = await open(browser, c, { saveData: true });
     await s.page.goto(base + PATHNAME, { waitUntil: "load", timeout: 120_000 });
     await s.page.waitForSelector("[data-feed] article", { timeout: 120_000 });
@@ -318,7 +328,7 @@ async function main() {
     const names = (process.env.PERF_CONDITIONS ?? "none,slow4g-cpu4x").split(",");
     const browser = await chromium.launch();
     const commit = spawnSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).stdout.trim();
-    const result: Record<string, unknown> = { measuredAt: new Date().toISOString(), commit, base, local, runs: RUNS, viewport: "390x844 DPR2 Chromium mobile", scrollCards: SCROLL_CARDS, warmup: process.env.PERF_WARMUP !== "0", counts: await dataCounts() };
+    const result: Record<string, unknown> = { measuredAt: new Date().toISOString(), commit, base, local, runs: RUNS, viewport: `390x844 DPR${DPR} Chromium mobile`, scrollCards: SCROLL_CARDS, warmup: process.env.PERF_WARMUP !== "0", counts: await dataCounts() };
     const conditions: Record<string, { aggregate: Agg; runs: { flat: Flat; meta: Meta }[] }> = {};
     let md = "";
     if (process.env.PERF_WARMUP !== "0") {

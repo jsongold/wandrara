@@ -4,7 +4,7 @@ import type { Locale } from "../types";
 
 const ja = {
   meta: { description: "箱根・伊豆の場所と体験を、写真から見つける。" },
-  common: { close: "閉じる", back: "戻る", loading: "読み込み中", yes: "あり", no: "なし", listSep: "、" },
+  common: { close: "閉じる", back: "戻る", loading: "読み込み中", pageFailed: "表示できませんでした", pageFailedHint: "通信が不安定かもしれません。もう一度お試しください。", retry: "もう一度", yes: "あり", no: "なし", listSep: "、" },
   mode: { stay: "宿", do: "体験" },
   home: {
     demo: "デモ表示",
@@ -67,6 +67,7 @@ const ja = {
       toggleAttribution: "地図の出典を開く・閉じる",
       failed: "地図を読み込めませんでした",
       retry: "もう一度読み込む",
+      load: "地図を読み込む",
       mobileHelp: "2 本指で地図を動かせます",
       windowsHelp: "Ctrl を押しながらスクロールで拡大・縮小",
       macHelp: "⌘ を押しながらスクロールで拡大・縮小",
@@ -86,6 +87,10 @@ const ja = {
   account: {
     title: "アカウント",
     language: "言語",
+    saveData: "通信量を抑える",
+    saveDataOn: "オン",
+    saveDataOff: "オフ",
+    saveDataLocked: "ブラウザのデータセーバーがオンのため、変えられません",
     login: "ログイン",
     fallbackName: "ユーザー",
     viaGoogle: "Google でログイン中",
@@ -446,7 +451,7 @@ const EN_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"
 
 const en: Messages = {
   meta: { description: "Find places and experiences in Hakone and Izu, starting from photos." },
-  common: { close: "Close", back: "Back", loading: "Loading", yes: "Yes", no: "No", listSep: ", " },
+  common: { close: "Close", back: "Back", loading: "Loading", pageFailed: "Couldn't show this page", pageFailedHint: "Your connection may be unstable. Please try again.", retry: "Try again", yes: "Yes", no: "No", listSep: ", " },
   mode: { stay: "Stays", do: "Experiences" },
   home: {
     demo: "Demo",
@@ -508,6 +513,7 @@ const en: Messages = {
       toggleAttribution: "Show or hide map credits",
       failed: "Couldn't load the map",
       retry: "Try again",
+      load: "Load the map",
       mobileHelp: "Use two fingers to move the map",
       windowsHelp: "Use Ctrl + scroll to zoom the map",
       macHelp: "Use ⌘ + scroll to zoom the map",
@@ -527,6 +533,10 @@ const en: Messages = {
   account: {
     title: "Account",
     language: "Language",
+    saveData: "Use less data",
+    saveDataOn: "On",
+    saveDataOff: "Off",
+    saveDataLocked: "Your browser's data saver is on, so this can't be changed",
     login: "Log in",
     fallbackName: "User",
     viaGoogle: "Logged in with Google",
