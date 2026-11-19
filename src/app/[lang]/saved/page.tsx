@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { SavedList } from "@/components/SavedList";
 import { getCurrentUser } from "@/lib/auth/next";
-import { getCatalog } from "@/lib/data";
+import { env, getRegions, photoUrl } from "@/lib/data";
 import { isLocale, withLocale } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
 import { getSavedDests } from "@/lib/saves-server";
@@ -26,7 +26,8 @@ async function Saved({ params }: Pick<PageProps<"/[lang]/saved">, "params">) {
   const user = await getCurrentUser();
   if (!user) redirect(to(`/login?next=${encodeURIComponent(to("/saved"))}`));
 
-  const items = await getSavedDests(await createClient(), await getCatalog(), lang);
+  const { url } = env();
+  const items = await getSavedDests(await createClient(), { regions: await getRegions(), photoBase: (key) => photoUrl(url, key) }, lang);
 
   return (
     <div className="relative mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-[#faf9f6] text-[#171717]">

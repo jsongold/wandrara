@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { areaHighlights } from "@/lib/area-highlights";
@@ -13,18 +11,19 @@ import { saveLastDiscoverUrl } from "@/lib/last-discover";
 import { messages, type Messages } from "@/lib/i18n/messages";
 import { useMessages } from "@/lib/i18n/use-locale";
 import { otherMode } from "@/lib/modes";
-import type { AreaTraits } from "@/lib/area-filter";
-import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, Locale, Photo, SortKey } from "@/lib/types";
+import { areaSheetLoader, IDLE_AREA_SHEET } from "@/lib/area-sheet-client";
+import type { CategoryView, DiscoverQuery, FeedCard, Locale, SortKey } from "@/lib/types";
 import { AccountButton } from "./AccountButton";
 import { AreaMap } from "./AreaMap";
 import { AreaStories } from "./area-stories/AreaStories";
 import { Chip } from "./Chip";
 import { CurrentFilterDisplay } from "./CurrentFilterDisplay";
 import { Icon } from "./icons";
+import { NearbySuggestions } from "./NearbySuggestions";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
 
-type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPageResult; categories: CategoryView[]; areas: AreaGroupView[]; traits?: AreaTraits };
+type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPageResult; categories: CategoryView[]; areaLabel: string | null };
 type Sheet = null | "area" | "filter";
 type AreaView = "list" | "map";
 
@@ -42,35 +41,40 @@ const sorts = (m: Messages): { id: SortKey; label: string }[] => [
   { id: "fresh", label: m.home.sortFresh },
 ];
 
-// 写真が無いときのデモ用の色面（空と地面）
-function placeholderStyle(photo: Photo | null): CSSProperties {
-  const sky = photo?.placeholderSky ?? "#8f9692";
-  const land = photo?.placeholderLand ?? "#2e322f";
-  return { background: `linear-gradient(180deg, ${sky} 0%, ${sky} 56%, ${land} 56%, ${land} 100%)` };
-}
-
 // トップのテキスト入力とフィルター。今は Off
 const SHOW_SEARCH_AND_FILTER = false;
 
-function areaName(areas: AreaGroupView[], id: string, all: string): string {
-  if (id === "all") return all;
-  for (const g of areas) {
-    if (g.id === id) return g.label;
-    const sub = g.subs.find((s) => s.id === id);
-    if (sub) return sub.label;
-  }
-  return all;
-}
-
-export function HomeScreen({ locale, query, feed, categories, areas, traits }: Props) {
+// areaLabel：今のエリアの名前（サーバーが渡す。「すべてのエリア」・知らない id は null）。エリアの一覧・地図に要る地域と特性は、シートを開いたときに取る（MS2c）
+export function HomeScreen({ locale, query, feed, categories, areaLabel }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [sheet, setSheet] = useState<Sheet>(null);
   const [areaView, setAreaView] = useState<AreaView>("list");
   const m = messages(locale);
   const feedRef = useRef<HTMLDivElement>(null);
+  // エリア選択シートのデータ（シートを開く・ボタンに触れた時点で取り始める）
+  const areaSheet = useSyncExternalStore(areaSheetLoader.subscribe, () => areaSheetLoader.get(locale), () => IDLE_AREA_SHEET);
+  const areaData = areaSheet.status === "ready" ? areaSheet.data : null;
+  const loadAreaSheet = () => areaSheetLoader.load(locale);
+  // 最初の表示が落ち着いたら先に取っておく（開く待ちを無くす。通信量を節約したい利用者（Save-Data）には先読みしない。その場合は触れた時点で取る）
+  useEffect(() => {
+    if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    const load = () => areaSheetLoader.load(locale);
+    // requestIdleCallback は Safari に無いので、その場合は少し待ってから
+    const w: { requestIdleCallback?: typeof window.requestIdleCallback; cancelIdleCallback?: typeof window.cancelIdleCallback } = window;
+    if (w.requestIdleCallback && w.cancelIdleCallback) {
+      const id = w.requestIdleCallback(load, { timeout: 4000 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const id = setTimeout(load, 2000);
+    return () => clearTimeout(id);
+  }, [locale]);
   // 地図の絞り込みで、子に合うものがあれば親も残すための親子
-  const parentOf = useMemo(() => Object.fromEntries(areas.flatMap((g) => [[g.id, null], ...g.subs.map((s) => [s.id, g.id])])) as Record<string, string | null>, [areas]);
+  const parentOf = useMemo(
+    () => Object.fromEntries((areaData?.areas ?? []).flatMap((g) => [[g.id, null], ...g.subs.map((s) => [s.id, g.id])])) as Record<string, string | null>,
+    [areaData],
+  );
+  const labelById = useMemo(() => new Map((areaData?.areas ?? []).flatMap((g) => [[g.id, g.label], ...g.subs.map((x) => [x.id, x.label] as const)] as [string, string][])), [areaData]);
   const queryKey = serializeDiscoverQuery(query, locale);
   // 一覧の同一性：条件に加えて、サーバーが渡した最初のカード（?after= の続きから開いた・先頭に戻った、でも作り直す）
   const feedKey = `${queryKey}|${feed.cards[0]?.destId ?? ""}`;
@@ -115,7 +119,7 @@ export function HomeScreen({ locale, query, feed, categories, areas, traits }: P
 
   const isStay = query.mode === "stay";
   const allCats: CategoryView[] = [{ id: "all", label: m.home.allCats, icon: "grid" }, ...categories];
-  const currentArea = areaName(areas, query.area, m.home.allAreas);
+  const currentArea = areaLabel ?? m.home.allAreas;
 
   return (
     <div data-home className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
@@ -186,7 +190,13 @@ export function HomeScreen({ locale, query, feed, categories, areas, traits }: P
           <nav aria-label={m.home.navLabel} className="flex min-w-0 flex-auto items-center gap-1.5">
             <button
               type="button"
-              onClick={() => setSheet("area")}
+              onClick={() => {
+                loadAreaSheet();
+                setSheet("area");
+              }}
+              // 押す前（触れた・フォーカスした）に取り始める。押した時点では取得中か取得済みになる
+              onPointerDown={loadAreaSheet}
+              onFocus={loadAreaSheet}
               aria-label={m.home.chooseAreaNow(currentArea)}
               title={currentArea}
               className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl"
@@ -279,17 +289,23 @@ export function HomeScreen({ locale, query, feed, categories, areas, traits }: P
           <div className="flex flex-wrap gap-x-5">
             <Chip on={query.area === "all"} onClick={() => { go({ area: "all" }); setSheet(null); }}>{m.home.allAreasChip}</Chip>
           </div>
-          {areaView === "map" && (
+          {areaSheet.status === "error" && (
+            <button type="button" onClick={loadAreaSheet} className="h-11 cursor-pointer self-start rounded-xl border border-white/40 bg-transparent px-[18px] text-sm text-white">
+              {m.home.moreFailed}
+            </button>
+          )}
+          {areaSheet.status !== "ready" && areaSheet.status !== "error" && <p role="status" className="m-0 text-[13px] text-white/70">{m.common.loading}</p>}
+          {areaData && areaView === "map" && (
             <AreaMap
               current={query.area}
-              labelOf={(id) => areaName(areas, id, id)}
+              labelOf={(id) => labelById.get(id) ?? id}
               parentOf={parentOf}
-              traits={traits}
+              traits={areaData.traits}
               // 地図では選んでもシートを閉じない（続けて寄ったり選び直したりできる）
               onSelect={(id) => go({ area: id })}
             />
           )}
-          {areaView === "list" && areas.map((g) => (
+          {areaData && areaView === "list" && areaData.areas.map((g) => (
             <div key={g.id} className="flex flex-col gap-2.5">
               <h3 className="m-0 text-[13px] font-semibold text-white/85">{g.label}</h3>
               <div className="flex flex-wrap gap-x-5">
@@ -437,27 +453,7 @@ function FeedCardView({ card, position, track }: { card: FeedCard; position: num
           <span className="text-[13px] text-white/90">{card.areaLabel}</span>
         </span>
       </PhotoCarousel>
-      {card.tiles.length > 0 && (
-        <section className="flex flex-col gap-2.5 px-3 pb-7 pt-3.5">
-          <h2 className="m-0 text-xs font-semibold tracking-[0.04em] text-white/75">{card.relLabel}</h2>
-          {/* 横にスワイプして送る。3 枚目が少し覗く幅にして続きがあると分かるようにする */}
-          <div className="-mx-3 flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-3 px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {card.tiles.map((t, ti) => (
-              <Link key={t.destId} href={t.href} prefetch={true} data-tile-dest-id={t.destId} data-tile-position={ti} className="flex w-[38%] shrink-0 snap-start flex-col gap-1.5 text-white no-underline">
-                {t.photo?.url && !t.photo.isDemo ? (
-                  <Image src={t.photo.url} alt="" width={640} height={640} sizes="(max-width: 480px) 38vw, 182px" className="block aspect-square h-auto w-full rounded-[10px] object-cover" />
-                ) : (
-                  <span className="block aspect-square w-full rounded-[10px]" style={placeholderStyle(t.photo)} />
-                )}
-                <span className="flex flex-col gap-0.5">
-                  <span className="text-xs leading-[1.4]">{t.label}</span>
-                  {t.sub && <span className="text-[11px] text-white/70">{t.sub}</span>}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <NearbySuggestions title={card.relLabel} tiles={card.tiles} />
     </article>
   );
 }

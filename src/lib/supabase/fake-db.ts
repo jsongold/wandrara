@@ -1,4 +1,4 @@
-// テスト用の Supabase の代わり。from(table).select().order()….range() だけ持つ。
+// テスト用の Supabase の代わり。from(table).select().order()….range() と、.in(column, values) を await する形だけ持つ。
 // 本物と同じく、range が大きくても 1 回に返すのは maxRows まで（黙って切る）。failAtFrom 以降のページはエラーを返す
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -12,8 +12,15 @@ export function fakeDb(
   const maxRows = opts.maxRows ?? 1000;
   const from = (table: string) => {
     const orders: { column: string; ascending: boolean }[] = [];
+    let inFilter: { column: string; values: unknown[] } | null = null;
     const q = {
       select: () => q,
+      in: (column: string, values: unknown[]) => ((inFilter = { column, values }), q),
+      // range なしで await したとき（.in で絞った 1 回の取得）
+      then: (res: (v: unknown) => unknown) => {
+        const rows = (tables[table] ?? []).filter((r) => !inFilter || inFilter.values.includes(r[inFilter.column]));
+        return Promise.resolve(opts.failAtFrom === -1 ? { data: null, error: { message: "page failed" } } : { data: rows, error: null }).then(res);
+      },
       order: (column: string, o: { ascending: boolean }) => (orders.push({ column, ascending: o.ascending }), q),
       range: async (a: number, b: number) => {
         ranges.push([a, b]);
