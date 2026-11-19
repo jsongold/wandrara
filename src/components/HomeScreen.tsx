@@ -109,13 +109,16 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
   // 記録の送り先（/api/feed/events）。画面にいる間だけつなぐ
   useEffect(() => installFeedEventBeacon(setFeedEventSink), []);
 
-  // 表示とクリックの記録。どの並べ方（feed.algorithm）で出したかを毎回付ける
+  // 表示とクリックの記録。どの並べ方（feed.algorithm）で出したかを毎回付ける。
+  // 続きの取得で並べ方が変わったカード（FeedList の pager が取り直したもの）は、その並べ方を渡して付ける
   const { algorithm } = feed;
   const { mode, sort, area, cat, q } = query;
   const track = useCallback(
-    (e: FeedEvent) => trackFeedEvent({ algorithm, mode, sort, area, cat, q }, e),
+    (e: FeedEvent, algo?: string) => trackFeedEvent({ algorithm: algo ?? algorithm, mode, sort, area, cat, q }, e),
     [algorithm, mode, sort, area, cat, q],
   );
+  // 並べ方が変わったら、サーバーの描画を取り直す（FeedList から呼ぶ。同じ関数を保ち、取り直しの間に何度も呼ばない）
+  const refreshFeed = useCallback(() => router.refresh(), [router]);
   // 最初に出した枚数と総件数（続きを読んでも、この表示の feed_view は 1 回）
   const count = feed.cards.length;
   const { total, totalIsLowerBound } = feed;
@@ -155,7 +158,7 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
       >
-        <FeedList key={feedKey} feed={feed} query={query} locale={locale} track={track} />
+        <FeedList key={feedKey} feed={feed} query={query} locale={locale} track={track} onAlgorithmChange={refreshFeed} />
         {feed.cards.length === 0 && (
           <div className="flex flex-col items-center gap-3.5 px-8 pt-[180px] text-center">
             <Icon name="search" size={40} />
@@ -369,11 +372,20 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
 // 最初のページはサーバーが渡し、終わりに近づいたら /api/feed で続きを足す（FeedPager）。条件が変わると key で作り直し、進行中の取得は止める。
 // 続きの枠は overflow-anchor: none（入った分だけブラウザが位置を補正すると、スクロールが送られて次の取得が連鎖する）。
 // 続きのリンクは検索エンジンがたどる普通の <a>（?after=cursor）。JS が動くときは押すと loadMore になり、失敗したときの再試行も兼ねる
-function FeedList({ feed, query, locale, track }: { feed: FeedPageResult; query: DiscoverQuery; locale: Locale; track: (e: FeedEvent) => void }) {
+// 並べ方の切り替え（deploy）で続きの取得が先頭から取り直し、並べ方が変わったら、記録にはその並べ方を付け、
+// 画面全体（並びのラベルなど）はサーバーの描画を取り直してそろえる（onAlgorithmChange）
+function FeedList({ feed, query, locale, track, onAlgorithmChange }: {
+  feed: FeedPageResult; query: DiscoverQuery; locale: Locale; track: (e: FeedEvent, algo?: string) => void; onAlgorithmChange: () => void;
+}) {
   const m = messages(locale);
   const [pager] = useState(() => new FeedPager(feed, apiFetchPage(query, locale)));
   useEffect(() => () => pager.dispose(), [pager]);
   const s = useSyncExternalStore(pager.subscribe, pager.getSnapshot, pager.getSnapshot);
+  const trackHere = useCallback((e: FeedEvent) => track(e, s.algorithm), [track, s.algorithm]);
+  const changed = s.algorithm !== feed.algorithm;
+  useEffect(() => {
+    if (changed) onAlgorithmChange();
+  }, [changed, onAlgorithmChange]);
   const sentinel = useRef<HTMLDivElement>(null);
   const idle = s.status === "idle";
 
@@ -394,7 +406,7 @@ function FeedList({ feed, query, locale, track }: { feed: FeedPageResult; query:
   return (
     <>
       {s.cards.map((card, i) => (
-        <FeedCardView key={card.key} card={card} position={i} track={track} />
+        <FeedCardView key={card.key} card={card} position={i} track={trackHere} />
       ))}
       {s.nextCursor && (
         <div ref={sentinel} className="flex flex-col items-center gap-1 px-4 pb-6 pt-2 text-center text-[13px] text-white/80 [overflow-anchor:none]">

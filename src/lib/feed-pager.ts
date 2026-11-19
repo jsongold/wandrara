@@ -13,6 +13,8 @@ export type PagerState = {
   status: "idle" | "loading" | "error";
   total: number | null;
   totalIsLowerBound: boolean;
+  // 今出しているカードの並べ方。409 で取り直したときに、サーバーの新しい並べ方に変わることがある
+  algorithm: string;
 };
 
 // cursor が null なら先頭ページ
@@ -61,6 +63,7 @@ export class FeedPager {
       status: "idle",
       total: initial.total,
       totalIsLowerBound: initial.totalIsLowerBound,
+      algorithm: initial.algorithm,
     };
     this.retries = opts.retries ?? DEFAULT_RETRIES;
     this.backoff = opts.backoffMs ?? DEFAULT_BACKOFF;
@@ -117,7 +120,7 @@ export class FeedPager {
         queryKey: res.queryKey,
         nextCursor: res.nextCursor,
         status: "idle",
-        ...(restarted ? { total: res.total, totalIsLowerBound: res.totalIsLowerBound } : {}),
+        ...(restarted ? { total: res.total, totalIsLowerBound: res.totalIsLowerBound, algorithm: res.algorithm } : {}),
       });
     } catch {
       if (current()) this.set({ status: "error" });
