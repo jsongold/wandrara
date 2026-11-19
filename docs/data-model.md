@@ -130,7 +130,8 @@ publications          dest_id・状態・公開日時・承認者
 regions               箱根・伊豆などの範囲（自治体コードも）
 categories            分類（親子を持つ）
 語彙                   設備（中カテゴリ → 小カテゴリの 2 段）・風呂の種類・料金の種類など。表にせず、コードに一覧を 1 つ置く。details の zod・表示名・OTA や Google のコードへの対応が同じ一覧を見る
-languages・currencies・fx_rates（まだ作っていない）
+languages             訳文を持てる言語の正本（tag：ja・en・zh-Hant など）。*_texts.lang と users.locale が外部キーで指す
+currencies・fx_rates（まだ作っていない）
 ```
 
 ### 投入
@@ -149,7 +150,16 @@ dest_imports          投入された入力の原本（出典・確認の状態�
 - **形を変えるとき**：zod を直し、投入の原本（dest_imports）から作り直す。migration は表の列を変えるときだけ
 - **項目が無いとき**：欄を書かない（JSON にキーが無い）。分かっている値は、その型（false・0 など）で持つ
 - **公開**：コアの列には持たせず、publications で持つ
-- **翻訳**：名前・紹介・住所はコアごとの *_texts に、列と型を保ったまま持つ。details の中の文（注意点・メモなど）は LocalizedText（`{"ja": "...", "en": "..."}`）
+- **翻訳**：名前・紹介・住所はコアごとの *_texts に、列と型を保ったまま持つ。details の中の文（注意点・メモなど）、地域・分類の名前、写真の alt は LocalizedText（`{"ja": "...", "en": "..."}`）。型・zod・表示での選び方は `src/lib/i18n/localized.ts` 1 か所
+- **言語は 3 種類**
+  - 訳文の言語：languages 表が正本。足すのは 1 行の insert で、デプロイは要らない。使われている言語は外部キー（restrict）で消せない
+  - 画面の言語：`src/lib/i18n/locale.ts` の LOCALES（ja / en）。languages の一部。画面の文言を訳すにはコードを変えるので、コードに持つ
+  - 案内言語：体験のガイドが話せる言語（details の courses[].languages）。値は languages のタグ。画面の言語とは関係ない
+- **言語タグの形**：BCP 47 の 言語[-文字][-地域]（ja・en・zh-Hant・pt-BR）。大文字小文字はこの形にそろえる（languages_tag_check）
+- **言語を確かめる場所**：*_texts.lang と users.locale は DB の外部キー。jsonb のキーと案内言語は、取り込み（registerDest）が languages 表と照らし、無ければ 400。DB に jsonb のキーを照らす check や trigger は作らない（languages を変えても確かめ直されないため）
+- **表示の言語の選び方**：要求した言語 → ja → en → ある言語のどれか。空の文は訳が無いものとして飛ばす
+- **取り込みは全部入れ直す**：dest_apply はその dest の行を全部消して入れ直し、公開を draft に戻す。1 つの言語だけ送ると、ほかの言語は消える。送るときは全部の言語を入れる
+- **辞書は migration と seed で管理する**：取り込みは regions・categories を作り直さない（on conflict do nothing）。名前や訳を直すのは migration か seed
 - **何でも入る形にしない**：field_name / text の形（EAV）にはしない。details は欄と型が zod で決まっているので、これに当たらない
 - **近さ**：コアの位置から計算する。テーブルには持たない
 - **spot という語は使わない**
