@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSaveDataHeader, readSaveData, saveDataCookie, saveDataOfRequest } from "./save-data";
+import { cookieSaveData, isSaveDataHeader, readSaveData, saveDataCookie, saveDataOfRequest } from "./save-data";
 
 describe("Save-Data", () => {
   it("リクエストヘッダは on のときだけ有効", () => {
@@ -24,6 +24,11 @@ describe("Save-Data", () => {
     expect(readSaveData({ connection: undefined, cookie: "savedata=1" })).toBe(true);
     expect(readSaveData({ connection: undefined, cookie: "savedata=0; x=savedata=1" })).toBe(false);
     expect(readSaveData({ connection: undefined, cookie: "mysavedata=1" })).toBe(false);
+  });
+
+  it("スイッチは本人の cookie だけを読む（ブラウザの設定とは別）", () => {
+    expect(cookieSaveData("savedata=1")).toBe(true);
+    expect(cookieSaveData("a=b")).toBe(false);
   });
 
   it("cookie は付ける・消すの 2 通り", () => {

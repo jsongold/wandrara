@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useMessages } from "@/lib/i18n/use-locale";
 import { imageQuality } from "@/lib/save-data";
-import { useSaveData, useSaveDataHint, useSaveDataSettled } from "@/lib/use-save-data";
+import { useHydrated, useSaveData, useSaveDataHint } from "@/lib/use-save-data";
 import type { Photo } from "@/lib/types";
 import { Icon } from "./icons";
 
@@ -56,8 +56,9 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
   // 通信量を抑える（Save-Data）：詳細の先読みと、今の写真の前後 1 枚の先読みをしない（今の写真だけ。スワイプで止まったら読む）。画質も下げる
   const saveData = useSaveData();
   const hint = useSaveDataHint(); // 画質はサーバーの HTML と揃える（詳細のようにサーバーが Save-Data を知らないページでは下げない）
-  const settled = useSaveDataSettled();
-  const reach = saveData || !settled ? 0 : 1;
+  // 前後 1 枚は水和のあとに出す（サーバーの HTML に入れると、Save-Data かどうかが分かる前にブラウザが取ってしまう）
+  const hydrated = useHydrated();
+  const reach = saveData || !hydrated ? 0 : 1;
   const scroller = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
   // スワイプ（指が動いた・ブラウザがスクロールに切り替えた）の後はタップとして扱わない

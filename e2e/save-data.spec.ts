@@ -109,11 +109,22 @@ test.describe("Save-Data に対応しないブラウザ（cookie で選ぶ）", 
   });
 });
 
-// サーバーが Save-Data を知らない静的な詳細ページ：水和の前にブラウザが前後 1 枚を取ってしまわないよう、サーバーの HTML には 1 枚目だけを入れる
-test("詳細のサーバー描画（HTML）には 1 枚目の写真だけ入る", async ({ page, request }) => {
-  const html = await (await request.get(await detailPath(page))).text();
-  expect(html).toContain('data-index="0"');
-  expect(html).not.toContain('data-index="1"');
+// 水和の前にブラウザが前後 1 枚を取ってしまわないよう（Save-Data かどうかはクライアントの値が決め手）、サーバーの HTML には 1 枚目だけを入れる
+test("サーバー描画（HTML）には、トップのカードも詳細も 1 枚目の写真だけ入る", async ({ page, request }) => {
+  for (const path of ["/ja", await detailPath(page)]) {
+    const html = await (await request.get(path)).text();
+    expect(html).toContain('data-index="0"');
+    expect(html).not.toContain('data-index="1"');
+  }
+});
+
+test("ブラウザのデータセーバーがオンのときは、スイッチは固定（オン・押せない）", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "WebKit は navigator.connection を持たない");
+  await forceConnectionSaveData(page);
+  await page.goto("/ja/login");
+  const sw = page.getByTestId("save-data-switch").first();
+  await expect(sw).toHaveAttribute("aria-checked", "true");
+  await expect(sw).toBeDisabled();
 });
 
 test.describe("Save-Data なし（通常の利用者は変わらない）", () => {

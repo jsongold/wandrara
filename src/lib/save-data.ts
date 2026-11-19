@@ -19,7 +19,12 @@ export type SaveDataEnv = { connection?: ConnectionLike; cookie: string };
 
 // クライアント：navigator.connection.saveData か cookie（Safari・Firefox は connection を持たない）
 export function readSaveData(env: SaveDataEnv): boolean {
-  return env.connection?.saveData === true || new RegExp(`(?:^|;\\s*)${SAVE_DATA_COOKIE}=1(?:;|$)`).test(env.cookie);
+  return env.connection?.saveData === true || cookieSaveData(env.cookie);
+}
+
+// 本人が選んだ設定（cookie）だけ。ブラウザの設定（connection）とは別に読む（スイッチが自分の分だけを切り替えるため）
+export function cookieSaveData(cookie: string): boolean {
+  return new RegExp(`(?:^|;\\s*)${SAVE_DATA_COOKIE}=1(?:;|$)`).test(cookie);
 }
 
 // 写真の画質。抑えるときは下げる（next.config.ts の images.qualities に両方を載せる。載せない値は近い値に丸められる）
