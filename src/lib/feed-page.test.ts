@@ -85,7 +85,7 @@ describe("fetchFeedPage", () => {
     expect(stories(await fetchFeedPage(fake({ cards: [at(3, "atami", "熱海")], has_more: false, total: null, total_capped: false }).db, "u", { ...args, cursor: q1.nextCursor }))).toEqual([[]]);
   });
 
-  it("地区の id が無い行（migration 20261119120000 の前の DB）では出さない", async () => {
+  it("地区の id が無い行（migration 20261119140000 の前の DB）では出さない", async () => {
     const r = await fetchFeedPage(fake({ cards: [card(1, [10])], has_more: false, total: 1, total_capped: false }).db, "u", args);
     expect(stories(r)).toEqual([[]]);
   });
@@ -115,6 +115,65 @@ describe("cursor", () => {
   });
   it("-infinity（公開日なし）の cursor を受け付ける", () => {
     expect(decodeCursor(encodeCursor({ ...good, k: "-infinity" }), key).k).toBe("-infinity");
+  });
+});
+
+describe("点数の順（#156）", () => {
+  const plan = { order: "score" as const, algorithm: "order=score@1 primary=by-mode@2 secondary=related-any-kind@1 paging=keyset@1" };
+  const scored = (n: number, score: string) => ({ ...card(n, []), sort_key: score });
+
+  it("p_sort=score で呼び、続きは p_after_score に数で渡す。ラベルと algorithm は点数の順", async () => {
+    const first = fake({ cards: [scored(1, "0.9"), scored(2, "0.25")], has_more: true, total: 3, total_capped: false });
+    const p1 = await fetchFeedPage(first.db, "u", { ...args, limit: 2, plan });
+    expect(first.rpc).toHaveBeenCalledWith("feed_page", expect.objectContaining({ p_sort: "score", p_after_key: null, p_after_score: null }));
+    expect(p1.orderLabel).toBe("おすすめ順");
+    expect(p1.algorithm).toBe(`${plan.algorithm} carousel=stories-first-once@1`);
+
+    const second = fake({ cards: [scored(3, "1e-05")], has_more: false, total: null, total_capped: false });
+    await fetchFeedPage(second.db, "u", { ...args, cursor: p1.nextCursor, plan });
+    expect(second.rpc).toHaveBeenCalledWith("feed_page", expect.objectContaining({ p_sort: "score", p_after_key: null, p_after_score: 0.25, p_after_id: id(2) }));
+  });
+
+  it("新着順は戦略によらず作成日の順", async () => {
+    const { db, rpc } = fake({ cards: [], has_more: false, total: 0, total_capped: false });
+    const r = await fetchFeedPage(db, "u", { ...args, query: { ...DEFAULT_QUERY, sort: "fresh" }, plan });
+    expect(rpc).toHaveBeenCalledWith("feed_page", expect.objectContaining({ p_sort: "fresh", p_after_score: null }));
+    expect(r.orderLabel).toBe("新着順");
+  });
+
+  const codeOf = async (p: Promise<unknown>) => p.then(() => null, (e) => (e as FeedCursorError).code);
+
+  it("並べ方を切り替えた直後の古い cursor は、どちら向きでも query-mismatch（409 で先頭から取り直させる）", async () => {
+    const editorialCursor = encodeCursor({ v: 1, q: feedQueryKey(DEFAULT_QUERY, "ja"), k: "2026-01-01T00:00:00+00:00", i: id(1), p: [] });
+    expect(await codeOf(fetchFeedPage(fake({}).db, "u", { ...args, cursor: editorialCursor, plan }))).toBe("query-mismatch");
+    const scoreCursor = encodeCursor({ v: 1, q: feedQueryKey(DEFAULT_QUERY, "ja", "score"), k: "0.25", i: id(1), p: [] });
+    expect(await codeOf(fetchFeedPage(fake({}).db, "u", { ...args, cursor: scoreCursor }))).toBe("query-mismatch");
+  });
+
+  it("同じ条件で並びの値の形が違うものは invalid", () => {
+    const scoreKey = feedQueryKey(DEFAULT_QUERY, "ja", "score");
+    expect(() => decodeCursor(encodeCursor({ v: 1, q: scoreKey, k: "2026-01-01T00:00:00+00:00", i: id(1), p: [] }), scoreKey, "score")).toThrow(
+      expect.objectContaining({ code: "invalid" }),
+    );
+  });
+});
+
+describe("dbFeedPlan", () => {
+  it("並びが editorial か score で、メイン・関連タイルが既定なら DB 版", async () => {
+    const { loadFeedStrategies } = await import("./feed-config");
+    const { dbFeedPlan } = await import("./feed-page");
+    expect(dbFeedPlan(loadFeedStrategies({}))?.order).toBe("editorial");
+    expect(dbFeedPlan(loadFeedStrategies({ order: "score" }))).toEqual({
+      order: "score", algorithm: "order=score@1 primary=by-mode@2 secondary=related-any-kind@1 paging=keyset@1",
+    });
+  });
+
+  it("関連タイルを差し替えているときは点数の順を選べず、編集部の順の全件版になる", async () => {
+    const { loadFeedStrategies } = await import("./feed-config");
+    const { dbFeedPlan } = await import("./feed-page");
+    const s = loadFeedStrategies({ order: "score", secondary: "related-other-mode" });
+    expect(s.id.startsWith("order=editorial@1 ")).toBe(true);
+    expect(dbFeedPlan(s)).toBeNull();
   });
 });
 

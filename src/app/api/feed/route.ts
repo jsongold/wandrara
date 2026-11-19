@@ -5,7 +5,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { parseDiscoverQuery } from "@/lib/discover-query";
 import { loadFeedStrategies } from "@/lib/feed-config";
-import { dbFeedApplies, FEED_UI_PAGE, FeedCursorError, getFeedPage } from "@/lib/feed-page";
+import { dbFeedPlan, FEED_UI_PAGE, FeedCursorError, getFeedPage } from "@/lib/feed-page";
 import { isLocale } from "@/lib/i18n/locale";
 
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -16,10 +16,11 @@ export async function GET(req: NextRequest) {
   const locale = sp.get("lang");
   if (!isLocale(locale)) return NextResponse.json({ error: "lang" }, { status: 400, headers: NO_STORE });
   // 戦略を差し替えている間は全件版（buildFeed）でトップを出していて、続きは無い
-  if (!dbFeedApplies(loadFeedStrategies())) return NextResponse.json({ error: "paging-disabled" }, { status: 404, headers: NO_STORE });
+  const plan = dbFeedPlan(loadFeedStrategies());
+  if (!plan) return NextResponse.json({ error: "paging-disabled" }, { status: 404, headers: NO_STORE });
   const query = parseDiscoverQuery(Object.fromEntries(sp));
   try {
-    const page = await getFeedPage({ query, locale, cursor: sp.get("cursor"), limit: FEED_UI_PAGE });
+    const page = await getFeedPage({ query, locale, cursor: sp.get("cursor"), limit: FEED_UI_PAGE, plan });
     return NextResponse.json(page, { headers: query.q ? NO_STORE : CDN_30S });
   } catch (e) {
     if (e instanceof FeedCursorError) {

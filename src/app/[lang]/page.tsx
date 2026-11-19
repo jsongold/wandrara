@@ -5,7 +5,7 @@ import { getCatalog, getRegions, listCategories } from "@/lib/data";
 import { parseDiscoverQuery } from "@/lib/discover-query";
 import { buildFeed } from "@/lib/feed";
 import { loadFeedStrategies } from "@/lib/feed-config";
-import { dbFeedApplies, FEED_UI_PAGE, FeedCursorError, feedQueryKey, getFeedPage, type FeedPageResult } from "@/lib/feed-page";
+import { dbFeedPlan, FEED_UI_PAGE, FeedCursorError, feedQueryKey, getFeedPage, type FeedPageResult } from "@/lib/feed-page";
 import { isLocale } from "@/lib/i18n/locale";
 import type { DiscoverQuery, Locale } from "@/lib/types";
 import { orFallback } from "@/lib/degrade";
@@ -28,14 +28,15 @@ export default function Home(props: PageProps<"/[lang]">) {
 // その状態になったら、差し替えた戦略の DB 版を作る（feed_page を拡張する）か、差し替えを外す
 async function firstPage(query: DiscoverQuery, locale: Locale, after: string | undefined): Promise<FeedPageResult> {
   const strategies = loadFeedStrategies();
-  if (!dbFeedApplies(strategies)) {
+  const plan = dbFeedPlan(strategies);
+  if (!plan) {
     const feed = buildFeed({ catalog: await getCatalog(), query, locale }, strategies);
     return { ...feed, queryKey: feedQueryKey(query, locale), nextCursor: null, total: feed.cards.length, totalIsLowerBound: false };
   }
   try {
-    return await getFeedPage({ query, locale, cursor: after, limit: FEED_UI_PAGE });
+    return await getFeedPage({ query, locale, cursor: after, limit: FEED_UI_PAGE, plan });
   } catch (e) {
-    if (e instanceof FeedCursorError) return getFeedPage({ query, locale, limit: FEED_UI_PAGE });
+    if (e instanceof FeedCursorError) return getFeedPage({ query, locale, limit: FEED_UI_PAGE, plan });
     throw e;
   }
 }
