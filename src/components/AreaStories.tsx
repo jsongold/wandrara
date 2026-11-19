@@ -279,7 +279,7 @@ function PeekShops({ item, m }: { item: HighlightItem; m: HM }) {
         {item.season && <span className="rounded-full bg-white/[0.08] px-2.5 py-1 text-[11px]">{m.season(item.season.from, item.season.to)}</span>}
         <span className="text-xs text-white/75">{item.note}</span>
       </div>
-      <ul className="m-0 flex list-none flex-col gap-2.5 p-0" data-testid="area-story-shops">
+      <ul className="m-0 flex list-none flex-col gap-5 p-0 pt-1" data-testid="area-story-shops">
         {item.offers.map((o) => (
           <OfferRow key={o.shopId} o={o} m={m} />
         ))}
@@ -299,7 +299,7 @@ function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
   const when = [o.hours, o.closed && m.closedOn(o.closed)].filter(Boolean).join(" · ");
   const pill = "flex h-8 items-center gap-1 rounded-full px-3 text-xs font-semibold no-underline";
   return (
-    <li className="flex gap-3 rounded-2xl bg-white/[0.06] p-3">
+    <li className="flex gap-3">
       <ShopThumbs o={o} />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex min-w-0 flex-col gap-0.5">
