@@ -26,19 +26,11 @@ describe("collectLanguages", () => {
 });
 
 describe("resolveLocalizedText", () => {
-  it("要求した言語があればそれ", () => {
-    expect(resolveLocalizedText({ ja: "宿", en: "Stay" }, "en")).toEqual({ text: "Stay", lang: "en", fallback: false });
+  it("要求した言語の文を出す", () => {
+    expect(resolveLocalizedText({ ja: "宿", en: "Stay" }, "en")).toEqual({ text: "Stay" });
   });
-  it("無ければ ja → en → ある言語のどれか", () => {
-    expect(resolveLocalizedText({ ja: "宿", en: "Stay" }, "fr")).toEqual({ text: "宿", lang: "ja", fallback: true });
-    expect(resolveLocalizedText({ en: "Stay" }, "ja")).toEqual({ text: "Stay", lang: "en", fallback: true });
-    expect(resolveLocalizedText({ de: "Haus" }, "ja")).toEqual({ text: "Haus", lang: "de", fallback: true });
-  });
-  it("空の文は訳が無いものとして飛ばす", () => {
-    expect(resolveLocalizedText({ ja: "", en: "Stay" }, "ja")).toEqual({ text: "Stay", lang: "en", fallback: true });
-    expect(resolveLocalizedText({ ja: " " }, "ja")).toEqual({ text: "", lang: null, fallback: false });
-  });
-  it("null は空", () => {
-    expect(resolveLocalizedText(null, "ja")).toEqual({ text: "", lang: null, fallback: false });
+  it("要求した言語が無ければ空（別の言語では出さない）", () => {
+    expect(resolveLocalizedText({ ja: "宿" }, "en")).toEqual({ text: "" });
+    expect(resolveLocalizedText(null, "ja")).toEqual({ text: "" });
   });
 });

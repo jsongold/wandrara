@@ -35,15 +35,8 @@ export function collectLanguages<T>(run: () => T): { result: T; languages: Set<s
   }
 }
 
-/** 表示に使う文を選ぶ。要求した言語 → ja → en → ある言語のどれか の順。空の文は訳が無いものとして飛ばす */
-export function resolveLocalizedText(
-  text: LocalizedText | null | undefined,
-  locale: string,
-): { text: string; lang: string | null; fallback: boolean } {
-  if (!text) return { text: "", lang: null, fallback: false };
-  for (const lang of [locale, "ja", "en", ...Object.keys(text)]) {
-    const v = text[lang];
-    if (typeof v === "string" && v.trim() !== "") return { text: v, lang, fallback: lang !== locale };
-  }
-  return { text: "", lang: null, fallback: false };
+/** 表示に使う文。要求した言語の文だけを出し、無ければ空。別の言語では出さない
+ *  （訳は取り込みの前に済ませ、そろっているかは Review で確かめる。Push → Pipeline → Review → Publish） */
+export function resolveLocalizedText(text: LocalizedText | null | undefined, locale: string): { text: string } {
+  return { text: text?.[locale] ?? "" };
 }

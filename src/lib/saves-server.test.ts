@@ -71,8 +71,8 @@ describe("getSavedDests", () => {
     ]);
     const en = await getSavedDests(db, catalog, "en");
     expect(en[0]).toMatchObject({ title: "Stay a", areaLabel: "Hakone・Lake Ashi", kindLabel: "Stay", href: "/en/d/s-a" });
-    // 英語の名前が無ければ日本語で出す
-    expect(en[1]).toMatchObject({ title: "体験b", kindLabel: "Experience" });
+    // 英語の名前が無ければ空（別の言語では出さない）
+    expect(en[1]).toMatchObject({ title: "", kindLabel: "Experience" });
   });
 
   it("0 件なら空配列", async () => {

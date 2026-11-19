@@ -12,9 +12,9 @@ describe("formatValue", () => {
     expect(formatValue("15:00:00", "ja")).toBe("15:00");
     expect(formatValue(0, "ja")).toBe("0");
   });
-  it("localized は locale で解決し、無ければ別の言語", () => {
+  it("localized は locale で解決し、無ければ出さない（別の言語では出さない）", () => {
     expect(formatValue({ ja: "朝食つき", en: "Breakfast" }, "en")).toBe("Breakfast");
-    expect(formatValue({ ja: "朝食つき" }, "en")).toBe("朝食つき");
+    expect(formatValue({ ja: "朝食つき" }, "en")).toBe(null);
   });
   it("kind は kindLabels で日本語にする", () => {
     expect(formatValue("private_rental", "ja", { private_rental: "一棟貸し" })).toBe("一棟貸し");
