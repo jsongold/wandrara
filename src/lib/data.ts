@@ -2,12 +2,12 @@
 import { createClient } from "@supabase/supabase-js";
 import { cacheLife, cacheTag } from "next/cache";
 import { CATALOG_TAG, REGIONS_TAG, TRAITS_TAG } from "./cache-tags";
-import { areaTraitsOf, type RegionTraitRow, type TraitRow } from "./area-traits";
-import type { AreaTraits } from "./area-filter";
+import { areaTraitsOf, type ItemTraits, type RegionTraitRow, type TraitRow } from "./area-traits";
+import { listAreas, type AreaSheetData } from "./area-sheet";
 import { resolveLocalizedText, type Catalog } from "./feed";
-import { selectAll } from "./supabase/select-all";
+import { selectAll, TooManyRowsError } from "./supabase/select-all";
 import { MODES } from "./modes";
-import type { AreaGroupView, CategoryView, DestCard, Locale, LocalizedText, Mode, Photo, Region } from "./types";
+import type { CategoryView, DestCard, Locale, LocalizedText, Mode, Photo, Region } from "./types";
 
 export function env() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -57,7 +57,16 @@ export async function getRegions(): Promise<Region[]> {
 // 公開・非公開・投入で変わる。tag（catalog）を付け、更新経路が捨てる。ただしインスタンス内のキャッシュ（use cache）なので、
 // 捨てられるのは書き込みを受けたインスタンスだけ。ほかのインスタンスは revalidate で追いつく。
 // 寿命は main と同じ "minutes" 相当（stale 300 / revalidate 60 / expire 3600。同梱の cacheLife.md の表）を明示する。
-// Catalog は日々増えるので全件キャッシュを長くしない。remote にしないのは 2MB の上限・読み取り課金が危ないため。全件読みそのものを MS2b でなくす
+// Catalog は日々増えるので全件キャッシュを長くしない。remote にしないのは 2MB の上限・読み取り課金が危ないため。
+// MS2c の後の用途は、戦略を環境変数で差し替えたときの buildFeed の全件版（page.tsx の firstPage）だけ。通常の経路（トップ・保存一覧・詳細）は読まない。
+// 件数が CATALOG_MAX_DESTS を超えたら読まずに CatalogTooLargeError（呼び出し側は DB 版に戻す）。メモリ・RSC が件数に比例するのを止める最後の歯止め
+export const CATALOG_MAX_DESTS = 3000;
+export class CatalogTooLargeError extends Error {
+  constructor() {
+    super(`dest が ${CATALOG_MAX_DESTS} 件を超えたので全件の Catalog は作らない`);
+  }
+}
+
 export async function getCatalog(): Promise<Catalog> {
   "use cache";
   // regions は中の getRegions と同じ内容。外側にも付けておく（入れ子の tag が外へ伝わるとは文書に無い）
@@ -70,9 +79,10 @@ export async function getCatalog(): Promise<Catalog> {
     db.from("categories").select("id, parent_id, name, icon, sort").order("sort"),
     // dest_cards も 1000 件で黙って切られるのでページを送って読み切る（dest_id は一意）
     selectAll<DestCardRow>(
-      db, "dest_cards", "dest_id, core_type, slug, is_demo, created_at, published_at, region_id, name, summary, category_ids, photos", ["dest_id"],
+      db, "dest_cards", "dest_id, core_type, slug, is_demo, created_at, published_at, region_id, name, summary, category_ids, photos", ["dest_id"], CATALOG_MAX_DESTS,
     ).then((data) => ({ data, error: null }), (e: Error) => ({ data: null, error: e })),
   ]);
+  if (dests.error instanceof TooManyRowsError) throw new CatalogTooLargeError();
   if (regions.error || categories.error || dests.error) {
     const err = regions.error ?? categories.error ?? dests.error;
     throw new Error(`Supabase の読み込みに失敗しました: ${err?.message}`);
@@ -93,29 +103,43 @@ export async function getCatalog(): Promise<Catalog> {
 
 const t = (x: Parameters<typeof resolveLocalizedText>[0], locale: Locale) => resolveLocalizedText(x, locale).text;
 
-// その mode の dest が使っているカテゴリだけ（親なし）
-export function listCategories(catalog: Catalog, mode: Mode, locale: Locale): CategoryView[] {
-  const coreTypes: readonly string[] = MODES[mode];
-  const used = new Set(catalog.dests.filter((d) => coreTypes.includes(d.coreType)).flatMap((d) => d.categoryIds));
-  return catalog.categories
-    .filter((c) => used.has(c.id) && !c.parentId)
-    .map((c) => ({ id: c.id, label: t(c.name, locale), icon: c.icon }));
+type CategoryRow = { id: string; name: LocalizedText; icon: string };
+
+// その mode の公開中の dest が直接使っている、親なしのカテゴリ。使っているかは DB が数える（used_root_categories）ので、結果は件数ではなくカテゴリのマスターの大きさ。
+// 公開・非公開で変わるので catalog tag。寿命は getCatalog と同じ（約 1 分）
+async function loadModeCategories(mode: Mode): Promise<CategoryRow[]> {
+  "use cache";
+  cacheTag(CATALOG_TAG);
+  cacheLife({ stale: 300, revalidate: 60, expire: 3600 });
+  const db = supabase();
+  const [cats, used] = await Promise.all([
+    db.from("categories").select("id, name, icon").is("parent_id", null).order("sort").order("id"),
+    db.rpc("used_root_categories", { p_core_types: [...MODES[mode]] }),
+  ]);
+  if (cats.error) throw new Error(`Supabase の読み込みに失敗しました: ${cats.error.message}`);
+  if (used.error) throw new Error(`Supabase の読み込みに失敗しました: used_root_categories: ${used.error.message}`);
+  const ids = new Set(used.data as string[]);
+  return (cats.data as CategoryRow[]).filter((c) => ids.has(c.id));
 }
 
-export function listAreas(catalog: Catalog, locale: Locale): AreaGroupView[] {
-  return catalog.regions
-    .filter((r) => !r.parentId)
-    .map((r) => ({
-      id: r.id,
-      label: t(r.name, locale),
-      subs: catalog.regions.filter((x) => x.parentId === r.id).map((x) => ({ id: x.id, label: t(x.name, locale) })),
-    }));
+export async function listCategories(mode: Mode, locale: Locale): Promise<CategoryView[]> {
+  return (await loadModeCategories(mode)).map((c) => ({ id: c.id, label: t(c.name, locale), icon: c.icon }));
 }
 
-/** エリアの特性（地図の絞り込み用）。特性のマスターと土地由来の値を読み、宿・体験の分類からの特性はカタログから数える */
-export async function getAreaTraits(catalog: Catalog, locale: Locale): Promise<AreaTraits> {
-  const { traits, regionTraits } = await loadTraitRows();
-  return areaTraitsOf(traits, regionTraits, catalog.dests, locale);
+// 宿・体験の分類から付く特性（エリア → 特性 id）。DB が集計する（area_item_traits）ので、結果の大きさは地域×特性のマスターで決まる。公開・非公開で変わるので catalog tag
+async function loadItemTraits(): Promise<ItemTraits> {
+  "use cache";
+  cacheTag(CATALOG_TAG, TRAITS_TAG);
+  cacheLife({ stale: 300, revalidate: 60, expire: 3600 });
+  const { data, error } = await supabase().rpc("area_item_traits");
+  if (error) throw new Error(`Supabase の読み込みに失敗しました: area_item_traits: ${error.message}`);
+  return data as ItemTraits;
+}
+
+/** エリア選択シート（一覧・地図）のデータ。トップの props には載せず、シートを開いたときに /api/area-sheet が返す */
+export async function getAreaSheetData(locale: Locale): Promise<AreaSheetData> {
+  const [regions, rows, items] = await Promise.all([getRegions(), loadTraitRows(), loadItemTraits()]);
+  return { areas: listAreas(regions, locale), traits: areaTraitsOf(rows.traits, rows.regionTraits, items, locale) };
 }
 
 // 特性のマスターと土地由来の値。更新は migration・スクリプトだけで、公開状態には依存しない
