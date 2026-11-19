@@ -12,8 +12,8 @@ export type FeedEvent =
   | { name: "card_view"; destId: string; position: number }
   | { name: "card_click"; destId: string; position: number }
   | { name: "tile_click"; destId: string; position: number; fromDestId: string }
-  // カルーセルのエリアの一言（Stories）の 1 枚を押した。position はカルーセルの中の位置
-  | { name: "stories_click"; area: string; position: number; fromDestId: string };
+  // カルーセルのエリアの一言（Stories）の 1 枚を押した。storiesArea はその地区（条件の area と別。条件の area で上書きされない名前にする）、position はカルーセルの中の位置
+  | { name: "stories_click"; storiesArea: string; position: number; fromDestId: string };
 
 export type FeedEventRecord = FeedEvent & FeedEventContext;
 export type FeedEventSink = (record: FeedEventRecord) => void;
@@ -46,7 +46,7 @@ export function clickEventOf(
 ): FeedEvent | null {
   if (!link) return null;
   if (link.storiesArea) {
-    return { name: "stories_click", area: link.storiesArea, position: Number(link.tilePosition ?? -1), fromDestId: card.destId };
+    return { name: "stories_click", storiesArea: link.storiesArea, position: Number(link.tilePosition ?? -1), fromDestId: card.destId };
   }
   if (link.tileDestId) {
     return { name: "tile_click", destId: link.tileDestId, position: Number(link.tilePosition ?? -1), fromDestId: card.destId };
