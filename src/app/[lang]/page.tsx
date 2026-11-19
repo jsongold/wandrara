@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { HomeScreen } from "@/components/HomeScreen";
-import { getAreaTraits, getCatalog, listAreas, listCategories } from "@/lib/data";
+import { areaLabelOf } from "@/lib/area-sheet";
+import { getCatalog, getRegions, listCategories } from "@/lib/data";
 import { parseDiscoverQuery } from "@/lib/discover-query";
 import { buildFeed } from "@/lib/feed";
 import { loadFeedStrategies } from "@/lib/feed-config";
@@ -19,7 +20,9 @@ export default function Home(props: PageProps<"/[lang]">) {
 
 // 最初のページだけを読んで送る（MS2b #109）。続きはクライアントが /api/feed で取る。
 // ?after=<cursor> は検索エンジンがたどる「次のページ」の入口で、その cursor の続きから 1 ページ出す（不正・別の条件なら先頭）。
-// 戦略を環境変数で差し替えている間は、DB 版（既定の戦略だけ）が使えないので buildFeed の全件版にする（続きは無い）
+// 戦略を環境変数で差し替えている間は、DB 版（既定の戦略だけ）が使えないので buildFeed の全件版にする（続きは無い）。
+// これが getCatalog（dest 全件）の唯一の使い道。件数が上限（CATALOG_MAX_DESTS）を超えると getCatalog が CatalogTooLargeError を投げる（黙って重くしない）。
+// その状態になったら、差し替えた戦略の DB 版を作る（feed_page を拡張する）か、差し替えを外す
 async function firstPage(query: DiscoverQuery, locale: Locale, after: string | undefined): Promise<FeedPageResult> {
   const strategies = loadFeedStrategies();
   if (!dbFeedApplies(strategies)) {
@@ -40,19 +43,14 @@ async function Discover({ params, searchParams }: Pick<PageProps<"/[lang]">, "pa
   const sp = await searchParams;
   const query = parseDiscoverQuery(sp);
   const after = typeof sp.after === "string" ? sp.after : undefined;
-  // フィードは DB が 1 ページ分だけ読む。カテゴリ・エリア・特性はまだ全件の Catalog から作る（MS2c で小さくする）
-  const [catalog, feed] = await Promise.all([getCatalog(), firstPage(query, locale, after)]);
-  const traits = await getAreaTraits(catalog, locale);
-  return (
-    <HomeScreen
-      locale={locale}
-      query={query}
-      feed={feed}
-      categories={listCategories(catalog, query.mode, locale)}
-      areas={listAreas(catalog, locale)}
-      traits={traits}
-    />
-  );
+  // 全部 dest の件数に比例しない：フィードは DB が 1 ページ分、カテゴリは DB が数えた小さな一覧、エリアは今の名前だけ。
+  // エリア選択シートの一覧・地図に要る地域と特性は props に載せず、シートを開いたときに /api/area-sheet から取る（MS2c）
+  const [categories, feed, areaLabel] = await Promise.all([
+    listCategories(query.mode, locale),
+    firstPage(query, locale, after),
+    query.area === "all" ? null : getRegions().then((regions) => areaLabelOf(regions, query.area, locale)),
+  ]);
+  return <HomeScreen locale={locale} query={query} feed={feed} categories={categories} areaLabel={areaLabel} />;
 }
 
 function HomeFallback() {
