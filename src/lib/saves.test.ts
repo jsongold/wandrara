@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import { listSavedIds, setSaved } from "./saves";
+import { fakeDb } from "./supabase/fake-db";
 
 type Err = { message: string; code?: string } | null;
 
@@ -8,7 +9,6 @@ type Err = { message: string; code?: string } | null;
 function fake(result: { data?: unknown; error: Err }) {
   const calls: { op: string; args: unknown[] }[] = [];
   const chain = {
-    select: (...args: unknown[]) => (calls.push({ op: "select", args }), Promise.resolve(result)),
     insert: (...args: unknown[]) => (calls.push({ op: "insert", args }), Promise.resolve(result)),
     delete: (...args: unknown[]) => (calls.push({ op: "delete", args }), filter),
   };
@@ -24,14 +24,23 @@ function fake(result: { data?: unknown; error: Err }) {
 
 describe("listSavedIds", () => {
   it("dest_id の集合を返す", async () => {
-    const { client, calls } = fake({ data: [{ dest_id: "a" }, { dest_id: "b" }], error: null });
-    expect(await listSavedIds(client)).toEqual(new Set(["a", "b"]));
-    expect(calls[0]).toEqual({ op: "from", args: ["user_saves"] });
+    const { db } = fakeDb({ user_saves: [{ dest_id: "a" }, { dest_id: "b" }] });
+    expect(await listSavedIds(db)).toEqual(new Set(["a", "b"]));
   });
 
-  it("エラーは throw", async () => {
-    const { client } = fake({ data: null, error: { message: "boom" } });
-    await expect(listSavedIds(client)).rejects.toThrow("boom");
+  it("1000 件を超えても全部読む（1001 件目が落ちない）", async () => {
+    const rows = Array.from({ length: 2500 }, (_, i) => ({ dest_id: `d${String(i).padStart(5, "0")}` }));
+    const { db, ranges } = fakeDb({ user_saves: rows });
+    const ids = await listSavedIds(db);
+    expect(ids.size).toBe(2500);
+    expect(ids.has("d02499")).toBe(true);
+    expect(ranges).toEqual([[0, 999], [1000, 1999], [2000, 2999]]);
+  });
+
+  it("途中のページが失敗したら throw する（黙って欠けた一覧を返さない）", async () => {
+    const rows = Array.from({ length: 2500 }, (_, i) => ({ dest_id: `d${i}` }));
+    const { db } = fakeDb({ user_saves: rows }, { failAtFrom: 1000 });
+    await expect(listSavedIds(db)).rejects.toThrow("page failed");
   });
 });
 

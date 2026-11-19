@@ -59,7 +59,10 @@ export async function getCatalog(): Promise<Catalog> {
   const [regions, categories, dests] = await Promise.all([
     getRegions().then((data) => ({ data, error: null }), (e: Error) => ({ data: null, error: e })),
     db.from("categories").select("id, parent_id, name, icon, sort").order("sort"),
-    db.from("dest_cards").select("dest_id, core_type, slug, is_demo, created_at, published_at, region_id, name, summary, category_ids, photos"),
+    // dest_cards も 1000 件で黙って切られるのでページを送って読み切る（dest_id は一意）
+    selectAll<DestCardRow>(
+      db, "dest_cards", "dest_id, core_type, slug, is_demo, created_at, published_at, region_id, name, summary, category_ids, photos", ["dest_id"],
+    ).then((data) => ({ data, error: null }), (e: Error) => ({ data: null, error: e })),
   ]);
   if (regions.error || categories.error || dests.error) {
     const err = regions.error ?? categories.error ?? dests.error;
@@ -71,7 +74,7 @@ export async function getCatalog(): Promise<Catalog> {
   return {
     regions: regions.data!,
     categories: categories.data.map((c) => ({ id: c.id, parentId: c.parent_id, name: c.name, icon: c.icon, sort: c.sort ?? 0 })),
-    dests: (dests.data as DestCardRow[]).map((d): DestCard => ({
+    dests: dests.data!.map((d): DestCard => ({
       id: d.dest_id, coreType: d.core_type, slug: d.slug, regionId: d.region_id, name: d.name ?? {}, summary: d.summary,
       isDemo: d.is_demo, createdAt: d.created_at, publishedAt: d.published_at, categoryIds: d.category_ids,
       photos: d.photos.map(toPhoto),
