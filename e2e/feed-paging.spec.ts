@@ -31,6 +31,18 @@ test("検索エンジンがたどる次のページは、先頭と重ならな�
   expect(second.filter((h) => firstPage.includes(h))).toEqual([]);
 });
 
+test("続きのページを開いてから、選んでいる条件を押すと先頭に戻る", async ({ page }) => {
+  await page.goto("/ja");
+  await expect(cards(page)).toHaveCount(6);
+  const firstPage = await hrefs(page);
+  await page.goto((await page.locator("a[rel=next]:visible").getAttribute("href"))!);
+  await expect(cards(page)).toHaveCount(6);
+  expect(await hrefs(page)).not.toEqual(firstPage);
+  await page.locator("nav button[aria-pressed=true]").click(); // いま選んでいるカテゴリ（すべて）をもう一度
+  await expect(page).toHaveURL(/\/ja$/);
+  await expect.poll(() => hrefs(page)).toEqual(firstPage);
+});
+
 test("スクロールで続きを足し、重ならない", async ({ page }) => {
   await page.goto("/ja");
   await expect(cards(page)).toHaveCount(6);

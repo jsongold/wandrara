@@ -72,11 +72,13 @@ export function HomeScreen({ locale, query, feed, categories, areas, traits }: P
   // 地図の絞り込みで、子に合うものがあれば親も残すための親子
   const parentOf = useMemo(() => Object.fromEntries(areas.flatMap((g) => [[g.id, null], ...g.subs.map((s) => [s.id, g.id])])) as Record<string, string | null>, [areas]);
   const queryKey = serializeDiscoverQuery(query, locale);
+  // 一覧の同一性：条件に加えて、サーバーが渡した最初のカード（?after= の続きから開いた・先頭に戻った、でも作り直す）
+  const feedKey = `${queryKey}|${feed.cards[0]?.destId ?? ""}`;
 
   // 条件（カテゴリなど）が変わり新しい一覧が来たら、一覧の一番上から見せる
   useEffect(() => {
     feedRef.current?.scrollTo({ top: 0 });
-  }, [queryKey]);
+  }, [feedKey]);
 
   // 全画面の詳細から戻るときのために、今の条件を控えておく
   useEffect(() => {
@@ -128,7 +130,7 @@ export function HomeScreen({ locale, query, feed, categories, areas, traits }: P
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
       >
-        <FeedList key={queryKey} feed={feed} query={query} locale={locale} track={track} />
+        <FeedList key={feedKey} feed={feed} query={query} locale={locale} track={track} />
         {feed.cards.length === 0 && (
           <div className="flex flex-col items-center gap-3.5 px-8 pt-[180px] text-center">
             <Icon name="search" size={40} />
