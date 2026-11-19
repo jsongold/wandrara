@@ -1,0 +1,1577 @@
+{
+  "measuredAt": "2026-11-19T04:08:15.875Z",
+  "commit": "be65f50",
+  "base": "https://wandrara.vercel.app",
+  "local": false,
+  "runs": 3,
+  "viewport": "390x844 DPR2 Chromium mobile",
+  "scrollCards": 10,
+  "warmup": true,
+  "counts": {
+    "dest_cards": 560,
+    "regions": 1990,
+    "dest_photos": 3272
+  },
+  "conditions": {
+    "none": {
+      "aggregate": {
+        "cold.ttfb": {
+          "median": 60.800000071525574,
+          "min": 56.199999928474426,
+          "max": 72.79999995231628,
+          "n": 3
+        },
+        "cold.fcp": {
+          "median": 236,
+          "min": 236,
+          "max": 288,
+          "n": 3
+        },
+        "cold.feed": {
+          "median": 809.1999999284744,
+          "min": 750,
+          "max": 896.7000000476837,
+          "n": 3
+        },
+        "cold.lcp": {
+          "median": 896,
+          "min": 888,
+          "max": 980,
+          "n": 3
+        },
+        "cold.docDecoded": {
+          "median": 1620180,
+          "min": 1620180,
+          "max": 1620180,
+          "n": 3
+        },
+        "cold.docRscDecoded": {
+          "median": 1514595,
+          "min": 1514595,
+          "max": 1514595,
+          "n": 3
+        },
+        "cold.docRscBrotli": {
+          "median": 74330,
+          "min": 74238,
+          "max": 74364,
+          "n": 3
+        },
+        "cold.bytes": {
+          "median": 761687,
+          "min": 761421,
+          "max": 761830,
+          "n": 3
+        },
+        "cold.reqs": {
+          "median": 42,
+          "min": 42,
+          "max": 42,
+          "n": 3
+        },
+        "cold.b.document": {
+          "median": 178954,
+          "min": 178697,
+          "max": 179106,
+          "n": 3
+        },
+        "cold.b.rsc": {
+          "median": 30636,
+          "min": 30595,
+          "max": 30639,
+          "n": 3
+        },
+        "cold.b.script": {
+          "median": 228618,
+          "min": 228587,
+          "max": 228725,
+          "n": 3
+        },
+        "cold.b.image": {
+          "median": 305183,
+          "min": 305179,
+          "max": 305188,
+          "n": 3
+        },
+        "cold.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "cold.b.other": {
+          "median": 18287,
+          "min": 18234,
+          "max": 18310,
+          "n": 3
+        },
+        "cold.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "cold.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "cold.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.scrolledTo": {
+          "median": 10,
+          "min": 10,
+          "max": 10,
+          "n": 3
+        },
+        "scroll.bytes": {
+          "median": 384965,
+          "min": 384880,
+          "max": 384976,
+          "n": 3
+        },
+        "scroll.reqs": {
+          "median": 39,
+          "min": 39,
+          "max": 39,
+          "n": 3
+        },
+        "scroll.b.document": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.rsc": {
+          "median": 67158,
+          "min": 67057,
+          "max": 67167,
+          "n": 3
+        },
+        "scroll.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.image": {
+          "median": 317809,
+          "min": 317807,
+          "max": 317823,
+          "n": 3
+        },
+        "scroll.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.prefetch": {
+          "median": 26,
+          "min": 26,
+          "max": 26,
+          "n": 3
+        },
+        "scroll.prefetchUnique": {
+          "median": 26,
+          "min": 26,
+          "max": 26,
+          "n": 3
+        },
+        "scroll.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.cumulativeBytes": {
+          "median": 1146652,
+          "min": 1146397,
+          "max": 1146710,
+          "n": 3
+        },
+        "detailPrefetch.bytes": {
+          "median": 94278,
+          "min": 94267,
+          "max": 94299,
+          "n": 3
+        },
+        "repeat.ttfb": {
+          "median": 16.600000023841858,
+          "min": 16.399999976158142,
+          "max": 18.699999928474426,
+          "n": 3
+        },
+        "repeat.feed": {
+          "median": 808.7999999523163,
+          "min": 786.2000000476837,
+          "max": 949.5,
+          "n": 3
+        },
+        "repeat.lcp": {
+          "median": 892,
+          "min": 840,
+          "max": 1016,
+          "n": 3
+        },
+        "repeat.bytes": {
+          "median": 199776,
+          "min": 199340,
+          "max": 201569,
+          "n": 3
+        },
+        "repeat.reqs": {
+          "median": 48,
+          "min": 48,
+          "max": 48,
+          "n": 3
+        },
+        "repeat.b.document": {
+          "median": 179370,
+          "min": 178923,
+          "max": 179623,
+          "n": 3
+        },
+        "repeat.b.rsc": {
+          "median": 20417,
+          "min": 20406,
+          "max": 21946,
+          "n": 3
+        },
+        "repeat.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.image": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "repeat.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "repeat.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetched": {
+          "median": 1,
+          "min": 1,
+          "max": 1,
+          "n": 3
+        },
+        "tap.sheetMs": {
+          "median": 46,
+          "min": 45,
+          "max": 79,
+          "n": 3
+        },
+        "tap.h1Ms": {
+          "median": 50,
+          "min": 48,
+          "max": 82,
+          "n": 3
+        },
+        "tap.bytes": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.reqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.document": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.rsc": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.image": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetch": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetchUnique": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "saveData.feed": {
+          "median": 737.3999999761581,
+          "min": 705.7000000476837,
+          "max": 860.3999999761581,
+          "n": 3
+        },
+        "saveData.lcp": {
+          "median": 912,
+          "min": 852,
+          "max": 976,
+          "n": 3
+        },
+        "saveData.bytes": {
+          "median": 761928,
+          "min": 761844,
+          "max": 762368,
+          "n": 3
+        },
+        "saveData.reqs": {
+          "median": 42,
+          "min": 42,
+          "max": 42,
+          "n": 3
+        },
+        "saveData.b.document": {
+          "median": 179266,
+          "min": 179130,
+          "max": 179670,
+          "n": 3
+        },
+        "saveData.b.rsc": {
+          "median": 30621,
+          "min": 30615,
+          "max": 30635,
+          "n": 3
+        },
+        "saveData.b.script": {
+          "median": 228615,
+          "min": 228607,
+          "max": 228641,
+          "n": 3
+        },
+        "saveData.b.image": {
+          "median": 305180,
+          "min": 305175,
+          "max": 305181,
+          "n": 3
+        },
+        "saveData.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "saveData.b.other": {
+          "median": 18259,
+          "min": 18258,
+          "max": 18287,
+          "n": 3
+        },
+        "saveData.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "saveData.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "saveData.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        }
+      },
+      "runs": [
+        {
+          "flat": {
+            "cold.ttfb": 56.199999928474426,
+            "cold.fcp": 236,
+            "cold.feed": 750,
+            "cold.lcp": 896,
+            "cold.docDecoded": 1620180,
+            "cold.docRscDecoded": 1514595,
+            "cold.docRscBrotli": 74330,
+            "cold.bytes": 761421,
+            "cold.reqs": 42,
+            "cold.b.document": 178697,
+            "cold.b.rsc": 30636,
+            "cold.b.script": 228618,
+            "cold.b.image": 305183,
+            "cold.b.font": 0,
+            "cold.b.other": 18287,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 384976,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 67167,
+            "scroll.b.script": 0,
+            "scroll.b.image": 317809,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1146397,
+            "detailPrefetch.bytes": 94278,
+            "repeat.ttfb": 16.399999976158142,
+            "repeat.feed": 949.5,
+            "repeat.lcp": 1016,
+            "repeat.bytes": 201569,
+            "repeat.reqs": 48,
+            "repeat.b.document": 179623,
+            "repeat.b.rsc": 21946,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 79,
+            "tap.h1Ms": 82,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 860.3999999761581,
+            "saveData.lcp": 976,
+            "saveData.bytes": 761928,
+            "saveData.reqs": 42,
+            "saveData.b.document": 179266,
+            "saveData.b.rsc": 30621,
+            "saveData.b.script": 228607,
+            "saveData.b.image": 305175,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18259,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "xcache": "HIT",
+            "vercelId": "kix1::j77l2-1795061327119-22dccc698dfa",
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        },
+        {
+          "flat": {
+            "cold.ttfb": 60.800000071525574,
+            "cold.fcp": 288,
+            "cold.feed": 896.7000000476837,
+            "cold.lcp": 980,
+            "cold.docDecoded": 1620180,
+            "cold.docRscDecoded": 1514595,
+            "cold.docRscBrotli": 74364,
+            "cold.bytes": 761830,
+            "cold.reqs": 42,
+            "cold.b.document": 179106,
+            "cold.b.rsc": 30639,
+            "cold.b.script": 228587,
+            "cold.b.image": 305188,
+            "cold.b.font": 0,
+            "cold.b.other": 18310,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 384880,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 67057,
+            "scroll.b.script": 0,
+            "scroll.b.image": 317823,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1146710,
+            "detailPrefetch.bytes": 94267,
+            "repeat.ttfb": 16.600000023841858,
+            "repeat.feed": 786.2000000476837,
+            "repeat.lcp": 840,
+            "repeat.bytes": 199776,
+            "repeat.reqs": 48,
+            "repeat.b.document": 179370,
+            "repeat.b.rsc": 20406,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 46,
+            "tap.h1Ms": 50,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 705.7000000476837,
+            "saveData.lcp": 912,
+            "saveData.bytes": 762368,
+            "saveData.reqs": 42,
+            "saveData.b.document": 179670,
+            "saveData.b.rsc": 30615,
+            "saveData.b.script": 228615,
+            "saveData.b.image": 305181,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18287,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "xcache": "HIT",
+            "vercelId": "kix1::f66rl-1795061361143-d3ac7ebb22e2",
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        },
+        {
+          "flat": {
+            "cold.ttfb": 72.79999995231628,
+            "cold.fcp": 236,
+            "cold.feed": 809.1999999284744,
+            "cold.lcp": 888,
+            "cold.docDecoded": 1620180,
+            "cold.docRscDecoded": 1514595,
+            "cold.docRscBrotli": 74238,
+            "cold.bytes": 761687,
+            "cold.reqs": 42,
+            "cold.b.document": 178954,
+            "cold.b.rsc": 30595,
+            "cold.b.script": 228725,
+            "cold.b.image": 305179,
+            "cold.b.font": 0,
+            "cold.b.other": 18234,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 384965,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 67158,
+            "scroll.b.script": 0,
+            "scroll.b.image": 317807,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1146652,
+            "detailPrefetch.bytes": 94299,
+            "repeat.ttfb": 18.699999928474426,
+            "repeat.feed": 808.7999999523163,
+            "repeat.lcp": 892,
+            "repeat.bytes": 199340,
+            "repeat.reqs": 48,
+            "repeat.b.document": 178923,
+            "repeat.b.rsc": 20417,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 45,
+            "tap.h1Ms": 48,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 737.3999999761581,
+            "saveData.lcp": 852,
+            "saveData.bytes": 761844,
+            "saveData.reqs": 42,
+            "saveData.b.document": 179130,
+            "saveData.b.rsc": 30635,
+            "saveData.b.script": 228641,
+            "saveData.b.image": 305180,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18258,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "xcache": "HIT",
+            "vercelId": "kix1::l9n7x-1795061392961-21cc9cfb27a3",
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        }
+      ]
+    },
+    "slow4g-cpu4x": {
+      "aggregate": {
+        "cold.ttfb": {
+          "median": 189.19999992847443,
+          "min": 188,
+          "max": 190.10000002384186,
+          "n": 3
+        },
+        "cold.fcp": {
+          "median": 764,
+          "min": 736,
+          "max": 788,
+          "n": 3
+        },
+        "cold.feed": {
+          "median": 895.8000000715256,
+          "min": 811.8999999761581,
+          "max": 1353.6999999284744,
+          "n": 3
+        },
+        "cold.lcp": {
+          "median": 3456,
+          "min": 3448,
+          "max": 3652,
+          "n": 3
+        },
+        "cold.docDecoded": {
+          "median": 1620180,
+          "min": 1620180,
+          "max": 1620180,
+          "n": 3
+        },
+        "cold.docRscDecoded": {
+          "median": 1514595,
+          "min": 1514595,
+          "max": 1514595,
+          "n": 3
+        },
+        "cold.docRscBrotli": {
+          "median": 74300,
+          "min": 74285,
+          "max": 74312,
+          "n": 3
+        },
+        "cold.bytes": {
+          "median": 762211,
+          "min": 761826,
+          "max": 762255,
+          "n": 3
+        },
+        "cold.reqs": {
+          "median": 42,
+          "min": 42,
+          "max": 42,
+          "n": 3
+        },
+        "cold.b.document": {
+          "median": 179485,
+          "min": 179033,
+          "max": 179491,
+          "n": 3
+        },
+        "cold.b.rsc": {
+          "median": 30592,
+          "min": 30572,
+          "max": 30620,
+          "n": 3
+        },
+        "cold.b.script": {
+          "median": 228704,
+          "min": 228676,
+          "max": 228786,
+          "n": 3
+        },
+        "cold.b.image": {
+          "median": 305176,
+          "min": 305176,
+          "max": 305181,
+          "n": 3
+        },
+        "cold.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "cold.b.other": {
+          "median": 18259,
+          "min": 18259,
+          "max": 18282,
+          "n": 3
+        },
+        "cold.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "cold.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "cold.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.scrolledTo": {
+          "median": 10,
+          "min": 10,
+          "max": 10,
+          "n": 3
+        },
+        "scroll.bytes": {
+          "median": 385146,
+          "min": 385126,
+          "max": 385197,
+          "n": 3
+        },
+        "scroll.reqs": {
+          "median": 39,
+          "min": 39,
+          "max": 39,
+          "n": 3
+        },
+        "scroll.b.document": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.rsc": {
+          "median": 67344,
+          "min": 67325,
+          "max": 67408,
+          "n": 3
+        },
+        "scroll.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.image": {
+          "median": 317789,
+          "min": 317782,
+          "max": 317821,
+          "n": 3
+        },
+        "scroll.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.prefetch": {
+          "median": 26,
+          "min": 26,
+          "max": 26,
+          "n": 3
+        },
+        "scroll.prefetchUnique": {
+          "median": 26,
+          "min": 26,
+          "max": 26,
+          "n": 3
+        },
+        "scroll.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.cumulativeBytes": {
+          "median": 1147337,
+          "min": 1146972,
+          "max": 1147452,
+          "n": 3
+        },
+        "detailPrefetch.bytes": {
+          "median": 94517,
+          "min": 94496,
+          "max": 94526,
+          "n": 3
+        },
+        "repeat.ttfb": {
+          "median": 151.5,
+          "min": 151,
+          "max": 153.79999995231628,
+          "n": 3
+        },
+        "repeat.feed": {
+          "median": 1204.5,
+          "min": 822.6999999284744,
+          "max": 1297.0999999046326,
+          "n": 3
+        },
+        "repeat.lcp": {
+          "median": 1748,
+          "min": 1336,
+          "max": 1836,
+          "n": 3
+        },
+        "repeat.bytes": {
+          "median": 199601,
+          "min": 199334,
+          "max": 199713,
+          "n": 3
+        },
+        "repeat.reqs": {
+          "median": 48,
+          "min": 48,
+          "max": 48,
+          "n": 3
+        },
+        "repeat.b.document": {
+          "median": 179183,
+          "min": 178831,
+          "max": 179204,
+          "n": 3
+        },
+        "repeat.b.rsc": {
+          "median": 20503,
+          "min": 20418,
+          "max": 20509,
+          "n": 3
+        },
+        "repeat.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.image": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "repeat.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "repeat.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetched": {
+          "median": 1,
+          "min": 1,
+          "max": 1,
+          "n": 3
+        },
+        "tap.sheetMs": {
+          "median": 103,
+          "min": 91,
+          "max": 213,
+          "n": 3
+        },
+        "tap.h1Ms": {
+          "median": 107,
+          "min": 96,
+          "max": 231,
+          "n": 3
+        },
+        "tap.bytes": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.reqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.document": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.rsc": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.image": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetch": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetchUnique": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "saveData.feed": {
+          "median": 1225.5,
+          "min": 768.2000000476837,
+          "max": 1933.7000000476837,
+          "n": 3
+        },
+        "saveData.lcp": {
+          "median": 3488,
+          "min": 3432,
+          "max": 4456,
+          "n": 3
+        },
+        "saveData.bytes": {
+          "median": 761848,
+          "min": 761814,
+          "max": 762037,
+          "n": 3
+        },
+        "saveData.reqs": {
+          "median": 42,
+          "min": 42,
+          "max": 42,
+          "n": 3
+        },
+        "saveData.b.document": {
+          "median": 179072,
+          "min": 179031,
+          "max": 179153,
+          "n": 3
+        },
+        "saveData.b.rsc": {
+          "median": 30505,
+          "min": 30495,
+          "max": 30553,
+          "n": 3
+        },
+        "saveData.b.script": {
+          "median": 228812,
+          "min": 228772,
+          "max": 228836,
+          "n": 3
+        },
+        "saveData.b.image": {
+          "median": 305180,
+          "min": 305180,
+          "max": 305295,
+          "n": 3
+        },
+        "saveData.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "saveData.b.other": {
+          "median": 18258,
+          "min": 18231,
+          "max": 18326,
+          "n": 3
+        },
+        "saveData.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "saveData.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "saveData.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        }
+      },
+      "runs": [
+        {
+          "flat": {
+            "cold.ttfb": 190.10000002384186,
+            "cold.fcp": 736,
+            "cold.feed": 895.8000000715256,
+            "cold.lcp": 3448,
+            "cold.docDecoded": 1620180,
+            "cold.docRscDecoded": 1514595,
+            "cold.docRscBrotli": 74300,
+            "cold.bytes": 762255,
+            "cold.reqs": 42,
+            "cold.b.document": 179491,
+            "cold.b.rsc": 30620,
+            "cold.b.script": 228704,
+            "cold.b.image": 305181,
+            "cold.b.font": 0,
+            "cold.b.other": 18259,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 385197,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 67408,
+            "scroll.b.script": 0,
+            "scroll.b.image": 317789,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1147452,
+            "detailPrefetch.bytes": 94526,
+            "repeat.ttfb": 151.5,
+            "repeat.feed": 822.6999999284744,
+            "repeat.lcp": 1336,
+            "repeat.bytes": 199334,
+            "repeat.reqs": 48,
+            "repeat.b.document": 178831,
+            "repeat.b.rsc": 20503,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 91,
+            "tap.h1Ms": 96,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 1933.7000000476837,
+            "saveData.lcp": 4456,
+            "saveData.bytes": 762037,
+            "saveData.reqs": 42,
+            "saveData.b.document": 179153,
+            "saveData.b.rsc": 30495,
+            "saveData.b.script": 228836,
+            "saveData.b.image": 305295,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18258,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "xcache": "HIT",
+            "vercelId": "kix1::54cwp-1795061423957-9f9db3b479a0",
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        },
+        {
+          "flat": {
+            "cold.ttfb": 189.19999992847443,
+            "cold.fcp": 788,
+            "cold.feed": 1353.6999999284744,
+            "cold.lcp": 3652,
+            "cold.docDecoded": 1620180,
+            "cold.docRscDecoded": 1514595,
+            "cold.docRscBrotli": 74285,
+            "cold.bytes": 762211,
+            "cold.reqs": 42,
+            "cold.b.document": 179485,
+            "cold.b.rsc": 30592,
+            "cold.b.script": 228676,
+            "cold.b.image": 305176,
+            "cold.b.font": 0,
+            "cold.b.other": 18282,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 385126,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 67344,
+            "scroll.b.script": 0,
+            "scroll.b.image": 317782,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1147337,
+            "detailPrefetch.bytes": 94517,
+            "repeat.ttfb": 151,
+            "repeat.feed": 1297.0999999046326,
+            "repeat.lcp": 1836,
+            "repeat.bytes": 199601,
+            "repeat.reqs": 48,
+            "repeat.b.document": 179183,
+            "repeat.b.rsc": 20418,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 213,
+            "tap.h1Ms": 231,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 1225.5,
+            "saveData.lcp": 3488,
+            "saveData.bytes": 761814,
+            "saveData.reqs": 42,
+            "saveData.b.document": 179031,
+            "saveData.b.rsc": 30505,
+            "saveData.b.script": 228772,
+            "saveData.b.image": 305180,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18326,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "xcache": "HIT",
+            "vercelId": "kix1::j77l2-1795061490927-40840f44651d",
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        },
+        {
+          "flat": {
+            "cold.ttfb": 188,
+            "cold.fcp": 764,
+            "cold.feed": 811.8999999761581,
+            "cold.lcp": 3456,
+            "cold.docDecoded": 1620180,
+            "cold.docRscDecoded": 1514595,
+            "cold.docRscBrotli": 74312,
+            "cold.bytes": 761826,
+            "cold.reqs": 42,
+            "cold.b.document": 179033,
+            "cold.b.rsc": 30572,
+            "cold.b.script": 228786,
+            "cold.b.image": 305176,
+            "cold.b.font": 0,
+            "cold.b.other": 18259,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 385146,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 67325,
+            "scroll.b.script": 0,
+            "scroll.b.image": 317821,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1146972,
+            "detailPrefetch.bytes": 94496,
+            "repeat.ttfb": 153.79999995231628,
+            "repeat.feed": 1204.5,
+            "repeat.lcp": 1748,
+            "repeat.bytes": 199713,
+            "repeat.reqs": 48,
+            "repeat.b.document": 179204,
+            "repeat.b.rsc": 20509,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 103,
+            "tap.h1Ms": 107,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 768.2000000476837,
+            "saveData.lcp": 3432,
+            "saveData.bytes": 761848,
+            "saveData.reqs": 42,
+            "saveData.b.document": 179072,
+            "saveData.b.rsc": 30553,
+            "saveData.b.script": 228812,
+            "saveData.b.image": 305180,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18231,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "xcache": "HIT",
+            "vercelId": "kix1::g6cts-1795061558235-7aa157104e6f",
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        }
+      ]
+    }
+  }
+}
