@@ -1,7 +1,7 @@
 // feed_page の呼び出しと、cursor・総件数・重複の間引きの引き継ぎ（MS2b）。DB の中身の一致は feed-page.db.test.ts（opt-in）
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
-import { destTilesOf } from "./carousel";
+import { destTilesOf, loadCarouselStrategy } from "./carousel";
 import { DEFAULT_QUERY } from "./discover-query";
 import { decodeCursor, encodeCursor, fetchFeedPage, FeedCursorError, feedQueryKey, FEED_PAGE_MAX } from "./feed-page";
 
@@ -20,6 +20,8 @@ function fake(result: unknown) {
   return { db: { rpc } as unknown as SupabaseClient, rpc };
 }
 const args = { query: DEFAULT_QUERY, locale: "ja" as const };
+// 既定のカルーセルの戦略。queryKey に入る
+const C = loadCarouselStrategy().id;
 
 describe("fetchFeedPage", () => {
   it("先頭ページ：DB の呼び出し・FeedCard の形・総件数・次の cursor", async () => {
@@ -36,7 +38,7 @@ describe("fetchFeedPage", () => {
     expect(destTilesOf(r.cards[0].carousel).map((x) => [x.destId, x.sub, x.href])).toEqual([[id(10), "エリア・地区", "/ja/d/t10"], [id(11), "エリア・地区", "/ja/d/t11"]]);
     expect(r.total).toBe(1000);
     expect(r.totalIsLowerBound).toBe(true);
-    expect(r.queryKey).toBe(feedQueryKey({ ...DEFAULT_QUERY, area: "tokyo", cat: "onsen", q: "湯" }, "ja"));
+    expect(r.queryKey).toBe(feedQueryKey({ ...DEFAULT_QUERY, area: "tokyo", cat: "onsen", q: "湯" }, "ja", "editorial", C));
     expect(r.nextCursor).not.toBeNull();
   });
 
@@ -58,7 +60,7 @@ describe("fetchFeedPage", () => {
   it("0 件：先頭ページだけ no-match。続きのページが空でも no-match にしない", async () => {
     const empty = { cards: [], has_more: false, total: 0, total_capped: false };
     expect((await fetchFeedPage(fake(empty).db, "u", args)).emptyReason).toBe("no-match");
-    const cursor = encodeCursor({ v: 1, q: feedQueryKey(DEFAULT_QUERY, "ja"), k: "-infinity", i: id(1), p: [] });
+    const cursor = encodeCursor({ v: 1, q: feedQueryKey(DEFAULT_QUERY, "ja", "editorial", C), k: "-infinity", i: id(1), p: [] });
     expect((await fetchFeedPage(fake(empty).db, "u", { ...args, cursor })).emptyReason).toBeNull();
   });
 
@@ -81,8 +83,15 @@ describe("fetchFeedPage", () => {
     expect(stories(await fetchFeedPage(second.db, "u", { ...args, cursor: p1.nextCursor }))).toEqual([[{ type: "stories", area: "atami", label: "熱海" }]]);
     const again = fake({ cards: [at(1, "atami", "熱海"), at(2, "atami", "熱海")], has_more: true, total: 3, total_capped: false });
     const q1 = await fetchFeedPage(again.db, "u", { ...args, limit: 2 });
-    expect(decodeCursor(q1.nextCursor!, feedQueryKey(DEFAULT_QUERY, "ja")).a).toBe("atami");
+    expect(decodeCursor(q1.nextCursor!, feedQueryKey(DEFAULT_QUERY, "ja", "editorial", C)).a).toBe("atami");
     expect(stories(await fetchFeedPage(fake({ cards: [at(3, "atami", "熱海")], has_more: false, total: null, total_capped: false }).db, "u", { ...args, cursor: q1.nextCursor }))).toEqual([[]]);
+  });
+
+  it("カルーセルの戦略が変わったら、古い cursor は query-mismatch（先頭から取り直す）", async () => {
+    const p1 = await fetchFeedPage(fake({ cards: [card(1, [])], has_more: true, total: 2, total_capped: false }).db, "u", { ...args, limit: 1 });
+    const other = loadCarouselStrategy("dest-only");
+    await expect(fetchFeedPage(fake({ cards: [], has_more: false, total: null, total_capped: false }).db, "u", { ...args, cursor: p1.nextCursor, carousel: other }))
+      .rejects.toMatchObject({ code: "query-mismatch" });
   });
 
   it("地区の id が無い行（migration 20261119140000 の前の DB）では出さない", async () => {

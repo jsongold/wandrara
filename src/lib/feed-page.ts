@@ -58,9 +58,12 @@ export class FeedCursorError extends Error {
 
 // 条件の同一性。cursor と結果に入れ、別の条件の cursor・結果を取り違えない。
 // 点数の順は並びの値の形が違う（時刻でなく数）ので、別の条件として扱う（戦略を切り替えた直後の古い cursor を読まない）
-export function feedQueryKey(query: DiscoverQuery, locale: Locale, order: DbOrder = "editorial"): string {
+// carouselId：カルーセルの戦略（例：carousel=stories-first-once@1）。戦略が変わったら古い cursor を query-mismatch にして、
+// 先頭から取り直させる（並べ方と同じ。続きのページだけ新しい戦略で、記録には古い戦略が付くのを防ぐ）
+export function feedQueryKey(query: DiscoverQuery, locale: Locale, order: DbOrder = "editorial", carouselId?: string): string {
   const key = [locale, query.mode, query.area, query.cat, query.sort, query.q];
-  return JSON.stringify(dbSortOf(query, order) === "score" ? [...key, "score"] : key);
+  const withOrder = dbSortOf(query, order) === "score" ? [...key, "score"] : key;
+  return JSON.stringify(carouselId ? [...withOrder, carouselId] : withOrder);
 }
 
 // ---- cursor ----
@@ -148,7 +151,7 @@ export async function fetchFeedPage(db: SupabaseClient, baseUrl: string, args: F
   const { query, locale, carousel = loadCarouselStrategy() } = args;
   const plan = args.plan ?? EDITORIAL_PLAN;
   const sort = dbSortOf(query, plan.order);
-  const queryKey = feedQueryKey(query, locale, plan.order);
+  const queryKey = feedQueryKey(query, locale, plan.order, carousel.id);
   const cursor = args.cursor ? decodeCursor(args.cursor, queryKey, sort) : null;
   const limit = Math.min(Math.max(Math.trunc(args.limit ?? FEED_PAGE_SIZE), 1), FEED_PAGE_MAX);
 
