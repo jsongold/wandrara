@@ -1,7 +1,7 @@
 "use client";
 
 // home-header：トップのヘッダー。左にタイトルと今のエリア、右にアカウント（ユーザーのアイコン）
-// 一覧をスクロールしたら畳む（collapsed）：タイトルは上へ抜けて見えなくなり、エリアの名前が出る。いちばん上に戻ると元に戻る（エリアの名前は隠れる）
+// 一覧をスクロールしたら畳む（collapsed）：タイトルは上へ抜けて見えなくなり、エリアの名前が左へ寄る。いちばん上に戻ると元に戻る
 // area はエリアの名前の場所に置く物（エリアの一言があればそれを開くボタン、無ければ名前だけ）
 import type { CSSProperties, ReactNode } from "react";
 import { AccountButton } from "./AccountButton";
@@ -37,16 +37,7 @@ export function HomeHeader({ locale, next, subtitle, iconStyle, collapsed, area 
             <span className="truncate text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{subtitle}</span>
           </div>
         </div>
-        {/* エリアの名前は最初は出さず、一覧をスクロールして畳んだときに出す（いちばん上に戻ると隠す） */}
-        <div
-          aria-hidden={!collapsed || undefined}
-          inert={!collapsed || undefined}
-          data-testid="header-area"
-          className="flex min-w-0 items-center motion-reduce:!transition-none"
-          style={{ opacity: collapsed ? 1 : 0, transition: `opacity ${MOTION}` }}
-        >
-          {area}
-        </div>
+        {area}
       </div>
       {/* 言語の切り替えはアカウント／ログインの画面に置く */}
       <AccountButton
