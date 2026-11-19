@@ -55,6 +55,7 @@ async function main(): Promise<number> {
   }
 
   let failed = 0;
+  let changed = false;
   for (const t of targets) {
     // フィルタ式に入るので、ID に使う文字だけを許す
     if (!/^[A-Za-z0-9_-]{1,80}$/.test(t)) { console.error(`${t}: 英数字・ハイフン・下線だけで指定する`); failed++; continue; }
@@ -69,7 +70,10 @@ async function main(): Promise<number> {
       .in("dest_id", found.map((d) => d.dest_id as string));
     if (error) { console.error(`${t}: ${error.message}`); failed++; continue; }
     for (const d of found) console.log(`${status}: ${d.ref ?? "-"} (/d/${d.slug})`);
+    changed = true;
   }
+  // DB を直接書くので、サイトのキャッシュは捨てない。すぐ反映したいときは pnpm dest:publish（API 経由）を使う
+  if (changed) console.warn("注意：サーバーキャッシュは捨てていない。反映されるまで一覧は最大約 1 分、詳細は最大 15 分（cacheLife の revalidate）かかる");
   return failed > 0 ? 1 : 0;
 }
 

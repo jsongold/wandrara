@@ -1,6 +1,7 @@
 // Supabase からコンテンツを読む。誰にでも同じ内容なので 'use cache' でまとめて持つ。
 import { createClient } from "@supabase/supabase-js";
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
+import { CATALOG_TAG, REGIONS_TAG, TRAITS_TAG } from "./cache-tags";
 import { areaTraitsOf, type RegionTraitRow, type TraitRow } from "./area-traits";
 import type { AreaTraits } from "./area-filter";
 import { resolveLocalizedText, type Catalog } from "./feed";
@@ -41,9 +42,11 @@ export function photoUrl(baseUrl: string, storageKey: string): string {
 }
 
 // 地域だけ。詳細が地域名の解決に使う（全件の Catalog を読まずに済む）。getCatalog もこれを使うので読み込みは共有される
+// 地域の更新は migration だけ（アプリからの無効化は無い）ので、ここはインスタンス内のキャッシュ。長く持つ
 export async function getRegions(): Promise<Region[]> {
   "use cache";
-  cacheLife("minutes");
+  cacheTag(REGIONS_TAG);
+  cacheLife({ stale: 300, revalidate: 900, expire: 86400 });
   // regions は 1000 行を超える（Data API は黙って切る）のでページを送って読み切る
   const rows = await selectAll<{ id: string; parent_id: string | null; name: LocalizedText; sort: number | null }>(
     supabase(), "regions", "id, parent_id, name, sort", ["sort", "id"],
@@ -51,9 +54,15 @@ export async function getRegions(): Promise<Region[]> {
   return rows.map((r) => ({ id: r.id, parentId: r.parent_id, name: r.name, sort: r.sort ?? 0 }));
 }
 
+// 公開・非公開・投入で変わる。tag（catalog）を付け、更新経路が捨てる。ただしインスタンス内のキャッシュ（use cache）なので、
+// 捨てられるのは書き込みを受けたインスタンスだけ。ほかのインスタンスは revalidate で追いつく。
+// 寿命は main と同じ "minutes" 相当（stale 300 / revalidate 60 / expire 3600。同梱の cacheLife.md の表）を明示する。
+// Catalog は日々増えるので全件キャッシュを長くしない。remote にしないのは 2MB の上限・読み取り課金が危ないため。全件読みそのものを MS2b でなくす
 export async function getCatalog(): Promise<Catalog> {
   "use cache";
-  cacheLife("minutes");
+  // regions は中の getRegions と同じ内容。外側にも付けておく（入れ子の tag が外へ伝わるとは文書に無い）
+  cacheTag(CATALOG_TAG, REGIONS_TAG);
+  cacheLife({ stale: 300, revalidate: 60, expire: 3600 });
   const { url } = env();
   const db = supabase();
   const [regions, categories, dests] = await Promise.all([
@@ -109,9 +118,11 @@ export async function getAreaTraits(catalog: Catalog, locale: Locale): Promise<A
   return areaTraitsOf(traits, regionTraits, catalog.dests, locale);
 }
 
+// 特性のマスターと土地由来の値。更新は migration・スクリプトだけで、公開状態には依存しない
 async function loadTraitRows(): Promise<{ traits: TraitRow[]; regionTraits: RegionTraitRow[] }> {
   "use cache";
-  cacheLife("minutes");
+  cacheTag(TRAITS_TAG);
+  cacheLife({ stale: 300, revalidate: 900, expire: 86400 });
   const db = supabase();
   const [traits, regionTraits] = await Promise.all([
     db.from("traits").select("id, name, icon, sort, source, category_ids").order("sort"),

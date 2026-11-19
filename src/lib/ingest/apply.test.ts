@@ -153,6 +153,26 @@ describe("registerDest", () => {
     expect(r).toMatchObject({ ok: true, unchanged: false, status: "draft" });
   });
 
+  it("onWrite：既存の dest を書き込む直前に slug を知らせる。新規・409・400 では呼ばない", async () => {
+    const calls: string[] = [];
+    const rec = (slug: string) => calls.push(slug);
+    await registerDest(mockDb(ex).db, acc, body(), principal, fixtureDeps, rec);
+    expect(calls).toEqual(["keep-me"]);
+    calls.length = 0;
+    await registerDest(mockDb().db, acc, body(), principal, fixtureDeps, rec); // 新規
+    await registerDest(mockDb({ ...ex, created_by: "u2" }).db, acc, body(), principal, fixtureDeps, rec); // 409
+    await registerDest(mockDb(ex).db, acc, { core: { kind: "nope" }, texts: [] }, principal, fixtureDeps, rec); // 400
+    expect(calls).toEqual([]);
+  });
+
+  it("onWrite：dest_apply が失敗しても、書き込みを試みたので slug は知らせてある", async () => {
+    const calls: string[] = [];
+    const { db } = mockDb(ex);
+    (db as unknown as { rpc: unknown }).rpc = async () => ({ data: null, error: { message: "boom" } });
+    await expect(registerDest(db, acc, body(), principal, fixtureDeps, (s) => calls.push(s))).rejects.toThrow("dest_apply");
+    expect(calls).toEqual(["keep-me"]);
+  });
+
   it("別の登録者なら、中身が同じでも 409", async () => {
     const { db } = mockDb({ ...ex, created_by: "u2" }, { content_hash: hashOf(body()), status: "published" });
     const r = await registerDest(db, acc, body(), principal);
