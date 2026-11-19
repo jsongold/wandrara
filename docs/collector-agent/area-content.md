@@ -44,7 +44,7 @@ pnpm import:bundle --dry-run <bundle.json>
 pnpm import:bundle <bundle.json> --area-local=src/lib/area-local
 ```
 - `--dry-run` は `dry-run: エリアの中身 <region_id>：products N / ... を確認した` が出れば通っている。
-- `--area-local=<dir>` は `<dir>/<region_id>.json` を画面が読む形（camelCase）で書く。API は呼ばない。
+- `--area-local=<dir>` は同じ検証をしてから、`<dir>/<region_id>.json` を画面が読む形（camelCase）で書く（あれば上書き）。API は呼ばない。`--dry-run` と一緒には使えない。
 - `--dry-run` も `--area-local` も無いと、`area_content` のある bundle は送らずに止まる（まだ DB に送れない）。
 
 ## 報告

@@ -21,6 +21,8 @@ export function parseArgs(argv: string[]): { ok: true; value: Args } | { ok: fal
     } else if (a.startsWith("--") && a !== "--dry-run") return { ok: false, error: `知らないオプション: ${a}` };
   }
   const value: Args = { file: argv.find((a) => !a.startsWith("--")), dryRun: argv.includes("--dry-run"), parallel };
+  // --dry-run は何も書かない。書き出しと一緒には使えない
+  if (areaLocal && value.dryRun) return { ok: false, error: "--dry-run と --area-local は一緒に使えない（--area-local も検証してから書く）" };
   if (areaLocal) value.areaLocal = areaLocal;
   return { ok: true, value };
 }

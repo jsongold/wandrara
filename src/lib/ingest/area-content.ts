@@ -134,7 +134,11 @@ const item = (x: AreaContent["services"][number]): ItemJson => ({
 /** 検証した area_content を、画面が読む形に変える */
 export function toAreaLocal(a: AreaContent): AreaLocalJson {
   return {
-    products: a.products.map((p) => ({ id: p.id, kind: p.kind, ...item(p) })),
+    // kind は id の次に置く（今の area-local の JSON と同じ順）
+    products: a.products.map((p) => {
+      const { id, ...rest } = item(p);
+      return { id, kind: p.kind, ...rest };
+    }),
     services: a.services.map(item),
     shops: a.shops.map((s) => ({
       id: s.id,
