@@ -121,7 +121,11 @@ export function AreaStories({ locale, area, areaLabel, groups, scrollRoot }: Pro
       <button
         ref={areaButtonRef}
         type="button"
-        onClick={() => setPopupFor(popupOpen ? null : area)}
+        onClick={() => {
+          // 自分で開け閉めしたら、自動では開かない
+          autoOpened.current.add(area);
+          setPopupFor(popupOpen ? null : area);
+        }}
         aria-expanded={popupOpen}
         aria-controls={popupId}
         aria-label={m.label(areaLabel)}
