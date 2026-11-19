@@ -7,7 +7,8 @@ export type FeedEventContext = Pick<DiscoverQuery, "mode" | "sort" | "area" | "c
 
 // position は 0 始まりの並び位置
 export type FeedEvent =
-  | { name: "feed_view"; count: number }
+  // count：この表示で最初に出した枚数、total：先頭ページが数えた総件数（1000 件で打ち切り。totalIsLowerBound のとき「1000 件以上」）。続きから開いたときは null
+  | { name: "feed_view"; count: number; total: number | null; totalIsLowerBound: boolean }
   | { name: "card_view"; destId: string; position: number }
   | { name: "card_click"; destId: string; position: number }
   | { name: "tile_click"; destId: string; position: number; fromDestId: string };

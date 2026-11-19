@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { areaHighlights, HIGHLIGHT_KINDS, inSeason, type HighlightGroup, type HighlightItem } from "@/lib/area-highlights";
-import { AreaStories, nextPos, prevPos } from "./AreaStories";
+import { AreaStories } from "./AreaStories";
+import { nextPos, prevPos } from "./story-nav";
 
 const item = (id: string): HighlightItem => ({ id, type: "product", name: id, note: "", description: "", color: "#000", photo: null, season: null, offers: [] });
 const groups: HighlightGroup[] = [
@@ -65,12 +66,28 @@ describe("丸の列", () => {
 });
 
 describe("Google マップ", () => {
-  it("店名と住所で検索する URL を作る", async () => {
-    const { mapsUrl } = await import("./AreaStories");
-    expect(mapsUrl({ shopName: "釜鶴ひもの店", address: "熱海市銀座町10-18" })).toBe(
-      "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent("釜鶴ひもの店 熱海市銀座町10-18"),
+  it("店名と省く前の住所で検索する URL を作る", async () => {
+    const { mapsUrl } = await import("./maps-url");
+    expect(mapsUrl({ shopName: "釜鶴ひもの店", fullAddress: "静岡県熱海市銀座町10-18" })).toBe(
+      "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent("釜鶴ひもの店 静岡県熱海市銀座町10-18"),
     );
-    expect(mapsUrl({ shopName: "店", address: null })).toBe("https://www.google.com/maps/search/?api=1&query=%E5%BA%97");
+    expect(mapsUrl({ shopName: "店", fullAddress: null })).toBe("https://www.google.com/maps/search/?api=1&query=%E5%BA%97");
+  });
+  it("熱海のデータでは、地図の検索に省く前の住所（熱海市を含む）を使う", () => {
+    const offers = areaHighlights("atami", "ja", 11).flatMap((g) => g.items.flatMap((i) => i.offers)).filter((o) => o.fullAddress);
+    expect(offers.length).toBeGreaterThan(0);
+    for (const o of offers) expect(o.fullAddress).not.toBe(o.address);
+  });
+});
+
+describe("スワイプで閉じる（詳細ページと同じ決まり）", () => {
+  it("120px より引いたら閉じる。短くても素早く払ったら閉じる。止めてから離したら払ったと見なさない", async () => {
+    const { swipeDecision } = await import("../use-swipe-down");
+    expect(swipeDecision(130, 0, 500)).toBe(true);
+    expect(swipeDecision(50, 0.8, 20)).toBe(true);
+    expect(swipeDecision(50, 0.8, 300)).toBe(false);
+    expect(swipeDecision(20, 2, 10)).toBe(false);
+    expect(swipeDecision(100, 0.2, 10)).toBe(false);
   });
 });
 

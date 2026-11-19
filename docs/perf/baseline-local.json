@@ -1,0 +1,1565 @@
+{
+  "measuredAt": "2026-11-19T04:02:57.900Z",
+  "commit": "be65f50",
+  "base": "http://localhost:3127",
+  "local": true,
+  "runs": 3,
+  "viewport": "390x844 DPR2 Chromium mobile",
+  "scrollCards": 10,
+  "warmup": true,
+  "counts": {
+    "dest_cards": 560,
+    "regions": 1990,
+    "dest_photos": 3272
+  },
+  "conditions": {
+    "none": {
+      "aggregate": {
+        "cold.ttfb": {
+          "median": 3.100000023841858,
+          "min": 3,
+          "max": 3.200000047683716,
+          "n": 3
+        },
+        "cold.fcp": {
+          "median": 112,
+          "min": 112,
+          "max": 124,
+          "n": 3
+        },
+        "cold.feed": {
+          "median": 111.70000004768372,
+          "min": 110.5,
+          "max": 122.60000002384186,
+          "n": 3
+        },
+        "cold.lcp": {
+          "median": 236,
+          "min": 228,
+          "max": 256,
+          "n": 3
+        },
+        "cold.docDecoded": {
+          "median": 1619737,
+          "min": 1619737,
+          "max": 1619737,
+          "n": 3
+        },
+        "cold.docRscDecoded": {
+          "median": 1514369,
+          "min": 1514369,
+          "max": 1514369,
+          "n": 3
+        },
+        "cold.docRscBrotli": {
+          "median": 74304,
+          "min": 74284,
+          "max": 74329,
+          "n": 3
+        },
+        "cold.bytes": {
+          "median": 786184,
+          "min": 786184,
+          "max": 786186,
+          "n": 3
+        },
+        "cold.reqs": {
+          "median": 42,
+          "min": 42,
+          "max": 42,
+          "n": 3
+        },
+        "cold.b.document": {
+          "median": 207881,
+          "min": 207880,
+          "max": 207882,
+          "n": 3
+        },
+        "cold.b.rsc": {
+          "median": 36129,
+          "min": 36128,
+          "max": 36129,
+          "n": 3
+        },
+        "cold.b.script": {
+          "median": 215747,
+          "min": 215747,
+          "max": 215747,
+          "n": 3
+        },
+        "cold.b.image": {
+          "median": 307870,
+          "min": 307870,
+          "max": 307870,
+          "n": 3
+        },
+        "cold.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "cold.b.other": {
+          "median": 18558,
+          "min": 18558,
+          "max": 18558,
+          "n": 3
+        },
+        "cold.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "cold.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "cold.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.scrolledTo": {
+          "median": 10,
+          "min": 10,
+          "max": 10,
+          "n": 3
+        },
+        "scroll.bytes": {
+          "median": 403978,
+          "min": 403976,
+          "max": 403979,
+          "n": 3
+        },
+        "scroll.reqs": {
+          "median": 39,
+          "min": 39,
+          "max": 39,
+          "n": 3
+        },
+        "scroll.b.document": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.rsc": {
+          "median": 82869,
+          "min": 82867,
+          "max": 82870,
+          "n": 3
+        },
+        "scroll.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.image": {
+          "median": 321109,
+          "min": 321109,
+          "max": 321109,
+          "n": 3
+        },
+        "scroll.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.prefetch": {
+          "median": 26,
+          "min": 26,
+          "max": 26,
+          "n": 3
+        },
+        "scroll.prefetchUnique": {
+          "median": 26,
+          "min": 26,
+          "max": 26,
+          "n": 3
+        },
+        "scroll.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.cumulativeBytes": {
+          "median": 1190163,
+          "min": 1190160,
+          "max": 1190164,
+          "n": 3
+        },
+        "detailPrefetch.bytes": {
+          "median": 115189,
+          "min": 115186,
+          "max": 115190,
+          "n": 3
+        },
+        "repeat.ttfb": {
+          "median": 6.299999952316284,
+          "min": 6.200000047683716,
+          "max": 17.899999976158142,
+          "n": 3
+        },
+        "repeat.feed": {
+          "median": 163.69999992847443,
+          "min": 159.89999997615814,
+          "max": 411.2999999523163,
+          "n": 3
+        },
+        "repeat.lcp": {
+          "median": 232,
+          "min": 228,
+          "max": 532,
+          "n": 3
+        },
+        "repeat.bytes": {
+          "median": 244008,
+          "min": 244005,
+          "max": 244053,
+          "n": 3
+        },
+        "repeat.reqs": {
+          "median": 48,
+          "min": 48,
+          "max": 48,
+          "n": 3
+        },
+        "repeat.b.document": {
+          "median": 207880,
+          "min": 207880,
+          "max": 207927,
+          "n": 3
+        },
+        "repeat.b.rsc": {
+          "median": 36126,
+          "min": 36125,
+          "max": 36128,
+          "n": 3
+        },
+        "repeat.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.image": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "repeat.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "repeat.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetched": {
+          "median": 1,
+          "min": 1,
+          "max": 1,
+          "n": 3
+        },
+        "tap.sheetMs": {
+          "median": 45,
+          "min": 29,
+          "max": 46,
+          "n": 3
+        },
+        "tap.h1Ms": {
+          "median": 49,
+          "min": 31,
+          "max": 49,
+          "n": 3
+        },
+        "tap.bytes": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.reqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.document": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.rsc": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.image": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetch": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetchUnique": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "saveData.feed": {
+          "median": 119.10000002384186,
+          "min": 111.20000004768372,
+          "max": 124.39999997615814,
+          "n": 3
+        },
+        "saveData.lcp": {
+          "median": 220,
+          "min": 176,
+          "max": 248,
+          "n": 3
+        },
+        "saveData.bytes": {
+          "median": 786184,
+          "min": 786183,
+          "max": 786185,
+          "n": 3
+        },
+        "saveData.reqs": {
+          "median": 42,
+          "min": 42,
+          "max": 42,
+          "n": 3
+        },
+        "saveData.b.document": {
+          "median": 207881,
+          "min": 207880,
+          "max": 207881,
+          "n": 3
+        },
+        "saveData.b.rsc": {
+          "median": 36128,
+          "min": 36128,
+          "max": 36129,
+          "n": 3
+        },
+        "saveData.b.script": {
+          "median": 215747,
+          "min": 215747,
+          "max": 215747,
+          "n": 3
+        },
+        "saveData.b.image": {
+          "median": 307870,
+          "min": 307870,
+          "max": 307870,
+          "n": 3
+        },
+        "saveData.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "saveData.b.other": {
+          "median": 18558,
+          "min": 18558,
+          "max": 18558,
+          "n": 3
+        },
+        "saveData.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "saveData.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "saveData.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        }
+      },
+      "runs": [
+        {
+          "flat": {
+            "cold.ttfb": 3,
+            "cold.fcp": 112,
+            "cold.feed": 110.5,
+            "cold.lcp": 228,
+            "cold.docDecoded": 1619737,
+            "cold.docRscDecoded": 1514369,
+            "cold.docRscBrotli": 74304,
+            "cold.bytes": 786184,
+            "cold.reqs": 42,
+            "cold.b.document": 207881,
+            "cold.b.rsc": 36128,
+            "cold.b.script": 215747,
+            "cold.b.image": 307870,
+            "cold.b.font": 0,
+            "cold.b.other": 18558,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 403976,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 82867,
+            "scroll.b.script": 0,
+            "scroll.b.image": 321109,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1190160,
+            "detailPrefetch.bytes": 115186,
+            "repeat.ttfb": 17.899999976158142,
+            "repeat.feed": 159.89999997615814,
+            "repeat.lcp": 228,
+            "repeat.bytes": 244005,
+            "repeat.reqs": 48,
+            "repeat.b.document": 207880,
+            "repeat.b.rsc": 36125,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 29,
+            "tap.h1Ms": 31,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 124.39999997615814,
+            "saveData.lcp": 176,
+            "saveData.bytes": 786183,
+            "saveData.reqs": 42,
+            "saveData.b.document": 207880,
+            "saveData.b.rsc": 36128,
+            "saveData.b.script": 215747,
+            "saveData.b.image": 307870,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18558,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        },
+        {
+          "flat": {
+            "cold.ttfb": 3.100000023841858,
+            "cold.fcp": 124,
+            "cold.feed": 122.60000002384186,
+            "cold.lcp": 256,
+            "cold.docDecoded": 1619737,
+            "cold.docRscDecoded": 1514369,
+            "cold.docRscBrotli": 74284,
+            "cold.bytes": 786184,
+            "cold.reqs": 42,
+            "cold.b.document": 207880,
+            "cold.b.rsc": 36129,
+            "cold.b.script": 215747,
+            "cold.b.image": 307870,
+            "cold.b.font": 0,
+            "cold.b.other": 18558,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 403979,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 82870,
+            "scroll.b.script": 0,
+            "scroll.b.image": 321109,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1190163,
+            "detailPrefetch.bytes": 115190,
+            "repeat.ttfb": 6.200000047683716,
+            "repeat.feed": 411.2999999523163,
+            "repeat.lcp": 532,
+            "repeat.bytes": 244053,
+            "repeat.reqs": 48,
+            "repeat.b.document": 207927,
+            "repeat.b.rsc": 36126,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 45,
+            "tap.h1Ms": 49,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 119.10000002384186,
+            "saveData.lcp": 248,
+            "saveData.bytes": 786185,
+            "saveData.reqs": 42,
+            "saveData.b.document": 207881,
+            "saveData.b.rsc": 36129,
+            "saveData.b.script": 215747,
+            "saveData.b.image": 307870,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18558,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        },
+        {
+          "flat": {
+            "cold.ttfb": 3.200000047683716,
+            "cold.fcp": 112,
+            "cold.feed": 111.70000004768372,
+            "cold.lcp": 236,
+            "cold.docDecoded": 1619737,
+            "cold.docRscDecoded": 1514369,
+            "cold.docRscBrotli": 74329,
+            "cold.bytes": 786186,
+            "cold.reqs": 42,
+            "cold.b.document": 207882,
+            "cold.b.rsc": 36129,
+            "cold.b.script": 215747,
+            "cold.b.image": 307870,
+            "cold.b.font": 0,
+            "cold.b.other": 18558,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 403978,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 82869,
+            "scroll.b.script": 0,
+            "scroll.b.image": 321109,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1190164,
+            "detailPrefetch.bytes": 115189,
+            "repeat.ttfb": 6.299999952316284,
+            "repeat.feed": 163.69999992847443,
+            "repeat.lcp": 232,
+            "repeat.bytes": 244008,
+            "repeat.reqs": 48,
+            "repeat.b.document": 207880,
+            "repeat.b.rsc": 36128,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 46,
+            "tap.h1Ms": 49,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 111.20000004768372,
+            "saveData.lcp": 220,
+            "saveData.bytes": 786184,
+            "saveData.reqs": 42,
+            "saveData.b.document": 207881,
+            "saveData.b.rsc": 36128,
+            "saveData.b.script": 215747,
+            "saveData.b.image": 307870,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18558,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        }
+      ]
+    },
+    "slow4g-cpu4x": {
+      "aggregate": {
+        "cold.ttfb": {
+          "median": 150.70000004768372,
+          "min": 150.60000002384186,
+          "max": 150.80000007152557,
+          "n": 3
+        },
+        "cold.fcp": {
+          "median": 572,
+          "min": 568,
+          "max": 572,
+          "n": 3
+        },
+        "cold.feed": {
+          "median": 576.1000000238419,
+          "min": 570.8000000715256,
+          "max": 577.2999999523163,
+          "n": 3
+        },
+        "cold.lcp": {
+          "median": 2856,
+          "min": 2840,
+          "max": 3112,
+          "n": 3
+        },
+        "cold.docDecoded": {
+          "median": 1619737,
+          "min": 1619737,
+          "max": 1619737,
+          "n": 3
+        },
+        "cold.docRscDecoded": {
+          "median": 1514369,
+          "min": 1514369,
+          "max": 1514369,
+          "n": 3
+        },
+        "cold.docRscBrotli": {
+          "median": 74260,
+          "min": 74254,
+          "max": 74293,
+          "n": 3
+        },
+        "cold.bytes": {
+          "median": 786185,
+          "min": 786183,
+          "max": 786186,
+          "n": 3
+        },
+        "cold.reqs": {
+          "median": 42,
+          "min": 42,
+          "max": 42,
+          "n": 3
+        },
+        "cold.b.document": {
+          "median": 207880,
+          "min": 207880,
+          "max": 207881,
+          "n": 3
+        },
+        "cold.b.rsc": {
+          "median": 36130,
+          "min": 36128,
+          "max": 36130,
+          "n": 3
+        },
+        "cold.b.script": {
+          "median": 215747,
+          "min": 215747,
+          "max": 215747,
+          "n": 3
+        },
+        "cold.b.image": {
+          "median": 307870,
+          "min": 307870,
+          "max": 307870,
+          "n": 3
+        },
+        "cold.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "cold.b.other": {
+          "median": 18558,
+          "min": 18558,
+          "max": 18558,
+          "n": 3
+        },
+        "cold.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "cold.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "cold.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.scrolledTo": {
+          "median": 10,
+          "min": 10,
+          "max": 10,
+          "n": 3
+        },
+        "scroll.bytes": {
+          "median": 403976,
+          "min": 403971,
+          "max": 403981,
+          "n": 3
+        },
+        "scroll.reqs": {
+          "median": 39,
+          "min": 39,
+          "max": 39,
+          "n": 3
+        },
+        "scroll.b.document": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.rsc": {
+          "median": 82867,
+          "min": 82862,
+          "max": 82872,
+          "n": 3
+        },
+        "scroll.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.image": {
+          "median": 321109,
+          "min": 321109,
+          "max": 321109,
+          "n": 3
+        },
+        "scroll.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.prefetch": {
+          "median": 26,
+          "min": 26,
+          "max": 26,
+          "n": 3
+        },
+        "scroll.prefetchUnique": {
+          "median": 26,
+          "min": 26,
+          "max": 26,
+          "n": 3
+        },
+        "scroll.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "scroll.cumulativeBytes": {
+          "median": 1190161,
+          "min": 1190154,
+          "max": 1190167,
+          "n": 3
+        },
+        "detailPrefetch.bytes": {
+          "median": 115188,
+          "min": 115181,
+          "max": 115193,
+          "n": 3
+        },
+        "repeat.ttfb": {
+          "median": 151,
+          "min": 150.89999997615814,
+          "max": 151.29999995231628,
+          "n": 3
+        },
+        "repeat.feed": {
+          "median": 370.7999999523163,
+          "min": 345.5,
+          "max": 1023.5999999046326,
+          "n": 3
+        },
+        "repeat.lcp": {
+          "median": 960,
+          "min": 944,
+          "max": 1624,
+          "n": 3
+        },
+        "repeat.bytes": {
+          "median": 244054,
+          "min": 244053,
+          "max": 244054,
+          "n": 3
+        },
+        "repeat.reqs": {
+          "median": 48,
+          "min": 48,
+          "max": 48,
+          "n": 3
+        },
+        "repeat.b.document": {
+          "median": 207926,
+          "min": 207925,
+          "max": 207926,
+          "n": 3
+        },
+        "repeat.b.rsc": {
+          "median": 36128,
+          "min": 36127,
+          "max": 36129,
+          "n": 3
+        },
+        "repeat.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.image": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "repeat.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "repeat.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "repeat.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetched": {
+          "median": 1,
+          "min": 1,
+          "max": 1,
+          "n": 3
+        },
+        "tap.sheetMs": {
+          "median": 114,
+          "min": 99,
+          "max": 262,
+          "n": 3
+        },
+        "tap.h1Ms": {
+          "median": 121,
+          "min": 105,
+          "max": 281,
+          "n": 3
+        },
+        "tap.bytes": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.reqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.document": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.rsc": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.script": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.image": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.b.other": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetch": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.prefetchUnique": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "tap.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "saveData.feed": {
+          "median": 604.2000000476837,
+          "min": 574.6000000238419,
+          "max": 875,
+          "n": 3
+        },
+        "saveData.lcp": {
+          "median": 2860,
+          "min": 2856,
+          "max": 3376,
+          "n": 3
+        },
+        "saveData.bytes": {
+          "median": 786181,
+          "min": 786178,
+          "max": 786185,
+          "n": 3
+        },
+        "saveData.reqs": {
+          "median": 42,
+          "min": 42,
+          "max": 42,
+          "n": 3
+        },
+        "saveData.b.document": {
+          "median": 207879,
+          "min": 207879,
+          "max": 207880,
+          "n": 3
+        },
+        "saveData.b.rsc": {
+          "median": 36127,
+          "min": 36124,
+          "max": 36130,
+          "n": 3
+        },
+        "saveData.b.script": {
+          "median": 215747,
+          "min": 215747,
+          "max": 215747,
+          "n": 3
+        },
+        "saveData.b.image": {
+          "median": 307870,
+          "min": 307870,
+          "max": 307870,
+          "n": 3
+        },
+        "saveData.b.font": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        },
+        "saveData.b.other": {
+          "median": 18558,
+          "min": 18558,
+          "max": 18558,
+          "n": 3
+        },
+        "saveData.prefetch": {
+          "median": 15,
+          "min": 15,
+          "max": 15,
+          "n": 3
+        },
+        "saveData.prefetchUnique": {
+          "median": 14,
+          "min": 14,
+          "max": 14,
+          "n": 3
+        },
+        "saveData.supabaseReqs": {
+          "median": 0,
+          "min": 0,
+          "max": 0,
+          "n": 3
+        }
+      },
+      "runs": [
+        {
+          "flat": {
+            "cold.ttfb": 150.80000007152557,
+            "cold.fcp": 568,
+            "cold.feed": 570.8000000715256,
+            "cold.lcp": 2840,
+            "cold.docDecoded": 1619737,
+            "cold.docRscDecoded": 1514369,
+            "cold.docRscBrotli": 74260,
+            "cold.bytes": 786186,
+            "cold.reqs": 42,
+            "cold.b.document": 207881,
+            "cold.b.rsc": 36130,
+            "cold.b.script": 215747,
+            "cold.b.image": 307870,
+            "cold.b.font": 0,
+            "cold.b.other": 18558,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 403981,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 82872,
+            "scroll.b.script": 0,
+            "scroll.b.image": 321109,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1190167,
+            "detailPrefetch.bytes": 115193,
+            "repeat.ttfb": 150.89999997615814,
+            "repeat.feed": 1023.5999999046326,
+            "repeat.lcp": 1624,
+            "repeat.bytes": 244054,
+            "repeat.reqs": 48,
+            "repeat.b.document": 207926,
+            "repeat.b.rsc": 36128,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 114,
+            "tap.h1Ms": 121,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 574.6000000238419,
+            "saveData.lcp": 2856,
+            "saveData.bytes": 786181,
+            "saveData.reqs": 42,
+            "saveData.b.document": 207879,
+            "saveData.b.rsc": 36127,
+            "saveData.b.script": 215747,
+            "saveData.b.image": 307870,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18558,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        },
+        {
+          "flat": {
+            "cold.ttfb": 150.70000004768372,
+            "cold.fcp": 572,
+            "cold.feed": 576.1000000238419,
+            "cold.lcp": 2856,
+            "cold.docDecoded": 1619737,
+            "cold.docRscDecoded": 1514369,
+            "cold.docRscBrotli": 74293,
+            "cold.bytes": 786183,
+            "cold.reqs": 42,
+            "cold.b.document": 207880,
+            "cold.b.rsc": 36128,
+            "cold.b.script": 215747,
+            "cold.b.image": 307870,
+            "cold.b.font": 0,
+            "cold.b.other": 18558,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 403971,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 82862,
+            "scroll.b.script": 0,
+            "scroll.b.image": 321109,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1190154,
+            "detailPrefetch.bytes": 115181,
+            "repeat.ttfb": 151.29999995231628,
+            "repeat.feed": 370.7999999523163,
+            "repeat.lcp": 960,
+            "repeat.bytes": 244053,
+            "repeat.reqs": 48,
+            "repeat.b.document": 207926,
+            "repeat.b.rsc": 36127,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 99,
+            "tap.h1Ms": 105,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 604.2000000476837,
+            "saveData.lcp": 2860,
+            "saveData.bytes": 786178,
+            "saveData.reqs": 42,
+            "saveData.b.document": 207879,
+            "saveData.b.rsc": 36124,
+            "saveData.b.script": 215747,
+            "saveData.b.image": 307870,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18558,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        },
+        {
+          "flat": {
+            "cold.ttfb": 150.60000002384186,
+            "cold.fcp": 572,
+            "cold.feed": 577.2999999523163,
+            "cold.lcp": 3112,
+            "cold.docDecoded": 1619737,
+            "cold.docRscDecoded": 1514369,
+            "cold.docRscBrotli": 74254,
+            "cold.bytes": 786185,
+            "cold.reqs": 42,
+            "cold.b.document": 207880,
+            "cold.b.rsc": 36130,
+            "cold.b.script": 215747,
+            "cold.b.image": 307870,
+            "cold.b.font": 0,
+            "cold.b.other": 18558,
+            "cold.prefetch": 15,
+            "cold.prefetchUnique": 14,
+            "cold.supabaseReqs": 0,
+            "scroll.scrolledTo": 10,
+            "scroll.bytes": 403976,
+            "scroll.reqs": 39,
+            "scroll.b.document": 0,
+            "scroll.b.rsc": 82867,
+            "scroll.b.script": 0,
+            "scroll.b.image": 321109,
+            "scroll.b.font": 0,
+            "scroll.b.other": 0,
+            "scroll.prefetch": 26,
+            "scroll.prefetchUnique": 26,
+            "scroll.supabaseReqs": 0,
+            "scroll.cumulativeBytes": 1190161,
+            "detailPrefetch.bytes": 115188,
+            "repeat.ttfb": 151,
+            "repeat.feed": 345.5,
+            "repeat.lcp": 944,
+            "repeat.bytes": 244054,
+            "repeat.reqs": 48,
+            "repeat.b.document": 207925,
+            "repeat.b.rsc": 36129,
+            "repeat.b.script": 0,
+            "repeat.b.image": 0,
+            "repeat.b.font": 0,
+            "repeat.b.other": 0,
+            "repeat.prefetch": 15,
+            "repeat.prefetchUnique": 14,
+            "repeat.supabaseReqs": 0,
+            "tap.prefetched": 1,
+            "tap.sheetMs": 262,
+            "tap.h1Ms": 281,
+            "tap.bytes": 0,
+            "tap.reqs": 0,
+            "tap.b.document": 0,
+            "tap.b.rsc": 0,
+            "tap.b.script": 0,
+            "tap.b.image": 0,
+            "tap.b.font": 0,
+            "tap.b.other": 0,
+            "tap.prefetch": 0,
+            "tap.prefetchUnique": 0,
+            "tap.supabaseReqs": 0,
+            "saveData.feed": 875,
+            "saveData.lcp": 3376,
+            "saveData.bytes": 786185,
+            "saveData.reqs": 42,
+            "saveData.b.document": 207880,
+            "saveData.b.rsc": 36130,
+            "saveData.b.script": 215747,
+            "saveData.b.image": 307870,
+            "saveData.b.font": 0,
+            "saveData.b.other": 18558,
+            "saveData.prefetch": 15,
+            "saveData.prefetchUnique": 14,
+            "saveData.supabaseReqs": 0
+          },
+          "meta": {
+            "cards": 194,
+            "scrolledTo": 10,
+            "prefetchTop": {
+              "/ja/d/miyabi-sengokuhara#/_tree": 1,
+              "/ja/d/miyabi-sengokuhara": 1,
+              "/ja/d/wr-ito-078#/_tree": 1,
+              "/ja/d/wr-ito-078": 1,
+              "/ja/d/wr-ito-nat-007#/_tree": 1,
+              "/ja/d/wr-ito-exp-001#/_tree": 1,
+              "/ja/d/wr-ito-exp-082#/_tree": 1,
+              "/ja/d/wr-ito-077#/_tree": 1,
+              "/ja/d/wr-ito-nat-007": 1,
+              "/ja/d/wr-ito-exp-001": 1,
+              "/ja/d/wr-ito-exp-082": 1,
+              "/ja/d/wr-ito-077": 1,
+              "/ja/d/wr-ito-069#/_tree": 1,
+              "/ja/d/wr-ito-069": 1,
+              "/ja/d/wr-ito-060#/_tree": 1,
+              "/ja/d/wr-ito-060": 1,
+              "/ja/d/wr-ito-065#/_tree": 1,
+              "/ja/d/wr-ito-065": 1,
+              "/ja/d/wr-ito-068#/_tree": 1,
+              "/ja/d/wr-ito-068": 1,
+              "/ja/d/wr-ito-064#/_tree": 1,
+              "/ja/d/wr-ito-064": 1,
+              "/ja/d/wr-ito-066#/_tree": 1,
+              "/ja/d/wr-ito-066": 1,
+              "/ja/d/wr-ito-056#/_tree": 1,
+              "/ja/d/wr-ito-056": 1
+            },
+            "tapHref": "/ja/d/koti-hakone"
+          }
+        }
+      ]
+    }
+  }
+}

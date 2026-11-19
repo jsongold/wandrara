@@ -46,3 +46,6 @@ next-env.d.ts
 
 # エリア地図の元データ（pnpm area-map:build が落とす）
 /.cache/
+
+# perf の出力
+/perf-out/

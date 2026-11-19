@@ -88,3 +88,12 @@ describe("cursor", () => {
     expect(decodeCursor(encodeCursor({ ...good, k: "-infinity" }), key).k).toBe("-infinity");
   });
 });
+
+describe("dbFeedApplies", () => {
+  it("既定の 3 戦略だけ DB 版。差し替えているときは buildFeed に分岐する", async () => {
+    const { loadFeedStrategies } = await import("./feed-config");
+    const { dbFeedApplies } = await import("./feed-page");
+    expect(dbFeedApplies(loadFeedStrategies({}))).toBe(true);
+    expect(dbFeedApplies({ ...loadFeedStrategies({}), id: "order=popular@1 primary=by-mode@1 secondary=related-other-mode@1" })).toBe(false);
+  });
+});
