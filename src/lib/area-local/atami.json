@@ -1,13 +1,978 @@
 {
   "products": [
-    { "id": "himono", "kind": "meisan", "name": { "ja": "干物", "en": "Dried fish" }, "summary": { "ja": "仮のデータ", "en": "Placeholder" }, "description": null, "season": null, "photo": null, "sources": [] }
+    {
+      "id": "himono",
+      "kind": "meisan",
+      "name": {
+        "ja": "干物",
+        "en": "Dried fish (himono)"
+      },
+      "summary": {
+        "ja": "江戸期から続く熱海銀座の老舗が焼く干物",
+        "en": "Dried fish from long-established shops in Atami Ginza"
+      },
+      "description": {
+        "ja": "熱海の駅前・銀座通りには干物店が多く、地物を中心に多種の干物を扱う。伊勢海老ひものなど季節の高級品もある。",
+        "en": "Atami's station and Ginza streets have many himono shops selling mostly local fish, plus seasonal luxury items such as spiny lobster."
+      },
+      "season": null,
+      "photo": null,
+      "sources": [
+        "https://www.kamaturu.co.jp/",
+        "https://www.aoki-himono.co.jp/",
+        "https://www.ataminews.gr.jp/product/38",
+        "https://www.ataminews.gr.jp/spot/331"
+      ]
+    },
+    {
+      "id": "onsen-manju",
+      "kind": "meisan",
+      "name": {
+        "ja": "温泉まんじゅう",
+        "en": "Onsen manju"
+      },
+      "summary": {
+        "ja": "駅前で買えるできたての温泉まんじゅう",
+        "en": "Fresh hot-spring buns sold near the station"
+      },
+      "description": {
+        "ja": "北海道産小豆のあんと黒糖の生地が基本。駅前商店街で買って食べ歩きできる。延命堂は温泉まんじゅう発祥の店とされる。",
+        "en": "Buns of brown-sugar dough filled with Hokkaido azuki paste, easy to eat while strolling the station shopping streets."
+      },
+      "season": null,
+      "photo": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/product/30",
+        "https://www.ataminews.gr.jp/product/81",
+        "https://www.ataminews.gr.jp/spot/331"
+      ]
+    },
+    {
+      "id": "atami-pudding",
+      "kind": "meisan",
+      "name": {
+        "ja": "熱海プリン",
+        "en": "Atami pudding"
+      },
+      "summary": {
+        "ja": "地元の丹那牛乳で蒸し上げたなめらかプリン",
+        "en": "Smooth steamed pudding made with local Tanna milk"
+      },
+      "description": {
+        "ja": "丹那牛乳を使いじっくり蒸し上げ、手作りカラメルをのせる。だいだい味など限定品もある。",
+        "en": "Slow-steamed with Tanna milk and topped with handmade caramel; limited flavors such as daidai also exist."
+      },
+      "season": null,
+      "photo": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/product/715",
+        "http://atami-purin.com/"
+      ]
+    },
+    {
+      "id": "daidai-yokan",
+      "kind": "meisan",
+      "name": {
+        "ja": "橙羊羹（鶴吉羊羹）",
+        "en": "Daidai yokan"
+      },
+      "summary": {
+        "ja": "熱海産の橙を100%使った甘くほろ苦い羊羹",
+        "en": "Sweet-bitter yokan made only with Atami daidai"
+      },
+      "description": {
+        "ja": "常盤木羊羹店の鶴吉羊羹（橙）。熱海産橙のみを使い、緑茶やコーヒーにも合うとされる。",
+        "en": "Tsurukichi yokan (daidai) from Tokiwagi Yokanten, made with 100% Atami daidai; pairs with tea or coffee."
+      },
+      "season": null,
+      "photo": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/product/66",
+        "https://tokiwagi-yohkanten.com/"
+      ]
+    },
+    {
+      "id": "neko-no-shita",
+      "kind": "meisan",
+      "name": {
+        "ja": "ネコの舌",
+        "en": "Neko no shita cookies"
+      },
+      "summary": {
+        "ja": "60年以上愛されるバターたっぷりのクッキー",
+        "en": "Buttery langue-de-chat cookies loved for 60+ years"
+      },
+      "description": {
+        "ja": "ラング・ド・シャを直訳した名の素朴なクッキー。三木製菓の看板商品。",
+        "en": "Plain butter cookies named as a literal translation of langue de chat, by Miki Seika."
+      },
+      "season": null,
+      "photo": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/product/15",
+        "https://www.mikiseika.com/"
+      ]
+    },
+    {
+      "id": "daidai",
+      "kind": "tokusan",
+      "name": {
+        "ja": "橙（だいだい）",
+        "en": "Daidai (bitter orange)"
+      },
+      "summary": {
+        "ja": "熱海・多賀で育つ縁起物の柑橘",
+        "en": "Auspicious citrus grown in the Taga hills"
+      },
+      "description": {
+        "ja": "熱海市の山間部、多賀地区が中心の産地。11月末から収穫、12〜1月に黄色く熟す。マーマレードやポン酢、菓子に使われる。",
+        "en": "Grown mainly in Taga; harvested from late November and ripe yellow in Dec-Jan. Used in marmalade, ponzu and sweets."
+      },
+      "season": {
+        "from": 11,
+        "to": 1
+      },
+      "photo": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/b/b2/Daidai.jpg",
+        "license": "CC BY-SA 4.0",
+        "credit": "Jpbrigand",
+        "source": "https://commons.wikimedia.org/wiki/File:Daidai.jpg"
+      },
+      "sources": [
+        "https://www.ataminews.gr.jp/ad/201803daidai/index.html",
+        "https://www.ataminews.gr.jp/product/32"
+      ]
+    },
+    {
+      "id": "mikan",
+      "kind": "tokusan",
+      "name": {
+        "ja": "熱海のみかん",
+        "en": "Atami mikan"
+      },
+      "summary": {
+        "ja": "南熱海・伊豆山のみかん園で食べ放題",
+        "en": "Mandarins grown on Atami's southern hills"
+      },
+      "description": {
+        "ja": "南熱海（網代）や伊豆山にみかん園があり、10月から12月頃（園により1月まで）みかん狩りができる。",
+        "en": "Orchards in Ajiro and Izusan offer mikan picking from October through December (to January at one farm)."
+      },
+      "season": {
+        "from": 10,
+        "to": 1
+      },
+      "photo": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/188"
+      ]
+    },
+    {
+      "id": "new-summer-orange",
+      "kind": "tokusan",
+      "name": {
+        "ja": "ニューサマーオレンジ",
+        "en": "New Summer orange"
+      },
+      "summary": {
+        "ja": "伊豆山の園でみかん狩りできる春夏の柑橘",
+        "en": "A spring-summer citrus picked at an Izusan orchard"
+      },
+      "description": {
+        "ja": "マルフクガーデン（伊豆山）の案内に、みかんの後にポンカン・ゴールデンオレンジ・ニューサマーオレンジの狩りが続くとある。時期の月は未確認。",
+        "en": "An Izusan orchard lists New Summer orange picking after the mikan season; exact months not confirmed."
+      },
+      "season": null,
+      "photo": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/5/5d/Hyuganatsu_20220528_151951.jpg",
+        "license": "CC BY 4.0",
+        "credit": "Ka23_13",
+        "source": "https://commons.wikimedia.org/wiki/File:Hyuganatsu_20220528_151951.jpg"
+      },
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/188",
+        "https://www.ataminews.gr.jp/product/95"
+      ]
+    }
   ],
-  "services": [],
+  "services": [
+    {
+      "id": "atami-baien",
+      "name": {
+        "ja": "熱海梅園を歩く",
+        "en": "Atami Plum Garden"
+      },
+      "summary": {
+        "ja": "1〜3月の梅まつりで梅を見る",
+        "en": "See plum blossoms at the Jan-Mar festival"
+      },
+      "description": {
+        "ja": "熱海梅園は梅まつり期間（2026年は1/10〜3/8）に有料時間帯がある。それ以外は入園自由。",
+        "en": "The garden charges admission only during the plum festival (Jan 10-Mar 8 in 2026) and is free to enter otherwise."
+      },
+      "season": {
+        "from": 1,
+        "to": 3
+      },
+      "photo": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Atami_baien_-_March_7_2021_various.jpeg",
+        "license": "CC BY 4.0",
+        "credit": "Nesnad",
+        "source": "https://commons.wikimedia.org/wiki/File:Atami_baien_-_March_7_2021_various.jpeg"
+      },
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/105"
+      ]
+    },
+    {
+      "id": "mikan-gari",
+      "name": {
+        "ja": "みかん狩り",
+        "en": "Mikan picking"
+      },
+      "summary": {
+        "ja": "食べ放題のみかん狩り（10月〜）",
+        "en": "All-you-can-eat mandarin picking from October"
+      },
+      "description": {
+        "ja": "西島農園（南熱海）とマルフクガーデン（伊豆山）で実施。受付は9時〜15時ごろ。収穫状況で変わるため事前確認が望ましい。",
+        "en": "At Nishijima Farm and Marufuku Garden; reception about 9:00-15:00. Dates depend on the harvest, so call ahead."
+      },
+      "season": {
+        "from": 10,
+        "to": 1
+      },
+      "photo": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/188"
+      ]
+    },
+    {
+      "id": "umi-zuri",
+      "name": {
+        "ja": "熱海港で海釣り",
+        "en": "Sea fishing at Atami Port"
+      },
+      "summary": {
+        "ja": "手ぶらで楽しめる海釣り施設",
+        "en": "Pier fishing with rental rods"
+      },
+      "description": {
+        "ja": "熱海港海釣り施設。入場は大人500円、竿セットは2時間2,200円で貸出。予約不可。荒天や花火の日は閉場あり。",
+        "en": "Atami Port fishing facility: adults 500 yen, rod rental 2,200 yen per 2 hours, no reservations. Closes in bad weather and on fireworks days."
+      },
+      "season": null,
+      "photo": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/136"
+      ]
+    },
+    {
+      "id": "hatsushima",
+      "name": {
+        "ja": "初島へ船で渡る",
+        "en": "Ferry to Hatsushima"
+      },
+      "summary": {
+        "ja": "熱海港から約30分の島へ高速船",
+        "en": "A ~30 minute ferry ride to an island"
+      },
+      "description": {
+        "ja": "富士急マリンリゾートの高速船で熱海港から初島へ。往復は大人2,900円、小学生1,450円。11/4〜12/24は検査のため1日7往復。",
+        "en": "Fujikyu Marine Resort ferries from Atami Port; round trip 2,900 yen adult, 1,450 yen child. 7 round trips/day Nov 4-Dec 24 (dock schedule)."
+      },
+      "season": null,
+      "photo": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Hatsushima_20120802.jpg",
+        "license": "Public domain",
+        "credit": "Batholith",
+        "source": "https://commons.wikimedia.org/wiki/File:Hatsushima_20120802.jpg"
+      },
+      "sources": [
+        "http://www.hatsushima.jp/access/",
+        "https://www.ataminews.gr.jp/spot/181"
+      ]
+    },
+    {
+      "id": "sup",
+      "name": {
+        "ja": "長浜でSUP体験",
+        "en": "SUP at Nagahama Beach"
+      },
+      "summary": {
+        "ja": "専属ガイド付きの60分SUP",
+        "en": "A 60-minute guided SUP session"
+      },
+      "description": {
+        "ja": "海の音色が長浜海水浴場で開催。7,700円〜（レンタル・保険・ガイド込み）。海水浴場開設中の夏季開催、荒天は中止。",
+        "en": "Run by Umi no Neiro at Nagahama beach from 7,700 yen (gear, insurance and guide included); summer season only, cancelled in rough weather."
+      },
+      "season": null,
+      "photo": null,
+      "sources": [
+        "https://www.asoview.com/item/activity/pln3000049043/"
+      ]
+    },
+    {
+      "id": "ashiyu",
+      "name": {
+        "ja": "家康の湯で足湯",
+        "en": "Foot bath at Ieyasu no Yu"
+      },
+      "summary": {
+        "ja": "熱海駅前の無料の足湯",
+        "en": "Free foot bath in front of Atami Station"
+      },
+      "description": {
+        "ja": "9:00〜16:00、無料、無休（不具合時は休止）。駅前の田原本町9。",
+        "en": "Free, 9:00-16:00, open daily unless under repair; right outside the station."
+      },
+      "season": null,
+      "photo": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/138"
+      ]
+    },
+    {
+      "id": "tabearuki",
+      "name": {
+        "ja": "駅前商店街で食べ歩き",
+        "en": "Snack walk on the station shopping streets"
+      },
+      "summary": {
+        "ja": "仲見世・平和通りで温泉まんじゅうなど",
+        "en": "Hot-spring buns and more on Nakamise and Heiwa-dori"
+      },
+      "description": {
+        "ja": "熱海駅前の仲見世・平和通りは、できたての温泉まんじゅうや干物店、土産店が並び、買いながら散策できる。",
+        "en": "Nakamise and Heiwa-dori by the station have fresh onsen manju, himono shops and souvenir stores."
+      },
+      "season": null,
+      "photo": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/331"
+      ]
+    }
+  ],
   "shops": [
-    { "id": "placeholder-shop", "name": { "ja": "仮の店", "en": "Placeholder shop" }, "online": false, "address": null, "lat": null, "lng": null, "hours": null, "closed": null, "url": "https://example.com/", "sources": [] }
+    {
+      "id": "kamatsuru-himono",
+      "name": {
+        "ja": "釜鶴ひもの店 本店",
+        "en": "Kamatsuru Himono (main store)"
+      },
+      "online": false,
+      "address": "静岡県熱海市銀座町10-18",
+      "lat": null,
+      "lng": null,
+      "hours": null,
+      "closed": "水曜（2026年11月から）",
+      "url": "https://www.kamaturu.co.jp/",
+      "sources": [
+        "https://www.kamaturu.co.jp/",
+        "https://www.ataminews.gr.jp/product/38"
+      ]
+    },
+    {
+      "id": "aoki-himono",
+      "name": {
+        "ja": "あをきのひもの 本店",
+        "en": "Aoki no Himono (main store)"
+      },
+      "online": false,
+      "address": "静岡県熱海市銀座町10-20",
+      "lat": null,
+      "lng": null,
+      "hours": "9:00-17:00（受付）",
+      "closed": "木曜",
+      "url": "https://www.aoki-himono.co.jp/",
+      "sources": [
+        "https://www.aoki-himono.co.jp/",
+        "https://www.ataminews.gr.jp/product/799"
+      ]
+    },
+    {
+      "id": "aoki-himono-online",
+      "name": {
+        "ja": "あをきのひもの 通販",
+        "en": "Aoki no Himono (online)"
+      },
+      "online": true,
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "hours": null,
+      "closed": null,
+      "url": "https://www.aoki-himono.co.jp/",
+      "sources": [
+        "https://www.aoki-himono.co.jp/"
+      ]
+    },
+    {
+      "id": "abe-shoten",
+      "name": {
+        "ja": "阿部商店",
+        "en": "Abe Shoten"
+      },
+      "online": false,
+      "address": "静岡県熱海市田原本町5-7",
+      "lat": null,
+      "lng": null,
+      "hours": null,
+      "closed": null,
+      "url": "http://abeshouten.com/",
+      "sources": [
+        "https://www.ataminews.gr.jp/product/81",
+        "http://abeshouten.com/"
+      ]
+    },
+    {
+      "id": "enmeido",
+      "name": {
+        "ja": "延命堂",
+        "en": "Enmeido"
+      },
+      "online": false,
+      "address": "静岡県熱海市上宿町3-28",
+      "lat": null,
+      "lng": null,
+      "hours": null,
+      "closed": null,
+      "url": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/product/30"
+      ]
+    },
+    {
+      "id": "atami-purin",
+      "name": {
+        "ja": "熱海プリン 本店",
+        "en": "Atami Pudding (main shop)"
+      },
+      "online": false,
+      "address": "静岡県熱海市田原本町3-14",
+      "lat": null,
+      "lng": null,
+      "hours": "10:00-18:00",
+      "closed": "なし",
+      "url": "http://atami-purin.com/",
+      "sources": [
+        "http://atami-purin.com/",
+        "https://www.ataminews.gr.jp/product/715"
+      ]
+    },
+    {
+      "id": "atami-purin-online",
+      "name": {
+        "ja": "熱海プリン オンラインストア",
+        "en": "Atami Pudding (online store)"
+      },
+      "online": true,
+      "address": null,
+      "lat": null,
+      "lng": null,
+      "hours": null,
+      "closed": null,
+      "url": "https://atami-purin.shop-pro.jp/",
+      "sources": [
+        "http://atami-purin.com/"
+      ]
+    },
+    {
+      "id": "tokiwagi-yohkanten",
+      "name": {
+        "ja": "常盤木羊羹店 總本店",
+        "en": "Tokiwagi Yokanten"
+      },
+      "online": false,
+      "address": "静岡県熱海市銀座町9-1",
+      "lat": null,
+      "lng": null,
+      "hours": "10:00-18:00",
+      "closed": "なし",
+      "url": "https://tokiwagi-yohkanten.com/",
+      "sources": [
+        "https://tokiwagi-yohkanten.com/",
+        "https://www.ataminews.gr.jp/product/66"
+      ]
+    },
+    {
+      "id": "miki-seika",
+      "name": {
+        "ja": "三木製菓",
+        "en": "Miki Seika"
+      },
+      "online": false,
+      "address": "静岡県熱海市渚町3-4",
+      "lat": null,
+      "lng": null,
+      "hours": null,
+      "closed": null,
+      "url": "https://www.mikiseika.com/",
+      "sources": [
+        "https://www.mikiseika.com/",
+        "https://www.ataminews.gr.jp/product/15"
+      ]
+    },
+    {
+      "id": "mase-kashiho",
+      "name": {
+        "ja": "菓子鋪 間瀬",
+        "en": "Kashiho Mase"
+      },
+      "online": false,
+      "address": "静岡県熱海市網代400-1",
+      "lat": null,
+      "lng": null,
+      "hours": null,
+      "closed": null,
+      "url": "https://www.mase-jp.com/",
+      "sources": [
+        "https://www.mase-jp.com/",
+        "https://www.ataminews.gr.jp/product/95"
+      ]
+    },
+    {
+      "id": "atami-collection-a-plus",
+      "name": {
+        "ja": "熱海コレクション A-PLUS（ラスカ熱海1F）",
+        "en": "Atami Collection A-PLUS (LASCA Atami 1F)"
+      },
+      "online": false,
+      "address": "静岡県熱海市田原本町11-1",
+      "lat": null,
+      "lng": null,
+      "hours": null,
+      "closed": null,
+      "url": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/product/32"
+      ]
+    },
+    {
+      "id": "atami-baien",
+      "name": {
+        "ja": "熱海梅園",
+        "en": "Atami Plum Garden"
+      },
+      "online": false,
+      "address": "静岡県熱海市梅園町8-11",
+      "lat": null,
+      "lng": null,
+      "hours": "入園時間の制限なし（梅まつり期間中は有料時間帯あり）",
+      "closed": null,
+      "url": "https://www.ataminews.gr.jp/spot/105",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/105"
+      ]
+    },
+    {
+      "id": "nishijima-nouen",
+      "name": {
+        "ja": "西島農園",
+        "en": "Nishijima Farm"
+      },
+      "online": false,
+      "address": "静岡県熱海市下多賀541付近（南熱海支所前）",
+      "lat": null,
+      "lng": null,
+      "hours": "9:00-15:00頃",
+      "closed": null,
+      "url": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/188"
+      ]
+    },
+    {
+      "id": "marufuku-garden",
+      "name": {
+        "ja": "マルフクガーデン",
+        "en": "Marufuku Garden"
+      },
+      "online": false,
+      "address": "静岡県熱海市伊豆山（国道135号沿い）",
+      "lat": null,
+      "lng": null,
+      "hours": "受付9:00-15:00頃",
+      "closed": "1〜9月は火曜（祝日は営業）",
+      "url": null,
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/188"
+      ]
+    },
+    {
+      "id": "atami-umizuri",
+      "name": {
+        "ja": "熱海港海釣り施設",
+        "en": "Atami Port Fishing Facility"
+      },
+      "online": false,
+      "address": "静岡県熱海市和田浜南町1694-32",
+      "lat": null,
+      "lng": null,
+      "hours": "4〜10月 6:00-日没／11〜3月 7:00-日没",
+      "closed": "荒天時、花火の日は12時以降、花火のない月は第3水曜",
+      "url": "http://www5d.biglobe.ne.jp/~atami/",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/136"
+      ]
+    },
+    {
+      "id": "fujikyu-marine-resort",
+      "name": {
+        "ja": "富士急マリンリゾート（熱海港 初島航路）",
+        "en": "Fujikyu Marine Resort (Atami-Hatsushima)"
+      },
+      "online": false,
+      "address": "静岡県熱海市和田浜南町6-11",
+      "lat": null,
+      "lng": null,
+      "hours": null,
+      "closed": null,
+      "url": "http://www.hatsushima.jp/access/",
+      "sources": [
+        "http://www.hatsushima.jp/access/",
+        "https://www.ataminews.gr.jp/spot/181"
+      ]
+    },
+    {
+      "id": "umi-no-neiro",
+      "name": {
+        "ja": "海の音色",
+        "en": "Umi no Neiro"
+      },
+      "online": false,
+      "address": "静岡県熱海市上多賀203-6",
+      "lat": null,
+      "lng": null,
+      "hours": null,
+      "closed": null,
+      "url": null,
+      "sources": [
+        "https://www.asoview.com/item/activity/pln3000049043/"
+      ]
+    },
+    {
+      "id": "ieyasu-no-yu",
+      "name": {
+        "ja": "家康の湯（足湯）",
+        "en": "Ieyasu no Yu foot bath"
+      },
+      "online": false,
+      "address": "静岡県熱海市田原本町9",
+      "lat": null,
+      "lng": null,
+      "hours": "9:00-16:00",
+      "closed": "無休（不具合時は休止）",
+      "url": "https://www.ataminews.gr.jp/spot/138",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/138"
+      ]
+    },
+    {
+      "id": "ekimae-shotengai",
+      "name": {
+        "ja": "熱海駅前商店街（仲見世・平和通り）",
+        "en": "Atami Station shopping streets (Nakamise / Heiwa-dori)"
+      },
+      "online": false,
+      "address": "静岡県熱海市田原本町",
+      "lat": null,
+      "lng": null,
+      "hours": null,
+      "closed": null,
+      "url": "https://www.ataminews.gr.jp/spot/331",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/331"
+      ]
+    }
   ],
   "shopItems": [
-    { "shop": "placeholder-shop", "product": "himono", "service": null, "price": null, "priceNote": null, "checkedAt": null, "url": null, "sources": [] }
+    {
+      "shop": "kamatsuru-himono",
+      "product": "himono",
+      "service": null,
+      "price": null,
+      "priceNote": "伊勢海老ひもの（目方により変動）",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.kamaturu.co.jp/",
+      "sources": [
+        "https://www.kamaturu.co.jp/",
+        "https://www.ataminews.gr.jp/product/38"
+      ]
+    },
+    {
+      "shop": "aoki-himono",
+      "product": "himono",
+      "service": null,
+      "price": 432,
+      "priceNote": "真あじ干物（1枚〜、税込）",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.aoki-himono.co.jp/",
+      "sources": [
+        "https://www.aoki-himono.co.jp/"
+      ]
+    },
+    {
+      "shop": "aoki-himono-online",
+      "product": "himono",
+      "service": null,
+      "price": 2808,
+      "priceNote": "特価真あじ詰合せ10枚入り SP-26（税込）",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.aoki-himono.co.jp/",
+      "sources": [
+        "https://www.aoki-himono.co.jp/"
+      ]
+    },
+    {
+      "shop": "abe-shoten",
+      "product": "onsen-manju",
+      "service": null,
+      "price": null,
+      "priceNote": null,
+      "checkedAt": "2026-11-19",
+      "url": "http://abeshouten.com/",
+      "sources": [
+        "https://www.ataminews.gr.jp/product/81",
+        "http://abeshouten.com/"
+      ]
+    },
+    {
+      "shop": "enmeido",
+      "product": "onsen-manju",
+      "service": null,
+      "price": null,
+      "priceNote": null,
+      "checkedAt": "2026-11-19",
+      "url": "https://www.ataminews.gr.jp/product/30",
+      "sources": [
+        "https://www.ataminews.gr.jp/product/30"
+      ]
+    },
+    {
+      "shop": "atami-purin",
+      "product": "atami-pudding",
+      "service": null,
+      "price": 450,
+      "priceNote": "熱海プリン 特製カラメルシロップ付 1個（税込）",
+      "checkedAt": "2026-11-19",
+      "url": "http://atami-purin.com/",
+      "sources": [
+        "http://atami-purin.com/"
+      ]
+    },
+    {
+      "shop": "atami-purin-online",
+      "product": "atami-pudding",
+      "service": null,
+      "price": 3150,
+      "priceNote": "熱海プリンお得な6本セット（税込）",
+      "checkedAt": "2026-11-19",
+      "url": "https://atami-purin.shop-pro.jp/",
+      "sources": [
+        "http://atami-purin.com/"
+      ]
+    },
+    {
+      "shop": "atami-purin",
+      "product": "daidai",
+      "service": null,
+      "price": 470,
+      "priceNote": "風呂まーじゅプリン だいだい 1個（税込）",
+      "checkedAt": "2026-11-19",
+      "url": "http://atami-purin.com/",
+      "sources": [
+        "http://atami-purin.com/"
+      ]
+    },
+    {
+      "shop": "tokiwagi-yohkanten",
+      "product": "daidai-yokan",
+      "service": null,
+      "price": null,
+      "priceNote": null,
+      "checkedAt": "2026-11-19",
+      "url": "https://tokiwagi-yohkanten.com/",
+      "sources": [
+        "https://tokiwagi-yohkanten.com/",
+        "https://www.ataminews.gr.jp/product/66"
+      ]
+    },
+    {
+      "shop": "miki-seika",
+      "product": "neko-no-shita",
+      "service": null,
+      "price": null,
+      "priceNote": null,
+      "checkedAt": "2026-11-19",
+      "url": "https://www.mikiseika.com/",
+      "sources": [
+        "https://www.mikiseika.com/",
+        "https://www.ataminews.gr.jp/product/15"
+      ]
+    },
+    {
+      "shop": "atami-collection-a-plus",
+      "product": "daidai",
+      "service": null,
+      "price": null,
+      "priceNote": "橙マーマレード（製造：橙の倉田家）",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.ataminews.gr.jp/product/32",
+      "sources": [
+        "https://www.ataminews.gr.jp/product/32"
+      ]
+    },
+    {
+      "shop": "mase-kashiho",
+      "product": "new-summer-orange",
+      "service": null,
+      "price": null,
+      "priceNote": "伊豆みかんゼリー（ニューサマーオレンジ・夏みかん・橙の果汁）",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.mase-jp.com/",
+      "sources": [
+        "https://www.ataminews.gr.jp/product/95",
+        "https://www.mase-jp.com/"
+      ]
+    },
+    {
+      "shop": "nishijima-nouen",
+      "product": "mikan",
+      "service": null,
+      "price": 500,
+      "priceNote": "みかん狩り入園（3歳以上、食べ放題）。持ち帰りは別途1kg 500円",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.ataminews.gr.jp/spot/188",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/188"
+      ]
+    },
+    {
+      "shop": "marufuku-garden",
+      "product": "mikan",
+      "service": null,
+      "price": 1000,
+      "priceNote": "みかん狩り入園（食べ放題、小学6年生以下は500円）",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.ataminews.gr.jp/spot/188",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/188"
+      ]
+    },
+    {
+      "shop": "marufuku-garden",
+      "product": "new-summer-orange",
+      "service": null,
+      "price": null,
+      "priceNote": "みかんの後の時期にニューサマーオレンジ狩り（月は未確認）",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.ataminews.gr.jp/spot/188",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/188"
+      ]
+    },
+    {
+      "shop": "atami-baien",
+      "product": null,
+      "service": "atami-baien",
+      "price": null,
+      "priceNote": "梅まつり期間中のみ有料（金額は公式ページに記載なし）",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.ataminews.gr.jp/spot/105",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/105"
+      ]
+    },
+    {
+      "shop": "nishijima-nouen",
+      "product": null,
+      "service": "mikan-gari",
+      "price": 500,
+      "priceNote": "入園（3歳以上、食べ放題）",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.ataminews.gr.jp/spot/188",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/188"
+      ]
+    },
+    {
+      "shop": "marufuku-garden",
+      "product": null,
+      "service": "mikan-gari",
+      "price": 1000,
+      "priceNote": "入園（食べ放題、小学6年生以下は500円）",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.ataminews.gr.jp/spot/188",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/188"
+      ]
+    },
+    {
+      "shop": "atami-umizuri",
+      "product": null,
+      "service": "umi-zuri",
+      "price": 500,
+      "priceNote": "入場（大人）。竿セット2時間2,200円は別",
+      "checkedAt": "2026-11-19",
+      "url": "http://www5d.biglobe.ne.jp/~atami/",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/136"
+      ]
+    },
+    {
+      "shop": "fujikyu-marine-resort",
+      "product": null,
+      "service": "hatsushima",
+      "price": 2900,
+      "priceNote": "大人往復（小人1,450円）",
+      "checkedAt": "2026-11-19",
+      "url": "http://www.hatsushima.jp/access/",
+      "sources": [
+        "http://www.hatsushima.jp/access/"
+      ]
+    },
+    {
+      "shop": "umi-no-neiro",
+      "product": null,
+      "service": "sup",
+      "price": 7700,
+      "priceNote": "60分SUP（〜、レンタル・保険・ガイド込み）。予約サイト掲載の価格",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.asoview.com/item/activity/pln3000049043/",
+      "sources": [
+        "https://www.asoview.com/item/activity/pln3000049043/"
+      ]
+    },
+    {
+      "shop": "ieyasu-no-yu",
+      "product": null,
+      "service": "ashiyu",
+      "price": 0,
+      "priceNote": "無料",
+      "checkedAt": "2026-11-19",
+      "url": "https://www.ataminews.gr.jp/spot/138",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/138"
+      ]
+    },
+    {
+      "shop": "ekimae-shotengai",
+      "product": null,
+      "service": "tabearuki",
+      "price": null,
+      "priceNote": null,
+      "checkedAt": "2026-11-19",
+      "url": "https://www.ataminews.gr.jp/spot/331",
+      "sources": [
+        "https://www.ataminews.gr.jp/spot/331"
+      ]
+    }
   ],
-  "popular": []
+  "popular": [
+    "atami-pudding",
+    "hatsushima",
+    "tabearuki"
+  ]
 }
