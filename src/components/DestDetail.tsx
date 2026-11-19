@@ -15,6 +15,7 @@ import { NearbyMap } from "./NearbyMap";
 import { nearbyMap } from "@/lib/nearby/spec";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
+import { SheetBarContent } from "./SheetBarContent";
 
 const GLASS: CSSProperties = {
   background: "rgba(18,18,16,0.46)",
@@ -43,14 +44,20 @@ export function DestDetail({ dest, variant, locale }: { dest: DestDetailView; va
   const map = mapOf("rounded-[10px]");
   return (
     <main className={`mx-auto w-full max-w-[480px] bg-[#f7f6f2] text-[#141413] ${variant === "page" ? "min-h-[100dvh]" : ""}`}>
+      {variant === "sheet" && <SheetBarContent title={dest.title} destId={dest.id} />}
       {/* 写真は横にスワイプで切り替える */}
       <PhotoCarousel photos={dest.photos} label={dest.title} className="h-[420px]">
-        <div className={`absolute left-4 ${variant === "sheet" ? "top-6" : "top-3.5"}`}>
-          <BackButton variant={variant} style={GLASS} />
-        </div>
-        <div className={`absolute right-4 ${variant === "sheet" ? "top-6" : "top-3.5"}`}>
-          <SaveButton destId={dest.id} variant="detail" style={GLASS} />
-        </div>
+        {/* シートでは閉じる・保存は上端の固定バー（DetailSheet）に出す。スクロールしても消えないように */}
+        {variant === "page" && (
+          <>
+            <div className="absolute left-4 top-3.5">
+              <BackButton variant={variant} style={GLASS} />
+            </div>
+            <div className="absolute right-4 top-3.5">
+              <SaveButton destId={dest.id} variant="detail" style={GLASS} />
+            </div>
+          </>
+        )}
         {(hero?.isDemo ?? true) && (
           <span className="pointer-events-none absolute bottom-4 left-4 rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold text-white">{m.home.photoDemo}</span>
         )}
