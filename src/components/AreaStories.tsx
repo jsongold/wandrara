@@ -85,13 +85,14 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
   const setPeek = (v: boolean) => setOpenState((s) => (s ? { ...s, peek: v } : s));
   const peekCloseRef = useRef<HTMLButtonElement>(null);
   const peekOpenRef = useRef<HTMLButtonElement>(null);
+  // 開いたらシートの閉じるへ、閉じたら「軽く見る」へフォーカスを移す。閉じた直後は inert が外れてから移す
+  const wasPeek = useRef(false);
   useEffect(() => {
     if (peek) peekCloseRef.current?.focus();
+    else if (wasPeek.current) peekOpenRef.current?.focus();
+    wasPeek.current = peek;
   }, [peek]);
-  const closePeek = () => {
-    setPeek(false);
-    peekOpenRef.current?.focus();
-  };
+  const closePeek = () => setPeek(false);
 
   // ストーリーはモーダルの <dialog> で開く。開いている間は後ろの画面にフォーカスが行かず、閉じたら押した丸に戻る
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -223,7 +224,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
           {/* 軽く見る：ストーリーの上に出す小さなシート。後で店・借りる先・dest への行き先を足す */}
           {peek && (
             <>
-              <button type="button" aria-label={common.close} onClick={closePeek} className="absolute inset-0 z-[3] cursor-pointer border-0 bg-black/40" />
+              <button type="button" tabIndex={-1} aria-hidden="true" onClick={closePeek} className="absolute inset-0 z-[3] cursor-pointer border-0 bg-black/40" />
               <section
                 aria-label={item.name}
                 data-testid="area-story-peek"
