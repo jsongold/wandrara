@@ -1,6 +1,7 @@
 // まちの details（jsonb）の形。形は docs/proposals/web-output-building-hotspring-village.html。必須かどうかは quality.ts が決める
 import { z } from "zod";
-import { localizedTextSchema, sourceSchema, timeSchema } from "../accommodation/details.ts";
+import { sourceSchema, timeSchema } from "../accommodation/details.ts";
+import { localizedTextSchema } from "../i18n/localized.ts";
 import { accessSchema, cautionSchema, eventSchema } from "../place-common.ts";
 
 export const walkKeySchema = z.string().regex(/^[a-z0-9_-]{1,40}$/, "歩き方の key は英小文字・数字・_・- の 1〜40 文字");

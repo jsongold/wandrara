@@ -3,7 +3,6 @@ import { jsonb, pgTable, primaryKey, text, uuid } from "drizzle-orm/pg-core";
 import { natureDetailsSchema } from "../../lib/nature/details.ts";
 import {
   geoPrecisionCheck,
-  langCheck,
   locationColumns,
   oneOf,
   publishedRead,
@@ -54,7 +53,7 @@ export const natures = pgTable(
 export const natureTexts = pgTable(
   "nature_texts",
   { ...textsColumns() },
-  (t) => [primaryKey({ columns: [t.destId, t.lang] }), langCheck("nature_texts", t), publishedRead(t.destId)],
+  (t) => [primaryKey({ columns: [t.destId, t.lang] }), publishedRead(t.destId)],
 );
 
 export const natureCore: CoreDef = {

@@ -327,8 +327,9 @@ describe("en の文", () => {
   it("部屋・風呂・設備・出典のラベルも英語", () => {
     expect(e.rooms[0].label).toBe("Entire house");
     expect(e.rooms[0].bedrooms).toEqual([
-      { label: "Bedroom 1 (1F)", beds: "Double × 1, Single × 1" },
-      { label: "Bedroom 2 (2F)", beds: "Semi-double × 2" },
+      // 階のメモは見本に日本語しか無いので、英語では出ない
+      { label: "Bedroom 1", beds: "Double × 1, Single × 1" },
+      { label: "Bedroom 2", beds: "Semi-double × 2" },
       { label: "Bedroom 3", beds: "Semi-double × 2" },
     ]);
     expect(e.baths.map((b) => [b.label, b.saunaStyleLabel])).toEqual([

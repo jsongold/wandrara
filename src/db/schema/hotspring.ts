@@ -3,7 +3,6 @@ import { jsonb, pgTable, primaryKey, text, uuid } from "drizzle-orm/pg-core";
 import { hotspringDetailsSchema } from "../../lib/hotspring/details.ts";
 import {
   geoPrecisionCheck,
-  langCheck,
   locationColumns,
   oneOf,
   publishedRead,
@@ -37,7 +36,6 @@ export const hotsprings = pgTable(
 
 export const hotspringTexts = pgTable("hotspring_texts", { ...textsColumns() }, (t) => [
   primaryKey({ columns: [t.destId, t.lang] }),
-  langCheck("hotspring_texts", t),
   publishedRead(t.destId),
 ]);
 

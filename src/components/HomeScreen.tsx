@@ -10,6 +10,7 @@ import type { FeedPageResult } from "@/lib/feed-page";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
 import { messages, type Messages } from "@/lib/i18n/messages";
 import { useMessages } from "@/lib/i18n/use-locale";
+import { SaveDataHint, useSaveData } from "@/lib/use-save-data";
 import { otherMode } from "@/lib/modes";
 import { areaSheetLoader, IDLE_AREA_SHEET } from "@/lib/area-sheet-client";
 import type { CategoryView, DiscoverQuery, FeedCard, Locale, SortKey } from "@/lib/types";
@@ -24,7 +25,8 @@ import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
 import { useScrolledAway } from "./use-scrolled-away";
 
-type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPageResult; categories: CategoryView[]; areaLabel: string | null };
+// saveData：サーバーが決めた「通信量を抑える」（最初の描画に使う。以降はクライアントの値に従う）
+type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPageResult; categories: CategoryView[]; areaLabel: string | null; saveData?: boolean };
 type Sheet = null | "area" | "filter";
 type AreaView = "list" | "map";
 
@@ -48,7 +50,16 @@ const sorts = (m: Messages): { id: SortKey; label: string }[] => [
 const SHOW_SEARCH_AND_FILTER = false;
 
 // areaLabel：今のエリアの名前（サーバーが渡す。「すべてのエリア」・知らない id は null）。エリアの一覧・地図に要る地域と特性は、シートを開いたときに取る（MS2c）
-export function HomeScreen({ locale, query, feed, categories, areaLabel }: Props) {
+export function HomeScreen({ saveData = false, ...props }: Props) {
+  return (
+    <SaveDataHint value={saveData}>
+      <HomeScreenBody {...props} />
+    </SaveDataHint>
+  );
+}
+
+function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Props, "saveData">) {
+  const saveData = useSaveData();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [sheet, setSheet] = useState<Sheet>(null);
@@ -63,7 +74,7 @@ export function HomeScreen({ locale, query, feed, categories, areaLabel }: Props
   const loadAreaSheet = () => areaSheetLoader.load(locale);
   // 最初の表示が落ち着いたら先に取っておく（開く待ちを無くす。通信量を節約したい利用者（Save-Data）には先読みしない。その場合は触れた時点で取る）
   useEffect(() => {
-    if ((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    if (saveData) return;
     const load = () => areaSheetLoader.load(locale);
     // requestIdleCallback は Safari に無いので、その場合は少し待ってから
     const w: { requestIdleCallback?: typeof window.requestIdleCallback; cancelIdleCallback?: typeof window.cancelIdleCallback } = window;
@@ -73,7 +84,7 @@ export function HomeScreen({ locale, query, feed, categories, areaLabel }: Props
     }
     const id = setTimeout(load, 2000);
     return () => clearTimeout(id);
-  }, [locale]);
+  }, [locale, saveData]);
   // 地図の絞り込みで、子に合うものがあれば親も残すための親子
   const parentOf = useMemo(
     () => Object.fromEntries((areaData?.areas ?? []).flatMap((g) => [[g.id, null], ...g.subs.map((s) => [s.id, g.id])])) as Record<string, string | null>,

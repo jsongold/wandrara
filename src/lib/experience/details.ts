@@ -2,7 +2,8 @@
 // 共通の値（LocalizedText・時刻・金額・出典）は宿と同じものを使う
 import { z } from "zod";
 import { GEO_PRECISIONS } from "../../db/schema/_shared.ts";
-import { bookingLinkSchema, cautionSchema, currencySchema, localizedTextSchema, sourceSchema, timeSchema } from "../accommodation/details.ts";
+import { bookingLinkSchema, cautionSchema, currencySchema, sourceSchema, timeSchema } from "../accommodation/details.ts";
+import { languageTagSchema, localizedTextSchema } from "../i18n/localized.ts";
 import { AUDIENCES, INCLUSION_KINDS, LOCATION_KINDS, PRICE_PERS } from "../vocab/experience.ts";
 
 export const courseKeySchema = z.string().regex(/^[a-z0-9_-]{1,40}$/, "コースの key は英小文字・数字・_・- の 1〜40 文字");
@@ -21,7 +22,7 @@ export const courseSchema = z
     people_min: count.optional(),
     people_max: count.optional(),
     age_min: age.optional(),
-    languages: z.array(z.string().regex(/^[a-z]{2}$/, "言語は英小文字 2 文字（ja・en）")).optional(),
+    languages: z.array(languageTagSchema).optional(),
   })
   .superRefine((c, ctx) => {
     if (c.people_min !== undefined && c.people_max !== undefined && c.people_min > c.people_max)

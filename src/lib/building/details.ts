@@ -1,6 +1,7 @@
 // 建物の details（jsonb）の形。形は docs/proposals/web-output-building-hotspring-village.html。必須かどうかは quality.ts が決める
 import { z } from "zod";
-import { bookingLinkSchema, localizedTextSchema, sourceSchema } from "../accommodation/details.ts";
+import { bookingLinkSchema, sourceSchema } from "../accommodation/details.ts";
+import { localizedTextSchema } from "../i18n/localized.ts";
 import { accessSchema, cautionSchema, checkFee, eventSchema, feeShape, hoursSchema } from "../place-common.ts";
 
 export const buildingFeeSchema = z.strictObject({ label: localizedTextSchema.optional(), ...feeShape }).superRefine(checkFee);

@@ -5,7 +5,6 @@ import { destinations } from "./common.ts";
 import { regions } from "./dictionary.ts";
 import { operators } from "./people.ts";
 import {
-  langCheck,
   oneOf,
   publishedRead,
   textsColumns,
@@ -42,7 +41,7 @@ export const experiences = pgTable(
 export const experienceTexts = pgTable(
   "experience_texts",
   { ...textsColumns() },
-  (t) => [primaryKey({ columns: [t.destId, t.lang] }), langCheck("experience_texts", t), publishedRead(t.destId)],
+  (t) => [primaryKey({ columns: [t.destId, t.lang] }), publishedRead(t.destId)],
 );
 
 export const experienceCore: CoreDef = {

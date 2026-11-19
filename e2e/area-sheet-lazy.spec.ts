@@ -25,16 +25,24 @@ test("表示が落ち着いたら先に取り、シートを開くと一覧が�
   expect(calls).toHaveLength(1);
 });
 
-// 先に取る 1 回目と、シートを開いたときの 2 回目が失敗しても、「もう一度」で取り直せる
-test("取得に失敗したら「もう一度」が出て、押すと一覧が出る", async ({ page }) => {
+// 先に取る 1 回目が失敗しても、自動の再試行（上限 2 回）のあと、「もう一度」で取り直せる
+test("取得に失敗したら再試行のあと「もう一度」が出て、押すと一覧が出る", async ({ page }) => {
   let n = 0;
-  await page.route("**/api/area-sheet*", (route) => (n++ < 2 ? route.fulfill({ status: 502, body: "{}" }) : route.continue()));
+  let failing = true;
+  await page.route("**/api/area-sheet*", (route) => {
+    n++;
+    return failing ? route.fulfill({ status: 502, body: "{}" }) : route.continue();
+  });
   const prefetched = page.waitForRequest(/\/api\/area-sheet/, { timeout: 10_000 });
   await page.goto("/ja");
   await prefetched;
   await openSheet(page);
   const sheet = page.getByRole("dialog", { name: "エリアを選ぶ" });
-  await sheet.getByRole("button", { name: "読み込めませんでした。もう一度" }).click();
+  const retry = sheet.getByRole("button", { name: "読み込めませんでした。もう一度" });
+  await expect(retry).toBeVisible({ timeout: 10_000 });
+  expect(n).toBe(3); // 1 回 + 再試行 2 回で止まる
+  failing = false;
+  await retry.click();
   await expect(sheet.getByRole("heading", { name: "箱根" })).toBeVisible();
 });
 

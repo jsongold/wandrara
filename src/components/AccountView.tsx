@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { LogoutButton } from "@/components/LogoutButton";
+import { SaveDataSwitch } from "@/components/SaveDataSwitch";
 import { getCurrentUser } from "@/lib/auth/next";
 import { withLocale } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
@@ -56,6 +57,10 @@ export async function AccountView({ lang, variant }: { lang: Locale; variant: "p
         <div className="flex h-[52px] items-center justify-between rounded-2xl bg-white pl-4 pr-1.5 text-[15px] font-medium">
           {m.language}
           <LanguageSwitch locale={lang} className="h-10 min-w-10 cursor-pointer rounded-xl border border-[#d6d3cb] bg-transparent px-3 text-[13px] font-semibold text-[#171717]" />
+        </div>
+        <div className="flex h-[52px] items-center justify-between rounded-2xl bg-white pl-4 pr-1.5 text-[15px] font-medium">
+          {m.saveData}
+          <SaveDataSwitch locale={lang} className="h-10 min-w-10 cursor-pointer rounded-xl border border-[#d6d3cb] bg-transparent px-3 text-[13px] font-semibold text-[#171717] aria-checked:bg-[#171717] aria-checked:text-white" />
         </div>
         <LogoutButton lang={lang} />
       </div>

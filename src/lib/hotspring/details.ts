@@ -1,6 +1,7 @@
 // 日帰り温泉の details（jsonb）の形。形は docs/proposals/web-output-building-hotspring-village.html。必須かどうかは quality.ts が決める
 import { z } from "zod";
-import { localizedTextSchema, moneySchema, sourceSchema } from "../accommodation/details.ts";
+import { moneySchema, sourceSchema } from "../accommodation/details.ts";
+import { localizedTextSchema } from "../i18n/localized.ts";
 import { accessSchema, cautionSchema, checkFee, feeShape, hoursSchema } from "../place-common.ts";
 import { BATH_GENDERS, BATH_KINDS, HOT_SPRING_SOURCES, TOWELS } from "../vocab/hotspring.ts";
 

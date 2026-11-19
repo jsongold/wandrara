@@ -81,7 +81,7 @@ export WANDRARA_API_KEY=wdr_...
 
 ## 共通の必須（`src/lib/ingest/quality.ts`）
 1 件でも合わないと、bundle 全体が通らない。core ごとの必須は各指示書にある。
-- `texts` に `name` と `summary`（どの言語でもよい）
+- `texts` に、その国の言語（日本は `ja`）の `name` と `summary`。ほかの言語は任意
 - 写真 1 枚以上
 - （`core.region_id` は要らない。位置からエリアが自動で決まる。決まらないとき・大涌谷のような点のエリアを指すときだけ書く。無い id は 400。エリアは自動では作らない）
 - 出どころの URL：`core.official_url`・`details.sources[].url`・dest の `sources[].url` のどれか（体験は `core.official_url` か `details.booking_links[].url`）。`official_url` の列があるのは宿・体験・建物・日帰り温泉だけ。自然・まちは `details.sources[].url` を使う

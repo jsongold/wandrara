@@ -30,7 +30,8 @@ import {
   SOURCE_TYPE_LIST,
   type Term,
 } from "../vocab/accommodation.ts";
-import type { LocalizedText, Money } from "./details.ts";
+import type { Money } from "./details.ts";
+import type { LocalizedText } from "../i18n/localized.ts";
 import { priceHint, type PriceLine, type PriceWho } from "./price-hint.ts";
 import { accommodationDetailsSchema, type AccommodationDetails } from "./schema.ts";
 

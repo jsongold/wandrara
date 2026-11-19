@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
     remotePatterns: supabaseUrl ? [new URL(`${supabaseUrl}/storage/v1/object/public/dest-photos/**`)] : [],
     deviceSizes: [828, 1080],
     imageSizes: [256, 384, 480],
-    qualities: [75],
+    qualities: [50, 75], // 75 が通常、50 は通信量を抑える利用者（Save-Data）の写真。lib/save-data.ts
     minimumCacheTTL: 2678400, // 31 日
   },
   partialPrefetching: true,

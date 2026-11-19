@@ -4,6 +4,7 @@ import { messages } from "./i18n/messages";
 import { CORES } from "./ingest/cores";
 import { MODES, otherMode } from "./modes";
 import type { Category, DestCard, DiscoverQuery, FeedCard, FeedPage, Locale, LocalizedText, Region, Tile } from "./types";
+import { resolveLocalizedText } from "./i18n/localized";
 
 export type Catalog = { regions: Region[]; categories: Category[]; dests: DestCard[] };
 export type Ctx = { catalog: Catalog; query: DiscoverQuery; locale: Locale };
@@ -23,13 +24,7 @@ export type Strategies = { id: string; order: OrderStrategy; primary: PrimaryStr
 
 // ---- 表示用の小道具 ----
 
-export function resolveLocalizedText(text: LocalizedText | null | undefined, locale: Locale): { text: string; fallback: boolean } {
-  if (!text) return { text: "", fallback: false };
-  const own = text[locale];
-  if (own) return { text: own, fallback: false };
-  const other = text.ja ?? text.en ?? "";
-  return { text: other, fallback: other !== "" };
-}
+export { resolveLocalizedText };
 
 const t = (x: LocalizedText | null | undefined, locale: Locale) => resolveLocalizedText(x, locale).text;
 

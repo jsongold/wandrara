@@ -7,6 +7,21 @@ import type { LocalizedText } from "./_shared.ts";
 const anyoneRead = () =>
   pgPolicy("anyone read", { for: "select", to: [anonRole, authenticatedRole], using: sql`true` });
 
+// 言語：訳文を持てる言語の正本。足すのは 1 行の insert（デプロイは要らない）。使われている言語は外部キー（restrict）で消せない
+// 画面の言語（src/lib/i18n/locale.ts の LOCALES）はこの一部で、別に持つ。形は src/lib/i18n/localized.ts の LANGUAGE_TAG_PATTERN と同じ
+export const languages = pgTable(
+  "languages",
+  {
+    tag: text("tag").primaryKey(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check("languages_tag_check", sql`${t.tag} ~ '^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$'`),
+    anyoneRead(),
+  ],
+);
+
 export const regions = pgTable(
   "regions",
   {

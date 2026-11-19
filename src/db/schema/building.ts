@@ -4,7 +4,6 @@ import { destinations } from "./common.ts";
 import { operators } from "./people.ts";
 import {
   geoPrecisionCheck,
-  langCheck,
   locationColumns,
   oneOf,
   publishedRead,
@@ -40,7 +39,7 @@ export const buildings = pgTable(
 export const buildingTexts = pgTable(
   "building_texts",
   { ...textsColumns() },
-  (t) => [primaryKey({ columns: [t.destId, t.lang] }), langCheck("building_texts", t), publishedRead(t.destId)],
+  (t) => [primaryKey({ columns: [t.destId, t.lang] }), publishedRead(t.destId)],
 );
 
 export const buildingCore: CoreDef = {

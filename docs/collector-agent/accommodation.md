@@ -20,7 +20,7 @@
 - `texts[].address`（住所）
 - `core.lat`・`core.lng`（日本の範囲：緯度 20〜46・経度 122〜154）
 - （`core.region_id` は要らない。位置からエリアが自動で決まる。決まらないとき・大涌谷のような点のエリアを指すときだけ書く。無い id は 400。エリアは自動では作らない）
-- `texts` に `name` と `summary`
+- `texts` に、その国の言語（日本は `ja`）の `name` と `summary`。ほかの言語は任意
 - 写真 1 枚以上。`photos[].room` を書くなら `details.rooms` にある key
 - `core.official_url` か `details.sources[].url`
 

@@ -33,6 +33,7 @@ function mockDb(
   existing?: { dest_id: string; slug: string; core_type?: string; created_by?: string | null },
   last?: { content_hash: string | null; status: string },
   regions: string[] = ["atami", "izu", "h", "h1", "hp", "i"],
+  languages: string[] = ["ja", "en"],
 ) {
   const rpcCalls: { fn: string; args: { p: Record<string, unknown> } }[] = [];
   const chain = (table: string) => {
@@ -41,6 +42,7 @@ function mockDb(
     const result = () => {
       if (table === "destinations") return { data: existing ?? null, error: null };
       if (table === "regions") return { data: regions.filter((r) => ids.includes(r)).map((id) => ({ id })), error: null };
+      if (table === "languages") return { data: languages.filter((l) => ids.includes(l)).map((tag) => ({ tag })), error: null };
       return { data: [], error: null };
     };
     for (const m of ["select", "eq", "like", "limit"]) q[m] = () => q;
@@ -74,6 +76,23 @@ describe("registerDest", () => {
       expect(r.errors.length).toBeGreaterThan(0);
     }
     expect(rpcCalls).toHaveLength(0);
+  });
+
+  it("languages 表に無い言語（texts の lang・LocalizedText のキー）は 400 で、書かない", async () => {
+    const { db, rpcCalls } = mockDb();
+    const b = body() as Record<string, unknown> & { texts: Record<string, unknown>[] };
+    const r = await registerDest(db, acc, { ...b, texts: [...b.texts, { lang: "fr", name: "Villa" }], photos: (b.photos as Record<string, unknown>[]).map((p) => ({ ...p, alt: { ja: "外観", de: "Außen" } })) }, principal);
+    expect(r).toMatchObject({ ok: false, status: 400 });
+    if (!r.ok) expect(r.errors.join("\n")).toMatch(/言語 de は languages 表に無い[\s\S]*言語 fr は languages 表に無い/);
+    expect(rpcCalls).toHaveLength(0);
+  });
+
+  it("languages 表に足した言語は通る（言語を足すのは 1 行）", async () => {
+    const { db, rpcCalls } = mockDb(undefined, undefined, undefined, ["ja", "en", "fr"]);
+    const b = body() as Record<string, unknown> & { texts: Record<string, unknown>[] };
+    const r = await registerDest(db, acc, { ...b, texts: [...b.texts, { lang: "fr", name: "Villa" }] }, principal, fixtureDeps);
+    expect(r.ok).toBe(true);
+    expect(rpcCalls).toHaveLength(1);
   });
 
   it("dest_apply に p を渡し draft を返す", async () => {

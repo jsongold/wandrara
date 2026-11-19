@@ -4,6 +4,7 @@ import { pgPolicy, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-or
 import { authenticatedRole, authUid, authUsers } from "drizzle-orm/supabase";
 import { oneOf } from "./_shared.ts";
 import { destinations } from "./common.ts";
+import { languages } from "./dictionary.ts";
 
 /** auth.users に入ったら trigger で作る（m1） */
 export const users = pgTable(
@@ -13,7 +14,7 @@ export const users = pgTable(
       .primaryKey()
       .references(() => authUsers.id, { onDelete: "cascade" }),
     displayName: text("display_name"),
-    locale: text("locale"),
+    locale: text("locale").references(() => languages.tag, { onDelete: "restrict" }),
     currency: text("currency"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
