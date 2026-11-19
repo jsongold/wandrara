@@ -80,3 +80,16 @@ describe("住所", () => {
     expect(shortAddress(null)).toBeNull();
   });
 });
+
+describe("時間帯と言語", () => {
+  it("旬の月は日本の時間で決める（UTC で月末の夜は日本ではもう翌月）", async () => {
+    const { tokyoMonth } = await import("@/lib/area-highlights");
+    expect(tokyoMonth(new Date("2027-03-31T16:00:00Z"))).toBe(4);
+    expect(tokyoMonth(new Date("2027-03-31T14:00:00Z"))).toBe(3);
+  });
+  it("英語では営業時間・定休・価格のメモも英語", () => {
+    const offers = areaHighlights("atami", "en", 11).flatMap((g) => g.items.flatMap((i) => i.offers));
+    const ja = /[぀-ヿ]/;
+    for (const o of offers) for (const v of [o.hours, o.closed, o.priceNote]) if (v) expect(v).not.toMatch(ja);
+  });
+});

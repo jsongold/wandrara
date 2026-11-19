@@ -13,8 +13,8 @@ type PhotoSrc = { url: string; license: string; credit: string; source: string }
 // ローカルの JSON の形（= 表の候補）
 type ProductSrc = { id: string; kind: "meisan" | "tokusan"; name: L10n; summary: L10n; description?: L10n | null; season?: Season | null; photo?: PhotoSrc | null; sources: string[] };
 type ServiceSrc = { id: string; name: L10n; summary: L10n; description?: L10n | null; season?: Season | null; photo?: PhotoSrc | null; sources: string[] };
-type ShopSrc = { id: string; name: L10n; online: boolean; address?: string | null; lat?: number | null; lng?: number | null; hours?: string | null; closed?: string | null; url?: string | null; photos?: PhotoSrc[]; sources: string[] };
-type ShopItemSrc = { shop: string; product?: string | null; service?: string | null; price?: number | null; priceNote?: string | null; checkedAt?: string | null; url?: string | null; sources: string[] };
+type ShopSrc = { id: string; name: L10n; online: boolean; address?: string | null; lat?: number | null; lng?: number | null; hours?: L10n | null; closed?: L10n | null; url?: string | null; photos?: PhotoSrc[]; sources: string[] };
+type ShopItemSrc = { shop: string; product?: string | null; service?: string | null; price?: number | null; priceNote?: L10n | null; checkedAt?: string | null; url?: string | null; sources: string[] };
 export type AreaLocalData = { products: ProductSrc[]; services: ServiceSrc[]; shops: ShopSrc[]; shopItems: ShopItemSrc[]; popular?: string[] };
 
 export type HighlightPhoto = PhotoSrc;
@@ -79,10 +79,10 @@ function offersOf(data: AreaLocalData, key: "product" | "service", id: string, l
         shopName: s.name[locale],
         online: s.online,
         address: shortAddress(s.address),
-        hours: s.hours ?? null,
-        closed: s.closed ?? null,
+        hours: s.hours?.[locale] ?? null,
+        closed: s.closed?.[locale] ?? null,
         price: x.price ?? null,
-        priceNote: x.priceNote ?? null,
+        priceNote: x.priceNote?.[locale] ?? null,
         checkedAt: x.checkedAt ?? null,
         url: x.url ?? s.url ?? null,
         photos: s.photos ?? [],
@@ -106,9 +106,14 @@ function toItem(data: AreaLocalData, src: ProductSrc | ServiceSrc, type: "produc
   };
 }
 
+// 旬を決める月（1〜12）。サーバーとブラウザの時間帯の違いで月の変わり目がずれないよう、日本の時間で決める
+export function tokyoMonth(now: Date = new Date()): number {
+  return Number(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Tokyo", month: "numeric" }).format(now));
+}
+
 // エリアの一言。全国（all）・データの無いエリアでは空の配列。候補の無い項目は出さない
-// month は旬を決める月（1〜12）。省略すると今月
-export function areaHighlights(area: string, locale: Locale, month: number = new Date().getMonth() + 1): HighlightGroup[] {
+// month は旬を決める月（1〜12）。省略すると日本の今月
+export function areaHighlights(area: string, locale: Locale, month: number = tokyoMonth()): HighlightGroup[] {
   if (area === "all") return [];
   const data = DATA[area];
   if (!data) return [];

@@ -366,7 +366,10 @@
       "lat": null,
       "lng": null,
       "hours": null,
-      "closed": "水曜（2026年11月から）",
+      "closed": {
+        "ja": "水曜（2026年11月から）",
+        "en": "Wednesdays (from Nov 2026)"
+      },
       "url": "https://www.kamaturu.co.jp/",
       "sources": [
         "https://www.kamaturu.co.jp/",
@@ -383,8 +386,14 @@
       "address": "静岡県熱海市銀座町10-20",
       "lat": null,
       "lng": null,
-      "hours": "9:00-17:00（受付）",
-      "closed": "木曜",
+      "hours": {
+        "ja": "9:00-17:00（受付）",
+        "en": "9:00-17:00 (reception)"
+      },
+      "closed": {
+        "ja": "木曜",
+        "en": "Thursdays"
+      },
       "url": "https://www.aoki-himono.co.jp/",
       "sources": [
         "https://www.aoki-himono.co.jp/",
@@ -453,8 +462,14 @@
       "address": "静岡県熱海市田原本町3-14",
       "lat": null,
       "lng": null,
-      "hours": "10:00-18:00",
-      "closed": "なし",
+      "hours": {
+        "ja": "10:00-18:00",
+        "en": "10:00-18:00"
+      },
+      "closed": {
+        "ja": "なし",
+        "en": "none"
+      },
       "url": "http://atami-purin.com/",
       "sources": [
         "http://atami-purin.com/",
@@ -488,8 +503,14 @@
       "address": "静岡県熱海市銀座町9-1",
       "lat": null,
       "lng": null,
-      "hours": "10:00-18:00",
-      "closed": "なし",
+      "hours": {
+        "ja": "10:00-18:00",
+        "en": "10:00-18:00"
+      },
+      "closed": {
+        "ja": "なし",
+        "en": "none"
+      },
       "url": "https://tokiwagi-yohkanten.com/",
       "sources": [
         "https://tokiwagi-yohkanten.com/",
@@ -559,7 +580,10 @@
       "address": "静岡県熱海市梅園町8-11",
       "lat": null,
       "lng": null,
-      "hours": "入園時間の制限なし（梅まつり期間中は有料時間帯あり）",
+      "hours": {
+        "ja": "入園時間の制限なし（梅まつり期間中は有料時間帯あり）",
+        "en": "Open any time (paid hours during the plum festival)"
+      },
       "closed": null,
       "url": "https://www.ataminews.gr.jp/spot/105",
       "sources": [
@@ -576,7 +600,10 @@
       "address": "静岡県熱海市下多賀541付近（南熱海支所前）",
       "lat": null,
       "lng": null,
-      "hours": "9:00-15:00頃",
+      "hours": {
+        "ja": "9:00-15:00頃",
+        "en": "About 9:00-15:00"
+      },
       "closed": null,
       "url": null,
       "sources": [
@@ -593,8 +620,14 @@
       "address": "静岡県熱海市伊豆山（国道135号沿い）",
       "lat": null,
       "lng": null,
-      "hours": "受付9:00-15:00頃",
-      "closed": "1〜9月は火曜（祝日は営業）",
+      "hours": {
+        "ja": "受付9:00-15:00頃",
+        "en": "Reception about 9:00-15:00"
+      },
+      "closed": {
+        "ja": "1〜9月は火曜（祝日は営業）",
+        "en": "Tuesdays Jan-Sep (open on holidays)"
+      },
       "url": null,
       "sources": [
         "https://www.ataminews.gr.jp/spot/188"
@@ -610,8 +643,14 @@
       "address": "静岡県熱海市和田浜南町1694-32",
       "lat": null,
       "lng": null,
-      "hours": "4〜10月 6:00-日没／11〜3月 7:00-日没",
-      "closed": "荒天時、花火の日は12時以降、花火のない月は第3水曜",
+      "hours": {
+        "ja": "4〜10月 6:00-日没／11〜3月 7:00-日没",
+        "en": "Apr-Oct 6:00-sunset / Nov-Mar 7:00-sunset"
+      },
+      "closed": {
+        "ja": "荒天時、花火の日は12時以降、花火のない月は第3水曜",
+        "en": "Bad weather; after 12:00 on fireworks days; 3rd Wed in months without fireworks"
+      },
       "url": "http://www5d.biglobe.ne.jp/~atami/",
       "sources": [
         "https://www.ataminews.gr.jp/spot/136"
@@ -662,8 +701,14 @@
       "address": "静岡県熱海市田原本町9",
       "lat": null,
       "lng": null,
-      "hours": "9:00-16:00",
-      "closed": "無休（不具合時は休止）",
+      "hours": {
+        "ja": "9:00-16:00",
+        "en": "9:00-16:00"
+      },
+      "closed": {
+        "ja": "無休（不具合時は休止）",
+        "en": "none (except for repairs)"
+      },
       "url": "https://www.ataminews.gr.jp/spot/138",
       "sources": [
         "https://www.ataminews.gr.jp/spot/138"
@@ -693,7 +738,10 @@
       "product": "himono",
       "service": null,
       "price": null,
-      "priceNote": "伊勢海老ひもの（目方により変動）",
+      "priceNote": {
+        "ja": "伊勢海老ひもの（目方により変動）",
+        "en": "Dried spiny lobster (price varies by weight)"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.kamaturu.co.jp/",
       "sources": [
@@ -706,7 +754,10 @@
       "product": "himono",
       "service": null,
       "price": 432,
-      "priceNote": "真あじ干物（1枚〜、税込）",
+      "priceNote": {
+        "ja": "真あじ干物（1枚〜、税込）",
+        "en": "Dried horse mackerel (from 1 piece, tax incl.)"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.aoki-himono.co.jp/",
       "sources": [
@@ -718,7 +769,10 @@
       "product": "himono",
       "service": null,
       "price": 2808,
-      "priceNote": "特価真あじ詰合せ10枚入り SP-26（税込）",
+      "priceNote": {
+        "ja": "特価真あじ詰合せ10枚入り SP-26（税込）",
+        "en": "Horse mackerel set, 10 pieces (tax incl.)"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.aoki-himono.co.jp/",
       "sources": [
@@ -755,7 +809,10 @@
       "product": "atami-pudding",
       "service": null,
       "price": 450,
-      "priceNote": "熱海プリン 特製カラメルシロップ付 1個（税込）",
+      "priceNote": {
+        "ja": "熱海プリン 特製カラメルシロップ付 1個（税込）",
+        "en": "Atami Pudding with caramel syrup, 1 (tax incl.)"
+      },
       "checkedAt": "2026-11-19",
       "url": "http://atami-purin.com/",
       "sources": [
@@ -767,7 +824,10 @@
       "product": "atami-pudding",
       "service": null,
       "price": 3150,
-      "priceNote": "熱海プリンお得な6本セット（税込）",
+      "priceNote": {
+        "ja": "熱海プリンお得な6本セット（税込）",
+        "en": "Atami Pudding set of 6 (tax incl.)"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://atami-purin.shop-pro.jp/",
       "sources": [
@@ -779,7 +839,10 @@
       "product": "daidai",
       "service": null,
       "price": 470,
-      "priceNote": "風呂まーじゅプリン だいだい 1個（税込）",
+      "priceNote": {
+        "ja": "風呂まーじゅプリン だいだい 1個（税込）",
+        "en": "Daidai pudding, 1 (tax incl.)"
+      },
       "checkedAt": "2026-11-19",
       "url": "http://atami-purin.com/",
       "sources": [
@@ -817,7 +880,10 @@
       "product": "daidai",
       "service": null,
       "price": null,
-      "priceNote": "橙マーマレード（製造：橙の倉田家）",
+      "priceNote": {
+        "ja": "橙マーマレード（製造：橙の倉田家）",
+        "en": "Daidai marmalade (made by Kurata-ke)"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.ataminews.gr.jp/product/32",
       "sources": [
@@ -829,7 +895,10 @@
       "product": "new-summer-orange",
       "service": null,
       "price": null,
-      "priceNote": "伊豆みかんゼリー（ニューサマーオレンジ・夏みかん・橙の果汁）",
+      "priceNote": {
+        "ja": "伊豆みかんゼリー（ニューサマーオレンジ・夏みかん・橙の果汁）",
+        "en": "Izu citrus jelly (new summer orange, natsumikan, daidai juice)"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.mase-jp.com/",
       "sources": [
@@ -842,7 +911,10 @@
       "product": "mikan",
       "service": null,
       "price": 500,
-      "priceNote": "みかん狩り入園（3歳以上、食べ放題）。持ち帰りは別途1kg 500円",
+      "priceNote": {
+        "ja": "みかん狩り入園（3歳以上、食べ放題）。持ち帰りは別途1kg 500円",
+        "en": "Mikan picking, all you can eat (age 3+). Take-home ¥500/kg"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.ataminews.gr.jp/spot/188",
       "sources": [
@@ -854,7 +926,10 @@
       "product": "mikan",
       "service": null,
       "price": 1000,
-      "priceNote": "みかん狩り入園（食べ放題、小学6年生以下は500円）",
+      "priceNote": {
+        "ja": "みかん狩り入園（食べ放題、小学6年生以下は500円）",
+        "en": "Mikan picking, all you can eat (¥500 for elementary school and under)"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.ataminews.gr.jp/spot/188",
       "sources": [
@@ -866,7 +941,10 @@
       "product": "new-summer-orange",
       "service": null,
       "price": null,
-      "priceNote": "みかんの後の時期にニューサマーオレンジ狩り（月は未確認）",
+      "priceNote": {
+        "ja": "みかんの後の時期にニューサマーオレンジ狩り（月は未確認）",
+        "en": "New summer orange picking after the mikan season (months unconfirmed)"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.ataminews.gr.jp/spot/188",
       "sources": [
@@ -878,7 +956,10 @@
       "product": null,
       "service": "atami-baien",
       "price": null,
-      "priceNote": "梅まつり期間中のみ有料（金額は公式ページに記載なし）",
+      "priceNote": {
+        "ja": "梅まつり期間中のみ有料（金額は公式ページに記載なし）",
+        "en": "Paid only during the plum festival (fee not listed)"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.ataminews.gr.jp/spot/105",
       "sources": [
@@ -890,7 +971,10 @@
       "product": null,
       "service": "mikan-gari",
       "price": 500,
-      "priceNote": "入園（3歳以上、食べ放題）",
+      "priceNote": {
+        "ja": "入園（3歳以上、食べ放題）",
+        "en": "Admission, all you can eat (age 3+)"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.ataminews.gr.jp/spot/188",
       "sources": [
@@ -902,7 +986,10 @@
       "product": null,
       "service": "mikan-gari",
       "price": 1000,
-      "priceNote": "入園（食べ放題、小学6年生以下は500円）",
+      "priceNote": {
+        "ja": "入園（食べ放題、小学6年生以下は500円）",
+        "en": "Admission, all you can eat (¥500 for elementary school and under)"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.ataminews.gr.jp/spot/188",
       "sources": [
@@ -914,7 +1001,10 @@
       "product": null,
       "service": "umi-zuri",
       "price": 500,
-      "priceNote": "入場（大人）。竿セット2時間2,200円は別",
+      "priceNote": {
+        "ja": "入場（大人）。竿セット2時間2,200円は別",
+        "en": "Admission (adult). Rod rental ¥2,200 for 2 h extra"
+      },
       "checkedAt": "2026-11-19",
       "url": "http://www5d.biglobe.ne.jp/~atami/",
       "sources": [
@@ -926,7 +1016,10 @@
       "product": null,
       "service": "hatsushima",
       "price": 2900,
-      "priceNote": "大人往復（小人1,450円）",
+      "priceNote": {
+        "ja": "大人往復（小人1,450円）",
+        "en": "Adult round trip (child ¥1,450)"
+      },
       "checkedAt": "2026-11-19",
       "url": "http://www.hatsushima.jp/access/",
       "sources": [
@@ -938,7 +1031,10 @@
       "product": null,
       "service": "sup",
       "price": 7700,
-      "priceNote": "60分SUP（〜、レンタル・保険・ガイド込み）。予約サイト掲載の価格",
+      "priceNote": {
+        "ja": "60分SUP（〜、レンタル・保険・ガイド込み）。予約サイト掲載の価格",
+        "en": "60-min SUP incl. rental, insurance, guide. Price from a booking site"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.asoview.com/item/activity/pln3000049043/",
       "sources": [
@@ -950,7 +1046,10 @@
       "product": null,
       "service": "ashiyu",
       "price": 0,
-      "priceNote": "無料",
+      "priceNote": {
+        "ja": "無料",
+        "en": "Free"
+      },
       "checkedAt": "2026-11-19",
       "url": "https://www.ataminews.gr.jp/spot/138",
       "sources": [

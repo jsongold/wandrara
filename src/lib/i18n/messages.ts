@@ -855,7 +855,7 @@ const en: Messages = {
     shopCount: (n: number) => `${n}`,
     shopsOf: "Where to get it",
     online: "Online",
-    closedOn: (d: string) => `Closed ${d}`,
+    closedOn: (d: string) => `Closed: ${d}`,
     price: (yen: number) => `From ¥${yen.toLocaleString("en-US")}`,
     openMapOf: (name: string) => `Open ${name} in Google Maps`,
     buyHere: "Buy",
