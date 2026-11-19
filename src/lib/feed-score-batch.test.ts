@@ -11,6 +11,20 @@ function fake(inputs: unknown, applied = 2) {
 }
 
 describe("runFeedScoreBatch", () => {
+  it("読み元を差し替えられる（書き込みは db のまま）", async () => {
+    const { db, rpc } = fake(null);
+    const source = { name: "other", load: vi.fn(async () => ({ targets: [{ dest_id: "a", core_type: "stay" }], counts: [] })) };
+    const r = await runFeedScoreBatch(db, new Date("2026-11-19T00:00:00Z"), W, source);
+    expect(source.load).toHaveBeenCalledWith("2026-08-21T00:00:00.000Z");
+    expect(rpc.mock.calls.map((c) => c[0])).toEqual(["feed_scores_apply"]);
+    expect(r.source).toBe("other");
+  });
+
+  it("知らない読み元は throw", async () => {
+    const { loadFeedScoreSource } = await import("./feed-score-source");
+    expect(() => loadFeedScoreSource(fake(null).db, "posthgo")).toThrow("FEED_SCORE_SOURCE=posthgo");
+  });
+
   it("直近 90 日を読み、点数と種類の平均を書き、重みの版を algorithm に付ける", async () => {
     const { db, rpc } = fake({
       targets: [{ dest_id: "a", core_type: "stay" }, { dest_id: "b", core_type: "stay" }],
@@ -29,7 +43,7 @@ describe("runFeedScoreBatch", () => {
     const a = args.p_scores.find((x) => x.dest_id === "a")!.score;
     const b = args.p_scores.find((x) => x.dest_id === "b")!.score;
     expect(a).toBeGreaterThan(b);
-    expect(r).toEqual({ algorithm: "order=score@7", targets: 2, counts: 3, scored: 2 });
+    expect(r).toEqual({ source: "supabase", algorithm: "order=score@7", targets: 2, counts: 3, scored: 2 });
   });
 
   it("読めなければ書かずに throw する", async () => {

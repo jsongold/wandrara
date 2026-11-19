@@ -6,7 +6,7 @@ import { adminClient } from "../src/lib/supabase/admin.ts";
 
 try {
   const r = await runFeedScoreBatch(adminClient());
-  console.log(`${r.algorithm}: dest ${r.targets} 件に点数を書いた（${r.scored} 件）。数えた組 ${r.counts}`);
+  console.log(`${r.algorithm}（読み元 ${r.source}）: dest ${r.targets} 件に点数を書いた（${r.scored} 件）。数えた組 ${r.counts}`);
 } catch (e) {
   console.error(`error: ${e instanceof Error ? e.message : e}`);
   process.exitCode = 1;

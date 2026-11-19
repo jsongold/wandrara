@@ -2,24 +2,24 @@
 // 何度走らせても同じ結果（全部を計算し直して置き換える）。scripts/feed-score.ts（pnpm feed:score）から走らせる
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { FEED_WEIGHTS, scoreDests, type ActionCount, type FeedAction, type FeedWeights } from "./feed-score.ts";
+import { loadFeedScoreSource, type FeedScoreSource } from "./feed-score-source.ts";
 
 export const FEED_SCORE_WINDOW_DAYS = 90;
 const ACTIONS: readonly FeedAction[] = ["card_view", "card_click", "tile_click", "save"];
 
-type Inputs = {
-  targets: { dest_id: string; core_type: string }[];
-  counts: { dest_id: string; action: string; position: number | null; n: number }[];
-};
-
-export type FeedScoreBatchResult = { algorithm: string; targets: number; counts: number; scored: number };
+export type FeedScoreBatchResult = { source: string; algorithm: string; targets: number; counts: number; scored: number };
 
 export const scoreAlgorithm = (w: FeedWeights) => `order=score@${w.version}`;
 
-export async function runFeedScoreBatch(db: SupabaseClient, now: Date = new Date(), weights: FeedWeights = FEED_WEIGHTS): Promise<FeedScoreBatchResult> {
+// db：点数の書き込み先。source：回数の読み元（既定は FEED_SCORE_SOURCE）
+export async function runFeedScoreBatch(
+  db: SupabaseClient,
+  now: Date = new Date(),
+  weights: FeedWeights = FEED_WEIGHTS,
+  source: FeedScoreSource = loadFeedScoreSource(db),
+): Promise<FeedScoreBatchResult> {
   const since = new Date(now.getTime() - FEED_SCORE_WINDOW_DAYS * 86_400_000).toISOString();
-  const { data, error } = await db.rpc("feed_score_inputs", { p_since: since });
-  if (error) throw new Error(`feed_score_inputs: ${error.message}`);
-  const inputs = data as Inputs;
+  const inputs = await source.load(since);
 
   const counts: ActionCount[] = inputs.counts
     .filter((c) => (ACTIONS as readonly string[]).includes(c.action))
@@ -37,5 +37,5 @@ export async function runFeedScoreBatch(db: SupabaseClient, now: Date = new Date
     p_algorithm: algorithm,
   });
   if (applyError) throw new Error(`feed_scores_apply: ${applyError.message}`);
-  return { algorithm, targets: inputs.targets.length, counts: counts.length, scored: Number(scored) };
+  return { source: source.name, algorithm, targets: inputs.targets.length, counts: counts.length, scored: Number(scored) };
 }
