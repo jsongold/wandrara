@@ -22,6 +22,7 @@ import { Icon } from "./icons";
 import { NearbySuggestions } from "./NearbySuggestions";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
+import { useScrolledAway } from "./use-scrolled-away";
 
 type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPageResult; categories: CategoryView[]; areaLabel: string | null };
 type Sheet = null | "area" | "filter";
@@ -54,6 +55,8 @@ export function HomeScreen({ locale, query, feed, categories, areaLabel }: Props
   const [areaView, setAreaView] = useState<AreaView>("list");
   const m = messages(locale);
   const feedRef = useRef<HTMLDivElement>(null);
+  // 一覧がいちばん上から離れたか（ヘッダーのタイトルを畳む）
+  const scrolledAway = useScrolledAway(feedRef);
   // エリア選択シートのデータ（シートを開く・ボタンに触れた時点で取り始める）
   const areaSheet = useSyncExternalStore(areaSheetLoader.subscribe, () => areaSheetLoader.get(locale), () => IDLE_AREA_SHEET);
   const areaData = areaSheet.status === "ready" ? areaSheet.data : null;
@@ -160,6 +163,7 @@ export function HomeScreen({ locale, query, feed, categories, areaLabel }: Props
         next={serializeDiscoverQuery(query, locale)}
         subtitle={`${feed.orderLabel} · ${m.home.demo}`}
         iconStyle={ICON_SOLID}
+        collapsed={scrolledAway}
         area={
           highlights.length > 0 ? (
             <AreaStories locale={locale} area={query.area} areaLabel={currentArea} groups={highlights} scrollRoot={feedRef} />
