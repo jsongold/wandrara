@@ -47,6 +47,7 @@ export function useSwipeDown<T extends HTMLElement>(onClose: () => void, { enabl
     let cur = 0;
     let suppressUntil = 0;
     let closingNow = false;
+    let timer: number | undefined;
     const move = (v: number) => {
       cur = v;
       setDy(v);
@@ -89,7 +90,8 @@ export function useSwipeDown<T extends HTMLElement>(onClose: () => void, { enabl
       if (swipeDecision(cur, d.v, performance.now() - d.lastT)) {
         closingNow = true;
         setClosing(true);
-        window.setTimeout(() => {
+        timer = window.setTimeout(() => {
+          timer = undefined;
           closingNow = false;
           setClosing(false);
           move(0);
@@ -119,16 +121,22 @@ export function useSwipeDown<T extends HTMLElement>(onClose: () => void, { enabl
       if (step(t.clientX, t.clientY, e.timeStamp)) e.preventDefault();
     };
     // マウス・ペン：押して引く。指は touch の方で受ける
+    // 離したのが要素の外でも受けられるよう、押している間は画面全体で「離した」を待つ
+    const onWindowUp = (e: PointerEvent) => {
+      window.removeEventListener("pointerup", onWindowUp);
+      window.removeEventListener("pointercancel", onWindowUp);
+      if (e.type === "pointercancel") cancel();
+      else release();
+    };
     const onPointerDown = (e: PointerEvent) => {
       if (e.pointerType === "touch" || e.button !== 0) return;
       begin(e.clientX, e.clientY, e.timeStamp);
+      window.addEventListener("pointerup", onWindowUp);
+      window.addEventListener("pointercancel", onWindowUp);
     };
     const onPointerMove = (e: PointerEvent) => {
       if (e.pointerType === "touch" || !drag) return;
       if (step(e.clientX, e.clientY, e.timeStamp) && !el.hasPointerCapture(e.pointerId)) el.setPointerCapture(e.pointerId);
-    };
-    const onPointerUp = (e: PointerEvent) => {
-      if (e.pointerType !== "touch") release();
     };
     const onClick = (e: MouseEvent) => {
       if (e.detail > 0 && Date.now() < suppressUntil) {
@@ -139,21 +147,25 @@ export function useSwipeDown<T extends HTMLElement>(onClose: () => void, { enabl
     el.addEventListener("touchstart", onTouchStart, { passive: true });
     el.addEventListener("touchmove", onTouchMove, { passive: false });
     el.addEventListener("touchend", release);
-    el.addEventListener("touchcancel", release);
+    // 中断（OS やブラウザが操作を取り上げた）は閉じずに元へ戻す
+    el.addEventListener("touchcancel", cancel);
     el.addEventListener("pointerdown", onPointerDown);
     el.addEventListener("pointermove", onPointerMove);
-    el.addEventListener("pointerup", onPointerUp);
-    el.addEventListener("pointercancel", onPointerUp);
     el.addEventListener("click", onClick, true);
     return () => {
       el.removeEventListener("touchstart", onTouchStart);
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", release);
-      el.removeEventListener("touchcancel", release);
+      el.removeEventListener("touchcancel", cancel);
       el.removeEventListener("pointerdown", onPointerDown);
       el.removeEventListener("pointermove", onPointerMove);
-      el.removeEventListener("pointerup", onPointerUp);
-      el.removeEventListener("pointercancel", onPointerUp);
+      window.removeEventListener("pointerup", onWindowUp);
+      window.removeEventListener("pointercancel", onWindowUp);
+      // 閉じる途中で要素が消えたら（Esc で閉じた・別の候補へ移った）、待っている onClose を取り消して戻す
+      if (timer !== undefined) window.clearTimeout(timer);
+      setClosing(false);
+      setDragging(false);
+      setDy(0);
       el.removeEventListener("click", onClick, true);
     };
   }, [el]);
