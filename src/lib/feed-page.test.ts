@@ -1,0 +1,90 @@
+// feed_page の呼び出しと、cursor・総件数・重複の間引きの引き継ぎ（MS2b）。DB の中身の一致は feed-page.db.test.ts（opt-in）
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { describe, expect, it, vi } from "vitest";
+import { DEFAULT_QUERY } from "./discover-query";
+import { decodeCursor, encodeCursor, fetchFeedPage, FeedCursorError, feedQueryKey, FEED_PAGE_MAX } from "./feed-page";
+
+vi.mock("./data", () => ({ env: () => ({ url: "https://x.supabase.co" }), supabase: () => ({}), photoUrl: (b: string, k: string) => `${b}/${k}` }));
+
+const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+const name = (s: string) => ({ ja: s });
+const tile = (n: number) => ({ dest_id: id(n), slug: `t${n}`, name: name(`タイル${n}`), photo: null, region_name: name("地区"), parent_region_name: name("エリア") });
+const card = (n: number, tiles: number[]) => ({
+  dest_id: id(n), core_type: "accommodation", slug: `d${n}`, name: name(`宿${n}`), photos: [{ storage_key: `k${n}`, license: null, credit: null }],
+  region_name: name("地区"), parent_region_name: null, sort_key: `2026-01-0${n}T00:00:00+00:00`, tiles: tiles.map(tile),
+});
+
+function fake(result: unknown) {
+  const rpc = vi.fn(async () => ({ data: result, error: null }));
+  return { db: { rpc } as unknown as SupabaseClient, rpc };
+}
+const args = { query: DEFAULT_QUERY, locale: "ja" as const };
+
+describe("fetchFeedPage", () => {
+  it("先頭ページ：DB の呼び出し・FeedCard の形・総件数・次の cursor", async () => {
+    const { db, rpc } = fake({ cards: [card(1, [10, 11])], has_more: true, total: 1000, total_capped: true });
+    const r = await fetchFeedPage(db, "https://x.supabase.co", { ...args, query: { ...DEFAULT_QUERY, area: "tokyo", cat: "onsen", q: "湯" }, limit: 99 });
+    expect(rpc).toHaveBeenCalledWith("feed_page", expect.objectContaining({
+      p_core_types: ["accommodation"], p_related_core_types: ["experience", "nature", "village", "building", "hotspring"],
+      p_area: "tokyo", p_cat: "onsen", p_q: "湯", p_sort: "editorial", p_limit: FEED_PAGE_MAX, p_after_key: null, p_after_id: null, p_with_total: true,
+    }));
+    expect(r.cards[0]).toMatchObject({
+      key: id(1), destId: id(1), title: "宿1", areaLabel: "地区", href: "/ja/d/d1",
+      photos: [{ url: "https://x.supabase.co/k1", isDemo: false }],
+    });
+    expect(r.cards[0].tiles.map((x) => [x.destId, x.sub, x.href])).toEqual([[id(10), "エリア・地区", "/ja/d/t10"], [id(11), "エリア・地区", "/ja/d/t11"]]);
+    expect(r.total).toBe(1000);
+    expect(r.totalIsLowerBound).toBe(true);
+    expect(r.queryKey).toBe(feedQueryKey({ ...DEFAULT_QUERY, area: "tokyo", cat: "onsen", q: "湯" }, "ja"));
+    expect(r.nextCursor).not.toBeNull();
+  });
+
+  it("次のページ：cursor を DB に渡し、総件数は返さず、前のページの最後のカードのタイルを最初のカードから間引く", async () => {
+    const first = fake({ cards: [card(1, [10, 11, 12]), card(2, [11, 12, 13])], has_more: true, total: 5, total_capped: false });
+    const p1 = await fetchFeedPage(first.db, "u", { ...args, limit: 2 });
+    // 2 枚目は 11・12 が直前と重なるので 13 だけ（残りが 1 枚以上ある）
+    expect(p1.cards[1].tiles.map((x) => x.destId)).toEqual([id(13)]);
+
+    const second = fake({ cards: [card(3, [13, 14])], has_more: false, total: null, total_capped: false });
+    const p2 = await fetchFeedPage(second.db, "u", { ...args, cursor: p1.nextCursor });
+    expect(second.rpc).toHaveBeenCalledWith("feed_page", expect.objectContaining({ p_after_key: "2026-01-02T00:00:00+00:00", p_after_id: id(2), p_with_total: false }));
+    expect(p2.cards[0].tiles.map((x) => x.destId)).toEqual([id(14)]);   // 13 は前のページの最後のカードに出したので出さない
+    expect(p2.total).toBeNull();
+    expect(p2.nextCursor).toBeNull();
+    expect(p2.emptyReason).toBeNull();
+  });
+
+  it("0 件：先頭ページだけ no-match。続きのページが空でも no-match にしない", async () => {
+    const empty = { cards: [], has_more: false, total: 0, total_capped: false };
+    expect((await fetchFeedPage(fake(empty).db, "u", args)).emptyReason).toBe("no-match");
+    const cursor = encodeCursor({ v: 1, q: feedQueryKey(DEFAULT_QUERY, "ja"), k: "-infinity", i: id(1), p: [] });
+    expect((await fetchFeedPage(fake(empty).db, "u", { ...args, cursor })).emptyReason).toBeNull();
+  });
+
+  it("DB のエラーは throw する（欠けたページを返さない）", async () => {
+    const db = { rpc: async () => ({ data: null, error: { message: "boom" } }) } as unknown as SupabaseClient;
+    await expect(fetchFeedPage(db, "u", args)).rejects.toThrow("feed_page: boom");
+  });
+});
+
+describe("cursor", () => {
+  const key = feedQueryKey(DEFAULT_QUERY, "ja");
+  const good = { v: 1 as const, q: key, k: "2026-01-01T00:00:00.123456+00:00", i: id(1), p: [id(2)] };
+
+  it("往復できる", () => expect(decodeCursor(encodeCursor(good), key)).toEqual(good));
+  it("別の条件の cursor は query-mismatch", () => {
+    expect(() => decodeCursor(encodeCursor(good), feedQueryKey({ ...DEFAULT_QUERY, mode: "do" }, "ja"))).toThrow(FeedCursorError);
+    try { decodeCursor(encodeCursor(good), "other"); } catch (e) { expect((e as FeedCursorError).code).toBe("query-mismatch"); }
+  });
+  it.each([
+    ["壊れた文字列", "!!!"],
+    ["並びの値が日付でない", encodeCursor({ ...good, k: "'; drop table x" })],
+    ["dest_id が uuid でない", encodeCursor({ ...good, i: "abc" })],
+    ["タイルが多すぎる", encodeCursor({ ...good, p: Array.from({ length: 7 }, (_, n) => id(n)) })],
+  ])("不正な cursor は invalid：%s", (_, raw) => {
+    try { decodeCursor(raw, key); throw new Error("no throw"); } catch (e) { expect((e as FeedCursorError).code).toBe("invalid"); }
+  });
+  it("-infinity（公開日なし）の cursor を受け付ける", () => {
+    expect(decodeCursor(encodeCursor({ ...good, k: "-infinity" }), key).k).toBe("-infinity");
+  });
+});
