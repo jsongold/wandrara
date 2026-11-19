@@ -4,7 +4,7 @@
 -- 地区の 30% は 1 つの上位エリア（hot）に集中させる（関連タイルの重い側を見るため）
 \set ON_ERROR_STOP on
 select setseed(0.42);
-truncate public.destinations cascade;
+truncate public.destinations, public.feed_entries cascade;
 
 create temp table fx as
 with leaves as (select id, row_number() over (order by id) as rn from public.regions where parent_id is not null),

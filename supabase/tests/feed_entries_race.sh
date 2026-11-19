@@ -15,15 +15,27 @@ insert into public.publications (dest_id, status) values ('$D', 'draft') on conf
 SQL
 # A：地域を race-b に付け替え、3 秒開いたまま
 $P -c "begin; update public.accommodations set region_id = 'race-b' where dest_id = '$D'; select pg_sleep(3); commit;" &
+A=$!
 sleep 1
 # B：A が開いている間に公開（A の付け替えはまだ見えない）
 $P -c "update public.publications set status = 'published', published_at = now() where dest_id = '$D'"
-wait
-$P -c "select case when exists (select 1 from public.feed_entries where dest_id = '$D' and area_id = 'race-b') and not exists (select 1 from public.feed_entries where dest_id = '$D' and area_id = 'race-a') then 'ok: 索引は race-b' else 'NG: 索引が古い地域のまま' end"
+wait $A
+# ずれていたら SQL のエラーにして、exit を非 0 にする
+$P -c "do \$\$ begin if not (exists (select 1 from public.feed_entries where dest_id = '$D' and area_id = 'race-b') and not exists (select 1 from public.feed_entries where dest_id = '$D' and area_id = 'race-a')) then raise exception 'NG: 索引が古い地域のまま'; end if; end \$\$"
+echo "ok: 索引は race-b"
 # 2 つ目：dest_apply（destinations を先に、publications を後に書く）と、publications だけを書く公開が重なっても deadlock しない
 $P -c "begin; update public.destinations set updated_at = now() where dest_id = '$D'; select pg_sleep(3); update public.publications set status = 'draft' where dest_id = '$D'; commit;" &
+A=$!
 sleep 1
 $P -c "update public.publications set published_at = now() where dest_id = '$D'"
-wait
+wait $A
 echo "ok: deadlock なし"
+# 3 つ目：dest_apply と同じ destinations の FOR UPDATE を握ったまま、公開中の dest の公開日の更新と重なっても deadlock しない（外部キーの KEY SHARE を取らない）
+$P -c "update public.publications set status = 'published' where dest_id = '$D'"
+$P -c "begin; select 1 from public.destinations where dest_id = '$D' for update; select pg_sleep(3); update public.publications set published_at = now() where dest_id = '$D'; commit;" &
+A=$!
+sleep 1
+$P -c "update public.publications set published_at = now() where dest_id = '$D'"
+wait $A
+echo "ok: FOR UPDATE と公開で deadlock なし"
 $P -c "delete from public.destinations where dest_id = '$D'"

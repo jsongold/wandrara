@@ -39,7 +39,7 @@ left join public.regions r on r.id = pl.region_id;
 -- 索引の表 -----------------------------------------------------------------------
 -- 1 つの dest につき最大 4 行：area_id = 'all'、自分の地区、親のエリア、'r:' + 自分の地区（関連タイルの「同じ地区」。地区が上位エリアのとき子の地区を含まない）
 create table if not exists public.feed_entries (
-  dest_id uuid not null references public.destinations (dest_id) on delete cascade,
+  dest_id uuid not null,             -- destinations への外部キーは張らない（dest_apply が destinations を FOR UPDATE で握るので、外部キーの KEY SHARE が公開と deadlock する）。dest の削除は trigger が追従する
   area_id text not null,
   core_type text not null,
   dest_created_at timestamptz not null,
@@ -106,7 +106,12 @@ create or replace function public.feed_entry_regions_touch() returns trigger
 language plpgsql security definer set search_path = ''
 as $$
 begin
-  perform public.feed_entry_refresh(d.dest_id) from (select distinct dest_id from public.feed_entries where region_id = new.id) d;
+  -- 写しの行ではなく元の表から探す（同時に公開される下書きの dest は、まだ写しに無い）
+  perform public.feed_entry_refresh(d.dest_id) from (
+    select dest_id from public.accommodations where region_id = new.id union select dest_id from public.experiences where region_id = new.id
+    union select dest_id from public.natures where region_id = new.id union select dest_id from public.villages where region_id = new.id
+    union select dest_id from public.buildings where region_id = new.id union select dest_id from public.hotsprings where region_id = new.id
+  ) d;
   return null;
 end;
 $$;

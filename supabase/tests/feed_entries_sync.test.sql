@@ -1,7 +1,7 @@
 -- feed_entries（フィードの索引の表）が、公開・非公開・日付・地域の変更に追従して、いつも feed_index の定義と一致する
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(9);
 -- 写しは commit 時に作り直される（deferred）。この test は 1 つの transaction の中で見るので、文ごとに作り直させる
 set constraints all immediate;
 
@@ -44,6 +44,10 @@ select is(pg_temp.drift(), 0::bigint, '付け替え後も定義と一致');
 
 update public.publications set status = 'draft' where dest_id = '00000000-0000-4000-8000-0000000000f1';
 select is((select count(*) from public.feed_entries where dest_id = '00000000-0000-4000-8000-0000000000f1'), 0::bigint, '非公開にすると索引から消える');
+
+update public.publications set status = 'published' where dest_id = '00000000-0000-4000-8000-0000000000f1';
+delete from public.destinations where dest_id = '00000000-0000-4000-8000-0000000000f1';
+select is((select count(*) from public.feed_entries where dest_id = '00000000-0000-4000-8000-0000000000f1'), 0::bigint, 'dest を消しても索引に残らない（外部キー無し）');
 
 select * from finish();
 rollback;
