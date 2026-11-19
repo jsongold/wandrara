@@ -7,6 +7,7 @@ import { licenseUrl, type HighlightGroup, type HighlightItem, type HighlightKind
 import { messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/types";
 import { Icon } from "./icons";
+import { useSwipeDown } from "./use-swipe-down";
 
 type Props = { locale: Locale; area: string; areaLabel: string; groups: HighlightGroup[] };
 type Open = { g: number; i: number };
@@ -69,6 +70,18 @@ export function prevPos(groups: HighlightGroup[], p: Open): Open {
 
 const photo = (color: string): CSSProperties => ({ background: `linear-gradient(160deg, ${color} 0%, #1b1b19 130%)` });
 
+// タイルの絵。写真のある候補を優先し、無ければ 1 件目の頭文字を色面に出す
+function CircleThumb({ items }: { items: HighlightItem[] }) {
+  const withPhoto = items.find((x) => x.photo);
+  if (withPhoto) return <ItemPhoto item={withPhoto} className="absolute inset-0 h-full w-full" />;
+  const first = items[0];
+  return (
+    <span aria-hidden="true" className="absolute inset-0 flex items-start justify-center pt-2.5 text-[20px] font-semibold text-white/85" style={photo(first.color)}>
+      {first.name.slice(0, 1)}
+    </span>
+  );
+}
+
 // 候補の写真。写真が無ければ色面（試作。MS1 で next/image と丸用の小さい画像にする）
 function ItemPhoto({ item, className }: { item: HighlightItem; className: string }) {
   if (!item.photo) return <span aria-hidden="true" className={`block ${className}`} style={photo(item.color)} />;
@@ -128,6 +141,10 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  // 下へのスワイプ：一覧のシートは中身が上までスクロールされているときだけ閉じる。ストーリーはシートが無いときだけ閉じる
+  const sheetSwipe = useSwipeDown(() => closePeek(), { enabled: peek, canStart: (el) => el.scrollTop <= 0 });
+  const storySwipe = useSwipeDown(() => setOpen(null), { enabled: open !== null && !peek, threshold: 110 });
+
   if (groups.length === 0) return null;
 
   const cur = open ? groups[open.g] : null;
@@ -135,11 +152,12 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
 
   return (
     <>
+      {/* ヘッダーから丸の列まで、上から薄くなる影でつなぐ（帯の背景の段差を作らない） */}
+      <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 z-[3] h-[180px]" style={{ background: "linear-gradient(to bottom, rgba(15,15,14,0.72) 0%, rgba(15,15,14,0.45) 55%, rgba(15,15,14,0) 100%)" }} />
       <nav
         aria-label={m.label(areaLabel)}
         data-testid="area-stories"
-        className="filter-mark-in absolute inset-x-0 top-[72px] z-[5] flex gap-3.5 overflow-x-auto px-4 pb-2 pt-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ background: "rgba(15,15,14,0.32)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}
+        className="filter-mark-in absolute inset-x-0 top-[72px] z-[4] flex gap-2.5 overflow-x-auto px-4 pb-6 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {groups.map((g, gi) => {
           const isSeen = seen.includes(g.kind);
@@ -153,15 +171,15 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
               }}
               aria-label={m.open(m.kind[g.kind], g.items.length)}
               data-seen={isSeen}
-              className="flex w-14 flex-none cursor-pointer flex-col items-center gap-1 border-0 bg-transparent p-0 text-white"
+              className="relative h-[64px] w-[64px] flex-none cursor-pointer overflow-hidden rounded-[14px] border-0 p-0 text-white transition-opacity"
+              style={{ opacity: isSeen ? 0.6 : 1, boxShadow: "0 4px 14px rgba(0,0,0,0.35)" }}
             >
-              <span
-                className="flex h-[52px] w-[52px] items-center justify-center rounded-full"
-                style={{ border: `2px solid ${isSeen ? "rgba(255,255,255,0.35)" : "#f4f1ea"}` }}
-              >
-                <ItemPhoto item={g.items[0]} className="h-11 w-11 rounded-full" />
-              </span>
-              <span className={`text-[11px] ${isSeen ? "text-white/70" : "font-semibold"}`}>{m.kind[g.kind]}</span>
+              <CircleThumb items={g.items} />
+              {/* 下に影を敷いて項目名を重ねる */}
+              <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-8" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.7))" }} />
+              <span className="absolute inset-x-0 bottom-1.5 text-center text-[11px] font-semibold leading-none">{m.kind[g.kind]}</span>
+              {/* まだ見ていない項目の印 */}
+              {!isSeen && <span aria-hidden="true" className="absolute inset-x-3 top-0 h-[3px] rounded-b-sm bg-[#f4f1ea]" />}
             </button>
           );
         })}
@@ -183,7 +201,13 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
         <div
           data-testid="area-story"
           className="relative flex h-full flex-col text-white"
-          style={photo(item.color)}
+          style={{
+            ...photo(item.color),
+            transform: storySwipe.dy ? `translateY(${storySwipe.dy}px) scale(${1 - Math.min(storySwipe.dy, 300) / 3000})` : undefined,
+            opacity: storySwipe.dy ? 1 - Math.min(storySwipe.dy, 300) / 600 : undefined,
+            transition: storySwipe.dy ? "none" : "transform 0.2s ease, opacity 0.2s ease",
+          }}
+          {...storySwipe.handlers}
         >
           {item.photo && <ItemPhoto item={item} className="absolute inset-0 h-full w-full" />}
           {/* 「軽く見る」を開いている間は、後ろのストーリーの操作を inert にしてフォーカスを入れない */}
@@ -242,8 +266,12 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
               <section
                 aria-label={item.name}
                 data-testid="area-story-peek"
-                className="filter-mark-in absolute inset-x-0 bottom-0 z-[4] flex max-h-[85%] flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-3xl bg-[#1b1b19] px-5 pb-8 pt-5"
+                className="filter-mark-in absolute inset-x-0 bottom-0 z-[4] flex max-h-[85%] flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-3xl bg-[#1b1b19] px-5 pb-8 pt-2.5"
+                style={{ transform: sheetSwipe.dy ? `translateY(${sheetSwipe.dy}px)` : undefined, transition: sheetSwipe.dy ? "none" : "transform 0.2s ease" }}
+                {...sheetSwipe.handlers}
               >
+                {/* 下に引いて閉じられることを示すつまみ */}
+                <span aria-hidden="true" className="mx-auto block h-1 w-9 flex-none rounded-full bg-white/25" />
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-col gap-1">
                     <span className="text-[11px] text-white/70">{m.shopsOf}</span>
@@ -254,7 +282,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                     type="button"
                     onClick={closePeek}
                     aria-label={common.close}
-                    className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl border-0 bg-white/[0.08] text-white"
+                    className="-mr-2 flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl border-0 bg-transparent text-white"
                   >
                     <Icon name="close" />
                   </button>
@@ -290,8 +318,9 @@ function PeekShops({ item, m }: { item: HighlightItem; m: HM }) {
 }
 
 // Google マップで店を開く（Maps URLs。API キーは要らない）。MS1 で place_id を持てば query_place_id も付ける
-export function mapsUrl(o: Pick<HighlightOffer, "shopName" | "address">): string {
-  const q = [o.shopName, o.address].filter(Boolean).join(" ");
+export function mapsUrl(o: Pick<HighlightOffer, "shopName" | "fullAddress">): string {
+  // 検索には省く前の住所を使う（町名だけだと別の町の同じ名前の店に当たる）
+  const q = [o.shopName, o.fullAddress].filter(Boolean).join(" ");
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }
 
