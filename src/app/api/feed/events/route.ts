@@ -1,10 +1,10 @@
-// フィードの表示とクリックの記録の受け口（#156）。ブラウザ（src/lib/feed-event-beacon.ts）がまとめて送り、feed_events に書く。
+// フィードの表示とクリックの記録の受け口（#156）。ブラウザ（src/lib/feed-event-beacon.ts）がまとめて送り、書き先（src/lib/feed-event-store.ts。既定は feed_events）に渡す。
 // 誰でも送れるので、形と件数だけ確かめる（数の水増しは防げない。点数の batch 側で session ごとの上限をかけるのが次の手）。
 // 失敗してもブラウザは送り直さない（記録の欠けは許す。画面を止めない）
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { FEED_EVENTS_MAX } from "@/lib/feed-event-beacon";
-import { adminClient } from "@/lib/supabase/admin";
+import { loadFeedEventStore, type FeedEventRow } from "@/lib/feed-event-store";
 
 const short = z.string().max(64);
 const Event = z.object({
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: "invalid" }, { status: 400 });
 
   const { sessionId, events } = parsed.data;
-  const rows = events.map((e) => ({
+  const rows: FeedEventRow[] = events.map((e) => ({
     name: e.name,
     dest_id: e.destId,
     position: e.position,
@@ -43,9 +43,10 @@ export async function POST(req: Request) {
     area: e.area,
     cat: e.cat,
   }));
-  const { error } = await adminClient().from("feed_events").insert(rows);
-  if (error) {
-    console.error(`feed_events: ${error.message}`);
+  try {
+    await loadFeedEventStore().write(rows);
+  } catch (e) {
+    console.error(e);
     return NextResponse.json({ error: "write" }, { status: 500 });
   }
   return new NextResponse(null, { status: 204 });

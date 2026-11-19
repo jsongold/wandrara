@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { insert } = vi.hoisted(() => ({ insert: vi.fn() }));
-vi.mock("@/lib/supabase/admin", () => ({ adminClient: () => ({ from: () => ({ insert }) }) }));
+const { write } = vi.hoisted(() => ({ write: vi.fn() }));
+vi.mock("@/lib/feed-event-store", () => ({ loadFeedEventStore: () => ({ name: "test", write }) }));
 
 import { POST } from "./route";
 
@@ -14,8 +14,8 @@ const post = (body: unknown) =>
 
 describe("POST /api/feed/events", () => {
   beforeEach(() => {
-    insert.mockReset();
-    insert.mockResolvedValue({ error: null });
+    write.mockReset();
+    write.mockResolvedValue(undefined);
   });
 
   it("行の形にして書く。from_dest_id は tile_click だけ", async () => {
@@ -27,7 +27,7 @@ describe("POST /api/feed/events", () => {
       ],
     });
     expect(res.status).toBe(204);
-    const rows = insert.mock.calls[0][0];
+    const rows = write.mock.calls[0][0];
     expect(rows).toEqual([
       { name: "card_click", dest_id: D, position: 3, from_dest_id: null, session_id: S, ...base },
       { name: "tile_click", dest_id: T, position: 1, from_dest_id: D, session_id: S, ...base },
@@ -42,11 +42,11 @@ describe("POST /api/feed/events", () => {
     ["多すぎる", { sessionId: S, events: Array.from({ length: 51 }, () => ({ name: "card_view", destId: D, position: 0, ...base })) }],
   ])("%s は 400 で書かない", async (_label, body) => {
     expect((await post(body)).status).toBe(400);
-    expect(insert).not.toHaveBeenCalled();
+    expect(write).not.toHaveBeenCalled();
   });
 
   it("書けなければ 500", async () => {
-    insert.mockResolvedValue({ error: { message: "down" } });
+    write.mockRejectedValue(new Error("down"));
     vi.spyOn(console, "error").mockImplementation(() => {});
     expect((await post({ sessionId: S, events: [{ name: "card_view", destId: D, position: 0, ...base }] })).status).toBe(500);
   });
