@@ -143,6 +143,11 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
   const isStay = query.mode === "stay";
   const allCats: CategoryView[] = [{ id: "all", label: m.home.allCats, icon: "grid" }, ...categories];
   const currentArea = areaLabel ?? m.home.allAreas;
+  // トップのエリア名は、Feed で今見ているカードのエリア（画面の上のほうにあるカード）。見る前は先頭のカード、カードが無ければ絞り込みのエリア。
+  // 絞り込みが変わったら（feedKey）前の Feed で見ていたカードは捨てる
+  const [seen, setSeen] = useState<{ feedKey: string; label: string } | null>(null);
+  const onCardSeen = useCallback((label: string) => setSeen({ feedKey, label }), [feedKey]);
+  const topArea = (seen?.feedKey === feedKey ? seen.label : null) ?? feed.cards[0]?.areaLabel ?? (query.area === "all" ? null : areaLabel);
   // カルーセルから開いたエリアの一言（押した 1 枚のカードの地区）。押した 1 枚にフォーカスを戻す。絞り込みが変わったら閉じる
   const [storiesOpen, setStoriesOpen] = useState<{ area: string; label: string; trigger: HTMLElement; queryKey: string } | null>(null);
   const stories: StoriesOpener = (area, label, trigger) => setStoriesOpen({ area, label, trigger, queryKey });
@@ -161,7 +166,7 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
       >
-        <FeedList key={feedKey} feed={feed} query={query} locale={locale} track={track} onAlgorithmChange={refreshFeed} stories={stories} />
+        <FeedList key={feedKey} feed={feed} query={query} locale={locale} track={track} onAlgorithmChange={refreshFeed} stories={stories} onCardSeen={onCardSeen} />
         {feed.cards.length === 0 && (
           <div className="flex flex-col items-center gap-3.5 px-8 pt-[180px] text-center">
             <Icon name="search" size={40} />
@@ -185,7 +190,7 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
         subtitle={`${feed.orderLabel} · ${m.home.demo}`}
         iconStyle={ICON_SOLID}
         collapsed={scrolledAway}
-        area={<CurrentFilterDisplay label={query.area === "all" || currentArea === m.home.allAreas ? null : currentArea} className="min-w-0" />}
+        area={<CurrentFilterDisplay label={topArea} className="min-w-0" />}
       />
 
       {/* エリアの一言の全画面。カルーセルの 1 枚から開く */}
@@ -376,8 +381,8 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
 // 続きのリンクは検索エンジンがたどる普通の <a>（?after=cursor）。JS が動くときは押すと loadMore になり、失敗したときの再試行も兼ねる
 // 並べ方の切り替え（deploy）で続きの取得が先頭から取り直し、並べ方が変わったら、記録にはその並べ方を付け、
 // 画面全体（並びのラベルなど）はサーバーの描画を取り直してそろえる（onAlgorithmChange）
-function FeedList({ feed, query, locale, track, onAlgorithmChange, stories }: {
-  feed: FeedPageResult; query: DiscoverQuery; locale: Locale; track: (e: FeedEvent, algo?: string) => void; onAlgorithmChange: () => void; stories: StoriesOpener;
+function FeedList({ feed, query, locale, track, onAlgorithmChange, stories, onCardSeen }: {
+  feed: FeedPageResult; query: DiscoverQuery; locale: Locale; track: (e: FeedEvent, algo?: string) => void; onAlgorithmChange: () => void; stories: StoriesOpener; onCardSeen: (areaLabel: string) => void;
 }) {
   const m = messages(locale);
   const [pager] = useState(() => new FeedPager(feed, apiFetchPage(query, locale)));
@@ -408,7 +413,7 @@ function FeedList({ feed, query, locale, track, onAlgorithmChange, stories }: {
   return (
     <>
       {s.cards.map((card, i) => (
-        <FeedCardView key={card.key} card={card} position={i} track={trackHere} stories={stories} />
+        <FeedCardView key={card.key} card={card} position={i} track={trackHere} stories={stories} onSeen={onCardSeen} />
       ))}
       {s.nextCursor && (
         <div ref={sentinel} className="flex flex-col items-center gap-1 px-4 pb-6 pt-2 text-center text-[13px] text-white/80 [overflow-anchor:none]">
@@ -436,8 +441,10 @@ const OFFSCREEN: CSSProperties = { contentVisibility: "auto", containIntrinsicSi
 
 // 半分以上見えたら 1 回だけ card_view を残す
 const VIEW_THRESHOLD = 0.5;
+// 「今見ているカード」：Feed の上から 30% の線にかかっているカード（root の上 30%・下 69.9% を除いた細い帯）
+const SEEN_BAND = "-30% 0px -69.9% 0px";
 
-function FeedCardView({ card, position, track, stories }: { card: FeedCard; position: number; track: (e: FeedEvent) => void; stories: StoriesOpener }) {
+function FeedCardView({ card, position, track, stories, onSeen }: { card: FeedCard; position: number; track: (e: FeedEvent) => void; stories: StoriesOpener; onSeen: (areaLabel: string) => void }) {
   const m = useMessages();
   const first = position === 0;
   const ref = useRef<HTMLElement>(null);
@@ -457,6 +464,20 @@ function FeedCardView({ card, position, track, stories }: { card: FeedCard; posi
     io.observe(el);
     return () => io.disconnect();
   }, [track, destId, position]);
+
+  const { areaLabel } = card;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) onSeen(areaLabel);
+      },
+      { root: el.closest("[data-feed]"), rootMargin: SEEN_BAND },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [onSeen, areaLabel]);
 
   // Link は画面内の遷移のために preventDefault するので defaultPrevented では見ない。
   // スワイプの残りのクリックは PhotoCarousel が capture で stopPropagation するので、ここには来ない
