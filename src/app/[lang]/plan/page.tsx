@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { SuggestPlan, type PlanCard } from "@/components/SuggestPlan";
 import { getAreaSheetData, getCatalog } from "@/lib/data";
@@ -7,6 +8,7 @@ import { buildFeed } from "@/lib/feed";
 import { loadFeedStrategies } from "@/lib/feed-config";
 import { dbFeedPlan, FEED_PAGE_MAX, getFeedPage } from "@/lib/feed-page";
 import { isLocale } from "@/lib/i18n/locale";
+import { SAVE_DATA_COOKIE, saveDataOfRequest } from "@/lib/save-data";
 import { cardTraitIds, orderBySuggest, parseSuggestTraits, suggestReason } from "@/lib/suggest";
 import type { FeedCard, Locale, Mode } from "@/lib/types";
 
@@ -39,9 +41,11 @@ async function Plan({ params, searchParams }: Pick<PageProps<"/[lang]/plan">, "p
   const { lang: locale } = await params;
   if (!isLocale(locale)) notFound();
   const picked = parseSuggestTraits((await searchParams).t);
-  const [stay, todo, sheet] = await Promise.all([candidates("stay", locale), candidates("do", locale), getAreaSheetData(locale)]);
+  const [stay, todo, sheet, h, jar] = await Promise.all([candidates("stay", locale), candidates("do", locale), getAreaSheetData(locale), headers(), cookies()]);
+  // 通信量を抑える利用者（Save-Data ヘッダか本人が選んだ cookie）。Home と同じく最初の描画から写真の画質を下げる
+  const saveData = saveDataOfRequest(h.get("save-data"), jar.get(SAVE_DATA_COOKIE)?.value);
   const { traits, byRegion } = sheet.traits;
   const traitsOf = (c: FeedCard) => cardTraitIds(c.regionIds, byRegion);
   const cards: PlanCard[] = orderBySuggest(interleave(stay, todo), -1, picked, traitsOf).map((c) => ({ ...c, reason: suggestReason(traitsOf(c), picked, traits) }));
-  return <SuggestPlan locale={locale} picked={picked} cards={cards} />;
+  return <SuggestPlan locale={locale} picked={picked} cards={cards} saveData={saveData} />;
 }

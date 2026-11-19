@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { messages } from "@/lib/i18n/messages";
+import { SaveDataHint } from "@/lib/use-save-data";
 import type { SuggestReason } from "@/lib/suggest";
 import type { FeedCard, Locale } from "@/lib/types";
 import { Icon } from "./icons";
@@ -12,11 +13,22 @@ import { SuggestBar } from "./SuggestBar";
 export type PlanCard = FeedCard & { reason: SuggestReason | null };
 
 // 提案ページ：提案の条件から作った並びを、1 画面に 1 枚ずつ全画面で見せる。下には提案の入力バー（条件を変えて作り直す）
-export function SuggestPlan({ locale, picked, cards }: { locale: Locale; picked: string[]; cards: PlanCard[] }) {
+// saveData：サーバーが決めた「通信量を抑える」（写真の画質。Home と同じ）
+export function SuggestPlan({ saveData, ...props }: { locale: Locale; picked: string[]; cards: PlanCard[]; saveData: boolean }) {
+  return (
+    <SaveDataHint value={saveData}>
+      <SuggestPlanBody {...props} />
+    </SaveDataHint>
+  );
+}
+
+// data-home：詳細シートが開いている間、裏を操作できなくする目印（DetailSheet が inert にする）
+function SuggestPlanBody({ locale, picked, cards }: { locale: Locale; picked: string[]; cards: PlanCard[] }) {
   const m = messages(locale);
   return (
-    <div className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
-      <div data-feed className="absolute inset-0 snap-y snap-mandatory overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div data-home className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
+      {/* 条件が変わったら作り直して先頭から見せる（同じページへの移動なのでスクロール位置が残るため） */}
+      <div key={picked.join(",")} data-feed className="absolute inset-0 snap-y snap-mandatory overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {cards.map((card, i) => (
           <article key={card.key} className="h-full snap-start snap-always">
             <PhotoCarousel photos={card.photos} href={card.href} label={card.title} className="h-full text-white" counterClassName="right-4 top-[76px]" priority={i === 0}>
