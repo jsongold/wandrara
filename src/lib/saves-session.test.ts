@@ -1,10 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 import { createSavesSession, type SavesState } from "./saves-session";
+import { fakeDb } from "./supabase/fake-db";
 
 // Supabase client の fake。auth の応答と保存の表（user_saves）を持つ
 function fakeClient(opts: { userId: string | null; saved?: string[]; listFails?: boolean }) {
   const rows = new Set(opts.saved ?? []);
+  // 一覧の読み取りは selectAll（order と range のページ送り）なので、fakeDb に生きた行を渡して読ませる。書き込みだけここで足す
+  const table: { dest_id: string }[] = [];
+  const sync = () => table.splice(0, table.length, ...[...rows].map((dest_id) => ({ dest_id })));
+  sync();
+  const reader = fakeDb({ user_saves: table }, opts.listFails ? { failAtFrom: 0 } : {}).db;
   let listener: ((e: string, s: { user: { id: string } } | null) => void) | null = null;
   const writes: string[] = [];
   const client = {
@@ -16,9 +22,9 @@ function fakeClient(opts: { userId: string | null; saved?: string[]; listFails?:
       },
     },
     from: () => ({
-      select: () => (opts.listFails ? Promise.resolve({ data: null, error: { message: "x" } }) : Promise.resolve({ data: [...rows].map((dest_id) => ({ dest_id })), error: null })),
-      insert: (r: { dest_id: string }) => (writes.push(`+${r.dest_id}`), rows.add(r.dest_id), Promise.resolve({ error: null })),
-      delete: () => ({ eq: () => ({ eq: (_c: string, id: string) => (writes.push(`-${id}`), rows.delete(id), Promise.resolve({ error: null })) }) }),
+      ...reader.from("user_saves"),
+      insert: (r: { dest_id: string }) => (writes.push(`+${r.dest_id}`), rows.add(r.dest_id), sync(), Promise.resolve({ error: null })),
+      delete: () => ({ eq: () => ({ eq: (_c: string, id: string) => (writes.push(`-${id}`), rows.delete(id), sync(), Promise.resolve({ error: null })) }) }),
     }),
   } as unknown as SupabaseClient;
   return { client, writes, emit: (id: string | null) => listener?.("SIGNED_IN", id ? { user: { id } } : null) };
