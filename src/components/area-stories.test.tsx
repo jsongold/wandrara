@@ -13,6 +13,8 @@ describe("エリアの一言のデータ", () => {
   it("全国とデータの無いエリアでは空", () => {
     expect(areaHighlights("all", "ja")).toEqual([]);
     expect(areaHighlights("hakone", "ja")).toEqual([]);
+    expect(areaHighlights("constructor", "ja")).toEqual([]);
+    expect(areaHighlights("__proto__", "ja")).toEqual([]);
   });
   it("熱海は決まった順で、候補の無い項目は出さない", () => {
     const g = areaHighlights("atami", "ja", 1);

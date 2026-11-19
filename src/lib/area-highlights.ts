@@ -46,7 +46,8 @@ export type HighlightGroup = { kind: HighlightKind; items: HighlightItem[] };
 
 export const HIGHLIGHT_KINDS: HighlightKind[] = ["meisan", "tokusan", "shun", "benri", "ninki"];
 
-const DATA: Record<string, AreaLocalData> = { atami: atami as AreaLocalData };
+// Map で持つ（area=constructor のような名前で Object の性質を引かない）
+const DATA = new Map<string, AreaLocalData>([["atami", atami as AreaLocalData]]);
 
 // 写真が無い候補の色面。id から決まった色を選ぶ
 const PALETTE = ["#b07a4f", "#c98f3a", "#8c4a3c", "#4f6680", "#3f6f78", "#4f7a8a", "#5a6b4a", "#6b5a4a", "#7a5a7a"];
@@ -123,7 +124,7 @@ export function tokyoMonth(now: Date = new Date()): number {
 // month は旬を決める月（1〜12）。省略すると日本の今月
 export function areaHighlights(area: string, locale: Locale, month: number = tokyoMonth()): HighlightGroup[] {
   if (area === "all") return [];
-  const data = DATA[area];
+  const data = DATA.get(area);
   if (!data) return [];
   const products = data.products.map((p) => toItem(data, p, "product", locale));
   const services = data.services.map((s) => toItem(data, s, "service", locale));
