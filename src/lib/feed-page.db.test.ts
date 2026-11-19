@@ -93,6 +93,6 @@ describe.skipIf(!url)("feed_page は buildFeed と一致する（DB の fixture�
   it("fixture の中身：先頭ページに関連タイルが実際に出ている（空のまま一致して見えるのを防ぐ）", () => {
     const f = buildFeed({ catalog, query: DEFAULT_QUERY, locale: "ja" }, loadFeedStrategies({}));
     expect(f.cards.length).toBeGreaterThan(20);
-    expect(f.cards.slice(0, 12).some((c) => c.tiles.length > 0)).toBe(true);
+    expect(f.cards.slice(0, 12).some((c) => c.carousel.length > 0)).toBe(true);
   });
 });

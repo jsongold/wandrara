@@ -5,7 +5,7 @@ import { apiFetchPage, CursorMismatch, FeedPager, mergeCards, nextPageHref, type
 import type { FeedCard } from "./types";
 
 const card = (n: number): FeedCard => ({
-  key: `d${n}`, destId: `d${n}`, title: `宿${n}`, areaLabel: "", kindLabel: "", relLabel: "", photos: [], href: `/ja/d/${n}`, tiles: [],
+  key: `d${n}`, destId: `d${n}`, title: `宿${n}`, areaLabel: "", kindLabel: "", relLabel: "", photos: [], href: `/ja/d/${n}`, carousel: [],
 });
 const page = (ids: number[], over: Partial<FeedPageResult> = {}): FeedPageResult => ({
   cards: ids.map(card), orderLabel: "", algorithm: "a", emptyReason: null,

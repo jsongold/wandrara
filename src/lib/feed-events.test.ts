@@ -38,6 +38,10 @@ describe("clickEventOf", () => {
     expect(clickEventOf({ tileDestId: "bath", tilePosition: "0" }, card))
       .toEqual({ name: "tile_click", destId: "bath", position: 0, fromDestId: "inn" });
   });
+  it("Stories のボタンは stories_click（エリアとカルーセルの中の位置）", () => {
+    expect(clickEventOf({ tileDestId: null, tilePosition: "0", storiesArea: "atami" }, card))
+      .toEqual({ name: "stories_click", area: "atami", position: 0, fromDestId: "inn" });
+  });
   it("それ以外のリンクは card_click", () => {
     expect(clickEventOf({ tileDestId: null, tilePosition: null }, card)).toEqual({ name: "card_click", destId: "inn", position: 1 });
   });

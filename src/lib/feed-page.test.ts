@@ -1,6 +1,7 @@
 // feed_page の呼び出しと、cursor・総件数・重複の間引きの引き継ぎ（MS2b）。DB の中身の一致は feed-page.db.test.ts（opt-in）
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
+import { destTilesOf } from "./carousel";
 import { DEFAULT_QUERY } from "./discover-query";
 import { decodeCursor, encodeCursor, fetchFeedPage, FeedCursorError, feedQueryKey, FEED_PAGE_MAX } from "./feed-page";
 
@@ -32,7 +33,7 @@ describe("fetchFeedPage", () => {
       key: id(1), destId: id(1), title: "宿1", areaLabel: "地区", href: "/ja/d/d1",
       photos: [{ url: "https://x.supabase.co/k1", isDemo: false }],
     });
-    expect(r.cards[0].tiles.map((x) => [x.destId, x.sub, x.href])).toEqual([[id(10), "エリア・地区", "/ja/d/t10"], [id(11), "エリア・地区", "/ja/d/t11"]]);
+    expect(destTilesOf(r.cards[0].carousel).map((x) => [x.destId, x.sub, x.href])).toEqual([[id(10), "エリア・地区", "/ja/d/t10"], [id(11), "エリア・地区", "/ja/d/t11"]]);
     expect(r.total).toBe(1000);
     expect(r.totalIsLowerBound).toBe(true);
     expect(r.queryKey).toBe(feedQueryKey({ ...DEFAULT_QUERY, area: "tokyo", cat: "onsen", q: "湯" }, "ja"));
@@ -43,12 +44,12 @@ describe("fetchFeedPage", () => {
     const first = fake({ cards: [card(1, [10, 11, 12]), card(2, [11, 12, 13])], has_more: true, total: 5, total_capped: false });
     const p1 = await fetchFeedPage(first.db, "u", { ...args, limit: 2 });
     // 2 枚目は 11・12 が直前と重なるので 13 だけ（残りが 1 枚以上ある）
-    expect(p1.cards[1].tiles.map((x) => x.destId)).toEqual([id(13)]);
+    expect(destTilesOf(p1.cards[1].carousel).map((x) => x.destId)).toEqual([id(13)]);
 
     const second = fake({ cards: [card(3, [13, 14])], has_more: false, total: null, total_capped: false });
     const p2 = await fetchFeedPage(second.db, "u", { ...args, cursor: p1.nextCursor });
     expect(second.rpc).toHaveBeenCalledWith("feed_page", expect.objectContaining({ p_after_key: "2026-01-02T00:00:00+00:00", p_after_id: id(2), p_with_total: false }));
-    expect(p2.cards[0].tiles.map((x) => x.destId)).toEqual([id(14)]);   // 13 は前のページの最後のカードに出したので出さない
+    expect(destTilesOf(p2.cards[0].carousel).map((x) => x.destId)).toEqual([id(14)]);   // 13 は前のページの最後のカードに出したので出さない
     expect(p2.total).toBeNull();
     expect(p2.nextCursor).toBeNull();
     expect(p2.emptyReason).toBeNull();

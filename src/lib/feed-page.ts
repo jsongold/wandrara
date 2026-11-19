@@ -2,6 +2,7 @@
 // 並び・メイン・関連タイルは buildFeed の既定（order=editorial・primary=by-mode・secondary=related-any-kind）と同じ。
 // 環境変数で戦略を差し替えている間は buildFeed を使うこと（この関数は既定の戦略しか持たない）。
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { loadCarouselStrategy, type CarouselEntry } from "./carousel";
 import { env, photoUrl, supabase } from "./data";
 import { dedupeRelatedTiles, kindLabelOf, MAX_CARD_PHOTOS, resolveLocalizedText, type Strategies } from "./feed";
 import { messages } from "./i18n/messages";
@@ -17,6 +18,7 @@ export const FEED_ALGORITHM = "order=editorial@1 primary=by-mode@2 secondary=rel
 // 関連タイルは全種類から選ぶ（related-any-kind）
 const ALL_CORE_TYPES: string[] = Object.values(MODES).flat();
 
+// carousel の段は DB の後に TS で組むので、ここでは見ない（どの carousel 戦略でも DB 版を使える）
 // この戦略なら DB 版で出せる（既定の 3 戦略）。環境変数で差し替えているときは false で、呼び出し側は buildFeed の全件版を使う
 export function dbFeedApplies(strategies: Strategies): boolean {
   return `${strategies.id} paging=keyset@1` === FEED_ALGORITHM;
@@ -103,10 +105,11 @@ function toTile(row: TileRow, baseUrl: string, locale: Locale): Tile {
 
 // ---- 取得 ----
 
-export type FeedPageArgs = { query: DiscoverQuery; locale: Locale; cursor?: string | null; limit?: number };
+// carousel：カルーセルに何を並べるか（既定は環境変数 CAROUSEL_STRATEGY）
+export type FeedPageArgs = { query: DiscoverQuery; locale: Locale; cursor?: string | null; limit?: number; carousel?: CarouselEntry };
 
 export async function fetchFeedPage(db: SupabaseClient, baseUrl: string, args: FeedPageArgs): Promise<FeedPageResult> {
-  const { query, locale } = args;
+  const { query, locale, carousel = loadCarouselStrategy() } = args;
   const queryKey = feedQueryKey(query, locale);
   const cursor = args.cursor ? decodeCursor(args.cursor, queryKey) : null;
   const limit = Math.min(Math.max(Math.trunc(args.limit ?? FEED_PAGE_SIZE), 1), FEED_PAGE_MAX);
@@ -129,6 +132,7 @@ export async function fetchFeedPage(db: SupabaseClient, baseUrl: string, args: F
 
   const m = messages(locale).home;
   const tiles = dedupeRelatedTiles(res.cards.map((c) => c.tiles.map((x) => toTile(x, baseUrl, locale))), MAX_TILES, 1, cursor?.p);
+  const items = carousel.run(tiles, { area: query.area, locale });
   const cards: FeedCard[] = res.cards.map((c, i) => ({
     key: c.dest_id,
     destId: c.dest_id,
@@ -138,13 +142,13 @@ export async function fetchFeedPage(db: SupabaseClient, baseUrl: string, args: F
     relLabel: m.relNearby,
     photos: c.photos.slice(0, MAX_CARD_PHOTOS).map((p) => toPhoto(baseUrl, p)),
     href: `/${locale}/d/${c.slug}`,
-    tiles: tiles[i],
+    carousel: items[i],
   }));
   const last = res.cards.at(-1);
   return {
     cards,
     orderLabel: query.sort === "fresh" ? m.orderFresh : m.orderEditorial,
-    algorithm: FEED_ALGORITHM,
+    algorithm: `${FEED_ALGORITHM} ${carousel.id}`,
     emptyReason: cards.length === 0 && !cursor ? "no-match" : null,
     queryKey,
     nextCursor: res.has_more && last ? encodeCursor({ v: 1, q: queryKey, k: last.sort_key, i: last.dest_id, p: tiles.at(-1)!.map((x) => x.destId) }) : null,

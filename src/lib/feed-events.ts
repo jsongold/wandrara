@@ -11,7 +11,9 @@ export type FeedEvent =
   | { name: "feed_view"; count: number; total: number | null; totalIsLowerBound: boolean }
   | { name: "card_view"; destId: string; position: number }
   | { name: "card_click"; destId: string; position: number }
-  | { name: "tile_click"; destId: string; position: number; fromDestId: string };
+  | { name: "tile_click"; destId: string; position: number; fromDestId: string }
+  // カルーセルのエリアの一言（Stories）の 1 枚を押した。position はカルーセルの中の位置
+  | { name: "stories_click"; area: string; position: number; fromDestId: string };
 
 export type FeedEventRecord = FeedEvent & FeedEventContext;
 export type FeedEventSink = (record: FeedEventRecord) => void;
@@ -37,12 +39,15 @@ export function viewedEnough(entries: Pick<IntersectionObserverEntry, "isInterse
   return entries.some((e) => e.isIntersecting && e.intersectionRatio >= threshold);
 }
 
-// カードの中で押されたリンクから、カードのクリックか関連タイルのクリックかを決める。リンクでなければ null
+// カードの中で押されたリンク（か Stories のボタン）から、カードのクリックか関連タイルのクリックかを決める。どちらでもなければ null
 export function clickEventOf(
-  link: { tileDestId: string | null; tilePosition: string | null } | null,
+  link: { tileDestId: string | null; tilePosition: string | null; storiesArea?: string | null } | null,
   card: { destId: string; position: number },
 ): FeedEvent | null {
   if (!link) return null;
+  if (link.storiesArea) {
+    return { name: "stories_click", area: link.storiesArea, position: Number(link.tilePosition ?? -1), fromDestId: card.destId };
+  }
   if (link.tileDestId) {
     return { name: "tile_click", destId: link.tileDestId, position: Number(link.tilePosition ?? -1), fromDestId: card.destId };
   }

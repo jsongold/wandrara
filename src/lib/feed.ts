@@ -1,4 +1,5 @@
 // フィードの組み立て。並べ方・メインの選び方・関連タイルの選び方の 3 戦略を独立に差し替えられる。
+import { loadCarouselStrategy, type CarouselEntry } from "./carousel";
 import { coreLabels } from "./i18n/core-labels";
 import { messages } from "./i18n/messages";
 import { CORES } from "./ingest/cores";
@@ -10,7 +11,7 @@ export type Catalog = { regions: Region[]; categories: Category[]; dests: DestCa
 export type Ctx = { catalog: Catalog; query: DiscoverQuery; locale: Locale };
 
 // メインカード（並べる前）。並べ方の戦略は anchor を見る
-export type PrimaryCard = Omit<FeedCard, "tiles"> & { anchor: DestCard };
+export type PrimaryCard = Omit<FeedCard, "carousel"> & { anchor: DestCard };
 
 export type OrderStrategy = (cards: PrimaryCard[], ctx: Ctx) => { cards: PrimaryCard[]; label: string };
 export type PrimaryStrategy = (candidates: DestCard[], ctx: Ctx) => PrimaryCard[];
@@ -205,14 +206,16 @@ export function dedupeRelatedTiles(tilesPerCard: Tile[][], show = 3, minKeep = 1
 // トップのカードに載せる写真の上限。全部の写真は詳細で見る（ページに埋め込むデータと画像の数を抑える）
 export const MAX_CARD_PHOTOS = 6;
 
-export function buildFeed(ctx: Ctx, strategies: Strategies): FeedPage {
+// carousel：カルーセルに何を並べるか（既定は環境変数 CAROUSEL_STRATEGY）。algorithm の末尾に足す
+export function buildFeed(ctx: Ctx, strategies: Strategies, carousel: CarouselEntry = loadCarouselStrategy()): FeedPage {
   const candidates = findCandidates(ctx);
   const primary = strategies.primary(candidates, ctx);
   const ordered = strategies.order(primary, ctx);
   const tiles = dedupeRelatedTiles(strategies.secondary(ordered.cards, ctx), MAX_TILES);
+  const items = carousel.run(tiles, { area: ctx.query.area, locale: ctx.locale });
   const cards: FeedCard[] = ordered.cards.map((c, i) => ({
     key: c.key, destId: c.destId, title: c.title, areaLabel: c.areaLabel, kindLabel: c.kindLabel, relLabel: c.relLabel,
-    photos: c.photos.slice(0, MAX_CARD_PHOTOS), href: c.href, tiles: tiles[i],
+    photos: c.photos.slice(0, MAX_CARD_PHOTOS), href: c.href, carousel: items[i],
   }));
-  return { cards, orderLabel: ordered.label, algorithm: strategies.id, emptyReason: cards.length === 0 ? "no-match" : null };
+  return { cards, orderLabel: ordered.label, algorithm: `${strategies.id} ${carousel.id}`, emptyReason: cards.length === 0 ? "no-match" : null };
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { destTilesOf } from "./carousel";
 import { parseDiscoverQuery, serializeDiscoverQuery, DEFAULT_QUERY } from "./discover-query";
 import { buildFeed, dedupeRelatedTiles, MAX_CARD_PHOTOS, timeOf, type Catalog } from "./feed";
 import { loadFeedStrategies } from "./feed-config";
@@ -90,14 +91,14 @@ describe("buildFeed", () => {
   });
   it("関連タイルは 同じ地域の全種類で、同じ地区を先に出す", () => {
     const lake = run({ area: "ashinoko" }).cards[0];
-    expect(lake.tiles.map((x) => x.destId)).toEqual(["lake-walk"]);
+    expect(destTilesOf(lake.carousel).map((x) => x.destId)).toEqual(["lake-walk"]);
     const gora = run({ area: "hakone" }).cards[0];
-    expect(gora.tiles.map((x) => x.destId)[0]).toBe("gora-bath");
+    expect(destTilesOf(gora.carousel).map((x) => x.destId)[0]).toBe("gora-bath");
     const bath = run({ mode: "do", area: "gora" }).cards[0];
-    expect(bath.tiles.map((x) => x.destId)).toEqual(["gora-inn"]);
+    expect(destTilesOf(bath.carousel).map((x) => x.destId)).toEqual(["gora-inn"]);
   });
   it("関連タイルには 自分と同じ種類も出るが、自分自身は出ない", () => {
-    const tiles = run({ area: "hakone" }).cards.find((c) => c.destId === "gora-inn")!.tiles.map((x) => x.destId);
+    const tiles = destTilesOf(run({ area: "hakone" }).cards.find((c) => c.destId === "gora-inn")!.carousel).map((x) => x.destId);
     expect(tiles).toContain("lake-inn");
     expect(tiles).not.toContain("gora-inn");
   });
@@ -108,7 +109,7 @@ describe("buildFeed", () => {
   });
   it("使った戦略の名前と版を返す。知らない名前は既定に戻す", () => {
     const id = "order=editorial@1 primary=by-mode@2 secondary=related-any-kind@1";
-    expect(run({}).algorithm).toBe(id);
+    expect(run({}).algorithm).toBe(`${id} carousel=stories-first@1`);
     expect(loadFeedStrategies({ order: "nope" }).id).toBe(id);
   });
   it("公開日が無い dest は最後に出す", () => {
