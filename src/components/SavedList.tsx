@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { SavedDestView } from "@/lib/saves-server";
 import type { Photo } from "@/lib/types";
+import { useSaveData } from "@/lib/use-save-data";
 import { useSaves } from "./saves-context";
 
 // 写真が無いときの色面（空と地面）
@@ -17,6 +18,7 @@ function placeholderStyle(photo: Photo | null) {
 
 export function SavedList({ items, emptyText }: { items: SavedDestView[]; emptyText: string }) {
   const { ready, isSaved } = useSaves();
+  const saveData = useSaveData(); // 通信量を抑えるときは、詳細を先読みしない
   const shown = ready ? items.filter((it) => isSaved(it.destId)) : items;
 
   if (shown.length === 0) {
@@ -32,7 +34,7 @@ export function SavedList({ items, emptyText }: { items: SavedDestView[]; emptyT
         <li key={it.destId}>
           <Link
             href={it.href}
-            prefetch={true}
+            prefetch={!saveData}
             data-testid="saved-item"
             className="flex items-center gap-3.5 rounded-2xl bg-white p-3 text-[#171717] no-underline"
           >

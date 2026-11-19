@@ -2,6 +2,7 @@
 // 詳細ページの地図。拡大・縮小・移動できる。駅・お店などは地図の上に出す（一覧にはしない）。
 // 何を載せるかは spec（nearbyMap().green().roads()… のメソッドの足し引き）で決める。
 // MapLibre（約 270KB gzip）は地図が画面に近づいてから読む。ページを開いた時点では読まない。
+// 通信量を抑える（Save-Data）ときは近づいても読まず、「地図を読み込む」を押したら読む。
 // 地図は OpenFreeMap（商用可・キー不要）。出典は MapLibre の既定どおり、最初は開いて出し、地図を動かすと (i) に畳む。
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
@@ -10,6 +11,7 @@ import { startLazyMap } from "@/lib/nearby/lazy-map";
 import type { NearbySpec } from "@/lib/nearby/spec";
 import { filterStyle, STYLE_URL, type Style } from "@/lib/nearby/style";
 import type { Locale } from "@/lib/types";
+import { useSaveData } from "@/lib/use-save-data";
 
 type Props = { spec: NearbySpec; lat: number; lng: number; locale: Locale; label: string; className: string };
 
@@ -22,13 +24,17 @@ async function loadStyle(): Promise<Style> {
 export function NearbyMap({ spec, lat, lng, locale, label, className }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
+  // 通信量を抑えるときは、押されるまで読まない
+  const saveData = useSaveData();
+  const [requested, setRequested] = useState(false);
+  const deferred = saveData && !requested;
   // 押すたびに増やして、地図をはじめから開き直す
   const [attempt, setAttempt] = useState(0);
   const t = messages(locale).detail.mapControls;
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || deferred) return;
     return startLazyMap({
       observe: (onNear) => {
         const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && onNear(), { rootMargin: "300px" });
@@ -73,11 +79,17 @@ export function NearbyMap({ spec, lat, lng, locale, label, className }: Props) {
         setFailed(true);
       },
     });
-  }, [spec, lat, lng, locale, label, t, attempt]);
+  }, [spec, lat, lng, locale, label, t, attempt, deferred]);
 
   return (
     <div className={`relative h-[240px] overflow-hidden border border-[#d0d5cf] bg-[#eeede7] ${className}`}>
-      {failed ? (
+      {deferred ? (
+        <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-[#55524a]">
+          <button type="button" data-testid="map-load" className="rounded-full border border-[#d0d5cf] bg-white px-4 py-2 text-[#141413]" onClick={() => setRequested(true)}>
+            {t.load}
+          </button>
+        </div>
+      ) : failed ? (
         <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-[#55524a]">
           <p className="m-0">{t.failed}</p>
           <button

@@ -7,6 +7,7 @@ import { withLocale } from "../lib/i18n/locale";
 import { messages } from "../lib/i18n/messages";
 import type { Locale } from "../lib/types";
 import { LanguageSwitch } from "./LanguageSwitch";
+import { SaveDataSwitch } from "./SaveDataSwitch";
 
 // 当面はメールのリンクだけ。Google は NEXT_PUBLIC_AUTH_GOOGLE=1 のときだけ出す
 const GOOGLE = process.env.NEXT_PUBLIC_AUTH_GOOGLE === "1";
@@ -83,6 +84,10 @@ export function LoginPanel({ locale, next, variant = "page" }: { locale: Locale;
         <div className="flex h-[52px] items-center justify-between rounded-2xl bg-[#f7f6f2] pl-4 pr-1.5 text-[15px] font-medium">
           {messages(locale).account.language}
           <LanguageSwitch locale={locale} className="h-10 min-w-10 cursor-pointer rounded-xl border border-[#d6d3cb] bg-white px-3 text-[13px] font-semibold text-[#171717]" />
+        </div>
+        <div className="flex h-[52px] items-center justify-between rounded-2xl bg-[#f7f6f2] pl-4 pr-1.5 text-[15px] font-medium">
+          {messages(locale).account.saveData}
+          <SaveDataSwitch locale={locale} className="h-10 min-w-10 cursor-pointer rounded-xl border border-[#d6d3cb] bg-white px-3 text-[13px] font-semibold text-[#171717] aria-checked:bg-[#171717] aria-checked:text-white" />
         </div>
         <div className="mt-auto flex flex-col items-center gap-2.5">
           <Link href={withLocale(locale, "/")} className="text-sm font-medium">{m.guest}</Link>

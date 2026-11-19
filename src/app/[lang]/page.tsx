@@ -8,6 +8,9 @@ import { loadFeedStrategies } from "@/lib/feed-config";
 import { dbFeedApplies, FEED_UI_PAGE, FeedCursorError, feedQueryKey, getFeedPage, type FeedPageResult } from "@/lib/feed-page";
 import { isLocale } from "@/lib/i18n/locale";
 import type { DiscoverQuery, Locale } from "@/lib/types";
+import { orFallback } from "@/lib/degrade";
+import { SAVE_DATA_COOKIE, saveDataOfRequest } from "@/lib/save-data";
+import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 
 export default function Home(props: PageProps<"/[lang]">) {
@@ -43,14 +46,19 @@ async function Discover({ params, searchParams }: Pick<PageProps<"/[lang]">, "pa
   const sp = await searchParams;
   const query = parseDiscoverQuery(sp);
   const after = typeof sp.after === "string" ? sp.after : undefined;
+  // 通信量を抑える利用者（Save-Data ヘッダか本人が選んだ cookie）。最初の描画から先読みを止めるために、サーバーで決めて渡す
+  const [h, jar] = await Promise.all([headers(), cookies()]);
+  const saveData = saveDataOfRequest(h.get("save-data"), jar.get(SAVE_DATA_COOKIE)?.value);
   // 全部 dest の件数に比例しない：フィードは DB が 1 ページ分、カテゴリは DB が数えた小さな一覧、エリアは今の名前だけ。
   // エリア選択シートの一覧・地図に要る地域と特性は props に載せず、シートを開いたときに /api/area-sheet から取る（MS2c）
+  // 待つのはフィードの最初のページだけ（無いと出せるものが無い。失敗は error.tsx）。カテゴリとエリア名は、取れなくてもフィードは出す
+  // （カテゴリの絞り込みが「すべて」だけになる・エリア名が出ない、の縮退。HTTP は 200 のまま）
   const [categories, feed, areaLabel] = await Promise.all([
-    listCategories(query.mode, locale),
+    orFallback(listCategories(query.mode, locale), [], "カテゴリ"),
     firstPage(query, locale, after),
-    query.area === "all" ? null : getRegions().then((regions) => areaLabelOf(regions, query.area, locale)),
+    query.area === "all" ? null : orFallback(getRegions().then((regions) => areaLabelOf(regions, query.area, locale)), null, "エリア名"),
   ]);
-  return <HomeScreen locale={locale} query={query} feed={feed} categories={categories} areaLabel={areaLabel} />;
+  return <HomeScreen locale={locale} query={query} feed={feed} categories={categories} areaLabel={areaLabel} saveData={saveData} />;
 }
 
 function HomeFallback() {

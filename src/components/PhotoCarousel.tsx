@@ -6,6 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useMessages } from "@/lib/i18n/use-locale";
+import { imageQuality } from "@/lib/save-data";
+import { useHydrated, useSaveData, useSaveDataHint } from "@/lib/use-save-data";
 import type { Photo } from "@/lib/types";
 import { Icon } from "./icons";
 
@@ -16,7 +18,7 @@ function placeholder(photo: Photo | null): CSSProperties {
 }
 
 // near：今の写真と前後 1 枚。それ以外は <img> を作らない（画像の展開でメモリを使い切らないため）
-function Slide({ photo, index, eager, near }: { photo: Photo | null; index: number; eager: boolean; near: boolean }) {
+function Slide({ photo, index, eager, near, quality }: { photo: Photo | null; index: number; eager: boolean; near: boolean; quality: number }) {
   if (photo?.url && !photo.isDemo && near) {
     return (
       // 列は最大 480px 幅（HomeScreen の max-w-[480px]）。sizes を付けると、PC の広い窓でも 1080 を取らず幅に合う大きさだけ取る（next.config.ts の images）
@@ -25,6 +27,7 @@ function Slide({ photo, index, eager, near }: { photo: Photo | null; index: numb
         alt=""
         fill
         sizes="(max-width: 480px) 100vw, 480px"
+        quality={quality}
         draggable={false}
         loading={eager ? "eager" : "lazy"}
         fetchPriority={eager ? "high" : "auto"}
@@ -50,6 +53,12 @@ type Props = {
 export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-4 right-4", className = "", children, priority = true }: Props) {
   const slides: (Photo | null)[] = photos.length > 0 ? photos : [null];
   const m = useMessages();
+  // 通信量を抑える（Save-Data）：詳細の先読みと、今の写真の前後 1 枚の先読みをしない（今の写真だけ。スワイプで止まったら読む）。画質も下げる
+  const saveData = useSaveData();
+  const hint = useSaveDataHint(); // 画質はサーバーの HTML と揃える（詳細のようにサーバーが Save-Data を知らないページでは下げない）
+  // 前後 1 枚は水和のあとに出す（サーバーの HTML に入れると、Save-Data かどうかが分かる前にブラウザが取ってしまう）
+  const hydrated = useHydrated();
+  const reach = saveData || !hydrated ? 0 : 1;
   const scroller = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
   // スワイプ（指が動いた・ブラウザがスクロールに切り替えた）の後はタップとして扱わない
@@ -75,7 +84,7 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
     >
       {slides.map((p, i) => (
         <div key={i} className="relative h-full w-full shrink-0 snap-center snap-always" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>
-          <Slide photo={p} index={i} eager={priority && i === 0} near={Math.abs(i - index) <= 1} />
+          <Slide photo={p} index={i} eager={priority && i === 0} near={Math.abs(i - index) <= reach} quality={imageQuality(hint)} />
         </div>
       ))}
     </div>
@@ -102,7 +111,7 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
     >
       {href ? (
         // 写真ごとに Link を作らず、スクロールの枠ごと 1 本の Link で包む（カードごとの Link を写真の枚数分から 1 本にする）
-        <Link href={href} prefetch={true} aria-label={m.photos.open(label)} className="block h-full w-full" draggable={false}>
+        <Link href={href} prefetch={!saveData} aria-label={m.photos.open(label)} className="block h-full w-full" draggable={false}>
           {track}
         </Link>
       ) : (

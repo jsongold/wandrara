@@ -2,6 +2,7 @@
 //   pnpm perf                      ローカルで pnpm build → next start --port $PERF_PORT（既定 3127）を立てて測る
 //   pnpm perf https://wandrara.vercel.app   指定の URL を測る（build しない。本番には軽く：1 条件 3 回 + 計測の補助）
 // 環境変数: PERF_RUNS（既定 3）/ PERF_CONDITIONS（既定 "none,slow4g-cpu4x"）/ PERF_OUT（既定 perf-out/result.json）
+//           PERF_ONLY=saveData|tap で Save-Data の初回表示だけ・詳細のタップだけ測る（他を省く）
 //           PERF_WARMUP=0 で最初の「サーバー・画像 CDN を温める 1 回」を省く / PERF_SKIP_BUILD=1 で build を省く
 // 条件: Chromium・幅 390・DPR 2・モバイル。none = 制限なし、slow4g-cpu4x = 1.6Mbps・RTT 150ms・CPU 4x。
 // 1 回 = ブラウザキャッシュ空（cold）の context で 初回表示 → 10 枚スクロール → 2 回目の訪問（warm）。
@@ -127,8 +128,10 @@ async function oneRun(base: string, c: Condition, browser: Browser): Promise<{ f
   const meta: Meta = {};
   const slow = c.net !== null;
 
+  const only = process.env.PERF_ONLY ?? "";
+
   // 1. 初回表示（cold）→ 2. 10 枚スクロール → 3. 2 回目の訪問（warm）
-  {
+  if (!only) {
     const s = await open(browser, c);
     await s.page.goto(base + PATHNAME, { waitUntil: "load", timeout: 120_000 });
     await s.page.waitForSelector("[data-feed] article", { timeout: 120_000 });
@@ -187,7 +190,7 @@ async function oneRun(base: string, c: Condition, browser: Browser): Promise<{ f
   }
 
   // 4. 詳細を開く：cold の context で 1 枚目のカードをタップ（タップから表示まで・転送バイト）
-  {
+  if (!only || only === "tap") {
     const s = await open(browser, c);
     await s.page.goto(base + PATHNAME, { waitUntil: "load", timeout: 120_000 });
     await s.page.waitForSelector("[data-feed] article", { timeout: 120_000 });
@@ -211,7 +214,7 @@ async function oneRun(base: string, c: Condition, browser: Browser): Promise<{ f
   }
 
   // 5. Save-Data の初回表示（cold）
-  {
+  if (!only || only === "saveData") {
     const s = await open(browser, c, { saveData: true });
     await s.page.goto(base + PATHNAME, { waitUntil: "load", timeout: 120_000 });
     await s.page.waitForSelector("[data-feed] article", { timeout: 120_000 });
