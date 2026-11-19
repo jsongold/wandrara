@@ -5,7 +5,9 @@ import Link from "next/link";
 import type { ComponentType, CSSProperties } from "react";
 import { areaHighlights, type HighlightGroup } from "@/lib/area-highlights";
 import { useLocale, useMessages } from "@/lib/i18n/use-locale";
+import { imageQuality } from "@/lib/save-data";
 import type { CarouselItem, Photo, Tile } from "@/lib/types";
+import { useSaveData, useSaveDataHint } from "@/lib/use-save-data";
 import { colorFill, ItemPhoto } from "./area-stories/ItemPhoto";
 import { useSeen } from "./area-stories/seen-store";
 
@@ -28,11 +30,12 @@ function placeholderStyle(photo: Photo | null): CSSProperties {
 
 const TILE = "flex w-[38%] shrink-0 snap-start flex-col gap-1.5 text-white no-underline";
 
-function DestTile({ tile, position }: { tile: Tile; position: number }) {
+// saveData：通信量を抑えるときは詳細を先読みしない。quality：写真の画質（サーバーが決めた値に揃える）
+function DestTile({ tile, position, saveData, quality }: { tile: Tile; position: number; saveData: boolean; quality: number }) {
   return (
-    <Link href={tile.href} prefetch={true} data-tile-dest-id={tile.destId} data-tile-position={position} className={TILE}>
+    <Link href={tile.href} prefetch={!saveData} data-tile-dest-id={tile.destId} data-tile-position={position} className={TILE}>
       {tile.photo?.url && !tile.photo.isDemo ? (
-        <Image src={tile.photo.url} alt="" width={640} height={640} sizes="(max-width: 480px) 38vw, 182px" className="block aspect-square h-auto w-full rounded-[10px] object-cover" />
+        <Image src={tile.photo.url} alt="" width={640} height={640} sizes="(max-width: 480px) 38vw, 182px" quality={quality} className="block aspect-square h-auto w-full rounded-[10px] object-cover" />
       ) : (
         <span className="block aspect-square w-full rounded-[10px]" style={placeholderStyle(tile.photo)} />
       )}
@@ -90,11 +93,13 @@ function StoriesCell({ group, label }: { group: HighlightGroup; label: string })
 
 // 横にスワイプして送る。3 枚目が少し覗く幅にして続きがあると分かるようにする
 function NearbyCarousel({ items, stories }: LayoutProps) {
+  const saveData = useSaveData(); // 通信量を抑えるときは、詳細を先読みせず、写真の画質を下げる（画質はサーバーが決めた値に揃える）
+  const quality = imageQuality(useSaveDataHint());
   return (
     <div className="-mx-3 flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-3 px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {items.map((x, i) =>
         x.type === "dest" ? (
-          <DestTile key={x.tile.destId} tile={x.tile} position={i} />
+          <DestTile key={x.tile.destId} tile={x.tile} position={i} saveData={saveData} quality={quality} />
         ) : (
           <StoriesTile key={`stories:${x.area}`} area={x.area} position={i} stories={stories} />
         ),
