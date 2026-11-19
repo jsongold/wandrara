@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { areaHighlights } from "@/lib/area-highlights";
@@ -14,13 +12,14 @@ import { messages, type Messages } from "@/lib/i18n/messages";
 import { useMessages } from "@/lib/i18n/use-locale";
 import { otherMode } from "@/lib/modes";
 import type { AreaTraits } from "@/lib/area-filter";
-import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, Locale, Photo, SortKey } from "@/lib/types";
+import type { AreaGroupView, CategoryView, DiscoverQuery, FeedCard, Locale, SortKey } from "@/lib/types";
 import { AccountButton } from "./AccountButton";
 import { AreaMap } from "./AreaMap";
 import { AreaStories } from "./area-stories/AreaStories";
 import { Chip } from "./Chip";
 import { CurrentFilterDisplay } from "./CurrentFilterDisplay";
 import { Icon } from "./icons";
+import { NearbySuggestions } from "./NearbySuggestions";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
 
@@ -41,13 +40,6 @@ const sorts = (m: Messages): { id: SortKey; label: string }[] => [
   { id: "editorial", label: m.home.sortEditorial },
   { id: "fresh", label: m.home.sortFresh },
 ];
-
-// 写真が無いときのデモ用の色面（空と地面）
-function placeholderStyle(photo: Photo | null): CSSProperties {
-  const sky = photo?.placeholderSky ?? "#8f9692";
-  const land = photo?.placeholderLand ?? "#2e322f";
-  return { background: `linear-gradient(180deg, ${sky} 0%, ${sky} 56%, ${land} 56%, ${land} 100%)` };
-}
 
 // トップのテキスト入力とフィルター。今は Off
 const SHOW_SEARCH_AND_FILTER = false;
@@ -437,27 +429,7 @@ function FeedCardView({ card, position, track }: { card: FeedCard; position: num
           <span className="text-[13px] text-white/90">{card.areaLabel}</span>
         </span>
       </PhotoCarousel>
-      {card.tiles.length > 0 && (
-        <section className="flex flex-col gap-2.5 px-3 pb-7 pt-3.5">
-          <h2 className="m-0 text-xs font-semibold tracking-[0.04em] text-white/75">{card.relLabel}</h2>
-          {/* 横にスワイプして送る。3 枚目が少し覗く幅にして続きがあると分かるようにする */}
-          <div className="-mx-3 flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-3 px-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {card.tiles.map((t, ti) => (
-              <Link key={t.destId} href={t.href} prefetch={true} data-tile-dest-id={t.destId} data-tile-position={ti} className="flex w-[38%] shrink-0 snap-start flex-col gap-1.5 text-white no-underline">
-                {t.photo?.url && !t.photo.isDemo ? (
-                  <Image src={t.photo.url} alt="" width={640} height={640} sizes="(max-width: 480px) 38vw, 182px" className="block aspect-square h-auto w-full rounded-[10px] object-cover" />
-                ) : (
-                  <span className="block aspect-square w-full rounded-[10px]" style={placeholderStyle(t.photo)} />
-                )}
-                <span className="flex flex-col gap-0.5">
-                  <span className="text-xs leading-[1.4]">{t.label}</span>
-                  {t.sub && <span className="text-[11px] text-white/70">{t.sub}</span>}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <NearbySuggestions title={card.relLabel} tiles={card.tiles} />
     </article>
   );
 }

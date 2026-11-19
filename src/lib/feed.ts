@@ -100,7 +100,7 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
       title: t(d.name, locale),
       areaLabel: areaLabel(d.regionId, catalog.regions, locale),
       kindLabel: kindLabelOf(d.coreType, locale),
-      relLabel: query.mode === "stay" ? messages(locale).home.relStay : messages(locale).home.relDo,
+      relLabel: messages(locale).home.relNearby,
       photos: d.photos,
       href: `/${locale}/d/${d.slug}`,
       anchor: d,
@@ -160,6 +160,26 @@ export const relatedOtherMode: SecondaryStrategy = (cards, ctx) => {
     const region = topRegionOf(a.regionId, catalog.regions);
     return catalog.dests
       .filter((d) => coreTypes.includes(d.coreType) && d.id !== a.id && inArea(d, query.area, catalog.regions))
+      .filter((d) => region !== null && topRegionOf(d.regionId, catalog.regions) === region)
+      .sort(
+        (x, y) =>
+          Number(y.regionId === a.regionId) - Number(x.regionId === a.regionId) ||
+          (y.publishedAt ?? "").localeCompare(x.publishedAt ?? ""),
+      )
+      .slice(0, MAX_TILES)
+      .map((d) => tileOf(d, ctx));
+  });
+};
+
+// 同じ地域の全種類（宿・体験・自然・温泉…）。自分自身は除く。同じ地区を先に出す。
+// 種類を絞らないので、メインと同じ種類も出る
+export const relatedAnyKind: SecondaryStrategy = (cards, ctx) => {
+  const { catalog, query } = ctx;
+  return cards.map((card) => {
+    const a = card.anchor;
+    const region = topRegionOf(a.regionId, catalog.regions);
+    return catalog.dests
+      .filter((d) => d.id !== a.id && inArea(d, query.area, catalog.regions))
       .filter((d) => region !== null && topRegionOf(d.regionId, catalog.regions) === region)
       .sort(
         (x, y) =>
