@@ -307,9 +307,9 @@ function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="truncate text-[14px] font-semibold">{o.shopName}</span>
-          {(where || when) && <span className="truncate text-[11px] text-white/65">{[where, when].filter(Boolean).join(" · ")}</span>}
+          {(where || when) && <span className="text-[11px] leading-snug text-white/65">{[where, when].filter(Boolean).join(" · ")}</span>}
           {(o.price != null || o.priceNote) && (
-            <span className="truncate text-[11px] text-white/85">
+            <span className="text-[11px] leading-snug text-white/85">
               {o.price != null && m.price(o.price)}
               {o.priceNote && <span className="text-white/60">{`${o.price != null ? " · " : ""}${o.priceNote}`}</span>}
             </span>
