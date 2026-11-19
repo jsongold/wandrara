@@ -72,13 +72,25 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
   const m = messages(locale).highlights;
   const common = messages(locale).common;
   const seen = parseSeen(useSyncExternalStore(subscribeSeen, () => readSeen(area), () => "[]"));
-  const [openState, setOpenState] = useState<{ area: string; pos: Open } | null>(null);
+  const [openState, setOpenState] = useState<{ area: string; pos: Open; peek: boolean } | null>(null);
   // エリアが変わったら閉じる
   const open = openState?.area === area ? openState.pos : null;
+  // 「軽く見る」のシートを開いているか。候補を移ると閉じる
+  const peek = open !== null && openState?.peek === true;
   const setOpen = (next: Open | null) => {
     // 開いた項目を「見た」にする
     if (next && groups[next.g]) markSeen(area, groups[next.g].kind);
-    setOpenState(next ? { area, pos: next } : null);
+    setOpenState(next ? { area, pos: next, peek: false } : null);
+  };
+  const setPeek = (v: boolean) => setOpenState((s) => (s ? { ...s, peek: v } : s));
+  const peekCloseRef = useRef<HTMLButtonElement>(null);
+  const peekOpenRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (peek) peekCloseRef.current?.focus();
+  }, [peek]);
+  const closePeek = () => {
+    setPeek(false);
+    peekOpenRef.current?.focus();
   };
 
   // ストーリーはモーダルの <dialog> で開く。開いている間は後ろの画面にフォーカスが行かず、閉じたら押した丸に戻る
@@ -96,7 +108,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
   }, [isOpen]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || peek) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") setOpen(nextPos(groups, open));
       if (e.key === "ArrowLeft") setOpen(prevPos(groups, open));
@@ -150,7 +162,9 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
         aria-label={cur ? m.kind[cur.kind] : undefined}
         onCancel={(e) => {
           e.preventDefault();
-          setOpen(null);
+          // Esc は「軽く見る」を先に閉じる
+          if (peek) closePeek();
+          else setOpen(null);
         }}
         className="m-0 mx-auto h-[100dvh] max-h-none w-full max-w-[480px] border-0 bg-transparent p-0 text-white backdrop:bg-black/60"
       >
@@ -188,21 +202,51 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
           <div className="relative z-[2] mt-auto flex flex-col gap-2 px-5 pb-10" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.55) 30%)" }}>
             <p className="m-0 pt-8 text-[28px] font-bold leading-tight">{item.name}</p>
             <p className="m-0 text-sm text-white/90">{item.note}</p>
-            {item.action && (
-              <div className="flex items-center gap-2 pt-2">
-                {/* 行き先（店・貸し出し・dest）はまだ無いので押せない */}
-                <button
-                  type="button"
-                  disabled
-                  className="h-11 rounded-full border-0 px-5 text-sm font-semibold"
-                  style={{ background: "#f4f1ea", color: "#141413", opacity: 0.85 }}
-                >
-                  {m.action[item.action]}
-                </button>
-                {item.pr && <span className="rounded border border-white/60 px-1.5 py-0.5 text-[10px] font-semibold">{m.pr}</span>}
-              </div>
-            )}
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                ref={peekOpenRef}
+                type="button"
+                onClick={() => setPeek(true)}
+                aria-expanded={peek}
+                className="h-11 cursor-pointer rounded-full border-0 px-5 text-sm font-semibold"
+                style={{ background: "#f4f1ea", color: "#141413" }}
+              >
+                {m.peek}
+              </button>
+              {item.pr && <span className="rounded border border-white/60 px-1.5 py-0.5 text-[10px] font-semibold">{m.pr}</span>}
+            </div>
           </div>
+
+          {/* 軽く見る：ストーリーの上に出す小さなシート。後で店・借りる先・dest への行き先を足す */}
+          {peek && (
+            <>
+              <button type="button" aria-label={common.close} onClick={closePeek} className="absolute inset-0 z-[3] cursor-pointer border-0 bg-black/40" />
+              <section
+                aria-label={item.name}
+                data-testid="area-story-peek"
+                className="filter-mark-in absolute inset-x-0 bottom-0 z-[4] flex flex-col gap-3 rounded-t-3xl bg-[#1b1b19] px-5 pb-8 pt-5"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <span className="text-[11px] text-white/70">{m.kind[cur.kind]} · {areaLabel}</span>
+                    <p className="m-0 text-[20px] font-bold leading-snug">{item.name}</p>
+                  </div>
+                  <button
+                    ref={peekCloseRef}
+                    type="button"
+                    onClick={closePeek}
+                    aria-label={common.close}
+                    className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-full border-0 bg-white/[0.08] text-white"
+                  >
+                    <Icon name="close" />
+                  </button>
+                </div>
+                <span aria-hidden="true" className="block h-36 w-full rounded-2xl" style={photo(item.color)} />
+                <p className="m-0 text-sm leading-relaxed text-white/90">{item.note}</p>
+                {item.pr && <span className="self-start rounded border border-white/60 px-1.5 py-0.5 text-[10px] font-semibold">{m.pr}</span>}
+              </section>
+            </>
+          )}
         </div>
       )}
       </dialog>
