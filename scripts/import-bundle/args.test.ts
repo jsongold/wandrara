@@ -11,6 +11,12 @@ describe("parseArgs", () => {
     expect(parseArgs(["--parallel=10", "b.json", "--dry-run"])).toEqual({ ok: true, value: { file: "b.json", dryRun: true, parallel: 10 } });
   });
 
+  it("--area-local=<dir> を受ける。dir が空なら失敗", () => {
+    expect(parseArgs(["b.json", "--area-local=out"])).toEqual({ ok: true, value: { file: "b.json", dryRun: false, parallel: 1, areaLocal: "out" } });
+    expect(parseArgs(["b.json", "--area-local="]).ok).toBe(false);
+    expect(parseArgs(["b.json", "--dry-run", "--area-local=out"]).ok).toBe(false);
+  });
+
   it("範囲外・数でない N と、知らないオプションは失敗", () => {
     for (const a of ["--parallel=0", "--parallel=17", "--parallel=x", "--parallel=2.5", "--paralel"]) {
       expect(parseArgs(["b.json", a]).ok).toBe(false);

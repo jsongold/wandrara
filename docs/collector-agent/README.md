@@ -17,7 +17,7 @@
 export WANDRARA_API_URL=https://wandrara.vercel.app
 export WANDRARA_API_KEY=wdr_...
 ```
-`--dry-run` も API は呼ばないが、この 2 つの環境変数は要る。
+この 2 つの環境変数は API を呼ぶときだけ要る（`--dry-run`・`--area-local` は API を呼ばない）。
 
 ## core ごとの指示書
 | core_type | 場所 | 指示書 | core.kind の値 |
@@ -28,12 +28,15 @@ export WANDRARA_API_KEY=wdr_...
 | building | 建物 | [building.md](building.md) | museum shrine temple castle observatory historic_building |
 | hotspring | 日帰り温泉 | [hotspring.md](hotspring.md) | day_use public_bath foot_bath |
 | village | まち | [village.md](village.md) | onsen_town post_town fishing_village temple_town castle_town |
+| （`area_content`） | エリアの中身 | [area-content.md](area-content.md) | products の kind：meisan tokusan |
 
-6 つとも `details` は JSON 1 つ。ほかのガイド：全体の書き方 `docs/collector-guide.md`、英語の投入ガイド `docs/agent-upload-guide.md`。
+6 つとも `details` は JSON 1 つ。
+
+エリアに付く中身（名産・特産・やった方が良いこと・扱う店）は dest ではなく、bundle の `area_content` に書く：[area-content.md](area-content.md)。まだ DB に送れない（検証してローカルの JSON に書き出すまで）。ほかのガイド：全体の書き方 `docs/collector-guide.md`、英語の投入ガイド `docs/agent-upload-guide.md`。
 
 ## bundle の形
 - 正本：`src/lib/ingest/bundle.ts`、`schema/content-bundle.schema.json`。全部の core の例が `scripts/import-bundle/fixtures/bundle.json` にある。この形に合わせる。
-- 上の階層：`bundle_version`（`"2"`）・`collector`（エージェントの名前）・`collected_at`（日時）・`dests`（配列）。
+- 上の階層：`bundle_version`（`"2"`）・`collector`（エージェントの名前）・`collected_at`（日時）・`dests`（配列）・`area_content`（任意。[area-content.md](area-content.md)）。
 - dest 1 つ：
 
 | 欄 | 中身 |
