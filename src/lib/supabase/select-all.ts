@@ -3,11 +3,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const PAGE = 1000;
 
-export async function selectAll<T>(db: SupabaseClient, table: string, columns: string, orderBy: string[]): Promise<T[]> {
+// 並び順の 1 キー。文字列は昇順。最後のキーまでで行が一意になること（同じ値が並ぶとページの境目で行が落ちる・重なる）
+export type OrderKey = string | { column: string; ascending: boolean };
+
+export async function selectAll<T>(db: SupabaseClient, table: string, columns: string, orderBy: OrderKey[]): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; ; from += PAGE) {
     let q = db.from(table).select(columns);
-    for (const c of orderBy) q = q.order(c, { ascending: true });
+    for (const k of orderBy) q = typeof k === "string" ? q.order(k, { ascending: true }) : q.order(k.column, { ascending: k.ascending });
     const { data, error } = await q.range(from, from + PAGE - 1);
     if (error) throw new Error(`${table}: ${error.message}`);
     const rows = (data ?? []) as T[];
