@@ -10,7 +10,7 @@ import { Icon } from "./icons";
 
 type Props = { locale: Locale; area: string; areaLabel: string; groups: HighlightGroup[] };
 type Open = { g: number; i: number };
-type PeekView = "info" | "shops";
+type PeekView = "shops";
 
 const seenKey = (area: string) => `wandrara:highlights-seen:${area}`;
 
@@ -80,7 +80,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
   const m = messages(locale).highlights;
   const common = messages(locale).common;
   const seen = parseSeen(useSyncExternalStore(subscribeSeen, () => readSeen(area), () => "[]"));
-  // peek：null は閉じている、info は「軽く見る」、shops は「購入先」の一覧
+  // peek：null は閉じている、shops は「探す」で開く扱う店の一覧
   const [openState, setOpenState] = useState<{ area: string; pos: Open; peek: PeekView | null } | null>(null);
   // エリアが変わったら閉じる
   const open = openState?.area === area ? openState.pos : null;
@@ -215,22 +215,26 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
           <div className="relative z-[2] mt-auto flex flex-col gap-2 px-5 pb-10" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.55) 30%)" }}>
             <p className="m-0 pt-8 text-[28px] font-bold leading-tight">{item.name}</p>
             <p className="m-0 text-sm text-white/90">{item.note}</p>
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                ref={peekOpenRef}
-                type="button"
-                onClick={() => setPeekView("info")}
-                aria-expanded={peek}
-                className="h-11 cursor-pointer rounded-full border-0 px-5 text-sm font-semibold"
-                style={{ background: "#f4f1ea", color: "#141413" }}
-              >
-                {m.peek}
-              </button>
-            </div>
+            {item.photo && <span className="text-[10px] text-white/60">{m.photoCredit(item.photo.credit, item.photo.license)}</span>}
+            {item.offers.length > 0 && (
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  ref={peekOpenRef}
+                  type="button"
+                  onClick={() => setPeekView("shops")}
+                  aria-expanded={peek}
+                  className="flex h-11 cursor-pointer items-center gap-2 rounded-full border-0 px-5 text-sm font-semibold"
+                  style={{ background: "#f4f1ea", color: "#141413" }}
+                >
+                  {m.find}
+                  <span className="text-xs font-normal">{m.shopCount(item.offers.length)}</span>
+                </button>
+              </div>
+            )}
           </div>
           </div>
 
-          {/* 軽く見る：ストーリーの上に出す小さなシート。後で店・借りる先・dest への行き先を足す */}
+          {/* 探す：ストーリーの上に、扱う店の一覧のシートを出す */}
           {peek && (
             <>
               <button type="button" tabIndex={-1} aria-hidden="true" onClick={closePeek} className="absolute inset-0 z-[3] cursor-pointer border-0 bg-black/40" />
@@ -241,7 +245,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-col gap-1">
-                    <span className="text-[11px] text-white/70">{peekView === "shops" ? m.shopsOf : `${m.kind[cur.kind]} · ${areaLabel}`}</span>
+                    <span className="text-[11px] text-white/70">{m.shopsOf}</span>
                     <p className="m-0 text-[20px] font-bold leading-snug">{item.name}</p>
                   </div>
                   <button
@@ -254,11 +258,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                     <Icon name="close" />
                   </button>
                 </div>
-                {peekView === "info" ? (
-                  <PeekInfo item={item} m={m} onShops={() => setPeekView("shops")} />
-                ) : (
-                  <PeekShops item={item} m={m} onBack={() => setPeekView("info")} />
-                )}
+                <PeekShops item={item} m={m} />
               </section>
             </>
           )}
@@ -271,36 +271,14 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
 
 type HM = ReturnType<typeof messages>["highlights"];
 
-// 軽く見る：写真・説明・旬・購入先を探す（扱う店が無ければ出さない）
-function PeekInfo({ item, m, onShops }: { item: HighlightItem; m: HM; onShops: () => void }) {
+// 探す：扱う店の一覧。1 行に「店のサイトへ」（外部）と「ここで買う」（自社購入。試作ではまだ使えない）
+function PeekShops({ item, m }: { item: HighlightItem; m: HM }) {
   return (
     <>
-      <ItemPhoto item={item} className="h-40 w-full flex-none rounded-2xl" />
-      {item.photo && <span className="-mt-2 text-[10px] text-white/50">{m.photoCredit(item.photo.credit, item.photo.license)}</span>}
-      {item.season && <span className="self-start rounded-full bg-white/[0.08] px-2.5 py-1 text-[11px]">{m.season(item.season.from, item.season.to)}</span>}
-      <p className="m-0 text-sm leading-relaxed text-white/90">{item.description}</p>
-      {item.offers.length > 0 && (
-        <button
-          type="button"
-          onClick={onShops}
-          className="mt-1 flex h-12 cursor-pointer items-center justify-between rounded-2xl border-0 px-4 text-sm font-semibold"
-          style={{ background: "#f4f1ea", color: "#141413" }}
-        >
-          <span>{item.type === "service" ? m.findWhereDo : m.findWhereBuy}</span>
-          <span className="text-xs font-normal">{m.shopCount(item.offers.length)}</span>
-        </button>
-      )}
-    </>
-  );
-}
-
-// 購入先：扱う店の一覧。1 行に「店のサイトへ」（外部）と「ここで買う」（自社購入。試作ではまだ使えない）
-function PeekShops({ item, m, onBack }: { item: HighlightItem; m: HM; onBack: () => void }) {
-  return (
-    <>
-      <button type="button" onClick={onBack} className="-mt-1 flex h-9 cursor-pointer items-center gap-1 self-start border-0 bg-transparent p-0 text-xs text-white/80">
-        <span aria-hidden="true">‹</span> {m.backToInfo}
-      </button>
+      <div className="-mt-1 flex flex-wrap items-center gap-2">
+        {item.season && <span className="rounded-full bg-white/[0.08] px-2.5 py-1 text-[11px]">{m.season(item.season.from, item.season.to)}</span>}
+        <span className="text-xs text-white/75">{item.note}</span>
+      </div>
       <ul className="m-0 flex list-none flex-col gap-2.5 p-0" data-testid="area-story-shops">
         {item.offers.map((o) => (
           <OfferRow key={o.shopId} o={o} m={m} />
