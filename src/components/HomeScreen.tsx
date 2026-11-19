@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { areaHighlights } from "@/lib/area-highlights";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
-import { clickEventOf, trackFeedEvent, viewedEnough, type FeedEvent } from "@/lib/feed-events";
+import { installFeedEventBeacon } from "@/lib/feed-event-beacon";
+import { clickEventOf, setFeedEventSink, trackFeedEvent, viewedEnough, type FeedEvent } from "@/lib/feed-events";
 import { apiFetchPage, FeedPager, nextPageHref } from "@/lib/feed-pager";
 import type { FeedPageResult } from "@/lib/feed-page";
 import { saveLastDiscoverUrl } from "@/lib/last-discover";
@@ -104,6 +105,9 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
   useEffect(() => {
     saveLastDiscoverUrl(serializeDiscoverQuery(query, locale));
   }, [query, locale]);
+
+  // 記録の送り先（/api/feed/events）。画面にいる間だけつなぐ
+  useEffect(() => installFeedEventBeacon(setFeedEventSink), []);
 
   // 表示とクリックの記録。どの並べ方（feed.algorithm）で出したかを毎回付ける
   const { algorithm } = feed;
