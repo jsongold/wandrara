@@ -1,11 +1,14 @@
 // bundle を検証し、写真を署名 URL で上げ、dest を API で下書きとして登録する（API キーだけで動く）。
-// 使い方: pnpm import:bundle <bundle.json> [--dry-run] [--parallel | --parallel=N]
-//   環境変数 WANDRARA_API_URL / WANDRARA_API_KEY
+// 使い方: pnpm import:bundle <bundle.json> [--dry-run] [--parallel | --parallel=N] [--area-local=<dir>]
+//   環境変数 WANDRARA_API_URL / WANDRARA_API_KEY（API を呼ぶときだけ）
 //   --dry-run: 検証と写真の読み込みまで。API は呼ばない
+//   --area-local=<dir>: 検証した area_content を <dir>/<region_id>.json（画面が読む形）に書く。API は呼ばない
+//   area_content のある bundle は、まだ API に送れない（表は MS1 #114 で作る）。--dry-run か --area-local で使う
 //   --parallel: 写真の読み込み・アップロードと dest の登録を同時に 6 つ（=N なら N）まで走らせる。無ければ 1 つずつ
 
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+import { areaContentCounts, toAreaLocal } from "../src/lib/ingest/area-content.ts";
 import { parseBundle } from "../src/lib/ingest/bundle.ts";
 import { coreByType } from "../src/lib/ingest/cores.ts";
 import { limiter } from "../src/lib/limit.ts";
@@ -25,14 +28,19 @@ async function main(): Promise<number> {
   const args = parseArgs(process.argv.slice(2));
   const apiUrl = process.env.WANDRARA_API_URL;
   const apiKey = process.env.WANDRARA_API_KEY;
-  if (!args.ok || !args.value.file || !apiUrl || !apiKey) {
-    if (!args.ok) console.error(args.error);
+  const usage = () => {
     console.error(
-      "使い方: pnpm import:bundle <bundle.json> [--dry-run] [--parallel | --parallel=N]\n  環境変数 WANDRARA_API_URL（例 https://wandrara.vercel.app）と WANDRARA_API_KEY（wdr_...）が要る",
+      "使い方: pnpm import:bundle <bundle.json> [--dry-run] [--parallel | --parallel=N] [--area-local=<dir>]\n  API を呼ぶときは環境変数 WANDRARA_API_URL（例 https://wandrara.vercel.app）と WANDRARA_API_KEY（wdr_...）が要る",
     );
     return 2;
+  };
+  if (!args.ok || !args.value.file) {
+    if (!args.ok) console.error(args.error);
+    return usage();
   }
-  const { file, dryRun, parallel } = args.value;
+  const { file, dryRun, parallel, areaLocal } = args.value;
+  // API を呼ぶのは --dry-run も --area-local も無いときだけ。環境変数はそのときだけ要る
+  const callsApi = !dryRun && !areaLocal;
   // 同時に走るものはすべてこの run を通す（run の中で run を待たない。n=1 で止まるため）
   const run = limiter(parallel);
 
@@ -44,6 +52,16 @@ async function main(): Promise<number> {
     for (const e of parsed.errors) console.error(`  ${e}`);
     return 1;
   }
+  const area = parsed.value.area_content;
+  if (area && callsApi) {
+    console.error("area_content はまだ DB に送れない（表は MS1 #114 で作る）。--dry-run で確かめるか、--area-local=<dir> でローカルの JSON に書く");
+    return 1;
+  }
+  if (areaLocal && !area) {
+    console.error("--area-local には area_content のある bundle が要る");
+    return 1;
+  }
+  if (callsApi && (!apiUrl || !apiKey)) return usage();
 
   const deps = { readFile: async (p: string) => new Uint8Array(await readFile(p)), download };
   const failures: string[] = [];
@@ -65,14 +83,24 @@ async function main(): Promise<number> {
     else ok.push(c);
   }
 
-  if (dryRun) {
+  if (!callsApi) {
+    const tag = dryRun ? "dry-run" : "area-local";
     const n = ok.reduce((s, x) => s + x.photos.length, 0);
-    console.log(`dry-run: dest ${ok.length} 件 / 写真 ${n} 枚を確認した（API は呼んでいない）`);
+    console.log(`${tag}: dest ${ok.length} 件 / 写真 ${n} 枚を確認した（API は呼んでいない）`);
+    if (area) console.log(`${tag}: エリアの中身 ${area.region_id}：${areaContentCounts(area)} を確認した`);
     for (const f of failures) console.error(`error: ${f}`);
-    return failures.length ? 1 : 0;
+    if (failures.length) return 1;
+    if (areaLocal && area) {
+      const dir = resolve(process.cwd(), areaLocal);
+      await mkdir(dir, { recursive: true });
+      const out = resolve(dir, `${area.region_id}.json`);
+      await writeFile(out, JSON.stringify(toAreaLocal(area), null, 2) + "\n");
+      console.log(`wrote ${out}`);
+    }
+    return 0;
   }
 
-  const client = createClient(apiUrl, apiKey);
+  const client = createClient(apiUrl!, apiKey!);
   const all = new Map<string, Collected>();
   for (const x of ok) for (const c of x.photos) all.set(c.sha256, c);
   const failedPhotos = new Map<string, string>();

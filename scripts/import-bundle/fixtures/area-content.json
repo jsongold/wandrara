@@ -1,0 +1,252 @@
+{
+  "bundle_version": "2",
+  "collector": "example-collector",
+  "collected_at": "2026-11-19T10:00:00+09:00",
+  "dests": [],
+  "area_content": {
+    "region_id": "atami",
+    "products": [
+      {
+        "id": "himono",
+        "kind": "meisan",
+        "name": {
+          "ja": "干物",
+          "en": "Dried fish (himono)"
+        },
+        "summary": {
+          "ja": "江戸期から続く熱海銀座の老舗が焼く干物",
+          "en": "Dried fish from long-established shops in Atami Ginza"
+        },
+        "description": {
+          "ja": "熱海の駅前・銀座通りには干物店が多く、地物を中心に多種の干物を扱う。伊勢海老ひものなど季節の高級品もある。",
+          "en": "Atami's station and Ginza streets have many himono shops selling mostly local fish, plus seasonal luxury items such as spiny lobster."
+        },
+        "season": null,
+        "photo": null,
+        "sources": [
+          "https://www.kamaturu.co.jp/",
+          "https://www.aoki-himono.co.jp/",
+          "https://www.ataminews.gr.jp/product/38",
+          "https://www.ataminews.gr.jp/spot/331"
+        ]
+      },
+      {
+        "id": "daidai",
+        "kind": "tokusan",
+        "name": {
+          "ja": "橙（だいだい）",
+          "en": "Daidai (bitter orange)"
+        },
+        "summary": {
+          "ja": "熱海・多賀で育つ縁起物の柑橘",
+          "en": "Auspicious citrus grown in the Taga hills"
+        },
+        "description": {
+          "ja": "熱海市の山間部、多賀地区が中心の産地。11月末から収穫、12〜1月に黄色く熟す。マーマレードやポン酢、菓子に使われる。",
+          "en": "Grown mainly in Taga; harvested from late November and ripe yellow in Dec-Jan. Used in marmalade, ponzu and sweets."
+        },
+        "season": {
+          "from": 11,
+          "to": 1
+        },
+        "photo": {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/b/b2/Daidai.jpg",
+          "license": "CC BY-SA 4.0",
+          "credit": "Jpbrigand",
+          "source": "https://commons.wikimedia.org/wiki/File:Daidai.jpg"
+        },
+        "sources": [
+          "https://www.ataminews.gr.jp/ad/201803daidai/index.html",
+          "https://www.ataminews.gr.jp/product/32"
+        ]
+      }
+    ],
+    "services": [
+      {
+        "id": "atami-baien",
+        "name": {
+          "ja": "熱海梅園を歩く",
+          "en": "Atami Plum Garden"
+        },
+        "summary": {
+          "ja": "1〜3月の梅まつりで梅を見る",
+          "en": "See plum blossoms at the Jan-Mar festival"
+        },
+        "description": {
+          "ja": "熱海梅園は梅まつり期間（2026年は1/10〜3/8）に有料時間帯がある。それ以外は入園自由。",
+          "en": "The garden charges admission only during the plum festival (Jan 10-Mar 8 in 2026) and is free to enter otherwise."
+        },
+        "season": {
+          "from": 1,
+          "to": 3
+        },
+        "photo": {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Atami_baien_-_March_7_2021_various.jpeg",
+          "license": "CC BY 4.0",
+          "credit": "Nesnad",
+          "source": "https://commons.wikimedia.org/wiki/File:Atami_baien_-_March_7_2021_various.jpeg"
+        },
+        "sources": [
+          "https://www.ataminews.gr.jp/spot/105"
+        ]
+      }
+    ],
+    "shops": [
+      {
+        "id": "kamatsuru-himono",
+        "name": {
+          "ja": "釜鶴ひもの店 本店",
+          "en": "Kamatsuru Himono (main store)"
+        },
+        "online": false,
+        "address": "静岡県熱海市銀座町10-18",
+        "lat": null,
+        "lng": null,
+        "hours": null,
+        "closed": {
+          "ja": "水曜（2026年11月から）",
+          "en": "Wednesdays (from November 2026)"
+        },
+        "url": "https://www.kamaturu.co.jp/",
+        "sources": [
+          "https://www.kamaturu.co.jp/",
+          "https://www.ataminews.gr.jp/product/38"
+        ]
+      },
+      {
+        "id": "aoki-himono",
+        "name": {
+          "ja": "あをきのひもの 本店",
+          "en": "Aoki no Himono (main store)"
+        },
+        "online": false,
+        "address": "静岡県熱海市銀座町10-20",
+        "lat": null,
+        "lng": null,
+        "hours": {
+          "ja": "9:00-17:00（受付）",
+          "en": "9:00-17:00 (last entry)"
+        },
+        "closed": {
+          "ja": "木曜",
+          "en": "Thursdays"
+        },
+        "url": "https://www.aoki-himono.co.jp/",
+        "sources": [
+          "https://www.aoki-himono.co.jp/",
+          "https://www.ataminews.gr.jp/product/799"
+        ]
+      },
+      {
+        "id": "atami-purin",
+        "name": {
+          "ja": "熱海プリン 本店",
+          "en": "Atami Pudding (main shop)"
+        },
+        "online": false,
+        "address": "静岡県熱海市田原本町3-14",
+        "lat": null,
+        "lng": null,
+        "hours": {
+          "ja": "10:00-18:00",
+          "en": "10:00-18:00"
+        },
+        "closed": {
+          "ja": "なし",
+          "en": "None"
+        },
+        "url": "http://atami-purin.com/",
+        "sources": [
+          "http://atami-purin.com/",
+          "https://www.ataminews.gr.jp/product/715"
+        ]
+      },
+      {
+        "id": "atami-baien",
+        "name": {
+          "ja": "熱海梅園",
+          "en": "Atami Plum Garden"
+        },
+        "online": false,
+        "address": "静岡県熱海市梅園町8-11",
+        "lat": null,
+        "lng": null,
+        "hours": {
+          "ja": "入園時間の制限なし（梅まつり期間中は有料時間帯あり）",
+          "en": "Open at all hours (paid hours during the plum festival)"
+        },
+        "closed": null,
+        "url": "https://www.ataminews.gr.jp/spot/105",
+        "sources": [
+          "https://www.ataminews.gr.jp/spot/105"
+        ]
+      }
+    ],
+    "shop_items": [
+      {
+        "shop": "kamatsuru-himono",
+        "product": "himono",
+        "service": null,
+        "price": null,
+        "price_note": {
+          "ja": "伊勢海老ひもの（目方により変動）",
+          "en": "Dried spiny lobster (price varies by weight)"
+        },
+        "checked_at": "2026-11-19",
+        "url": "https://www.kamaturu.co.jp/",
+        "sources": [
+          "https://www.kamaturu.co.jp/",
+          "https://www.ataminews.gr.jp/product/38"
+        ]
+      },
+      {
+        "shop": "aoki-himono",
+        "product": "himono",
+        "service": null,
+        "price": 432,
+        "price_note": {
+          "ja": "真あじ干物（1枚〜、税込）",
+          "en": "Dried horse mackerel (from 1 piece, tax incl.)"
+        },
+        "checked_at": "2026-11-19",
+        "url": "https://www.aoki-himono.co.jp/",
+        "sources": [
+          "https://www.aoki-himono.co.jp/"
+        ]
+      },
+      {
+        "shop": "atami-purin",
+        "product": "daidai",
+        "service": null,
+        "price": 470,
+        "price_note": {
+          "ja": "風呂まーじゅプリン だいだい 1個（税込）",
+          "en": "Furo-mage pudding, daidai, 1 piece (tax incl.)"
+        },
+        "checked_at": "2026-11-19",
+        "url": "http://atami-purin.com/",
+        "sources": [
+          "http://atami-purin.com/"
+        ]
+      },
+      {
+        "shop": "atami-baien",
+        "product": null,
+        "service": "atami-baien",
+        "price": null,
+        "price_note": {
+          "ja": "梅まつり期間中のみ有料（金額は公式ページに記載なし）",
+          "en": "Paid only during the plum festival (amount not listed on the official page)"
+        },
+        "checked_at": "2026-11-19",
+        "url": "https://www.ataminews.gr.jp/spot/105",
+        "sources": [
+          "https://www.ataminews.gr.jp/spot/105"
+        ]
+      }
+    ],
+    "popular": [
+      "daidai"
+    ]
+  }
+}
