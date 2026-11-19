@@ -38,8 +38,16 @@ export function kindLabelOf(coreType: string, locale: Locale): string {
   return core ? coreLabels(core, locale).label : "";
 }
 
-function regionIndex(regions: Region[]) {
-  return new Map(regions.map((r) => [r.id, r]));
+// 地域の索引。regions の配列ごとに 1 回だけ作って使い回す（カードごと・dest ごとに作り直すと件数の 2 乗で遅くなる）
+const regionIndexCache = new WeakMap<Region[], Map<string, Region>>();
+
+function regionIndex(regions: Region[]): Map<string, Region> {
+  let idx = regionIndexCache.get(regions);
+  if (!idx) {
+    idx = new Map(regions.map((r) => [r.id, r]));
+    regionIndexCache.set(regions, idx);
+  }
+  return idx;
 }
 
 export function areaLabel(regionId: string | null, regions: Region[], locale: Locale): string {
