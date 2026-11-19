@@ -3,13 +3,14 @@
 // area-stories：エリアの一言（F 案「写真の丸＋ストーリー」）。ヘッダーの下に項目ごとの丸い写真を並べ、押すと全画面で候補を順に見せる
 // 見たかどうかは端末ごと（localStorage）に覚える。ログインした利用者ごとに覚えるかは未決定
 import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
-import type { HighlightGroup, HighlightKind } from "@/lib/area-highlights";
+import type { HighlightGroup, HighlightItem, HighlightKind, HighlightOffer } from "@/lib/area-highlights";
 import { messages } from "@/lib/i18n/messages";
 import type { Locale } from "@/lib/types";
 import { Icon } from "./icons";
 
 type Props = { locale: Locale; area: string; areaLabel: string; groups: HighlightGroup[] };
 type Open = { g: number; i: number };
+type PeekView = "info" | "shops";
 
 const seenKey = (area: string) => `wandrara:highlights-seen:${area}`;
 
@@ -68,21 +69,30 @@ export function prevPos(groups: HighlightGroup[], p: Open): Open {
 
 const photo = (color: string): CSSProperties => ({ background: `linear-gradient(160deg, ${color} 0%, #1b1b19 130%)` });
 
+// 候補の写真。写真が無ければ色面（試作。MS1 で next/image と丸用の小さい画像にする）
+function ItemPhoto({ item, className }: { item: HighlightItem; className: string }) {
+  if (!item.photo) return <span aria-hidden="true" className={`block ${className}`} style={photo(item.color)} />;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={item.photo.url} alt="" className={`block object-cover ${className}`} />;
+}
+
 export function AreaStories({ locale, area, areaLabel, groups }: Props) {
   const m = messages(locale).highlights;
   const common = messages(locale).common;
   const seen = parseSeen(useSyncExternalStore(subscribeSeen, () => readSeen(area), () => "[]"));
-  const [openState, setOpenState] = useState<{ area: string; pos: Open; peek: boolean } | null>(null);
+  // peek：null は閉じている、info は「軽く見る」、shops は「購入先」の一覧
+  const [openState, setOpenState] = useState<{ area: string; pos: Open; peek: PeekView | null } | null>(null);
   // エリアが変わったら閉じる
   const open = openState?.area === area ? openState.pos : null;
   // 「軽く見る」のシートを開いているか。候補を移ると閉じる
-  const peek = open !== null && openState?.peek === true;
+  const peekView = open !== null ? (openState?.peek ?? null) : null;
+  const peek = peekView !== null;
   const setOpen = (next: Open | null) => {
     // 開いた項目を「見た」にする
     if (next && groups[next.g]) markSeen(area, groups[next.g].kind);
-    setOpenState(next ? { area, pos: next, peek: false } : null);
+    setOpenState(next ? { area, pos: next, peek: null } : null);
   };
-  const setPeek = (v: boolean) => setOpenState((s) => (s ? { ...s, peek: v } : s));
+  const setPeekView = (v: PeekView | null) => setOpenState((s) => (s ? { ...s, peek: v } : s));
   const peekCloseRef = useRef<HTMLButtonElement>(null);
   const peekOpenRef = useRef<HTMLButtonElement>(null);
   // 開いたらシートの閉じるへ、閉じたら「軽く見る」へフォーカスを移す。閉じた直後は inert が外れてから移す
@@ -92,7 +102,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
     else if (wasPeek.current) peekOpenRef.current?.focus();
     wasPeek.current = peek;
   }, [peek]);
-  const closePeek = () => setPeek(false);
+  const closePeek = () => setPeekView(null);
 
   // ストーリーはモーダルの <dialog> で開く。開いている間は後ろの画面にフォーカスが行かず、閉じたら押した丸に戻る
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -149,7 +159,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                 className="flex h-[52px] w-[52px] items-center justify-center rounded-full"
                 style={{ border: `2px solid ${isSeen ? "rgba(255,255,255,0.35)" : "#f4f1ea"}` }}
               >
-                <span aria-hidden="true" className="h-11 w-11 rounded-full" style={photo(g.items[0].color)} />
+                <ItemPhoto item={g.items[0]} className="h-11 w-11 rounded-full" />
               </span>
               <span className={`text-[11px] ${isSeen ? "text-white/70" : "font-semibold"}`}>{m.kind[g.kind]}</span>
             </button>
@@ -175,10 +185,10 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
           className="relative flex h-full flex-col text-white"
           style={photo(item.color)}
         >
+          {item.photo && <ItemPhoto item={item} className="absolute inset-0 h-full w-full" />}
           {/* 「軽く見る」を開いている間は、後ろのストーリーの操作を inert にしてフォーカスを入れない */}
           <div className="contents" inert={peek}>
-          <span aria-hidden="true" className="absolute bottom-[200px] left-4 text-xs text-white/60">{m.photoDemo}</span>
-          <div className="relative z-[2] flex gap-1 px-3 pt-3">
+          <div className="relative z-[2] flex gap-1 px-3 pt-3" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0))" }}>
             {cur.items.map((_, i) => (
               <span key={i} className="h-[3px] flex-1 rounded-full" style={{ background: i <= open.i ? "#ffffff" : "rgba(255,255,255,0.35)" }} />
             ))}
@@ -209,14 +219,13 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
               <button
                 ref={peekOpenRef}
                 type="button"
-                onClick={() => setPeek(true)}
+                onClick={() => setPeekView("info")}
                 aria-expanded={peek}
                 className="h-11 cursor-pointer rounded-full border-0 px-5 text-sm font-semibold"
                 style={{ background: "#f4f1ea", color: "#141413" }}
               >
                 {m.peek}
               </button>
-              {item.pr && <span className="rounded border border-white/60 px-1.5 py-0.5 text-[10px] font-semibold">{m.pr}</span>}
             </div>
           </div>
           </div>
@@ -232,7 +241,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-col gap-1">
-                    <span className="text-[11px] text-white/70">{m.kind[cur.kind]} · {areaLabel}</span>
+                    <span className="text-[11px] text-white/70">{peekView === "shops" ? m.shopsOf : `${m.kind[cur.kind]} · ${areaLabel}`}</span>
                     <p className="m-0 text-[20px] font-bold leading-snug">{item.name}</p>
                   </div>
                   <button
@@ -245,9 +254,11 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                     <Icon name="close" />
                   </button>
                 </div>
-                <span aria-hidden="true" className="block h-36 w-full flex-none rounded-2xl" style={photo(item.color)} />
-                <p className="m-0 text-sm leading-relaxed text-white/90">{item.note}</p>
-                {item.pr && <span className="self-start rounded border border-white/60 px-1.5 py-0.5 text-[10px] font-semibold">{m.pr}</span>}
+                {peekView === "info" ? (
+                  <PeekInfo item={item} m={m} onShops={() => setPeekView("shops")} />
+                ) : (
+                  <PeekShops item={item} m={m} onBack={() => setPeekView("info")} />
+                )}
               </section>
             </>
           )}
@@ -255,5 +266,82 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
       )}
       </dialog>
     </>
+  );
+}
+
+type HM = ReturnType<typeof messages>["highlights"];
+
+// 軽く見る：写真・説明・旬・購入先を探す（扱う店が無ければ出さない）
+function PeekInfo({ item, m, onShops }: { item: HighlightItem; m: HM; onShops: () => void }) {
+  return (
+    <>
+      <ItemPhoto item={item} className="h-40 w-full flex-none rounded-2xl" />
+      {item.photo && <span className="-mt-2 text-[10px] text-white/50">{m.photoCredit(item.photo.credit, item.photo.license)}</span>}
+      {item.season && <span className="self-start rounded-full bg-white/[0.08] px-2.5 py-1 text-[11px]">{m.season(item.season.from, item.season.to)}</span>}
+      <p className="m-0 text-sm leading-relaxed text-white/90">{item.description}</p>
+      {item.offers.length > 0 && (
+        <button
+          type="button"
+          onClick={onShops}
+          className="mt-1 flex h-12 cursor-pointer items-center justify-between rounded-2xl border-0 px-4 text-sm font-semibold"
+          style={{ background: "#f4f1ea", color: "#141413" }}
+        >
+          <span>{item.type === "service" ? m.findWhereDo : m.findWhereBuy}</span>
+          <span className="text-xs font-normal">{m.shopCount(item.offers.length)}</span>
+        </button>
+      )}
+    </>
+  );
+}
+
+// 購入先：扱う店の一覧。1 行に「店のサイトへ」（外部）と「ここで買う」（自社購入。試作ではまだ使えない）
+function PeekShops({ item, m, onBack }: { item: HighlightItem; m: HM; onBack: () => void }) {
+  return (
+    <>
+      <button type="button" onClick={onBack} className="-mt-1 flex h-9 cursor-pointer items-center gap-1 self-start border-0 bg-transparent p-0 text-xs text-white/80">
+        <span aria-hidden="true">‹</span> {m.backToInfo}
+      </button>
+      <ul className="m-0 flex list-none flex-col gap-2.5 p-0" data-testid="area-story-shops">
+        {item.offers.map((o) => (
+          <OfferRow key={o.shopId} o={o} m={m} />
+        ))}
+      </ul>
+    </>
+  );
+}
+
+function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
+  const where = o.online ? m.online : o.address;
+  const when = [o.hours, o.closed && m.closedOn(o.closed)].filter(Boolean).join(" · ");
+  return (
+    <li className="flex flex-col gap-2 rounded-2xl bg-white/[0.06] p-3.5">
+      <div className="flex flex-col gap-0.5">
+        <span className="text-[15px] font-semibold">{o.shopName}</span>
+        {where && <span className="text-xs text-white/70">{where}</span>}
+        {when && <span className="text-xs text-white/70">{when}</span>}
+        {o.price != null && (
+          <span className="text-xs text-white/85">
+            {m.price(o.price)}
+            {o.priceNote && ` · ${o.priceNote}`}
+            {o.checkedAt && <span className="text-white/50">{` · ${m.checkedAt(o.checkedAt)}`}</span>}
+          </span>
+        )}
+      </div>
+      <div className="flex gap-2">
+        {o.url && (
+          <a
+            href={o.url}
+            target="_blank"
+            rel="noopener"
+            className="flex h-10 flex-1 items-center justify-center gap-1 rounded-xl border border-white/30 text-[13px] font-semibold text-white no-underline"
+          >
+            {m.toShopSite} <span aria-hidden="true">↗</span>
+          </a>
+        )}
+        <button type="button" disabled title={m.buyHereSoon} className="h-10 flex-1 rounded-xl border-0 text-[13px] font-semibold" style={{ background: "rgba(244,241,234,0.35)", color: "#141413" }}>
+          {m.buyHere}
+        </button>
+      </div>
+    </li>
   );
 }

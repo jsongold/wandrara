@@ -1,0 +1,13 @@
+{
+  "products": [
+    { "id": "himono", "kind": "meisan", "name": { "ja": "干物", "en": "Dried fish" }, "summary": { "ja": "仮のデータ", "en": "Placeholder" }, "description": null, "season": null, "photo": null, "sources": [] }
+  ],
+  "services": [],
+  "shops": [
+    { "id": "placeholder-shop", "name": { "ja": "仮の店", "en": "Placeholder shop" }, "online": false, "address": null, "lat": null, "lng": null, "hours": null, "closed": null, "url": "https://example.com/", "sources": [] }
+  ],
+  "shopItems": [
+    { "shop": "placeholder-shop", "product": "himono", "service": null, "price": null, "priceNote": null, "checkedAt": null, "url": null, "sources": [] }
+  ],
+  "popular": []
+}
