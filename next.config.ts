@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
   // 写真は Supabase Storage の dest-photos だけを最適化する。
-  // 幅の種類を絞るのは Hobby の変換枠（月 5K。キーは 画像 × 幅 × 画質 × 形式）に収めるため。
+  // 幅の種類を絞るのは Hobby の変換枠（月 5K。キーは 画像 × 幅 × 画質 × 形式。形式は AVIF・WebP の 2 つ）に収めるため。
   // カルーセル・部屋（sizes あり）は deviceSizes から、タイル（sizes 38vw）は imageSizes の 384 / 480 から選ぶ。
   //   390px 幅の DPR2 → カルーセル 828・タイル 384、DPR3 → カルーセル 1080・タイル 480。保存一覧（64px）は 256。
   // storage_key は中身の sha256 なので同じ URL の中身は変わらない。キャッシュは長く持つ。
@@ -14,7 +14,9 @@ const nextConfig: NextConfig = {
     remotePatterns: supabaseUrl ? [new URL(`${supabaseUrl}/storage/v1/object/public/dest-photos/**`)] : [],
     deviceSizes: [828, 1080],
     imageSizes: [256, 384, 480],
-    qualities: [50, 75], // 75 が通常、50 は通信量を抑える利用者（Save-Data）の写真。lib/save-data.ts
+    // 形式：ブラウザの Accept に合う最初のもの（順番が優先順）。AVIF 対応なら AVIF、なければ WebP。AVIF は変換が遅い（初回のみ。キャッシュは形式ごと）。#151
+    formats: ["image/avif", "image/webp"],
+    qualities: [60, 75], // 75 が通常、60 は通信量を抑える利用者（Save-Data）の写真。lib/save-data.ts
     minimumCacheTTL: 2678400, // 31 日
   },
   partialPrefetching: true,

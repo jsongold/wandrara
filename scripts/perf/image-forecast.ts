@@ -1,7 +1,7 @@
 // 公開中の写真の枚数から、画像変換の月間件数と Pro の費用を見積もる（読むだけ。DB と Storage には何も書かない）。#125
 // 使い方: pnpm perf:image-forecast   （.env.local の NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY）
 import { existsSync } from "node:fs";
-import { forecast, HOBBY_TRANSFORMS_PER_MONTH, hobbyLimitPhotos, TRANSFORMS_PER_PHOTO } from "../../src/lib/image-forecast.ts";
+import { AVIF_TRANSFORMS_PER_PHOTO, forecast, HOBBY_TRANSFORMS_PER_MONTH, hobbyLimitPhotos, TRANSFORMS_PER_PHOTO, WEBP_FALLBACK_SHARE } from "../../src/lib/image-forecast.ts";
 import { adminClient } from "../../src/lib/supabase/admin.ts";
 import { selectAll } from "../../src/lib/supabase/select-all.ts";
 
@@ -17,7 +17,8 @@ const photos = await selectAll<{ dest_id: string; storage_key: string }>(db, "de
 const distinct = new Set(photos.filter((p) => published.has(p.dest_id)).map((p) => p.storage_key)).size;
 
 console.log(`公開中の dest ${published.size} 件・dest_photos ${photos.length} 行・公開中の写真（storage_key の種類）${distinct} 枚`);
-console.log(`見積もり（全写真が月内に見られる上限側。実際は閲覧数で決まる）：1 枚あたり月 ${TRANSFORMS_PER_PHOTO} 件（MS1c）。Hobby の上限 ${HOBBY_TRANSFORMS_PER_MONTH} 件に当たるのは ${hobbyLimitPhotos()} 枚`);
+console.log(`見積もり（全写真が月内に見られる上限側。実際は閲覧数で決まる）：AVIF 対応の端末で 1 枚あたり月 ${AVIF_TRANSFORMS_PER_PHOTO} 件（MS1c）。AVIF 非対応の端末・クローラーの WebP を ${WEBP_FALLBACK_SHARE * 100}% 足して ${TRANSFORMS_PER_PHOTO} 件（#151）`);
+console.log(`Hobby の上限 ${HOBBY_TRANSFORMS_PER_MONTH} 件に当たるのは ${hobbyLimitPhotos()} 枚（AVIF のみなら ${hobbyLimitPhotos(AVIF_TRANSFORMS_PER_PHOTO)} 枚）`);
 console.log("倍率\t写真\t変換/月\tHobby比\tPro(USD/月)");
 for (const m of [1, 2, 5, 10]) {
   const f = forecast(distinct * m);

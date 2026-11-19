@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { cookieSaveData, isSaveDataHeader, readSaveData, saveDataCookie, saveDataOfRequest } from "./save-data";
+import nextConfig from "../../next.config";
+import { cookieSaveData, imageQuality, isSaveDataHeader, readSaveData, saveDataCookie, saveDataOfRequest } from "./save-data";
 
 describe("Save-Data", () => {
   it("リクエストヘッダは on のときだけ有効", () => {
@@ -34,5 +35,11 @@ describe("Save-Data", () => {
   it("cookie は付ける・消すの 2 通り", () => {
     expect(saveDataCookie(true)).toMatch(/^savedata=1; path=\/; max-age=\d+/);
     expect(saveDataCookie(false)).toMatch(/^savedata=; path=\/; max-age=0/);
+  });
+
+  it("写真の画質は next.config.ts の images.qualities に載っている（載っていないと近い値に丸められ、画質の意図が変わる）。形式は AVIF が先", () => {
+    expect(nextConfig.images?.qualities).toEqual(expect.arrayContaining([imageQuality(false), imageQuality(true)]));
+    expect(imageQuality(true)).toBeLessThan(imageQuality(false));
+    expect(nextConfig.images?.formats).toEqual(["image/avif", "image/webp"]);
   });
 });
