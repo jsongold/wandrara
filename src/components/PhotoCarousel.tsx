@@ -1,7 +1,7 @@
 "use client";
 
 // 写真を横にスワイプして 1 枚ずつ切り替える（CSS の scroll-snap）。トップのカードと詳細で使う。
-// href があれば各写真がリンクになる（スワイプはスクロール、タップは遷移）。
+// href があれば写真の枠ごと 1 本のリンクになる（スワイプはスクロール、タップは遷移）。
 import Image from "next/image";
 import Link from "next/link";
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
@@ -19,11 +19,12 @@ function placeholder(photo: Photo | null): CSSProperties {
 function Slide({ photo, index, eager, near }: { photo: Photo | null; index: number; eager: boolean; near: boolean }) {
   if (photo?.url && !photo.isDemo && near) {
     return (
-      // sizes を付けない fill なので srcset は deviceSizes（1080）だけになる（next.config.ts の images）
+      // 列は最大 480px 幅（HomeScreen の max-w-[480px]）。sizes を付けると、PC の広い窓でも 1080 を取らず幅に合う大きさだけ取る（next.config.ts の images）
       <Image
         src={photo.url}
         alt=""
         fill
+        sizes="(max-width: 480px) 100vw, 480px"
         draggable={false}
         loading={eager ? "eager" : "lazy"}
         fetchPriority={eager ? "high" : "auto"}
@@ -66,6 +67,20 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
     el.scrollTo({ left: (index + delta) * el.clientWidth, behavior: "smooth" });
   }
 
+  const track = (
+    <div
+      ref={scroller}
+      onScroll={onScroll}
+      className="flex h-full w-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {slides.map((p, i) => (
+        <div key={i} className="relative h-full w-full shrink-0 snap-center snap-always" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>
+          <Slide photo={p} index={i} eager={priority && i === 0} near={Math.abs(i - index) <= 1} />
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div
       className={`relative overflow-hidden ${className}`}
@@ -85,23 +100,14 @@ export function PhotoCarousel({ photos, href, label, counterClassName = "bottom-
         e.stopPropagation();
       }}
     >
-      <div
-        ref={scroller}
-        onScroll={onScroll}
-        className="flex h-full w-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {slides.map((p, i) => (
-          <div key={i} className="relative h-full w-full shrink-0 snap-center snap-always" aria-roledescription="slide" aria-label={`${i + 1} / ${slides.length}`}>
-            {href ? (
-              <Link href={href} prefetch={true} tabIndex={i === 0 ? 0 : -1} aria-hidden={i === 0 ? undefined : true} aria-label={i === 0 ? m.photos.open(label) : undefined} className="block h-full w-full" draggable={false}>
-                <Slide photo={p} index={i} eager={priority && i === 0} near={Math.abs(i - index) <= 1} />
-              </Link>
-            ) : (
-              <Slide photo={p} index={i} eager={priority && i === 0} near={Math.abs(i - index) <= 1} />
-            )}
-          </div>
-        ))}
-      </div>
+      {href ? (
+        // 写真ごとに Link を作らず、スクロールの枠ごと 1 本の Link で包む（カードごとの Link を写真の枚数分から 1 本にする）
+        <Link href={href} prefetch={true} aria-label={m.photos.open(label)} className="block h-full w-full" draggable={false}>
+          {track}
+        </Link>
+      ) : (
+        track
+      )}
 
       {children}
 

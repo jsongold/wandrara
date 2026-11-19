@@ -24,7 +24,8 @@ function RoomDetail({ room, photos, locale }: { room: RoomView; photos: RoomView
               alt={room.label}
               width={1080}
               height={720}
-              sizes="(max-width: 480px) 100vw, 480px"
+              // 1 枚なら列の幅いっぱい、複数なら 78%（className の w-[78%]）。高さは 120px 固定で上下は切るので、実際の幅より大きい画像は取らない
+              sizes={photos.length === 1 ? "(max-width: 480px) 100vw, 480px" : "(max-width: 480px) 78vw, 374px"}
               className={`block h-[120px] shrink-0 snap-start rounded-[10px] object-cover ${photos.length === 1 ? "w-full" : "w-[78%]"}`}
             />
           ) : null)}

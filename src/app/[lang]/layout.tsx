@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { BfcacheGuard } from "@/components/BfcacheGuard";
 import { DebugOverlay } from "@/components/DebugOverlay";
@@ -9,16 +8,6 @@ import { isLocale, LOCALES } from "@/lib/i18n/locale";
 import { messages } from "@/lib/i18n/messages";
 import { LocaleProvider } from "@/lib/i18n/use-locale";
 import "../globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Promise<Metadata> {
   const { lang } = await params;
@@ -36,7 +25,7 @@ export default async function RootLayout({ children, sheet, params }: LayoutProp
   return (
     <html
       lang={lang}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
       <body className="min-h-full flex flex-col">
         <LocaleProvider locale={lang}>
