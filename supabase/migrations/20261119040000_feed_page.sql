@@ -69,6 +69,8 @@ create or replace function public.feed_entry_refresh(p_dest uuid) returns void
 language plpgsql security definer set search_path = ''
 as $$
 begin
+  -- 同じ dest を別の transaction が書いている間に作り直すと、古い値で作ってしまう。dest ごとに待ち合わせる（待った後の各文は、書き終えた側の変更を見る）
+  perform pg_advisory_xact_lock(hashtextextended(p_dest::text, 0));
   delete from public.feed_entries where dest_id = p_dest;
   insert into public.feed_entries (dest_id, area_id, core_type, dest_created_at, published_at, pub_key, region_id, parent_region_id, top_region_id)
   select i.dest_id, a.area_id, i.core_type, i.dest_created_at, i.published_at, i.pub_key, i.region_id, i.parent_region_id, i.top_region_id
