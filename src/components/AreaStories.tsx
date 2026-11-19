@@ -223,7 +223,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                   type="button"
                   onClick={() => setPeekView("shops")}
                   aria-expanded={peek}
-                  className="flex h-11 cursor-pointer items-center gap-2 rounded-full border-0 px-5 text-sm font-semibold"
+                  className="flex h-9 cursor-pointer items-center gap-1.5 rounded-full border-0 px-4 text-[13px] font-semibold"
                   style={{ background: "#f4f1ea", color: "#141413" }}
                 >
                   {m.find}
@@ -297,46 +297,64 @@ export function mapsUrl(o: Pick<HighlightOffer, "shopName" | "address">): string
 function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
   const where = o.online ? m.online : o.address;
   const when = [o.hours, o.closed && m.closedOn(o.closed)].filter(Boolean).join(" · ");
+  const pill = "flex h-8 items-center gap-1 rounded-full px-3 text-xs font-semibold no-underline";
   return (
-    <li className="flex flex-col gap-2 rounded-2xl bg-white/[0.06] p-3.5">
-      <div className="flex flex-col gap-0.5">
-        <span className="text-[15px] font-semibold">{o.shopName}</span>
-        {where && <span className="text-xs text-white/70">{where}</span>}
-        {when && <span className="text-xs text-white/70">{when}</span>}
-        {o.price != null && (
-          <span className="text-xs text-white/85">
-            {m.price(o.price)}
-            {o.priceNote && ` · ${o.priceNote}`}
-            {o.checkedAt && <span className="text-white/50">{` · ${m.checkedAt(o.checkedAt)}`}</span>}
-          </span>
-        )}
-      </div>
-      <div className="flex gap-2">
-        {o.url && (
-          <a
-            href={o.url}
-            target="_blank"
-            rel="noopener"
-            className="flex h-10 flex-1 items-center justify-center gap-1 rounded-xl border border-white/30 text-[13px] font-semibold text-white no-underline"
-          >
-            {m.toShopSite} <span aria-hidden="true">↗</span>
-          </a>
-        )}
-        {!o.online && (
-          <a
-            href={mapsUrl(o)}
-            target="_blank"
-            rel="noopener"
-            aria-label={m.openMapOf(o.shopName)}
-            className="flex h-10 w-12 flex-none items-center justify-center rounded-xl border border-white/30 text-white"
-          >
-            <Icon name="pin" size={18} />
-          </a>
-        )}
-        <button type="button" disabled title={m.buyHereSoon} className="h-10 flex-1 rounded-xl border-0 text-[13px] font-semibold" style={{ background: "rgba(244,241,234,0.35)", color: "#141413" }}>
-          {m.buyHere}
-        </button>
+    <li className="flex gap-3 rounded-2xl bg-white/[0.06] p-3">
+      <ShopThumbs o={o} />
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className="truncate text-[14px] font-semibold">{o.shopName}</span>
+          {(where || when) && <span className="truncate text-[11px] text-white/65">{[where, when].filter(Boolean).join(" · ")}</span>}
+          {o.price != null && (
+            <span className="truncate text-[11px] text-white/85">
+              {m.price(o.price)}
+              {o.priceNote && <span className="text-white/60">{` · ${o.priceNote}`}</span>}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {!o.online && (
+            <a href={mapsUrl(o)} target="_blank" rel="noopener" aria-label={m.openMapOf(o.shopName)} className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/[0.08] text-white">
+              <Icon name="pin" size={15} />
+            </a>
+          )}
+          {o.url && (
+            <a href={o.url} target="_blank" rel="noopener" className={`${pill} bg-white/[0.08] text-white`}>
+              {m.toShopSite}
+              <span aria-hidden="true" className="text-[10px]">↗</span>
+            </a>
+          )}
+          <button type="button" disabled title={m.buyHereSoon} className={`${pill} ml-auto border-0`} style={{ background: "rgba(244,241,234,0.4)", color: "#141413" }}>
+            {m.buyHere}
+          </button>
+        </div>
       </div>
     </li>
   );
+}
+
+// 店のサムネイル。横にめくれるカルーセル（今は写真が無いので 1 枚の仮の枠）
+function ShopThumbs({ o }: { o: HighlightOffer }) {
+  const frames = o.photos.length > 0 ? o.photos : [null];
+  return (
+    <div className="flex h-[76px] w-[76px] flex-none snap-x snap-mandatory overflow-x-auto rounded-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-hidden="true">
+      {frames.map((ph, i) =>
+        ph ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={ph.url} src={ph.url} alt="" className="h-full w-full flex-none snap-start object-cover" />
+        ) : (
+          <span key={i} className="flex h-full w-full flex-none snap-start items-center justify-center text-lg font-semibold text-white/80" style={photo(colorOfName(o.shopName))}>
+            {o.shopName.slice(0, 1)}
+          </span>
+        ),
+      )}
+    </div>
+  );
+}
+
+const THUMB_COLORS = ["#5a4a3c", "#3f5560", "#4f4a62", "#4a5a45", "#62453f"];
+function colorOfName(name: string): string {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return THUMB_COLORS[h % THUMB_COLORS.length];
 }

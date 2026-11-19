@@ -430,9 +430,9 @@ const ja = {
     closedOn: (d: string) => `定休 ${d}`,
     price: (yen: number) => `参考 ¥${yen.toLocaleString("ja-JP")}`,
     checkedAt: (d: string) => `${d} 時点`,
-    toShopSite: "店のサイトへ",
+    toShopSite: "サイト",
     openMapOf: (name: string) => `${name}を Google マップで開く`,
-    buyHere: "ここで買う",
+    buyHere: "購入",
     buyHereSoon: "準備中",
   },
 };
@@ -860,9 +860,9 @@ const en: Messages = {
     closedOn: (d: string) => `Closed ${d}`,
     price: (yen: number) => `From ¥${yen.toLocaleString("en-US")}`,
     checkedAt: (d: string) => `as of ${d}`,
-    toShopSite: "Shop site",
+    toShopSite: "Website",
     openMapOf: (name: string) => `Open ${name} in Google Maps`,
-    buyHere: "Buy here",
+    buyHere: "Buy",
     buyHereSoon: "Coming soon",
   },
 };

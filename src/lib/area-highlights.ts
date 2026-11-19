@@ -13,7 +13,7 @@ type PhotoSrc = { url: string; license: string; credit: string; source: string }
 // ローカルの JSON の形（= 表の候補）
 type ProductSrc = { id: string; kind: "meisan" | "tokusan"; name: L10n; summary: L10n; description?: L10n | null; season?: Season | null; photo?: PhotoSrc | null; sources: string[] };
 type ServiceSrc = { id: string; name: L10n; summary: L10n; description?: L10n | null; season?: Season | null; photo?: PhotoSrc | null; sources: string[] };
-type ShopSrc = { id: string; name: L10n; online: boolean; address?: string | null; lat?: number | null; lng?: number | null; hours?: string | null; closed?: string | null; url?: string | null; sources: string[] };
+type ShopSrc = { id: string; name: L10n; online: boolean; address?: string | null; lat?: number | null; lng?: number | null; hours?: string | null; closed?: string | null; url?: string | null; photos?: PhotoSrc[]; sources: string[] };
 type ShopItemSrc = { shop: string; product?: string | null; service?: string | null; price?: number | null; priceNote?: string | null; checkedAt?: string | null; url?: string | null; sources: string[] };
 export type AreaLocalData = { products: ProductSrc[]; services: ServiceSrc[]; shops: ShopSrc[]; shopItems: ShopItemSrc[]; popular?: string[] };
 
@@ -29,6 +29,7 @@ export type HighlightOffer = {
   priceNote: string | null;
   checkedAt: string | null;
   url: string | null;
+  photos: HighlightPhoto[];
 };
 export type HighlightItem = {
   id: string;
@@ -61,6 +62,12 @@ export function inSeason(season: Season | null | undefined, month: number): bool
   return season.from <= season.to ? month >= season.from && month <= season.to : month >= season.from || month <= season.to;
 }
 
+// エリアの中なので、住所の「静岡県熱海市」までは省く
+export function shortAddress(a: string | null | undefined): string | null {
+  if (!a) return null;
+  return a.replace(/^(\S+?[都道府県])?\S+?[市郡]/, "").trim() || a;
+}
+
 function offersOf(data: AreaLocalData, key: "product" | "service", id: string, locale: Locale): HighlightOffer[] {
   const shops = new Map(data.shops.map((s) => [s.id, s]));
   return data.shopItems
@@ -71,13 +78,14 @@ function offersOf(data: AreaLocalData, key: "product" | "service", id: string, l
         shopId: s.id,
         shopName: s.name[locale],
         online: s.online,
-        address: s.address ?? null,
+        address: shortAddress(s.address),
         hours: s.hours ?? null,
         closed: s.closed ?? null,
         price: x.price ?? null,
         priceNote: x.priceNote ?? null,
         checkedAt: x.checkedAt ?? null,
         url: x.url ?? s.url ?? null,
+        photos: s.photos ?? [],
       };
     })
     // 実店舗を先に、通販を最後に

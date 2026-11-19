@@ -71,3 +71,12 @@ describe("Google マップ", () => {
     expect(mapsUrl({ shopName: "店", address: null })).toBe("https://www.google.com/maps/search/?api=1&query=%E5%BA%97");
   });
 });
+
+describe("住所", () => {
+  it("都道府県と市を省く", async () => {
+    const { shortAddress } = await import("@/lib/area-highlights");
+    expect(shortAddress("静岡県熱海市銀座町10-18")).toBe("銀座町10-18");
+    expect(shortAddress("熱海市田原本町3-14")).toBe("田原本町3-14");
+    expect(shortAddress(null)).toBeNull();
+  });
+});
