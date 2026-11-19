@@ -3,7 +3,8 @@ import type { Mode } from "./modes";
 
 export type { Mode };
 export type Locale = "ja" | "en";
-export type LocalizedText = Partial<Record<Locale, string>>;
+import type { LocalizedText } from "./i18n/localized";
+export type { LocalizedText };
 export type SortKey = "editorial" | "fresh";
 export type FactStatus = "verified" | "unverified" | "unknown";
 

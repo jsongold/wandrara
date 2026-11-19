@@ -1,6 +1,7 @@
 // 自然の details（jsonb）の形。形は docs/proposals/web-output-experience-nature.html。必須かどうかは quality.ts が決める
 import { z } from "zod";
-import { cautionSchema, currencySchema, dateSchema, localizedTextSchema, sourceSchema, timeSchema } from "../accommodation/details.ts";
+import { cautionSchema, currencySchema, dateSchema, sourceSchema, timeSchema } from "../accommodation/details.ts";
+import { localizedTextSchema } from "../i18n/localized.ts";
 import { ACCESS_MODES, AUDIENCES, DIFFICULTIES, RESTRICTION_KINDS } from "../vocab/nature.ts";
 
 const nonneg = z.number().nonnegative();

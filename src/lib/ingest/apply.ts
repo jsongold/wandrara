@@ -1,4 +1,4 @@
-// 1 件の dest を登録する：形と中身の検証 → 代表の位置からエリアを決める → 既存と辞書の引き当て → region_id を確定（無ければ 400）
+// 1 件の dest を登録する：形と中身の検証 → 言語が languages 表にあるか → 代表の位置からエリアを決める → 既存と辞書の引き当て → region_id を確定（無ければ 400）
 // → 行に平たくする → dest_apply（中身が前回と同じなら dest_apply が行ロックの中で飛ばす）
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -61,6 +61,15 @@ export async function loadRefs(db: SupabaseClient, input: DestInput, extraRegion
   return { destByRef, slugs, regions, categories };
 }
 
+/** languages 表に無い言語タグ（言語は自動では作らない。足すのは運営） */
+export async function unknownLanguages(db: SupabaseClient, tags: string[]): Promise<string[]> {
+  if (!tags.length) return [];
+  const { data, error } = await db.from("languages").select("tag").in("tag", tags);
+  fail(error, "languages");
+  const known = new Set((data ?? []).map((r) => r.tag as string));
+  return tags.filter((t) => !known.has(t));
+}
+
 export type ApplyResult = { dest_id: string; slug: string; unchanged: boolean; status: string };
 
 export async function applyDestWrite(db: SupabaseClient, plan: DestWritePlan): Promise<ApplyResult> {
@@ -92,6 +101,8 @@ export async function registerDest(
   const parsed = parseDestInput(core, json);
   if (!parsed.ok) return { ok: false, status: 400, errors: parsed.errors };
   const input = parsed.value;
+  const missing = await unknownLanguages(db, parsed.languages ?? []);
+  if (missing.length) return { ok: false, status: 400, errors: missing.map((t) => `言語 ${t} は languages 表に無い。言語は自動では作らない（運営が足す）`) };
   const resolved = await deps.resolve(representativeLocation(core.coreType, input.core, input.details));
   const explicit = (input.core.region_id as string | undefined) ?? input.region?.id;
   const refs = await loadRefs(db, input, [resolved.ok ? resolved.regionId : null]);

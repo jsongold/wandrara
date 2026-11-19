@@ -14,7 +14,7 @@
 
 ## 必須の項目
 次が 1 つでも無いと、その bundle は通らない（`src/lib/ingest/quality.ts`）。
-- `texts` に `name` と `summary`（どの言語でもよい）
+- `texts` に、その国の言語（日本は `ja`）の `name` と `summary`。ほかの言語は任意
 - 写真 1 枚以上
 - （`core.region_id` は要らない。位置からエリアが自動で決まる。決まらないとき・大涌谷のような点のエリアを指すときだけ書く。無い id は 400。エリアは自動では作らない）
 - `core.duration_minutes`（0 より大きい）。`core.kind` が `facility_use`（施設の利用）なら任意

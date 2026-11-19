@@ -162,6 +162,13 @@
       "when": 1795014232567,
       "tag": "20261118150352_traits",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795068060000,
+      "tag": "20261119060100_languages",
+      "breakpoints": true
     }
   ]
 }

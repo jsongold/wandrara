@@ -9,7 +9,7 @@
 //   }, (t) => [index("building_hours_dest_id_idx").on(t.destId), publishedRead(t.destId)]);
 //   入れ子にするなら：parentId: uuid("parent_id").notNull().references(() => 親の表.id, { onDelete: "cascade" }) と、details に parent: { key, column } を付ける
 //   export const buildingTexts = pgTable("building_texts", { ...textsColumns() },
-//     (t) => [primaryKey({ columns: [t.destId, t.lang] }), langCheck("building_texts", t), publishedRead(t.destId)]);
+//     (t) => [primaryKey({ columns: [t.destId, t.lang] }), publishedRead(t.destId)]);
 //   export const buildingCore: CoreDef = { coreType: "building", path: "buildings", label: "建物",
 //     table: buildings, texts: buildingTexts, columns: { kind: "種類" }, kindLabels: KIND_LABELS,
 //     details: [{ key: "hours", table: buildingHours, label: "開館時間", columns: { openTime: "開く時刻" } }] };
@@ -28,15 +28,15 @@ import {
 import { anonRole, authenticatedRole } from "drizzle-orm/supabase";
 import type { z } from "zod";
 import { destinations } from "./common.ts";
-import { regions } from "./dictionary.ts";
+import { languages, regions } from "./dictionary.ts";
+
+export type { LocalizedText } from "../../lib/i18n/localized.ts";
+import type { LocalizedText } from "../../lib/i18n/localized.ts";
 
 export const CORE_TYPES = ["accommodation", "experience", "nature", "village", "building", "hotspring"] as const;
 export type CoreType = (typeof CORE_TYPES)[number];
 
 export const GEO_PRECISIONS = ["exact", "street", "district", "municipality"] as const;
-
-/** 言語ごとの文。例 {"ja": "...", "en": "..."} */
-export type LocalizedText = Record<string, string>;
 
 /** 詳細の行の中の文（注意点・メモなど）。jsonb の LocalizedText */
 export function localized(name: string) {
@@ -67,13 +67,15 @@ export function destChildColumns() {
   };
 }
 
-/** <core>_texts の列。主キー (dest_id, lang) と langCheck は表ごとに付ける。コアによって列を足してよい */
+/** <core>_texts の列。主キー (dest_id, lang) は表ごとに付ける。lang は languages 表を指す。コアによって列を足してよい */
 export function textsColumns() {
   return {
     destId: uuid("dest_id")
       .notNull()
       .references(() => destinations.destId, { onDelete: "cascade" }),
-    lang: text("lang").notNull(),
+    lang: text("lang")
+      .notNull()
+      .references(() => languages.tag, { onDelete: "restrict" }),
     name: text("name").notNull(),
     summary: text("summary"),
     address: text("address"),
@@ -100,11 +102,6 @@ export function oneOf(name: string, column: PgColumn, values: readonly string[])
 /** locationColumns の geo_precision の check */
 export function geoPrecisionCheck(tableName: string, t: { geoPrecision: PgColumn }) {
   return oneOf(`${tableName}_geo_precision_check`, t.geoPrecision, GEO_PRECISIONS);
-}
-
-/** textsColumns の lang の check（英小文字 2 文字） */
-export function langCheck(tableName: string, t: { lang: PgColumn }) {
-  return check(`${tableName}_lang_check`, sql`${t.lang} ~ '^[a-z]{2}$'`);
 }
 
 /** 料金の currency の check（英大文字 3 文字） */

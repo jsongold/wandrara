@@ -71,12 +71,12 @@ describe("toBuildingView", () => {
     expect([v.hours, v.fees, v.events, v.access, v.cautions, v.bookingLinks, v.sources]).toEqual([null, [], [], null, [], [], []]);
   });
 
-  it("en：英語の文。無い言語は別の言語に落ちる", () => {
+  it("en：英語の文。無い言語は出さない", () => {
     const v = view({ locale: "en" });
     expect(v.hours).toMatchObject({ openText: "09:00–17:00", closedDays: "Wed", closedNote: "New Year holidays (Dec 29 - Jan 1)" });
     expect(v.fees[1]).toMatchObject({ label: "Children (ages 6–15)", text: "¥700" });
     expect(v.events[0]).toMatchObject({ name: "Winter glass exhibition" });
     expect(v.access).toMatchObject({ how: "Bus, 20 min" });
-    expect(view({ details: { cautions: [{ note: { ja: "日本語だけ" } }] }, locale: "en" }).cautions).toEqual(["日本語だけ"]);
+    expect(view({ details: { cautions: [{ note: { ja: "日本語だけ" } }] }, locale: "en" }).cautions).toEqual([]);
   });
 });

@@ -6,7 +6,7 @@ import { checkQuality, QUALITY_RULES } from "./quality.ts";
 const loc = { lat: 35.1, lng: 139.07 };
 const base = (core: Record<string, unknown>, details: Record<string, unknown>, opts: { address?: boolean } = {}): DestInput => ({
   core: { region_id: "atami", ...core },
-  texts: [{ lang: "en", name: "N", summary: "S", ...(opts.address === false ? {} : { address: "A" }) }],
+  texts: [{ lang: "ja", name: "N", summary: "S", ...(opts.address === false ? {} : { address: "A" }) }],
   details,
   photos: [{ storage_key: "a.jpg" }],
   sources: [{ url: "https://example.com/" }],
@@ -56,11 +56,16 @@ describe("checkQuality", () => {
     });
   }
 
-  it("言語は問わない（en だけでも通る）・prefix が付く", () => {
+  it("その国の言語（ja）の name と summary が要る・ほかの言語は任意・prefix が付く", () => {
     const d = complete.nature();
     expect(checkQuality("nature", d, "/dests/3")).toEqual([]);
+    const err = ["/dests/3/texts その国の言語（ja）の name と summary が要る"];
     d.texts = [{ lang: "ja", name: "N" }];
-    expect(checkQuality("nature", d, "/dests/3")).toEqual(["/dests/3/texts name と summary が要る（どの言語でもよい）"]);
+    expect(checkQuality("nature", d, "/dests/3")).toEqual(err);
+    d.texts = [{ lang: "en", name: "N", summary: "S" }];
+    expect(checkQuality("nature", d, "/dests/3")).toEqual(err);
+    d.texts = [{ lang: "ja", name: "N", summary: "S" }, { lang: "fr", name: "N" }];
+    expect(checkQuality("nature", d, "/dests/3")).toEqual([]);
   });
 
   type AccDetails = { rooms: Record<string, unknown>[]; prices: { items: Record<string, unknown>[] } };

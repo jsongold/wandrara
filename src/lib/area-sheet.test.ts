@@ -9,12 +9,12 @@ const regions: Region[] = [
 ];
 
 describe("listAreas", () => {
-  it("親なしのエリアと、その直下の地区を言語で返す（英語が無ければ日本語）", () => {
+  it("親なしのエリアと、その直下の地区を言語で返す（英語が無ければ空。別の言語では出さない）", () => {
     expect(listAreas(regions, "ja")).toEqual([
       { id: "hakone", label: "箱根", subs: [{ id: "gora", label: "強羅" }] },
       { id: "izu", label: "伊豆", subs: [] },
     ]);
-    expect(listAreas(regions, "en")[0]).toEqual({ id: "hakone", label: "Hakone", subs: [{ id: "gora", label: "強羅" }] });
+    expect(listAreas(regions, "en")[0]).toEqual({ id: "hakone", label: "Hakone", subs: [{ id: "gora", label: "" }] });
   });
 });
 

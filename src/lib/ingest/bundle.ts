@@ -8,6 +8,7 @@ import { z } from "zod";
 import { areaContentSchema, type AreaContent } from "./area-content.ts";
 import { CORES } from "./cores.ts";
 import { checkQuality } from "./quality.ts";
+import { collectLanguages, localizedTextSchema } from "../i18n/localized.ts";
 import type { CoreDef } from "../../db/schema/_shared.ts";
 
 export type DestInput = Record<string, unknown> & {
@@ -22,7 +23,6 @@ export type DestInput = Record<string, unknown> & {
   region?: { id: string; name: Record<string, string>; parent_id?: string | null };
 };
 
-const localizedSchema = z.record(z.string(), z.string());
 const numericSchema = z.union([z.number(), z.string()]).transform((v) => String(v));
 
 /** 元のスキーマが optional / nullable ならそれを引き継ぐ */
@@ -39,7 +39,7 @@ function columnShape(table: PgTable, skip: (col: PgColumn) => boolean): Record<s
   const overrides: Record<string, (s: z.ZodType) => z.ZodType> = {};
   for (const [prop, col] of Object.entries(cols)) {
     if (col.columnType === "PgNumeric") overrides[prop] = (s) => wrapOptional(numericSchema, s);
-    else if (col.columnType === "PgJsonb") overrides[prop] = (s) => wrapOptional(localizedSchema, s);
+    else if (col.columnType === "PgJsonb") overrides[prop] = (s) => wrapOptional(localizedTextSchema, s);
   }
   const schema = createInsertSchema(table, overrides as never) as unknown as z.ZodObject;
   const shape: Record<string, z.ZodType> = {};
@@ -79,14 +79,14 @@ const photoBase = {
   source_page_url: z.string().nullish(),
   original_url: z.string().nullish(),
   subject: z.enum(["exterior", "room", "bath", "view", "food", "activity", "landscape", "other"]).nullish(),
-  alt: localizedSchema.nullish(),
+  alt: localizedTextSchema.nullish(),
   /** 部屋などの key（details の中のもの）。dest_photos.subject_key に入る */
   room: z.string().regex(/^[a-z0-9_-]{1,40}$/).nullish(),
 };
 
 const regionSchema = z.strictObject({
   id: z.string().regex(/^[a-z0-9-]{1,40}$/),
-  name: localizedSchema,
+  name: localizedTextSchema,
   parent_id: z.string().nullish(),
 });
 
@@ -179,13 +179,15 @@ export function parseBundle(json: unknown): ParseResult<Bundle> {
   return errors.length ? { ok: false, errors } : { ok: true, value };
 }
 
-/** API 用（photos は storage_key 必須）。中身の決まりも同じものを確かめる（スクリプトを通さずに API を呼んでも同じ） */
-export function parseDestInput(core: CoreDef, json: unknown): ParseResult<DestInput> {
-  const r = destInputSchema(core).safeParse(json);
+/** API 用（photos は storage_key 必須）。中身の決まりも同じものを確かめる（スクリプトを通さずに API を呼んでも同じ）
+ *  languages：入力に出てくる言語タグ（texts の lang・LocalizedText のキー・案内言語）。languages 表にあるかは registerDest が確かめる */
+export function parseDestInput(core: CoreDef, json: unknown): ParseResult<DestInput> & { languages?: string[] } {
+  const { result: r, languages } = collectLanguages(() => destInputSchema(core).safeParse(json));
   if (!r.success) return { ok: false, errors: formatIssues(r.error) };
   const value = r.data as unknown as DestInput;
+  for (const t of value.texts) if (typeof t.lang === "string") languages.add(t.lang);
   const errors = checkQuality(core.coreType, value);
-  return errors.length ? { ok: false, errors } : { ok: true, value };
+  return errors.length ? { ok: false, errors } : { ok: true, value, languages: [...languages].sort() };
 }
 
 /** bundle の JSON Schema（i5 が schema/ に書き出す） */

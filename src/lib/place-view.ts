@@ -1,5 +1,5 @@
 // 建物・日帰り温泉・まちの詳細の画面で共通の view の部品。画面に出す文字にして渡す
-import type { LocalizedText } from "./accommodation/details.ts";
+import type { LocalizedText } from "./i18n/localized.ts";
 import { amountText, toHHMM } from "./accommodation/view.ts";
 import { resolveLocalizedText } from "./feed.ts";
 import { messages } from "./i18n/messages.ts";

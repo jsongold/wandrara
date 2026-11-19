@@ -85,7 +85,7 @@ describe("toNatureView", () => {
     expect([v.seasons, v.hours, v.fees, v.access, v.trails, v.restrictions, v.cautions, v.sources]).toEqual([[], null, [], null, [], [], [], []]);
   });
 
-  it("en：英語の表示名・文。無い言語は別の言語に落ちる", () => {
+  it("en：英語の表示名・文。無い言語は出さない", () => {
     const v = view({ locale: "en" });
     expect(v.summary).toEqual({ seasonText: "Apr–May", feeText: "Free entry" });
     expect(v.seasons[1]).toEqual({ subject: "Sunsets", months: "Oct–Feb" });
@@ -93,6 +93,6 @@ describe("toNatureView", () => {
     expect(v.access).toMatchObject({ modeLabel: "Walk", how: "Walk, 15 min", parking: { text: "Yes (paid, 80 spaces)" }, station: "Example Station" });
     expect(v.trails[0]).toMatchObject({ difficultyLabel: "Moderate", summary: "3.2 km, 90 min" });
     expect(v.restrictions[0]).toMatchObject({ kindLabel: "Closed to entry", period: "2026-12-01 – 2027-02-28" });
-    expect(view({ details: { cautions: [{ note: { ja: "日本語だけ" } }] }, locale: "en" }).cautions).toEqual(["日本語だけ"]);
+    expect(view({ details: { cautions: [{ note: { ja: "日本語だけ" } }] }, locale: "en" }).cautions).toEqual([]);
   });
 });

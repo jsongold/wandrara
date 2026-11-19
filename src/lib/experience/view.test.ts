@@ -114,7 +114,7 @@ describe("toExperienceView", () => {
     expect([v.priceTable, v.courses, v.schedules, v.locations, v.inclusions, v.cautions, v.bookingLinks, v.sources]).toEqual([null, [], [], [], [], [], [], []]);
   });
 
-  it("en：英語の表示名・文。無い言語は別の言語に落ちる", () => {
+  it("en：英語の表示名・文。無い言語は出さない", () => {
     const v = view({ locale: "en" });
     expect(v.priceTable!.unitLabel).toBe("Tax incl. (¥)");
     expect(v.priceTable!.rows[0]).toMatchObject({ courseLabel: "Tour and tasting", perLabel: "per person", notes: ["Adults ¥3,500", "Children (ages 6–12) ¥2,500"] });
@@ -123,6 +123,7 @@ describe("toExperienceView", () => {
     expect(v.locations[0]).toMatchObject({ kindLabel: "Meeting point", label: "Winery reception", address: "1-2 Example, Izu" });
     expect(v.inclusions.map((g) => g.label)).toEqual(["Included", "Not included", "What to bring"]);
     const ja = { courses: [{ key: "a", name: { ja: "日本語だけ" } }] };
-    expect(view({ details: ja, locale: "en" }).courses[0].label).toBe("日本語だけ");
+    // 英語の名前が無ければ、日本語ではなくコースの key を出す（今までの名前が無いときの扱い）
+    expect(view({ details: ja, locale: "en" }).courses[0].label).toBe("a");
   });
 });

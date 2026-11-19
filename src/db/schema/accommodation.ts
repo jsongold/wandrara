@@ -1,6 +1,6 @@
 // コア accommodation（宿）の表。詳細は accommodations.details（JSON）に持つ
 import { jsonb, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
-import { geoPrecisionCheck, langCheck, locationColumns, oneOf, publishedRead, textsColumns, type CoreDef } from "./_shared.ts";
+import { geoPrecisionCheck, locationColumns, oneOf, publishedRead, textsColumns, type CoreDef } from "./_shared.ts";
 import { accommodationDetailsSchema } from "../../lib/accommodation/schema.ts";
 import { destinations } from "./common.ts";
 import { operators } from "./people.ts";
@@ -36,7 +36,7 @@ export const accommodations = pgTable(
 export const accommodationTexts = pgTable(
   "accommodation_texts",
   { ...textsColumns() },
-  (t) => [primaryKey({ columns: [t.destId, t.lang] }), langCheck("accommodation_texts", t), publishedRead(t.destId)],
+  (t) => [primaryKey({ columns: [t.destId, t.lang] }), publishedRead(t.destId)],
 );
 
 export const accommodationCore: CoreDef = {
