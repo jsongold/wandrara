@@ -14,15 +14,16 @@ import { SaveDataHint, useSaveData } from "@/lib/use-save-data";
 import { otherMode } from "@/lib/modes";
 import { areaSheetLoader, IDLE_AREA_SHEET } from "@/lib/area-sheet-client";
 import type { CategoryView, DiscoverQuery, FeedCard, Locale, SortKey } from "@/lib/types";
-import { AccountButton } from "./AccountButton";
 import { AreaMap } from "./AreaMap";
 import { AreaStories } from "./area-stories/AreaStories";
 import { Chip } from "./Chip";
 import { CurrentFilterDisplay } from "./CurrentFilterDisplay";
+import { HomeHeader } from "./HomeHeader";
 import { Icon } from "./icons";
 import { NearbySuggestions } from "./NearbySuggestions";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
+import { useScrolledAway } from "./use-scrolled-away";
 
 // saveData：サーバーが決めた「通信量を抑える」（最初の描画に使う。以降はクライアントの値に従う）
 type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPageResult; categories: CategoryView[]; areaLabel: string | null; saveData?: boolean };
@@ -35,6 +36,8 @@ const GLASS: CSSProperties = {
   WebkitBackdropFilter: "blur(16px) saturate(1.2)",
   border: "1px solid rgba(255,255,255,0.14)",
 };
+// ヘッダーのアカウントのアイコン。透けない色（写真の上でも形がはっきり見える）
+const ICON_SOLID: CSSProperties = { background: "#1a1a18", border: "1px solid rgba(255,255,255,0.14)", color: "#ffffff" };
 // 下に浮かぶアイコン。外枠は無く、1 つずつがガラスの上に乗る
 const ICON_OFF: CSSProperties = { ...GLASS, color: "#ffffff" };
 const ICON_ON: CSSProperties = { background: "#f4f1ea", color: "#141413", border: "1px solid #f4f1ea" };
@@ -63,6 +66,8 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
   const [areaView, setAreaView] = useState<AreaView>("list");
   const m = messages(locale);
   const feedRef = useRef<HTMLDivElement>(null);
+  // 一覧がいちばん上から離れたか（ヘッダーのタイトルを畳む）
+  const scrolledAway = useScrolledAway(feedRef);
   // エリア選択シートのデータ（シートを開く・ボタンに触れた時点で取り始める）
   const areaSheet = useSyncExternalStore(areaSheetLoader.subscribe, () => areaSheetLoader.get(locale), () => IDLE_AREA_SHEET);
   const areaData = areaSheet.status === "ready" ? areaSheet.data : null;
@@ -131,6 +136,7 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
   const isStay = query.mode === "stay";
   const allCats: CategoryView[] = [{ id: "all", label: m.home.allCats, icon: "grid" }, ...categories];
   const currentArea = areaLabel ?? m.home.allAreas;
+  const highlights = areaHighlights(query.area, locale);
 
   return (
     <div data-home className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
@@ -162,27 +168,21 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
         )}
       </div>
 
-      {/* Top bar */}
-      <header className="absolute inset-x-0 top-0 z-[5] flex items-center justify-between px-4 py-3.5">
-        <div className="flex w-[136px] flex-none flex-col gap-0.5">
-          <span className="text-[15px] font-semibold tracking-[0.24em] [text-shadow:0_1px_6px_rgba(0,0,0,0.55)]">WANDRARA</span>
-          <span className="truncate text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{feed.orderLabel} · {m.home.demo}</span>
-        </div>
-        {/* 今のエリアの名前。画面の真ん中で、ロゴ（16+136px）に届かない幅まで。狭い画面（380px 未満）ではロゴとアイコンの間に置く。全エリア（と知らないエリア）では出さない */}
-        <CurrentFilterDisplay label={query.area === "all" || currentArea === m.home.allAreas ? null : currentArea} className="absolute left-1/2 max-w-[calc(100%-312px)] -translate-x-1/2 text-center max-[379px]:static max-[379px]:mx-2 max-[379px]:max-w-none max-[379px]:flex-auto max-[379px]:translate-x-0" />
-        {/* 言語の切り替えはアカウント／ログインの画面に置く */}
-        <div className="flex gap-2">
-          <AccountButton
-            locale={locale}
-            next={serializeDiscoverQuery(query, locale)}
-            className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full text-white"
-            style={GLASS}
-          />
-        </div>
-      </header>
-
-      {/* エリアの一言。エリアに絞り込んだときだけ（全国・データの無いエリアでは出さない） */}
-      <AreaStories locale={locale} area={query.area} areaLabel={currentArea} groups={areaHighlights(query.area, locale)} />
+      {/* Top bar。エリアの名前は、エリアの一言があればそれを開くボタン（全国・データの無いエリアでは名前だけ） */}
+      <HomeHeader
+        locale={locale}
+        next={serializeDiscoverQuery(query, locale)}
+        subtitle={`${feed.orderLabel} · ${m.home.demo}`}
+        iconStyle={ICON_SOLID}
+        collapsed={scrolledAway}
+        area={
+          highlights.length > 0 ? (
+            <AreaStories locale={locale} area={query.area} areaLabel={currentArea} groups={highlights} scrollRoot={feedRef} />
+          ) : (
+            <CurrentFilterDisplay label={query.area === "all" || currentArea === m.home.allAreas ? null : currentArea} className="min-w-0" />
+          )
+        }
+      />
 
       {/* Floating overlay */}
       {/* 横幅は画面の 80% まで、中央に置く */}
