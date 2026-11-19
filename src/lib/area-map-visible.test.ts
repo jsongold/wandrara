@@ -9,6 +9,12 @@ describe("area-map-visible", () => {
     expect(showChildren(start, start)).toBe(false);
     expect(showChildren({ ...start, w: start.w / CHILD_ZOOM }, start)).toBe(true);
   });
+  it("子を出している間は、少し引いても子のまま", () => {
+    const w = (start.w / CHILD_ZOOM) * 1.1;
+    expect(showChildren({ ...start, w }, start)).toBe(false);
+    expect(showChildren({ ...start, w }, start, true)).toBe(true);
+    expect(showChildren({ ...start, w: (start.w / CHILD_ZOOM) * 1.2 }, start, true)).toBe(false);
+  });
   it("表示範囲と重なる親だけ返す", () => {
     const view = { x: 0, y: 0, w: 100, h: 100 };
     const parents = [

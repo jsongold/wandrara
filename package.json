@@ -16,6 +16,7 @@
     "bundle:schema": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/bundle-schema.ts",
     "test:e2e": "playwright test",
     "area-map:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/area-map/build.ts",
+    "area-map:labels": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/area-map/add-labels.ts",
     "backfill:regions": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/backfill-regions.ts"
   },
   "dependencies": {

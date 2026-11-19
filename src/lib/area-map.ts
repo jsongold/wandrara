@@ -5,10 +5,12 @@ export type LocalizedName = { ja: string; en: string };
 /** 地図の座標での範囲 [x, y, 幅, 高さ] */
 export type Box = [number, number, number, number];
 
+/** ロケール → ラベルを出す最大の k（地図の単位 / 画面 px）。null = いつでも出す、0 = 出さない（area-label-zoom.ts） */
+export type LabelK = Record<string, number | null>;
 /** 押せるエリアの形。label はラベルを置く位置、size は地図の座標での面積（大きいものからラベルを出す） */
-export type MapArea = { id: string; d: string; label: [number, number]; box: Box; size: number };
+export type MapArea = { id: string; d: string; label: [number, number]; box: Box; size: number; labelK?: LabelK };
 /** 押せるエリアの点（大涌谷など） */
-export type MapPoint = { id: string; at: [number, number] };
+export type MapPoint = { id: string; at: [number, number]; labelK?: LabelK };
 
 export type AreaMapBase = {
   viewBox: string; // 地図全体（全国）

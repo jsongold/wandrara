@@ -72,3 +72,14 @@ html[data-sheet="open"] [data-home] {
 @media (prefers-reduced-motion: reduce) {
   .filter-mark-in { animation: none; }
 }
+
+/* エリアの地図のラベル：寄せて出るときは静かに浮かぶ（AreaMap.tsx） */
+@keyframes map-label-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.map-label-in { animation: map-label-in 180ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .map-label-in { animation: none; }
+}

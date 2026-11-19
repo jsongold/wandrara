@@ -9,7 +9,9 @@ import path from "node:path";
 import { gzipSync } from "node:zlib";
 import type { AreaMapBase, AreaMapChildren, Box, MapArea } from "../../src/lib/area-map.ts";
 import type { BBox, RegionDef } from "../../src/lib/region/types.ts";
+import { LOCALES } from "../../src/lib/i18n/locale.ts";
 import { loadDefinitions, mappable } from "./definitions.ts";
+import { nameFrom, withLabelZooms } from "./labels.ts";
 import { citiesOf, fc, featuresOf, q, run, type Feature, type Sources } from "./parts.ts";
 import { areaOf, makeProjection, pathOf, type Geometry, type Projection } from "./project.ts";
 import { fetchSources, SOURCE_VERSIONS } from "./sources.ts";
@@ -164,7 +166,9 @@ async function main() {
     if (b) bbox.set(d.id, b);
     else if (d.point) bbox.set(d.id, [d.point[0], d.point[1], d.point[0], d.point[1]]);
   }
-  const sheet = await buildSheet(defs, shapes, landBase, bbox);
+  const names = new Map(defs.map((d) => [d.id, d.name as Record<string, string>]));
+  const drawn = await buildSheet(defs, shapes, landBase, bbox);
+  const sheet = withLabelZooms(drawn.base, drawn.children, nameFrom(names), LOCALES);
 
   // 画面用の地図
   fs.rmSync(MAP_OUT, { recursive: true, force: true });
