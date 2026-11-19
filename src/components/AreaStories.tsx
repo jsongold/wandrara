@@ -174,6 +174,8 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
           className="relative flex h-full flex-col text-white"
           style={photo(item.color)}
         >
+          {/* 「軽く見る」を開いている間は、後ろのストーリーの操作を inert にしてフォーカスを入れない */}
+          <div className="contents" inert={peek}>
           <span aria-hidden="true" className="absolute bottom-[200px] left-4 text-xs text-white/60">{m.photoDemo}</span>
           <div className="relative z-[2] flex gap-1 px-3 pt-3">
             {cur.items.map((_, i) => (
@@ -215,6 +217,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
               </button>
               {item.pr && <span className="rounded border border-white/60 px-1.5 py-0.5 text-[10px] font-semibold">{m.pr}</span>}
             </div>
+          </div>
           </div>
 
           {/* 軽く見る：ストーリーの上に出す小さなシート。後で店・借りる先・dest への行き先を足す */}
