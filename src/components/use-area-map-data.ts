@@ -24,7 +24,10 @@ export function useAreaMapBase(): AreaMapBase | null {
 /** 子を出す寄り方なら、見えている親の子（読み終わったもの）。zoomed は子を出す寄り方か */
 export function useAreaMapChildren(base: AreaMapBase | null, view: View | null, start: View | null, box: { w: number; h: number } | null): { zoomed: boolean; children: AreaMapChildren[] } {
   const [loaded, setLoaded] = useState<Record<string, AreaMapChildren>>({});
-  const zoomed = !!(base && view && start && showChildren(view, start));
+  // 前の描画で子を出していたか（境目のしきい値をずらすため。描画中に前の値と比べて更新する React の書き方）
+  const [was, setWas] = useState(false);
+  const zoomed = !!(base && view && start && showChildren(view, start, was));
+  if (zoomed !== was) setWas(zoomed);
   const want = zoomed ? visibleParents(base!.parents, box ? shownView(view!, box) : view!).filter((id) => AREA_MAP_CHILDREN[id]) : [];
   const key = want.join(",");
 

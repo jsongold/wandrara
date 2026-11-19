@@ -5,7 +5,8 @@
 import { useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { AREA_MAP_CREDIT, CHILD_ZOOM, type MapArea } from "@/lib/area-map";
 import { filterAreas, type AreaTraits } from "@/lib/area-filter";
-import { layoutLabels, type LabelCandidate } from "@/lib/area-labels";
+import { shortName } from "@/lib/area-label-zoom";
+import { visibleLabels } from "@/lib/area-labels";
 import { useLocale, useMessages } from "@/lib/i18n/use-locale";
 import { fitView, parseView, toScreen } from "@/lib/pan-zoom";
 import { useAreaMapBase, useAreaMapChildren } from "./use-area-map-data";
@@ -28,8 +29,12 @@ const GLASS: CSSProperties = {
   WebkitBackdropFilter: "blur(16px) saturate(1.2)",
   border: "1px solid rgba(255,255,255,0.14)",
 };
-const TOP_PX = 56; // 上の文字の下からラベルを出す
-const BOTTOM_PX = 64; // 下の特性のバーの上まで
+
+// ラベルは上の文字と下のバーの所で薄くして消す（位置で連続に変わるので出し消しにならない）
+const LABEL_MASK: CSSProperties = {
+  maskImage: "linear-gradient(to bottom, transparent 0, transparent 44px, #000 64px, #000 calc(100% - 76px), transparent calc(100% - 60px))",
+  WebkitMaskImage: "linear-gradient(to bottom, transparent 0, transparent 44px, #000 64px, #000 calc(100% - 76px), transparent calc(100% - 60px))",
+};
 
 function onKey(fn: () => void) {
   return (e: KeyboardEvent) => {
@@ -39,9 +44,6 @@ function onKey(fn: () => void) {
     }
   };
 }
-
-/** 政令市の区は「横浜市中区」→「中区」と短くする（地図では親が横浜と分かる） */
-const shortName = (s: string) => s.replace(/^[^・]+市(.+区)$/, "$1");
 
 export function AreaMap({ current, labelOf, parentOf, onSelect, traits }: Props) {
   const locale = useLocale();
@@ -75,19 +77,18 @@ export function AreaMap({ current, labelOf, parentOf, onSelect, traits }: Props)
   const kidPoints = children.flatMap((c) => c.points);
   const currentParent = parentOf[current] ?? null;
 
-  const labels = (() => {
-    if (!base || !view || !box) return [];
-    const cand = (id: string, at: [number, number], size: [number, number], font: number): LabelCandidate => ({
-      id, text: shortName(labelOf(id)), at: toScreen(view, box, at[0], at[1]), size, font, rank: size[0] * size[1],
-    });
-    const fromArea = (a: MapArea, font: number) => cand(a.id, a.label, [a.box[2] / k, a.box[3] / k], font);
-    const list: LabelCandidate[] = [
-      ...base.parents.filter((p) => !zoomed || !covered.has(p.id)).map((p) => fromArea(p, 13)),
-      ...(zoomed ? kidShapes.filter((s) => !s.rest).map((s) => fromArea(s, 11)) : []),
-      ...(zoomed ? kidPoints.map((p) => cand(p.id, p.at, [40, 40], 11)) : []),
-    ].filter((c) => !isOff(c.id) || c.id === current);
-    return layoutLabels(list, { width: box.w - 48, height: box.h, top: TOP_PX, bottom: BOTTOM_PX, selected: current === "all" ? null : current });
-  })();
+  // ラベル：どの縮尺で出すかは生成ファイルに入っている（寄せると出る・引くと消える・動かすだけなら変わらない）
+  const labels = base && view && box
+    ? visibleLabels(
+        [
+          // 子の層では親のラベルは出さない（どの親も子を持つ。見えている親が変わるたびに出し消ししない）
+          ...(zoomed ? [] : base.parents.map((p) => ({ id: p.id, at: p.label, labelK: p.labelK, font: 13 }))),
+          ...(zoomed ? kidShapes.filter((s) => !s.rest).map((s) => ({ id: s.id, at: s.label, labelK: s.labelK, font: 11 })) : []),
+          ...(zoomed ? kidPoints.map((p) => ({ id: p.id, at: p.at, labelK: p.labelK, font: 11 })) : []),
+        ].filter((i) => !isOff(i.id) || i.id === current),
+        { k, locale, selected: current === "all" ? null : current, toScreen: (x, y) => toScreen(view, box, x, y), textOf: (id) => shortName(labelOf(id)), width: box.w, height: box.h },
+      )
+    : [];
 
   const areaProps = (id: string, after?: () => void) => {
     const off = isOff(id);
@@ -166,15 +167,15 @@ export function AreaMap({ current, labelOf, parentOf, onSelect, traits }: Props)
         )}
 
         {/* ラベル：画面の px で置く（寄せても同じ大きさ）。重なるもの・小さすぎるもの・OFF は出さない */}
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={LABEL_MASK}>
           {labels.map((l) => (
             <span
               key={l.id}
-              className="absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-semibold"
+              className="map-label-in absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-semibold"
               style={{
                 left: l.x,
                 top: l.y,
-                fontSize: parentOf[l.id] === null || parentOf[l.id] === undefined ? 13 : 11,
+                fontSize: l.font,
                 color: l.id === current ? "#ffffff" : "rgba(244,241,234,0.9)",
                 fontWeight: l.id === current ? 800 : 600,
                 textShadow: "0 1px 2px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7)",
