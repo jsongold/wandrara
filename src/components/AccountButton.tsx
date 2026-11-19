@@ -1,22 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import { withLocale } from "../lib/i18n/locale";
 import { messages } from "../lib/i18n/messages";
-import { createClient } from "../lib/supabase/client";
 import type { Locale } from "../lib/types";
+import { useSaves } from "./saves-context";
 
-// ログイン状態は client で取る（トップをサーバーで動的にしないため）。next は今の URL
+// ログイン状態は SavesProvider が持つ（getUser を二重に呼ばない）。トップをサーバーで動的にしないため client で取る。next は今の URL
 export function AccountButton({ locale, next, className, style }: { locale: Locale; next: string; className?: string; style?: CSSProperties }) {
-  const [signedIn, setSignedIn] = useState(false);
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => setSignedIn(!!data.user));
-    const { data } = supabase.auth.onAuthStateChange((_e, session) => setSignedIn(!!session?.user));
-    return () => data.subscription.unsubscribe();
-  }, []);
+  const { signedIn } = useSaves();
 
   const href = signedIn ? withLocale(locale, "/account") : withLocale(locale, `/login?next=${encodeURIComponent(next)}`);
   return (
