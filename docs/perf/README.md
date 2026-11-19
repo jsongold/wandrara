@@ -135,8 +135,9 @@ MS ごとに、計測の before / after と、分かったこと・残った課�
 | MS2a 反映の確認 | #103 | 公開・非公開が、一覧・詳細に許容時間内に反映されるか未確認（テストのみ） | 本番（`ff856fc`）、低影響の dest 1 件（`WR-ashinoko-020`、箱根芦ノ湖の宿）を `pnpm dest:status … draft` で非公開 → 元に戻した。**この経路は DB を直接書き、`revalidateTag` を呼ばない**ので、確かめたのは「寿命で追いつく最悪の遅れ」。非公開にしてから：検索つきの一覧 `/api/feed?q=`（`no-store`）と `/ja?area=ashinoko` の HTML は 1s で消え、CDN に 30 秒持たせる `/api/feed?area=ashinoko` は 13s で消えた（`s-maxage=30` の範囲）。詳細 `/ja/d/<slug>` は 14 分 55 秒で「見つからない」に変わった（`use cache: remote` の revalidate 900s のとおり。HTTP は 200 のまま画面が「見つからない」）。公開に戻してから：一覧は 3〜13s、詳細は約 67s で戻った（null の revalidate 60s のとおり）。公開の状態は元の値（`published_at`・`updated_at`・`approved_by`）に戻して、同じであることを確かめた | 許容時間（一覧は約 1 分、詳細は最大 15 分）の最悪側は守られている。API 経由（`/api/publications`。`revalidateTag(..., { expire: 0 })` で即時に反映されるはず）は、本番の API キー（`WANDRARA_API_KEY`）が手元に無く確かめていない。確かめるには、キーで登録した dest を `pnpm dest:publish <ref> --draft` で非公開にして、詳細が 1 分以内に消えることを見る（#103 に残す）。詳細の「見つからない」が HTTP 200 になる点は別途（残った課題） |
 | MS5 最終 | #106 | 発足時（上の暫定の基準値）、MS0〜MS4 の各行 | 本番（`ff856fc`、2026-11-19）、遅い 4G + CPU 4x、3 回の中央値：最初のカード 0.81s / LCP 2.82s / TTFB 0.19s / 初回 612KB・44 リクエスト（document 13KB・JS 231KB・画像 298KB）/ 10 枚スクロール込み 996KB / 2 回目 55KB（60 秒以上空けた再訪は 57.7KB）/ Save-Data の初回 432KB / 詳細：タップから dialog 0.10s。制限なし：最初のカード 0.34s・LCP 0.40s・2 回目 34KB。DPR 3：初回 778KB・10 枚込み 1,176KB・LCP 4.30s（遅い 4G）・Save-Data 548KB。海外のエミュレーション（RTT 200ms・3Mbps、**実測ではない**）：最初のカード 0.71s・LCP 1.91s。詳細は `baseline.md` 6 節 | 下の「発足時 → 最終」。ゴール 6 つのうち 5 つ達成、2 回目だけ未達（#143）。 |
 | 2 回目の再訪（60 秒以上） | #143 | 本番（`ff856fc`）：2 回目 55KB（60 秒以上空けた再訪は 57.7KB）。`/api/area-sheet` 23.0KB が 60 秒で切れて取り直し | ローカルの本番ビルド（`3cd2b8b` + この変更）、遅い 4G + CPU 4x、1 回、`PERF_REPEAT_DELAY_MS=65000`（再訪の前に 65 秒待つ）：2 回目 **76KB → 55KB**（「その他」21KB → 0KB。area-sheet は 304 で本文なし）。`curl` で `If-None-Match` つきは 304・0 バイト（`W/` つきも 304） | ローカルは CDN の圧縮・キャッシュが無く document 19KB・先読み RSC 36KB と本番（13KB・20KB）より大きいので、絶対値ではなく差（-21KB）で見る。本番の見込み：57.7KB - 23KB + 条件付き取得 約 0.5KB = 約 35KB。**本番 CDN が `If-None-Match` を 304 で返すかは未確認**（preview・本番へのデプロイをしていないため）。デプロイ後に `PERF_REPEAT_DELAY_MS=65000 pnpm perf https://wandrara.vercel.app` で確認する |
+| #143 本番の確認 | #143 #149 | 本番（`ff856fc`）：2 回目 55KB（60 秒以上空けた再訪は 57.7KB）。`/api/area-sheet` 23.0KB が 60 秒で切れて取り直し | 本番（`124463a`、2026-11-19）、`PERF_REPEAT_DELAY_MS=65000 pnpm perf https://wandrara.vercel.app`、遅い 4G + CPU 4x、3 回の中央値：**2 回目 33KB**（33〜34KB。document 13KB + 追加 RSC 20KB、その他 0KB。ゴール 50KB 以下を達成。60 秒以上空けた再訪で 57.7KB → 33KB、-24KB）/ 最初のカード 0.80s / LCP 2.81s / TTFB 0.19s / 初回 614KB・44 リクエスト / 10 枚スクロール込み 997KB / Save-Data の初回 434KB / 2 回目の最初のカード 0.49s・LCP 0.66s。CDN：`curl` で `/api/area-sheet?lang=ja` は `etag` つきの 200（`x-vercel-cache: MISS`）、`If-None-Match` が一致すると 304・本文なし（`x-vercel-cache: HIT`、`etag`・`cache-control: public, max-age=60` つき）、不一致の値は 200。デプロイ後 10 分の `vercel logs --level error` は 0 件 | CDN は `If-None-Match` を自分で 304 にして返すので、関数は呼ばれない。残る 2 回目は document 13KB と詳細の先読み RSC 20KB。MS5 最終に対する回帰はない（最初のカード 0.81s → 0.80s、LCP 2.82s → 2.81s、初回 612KB → 614KB、10 枚込み 996KB → 997KB、Save-Data 432KB → 434KB。いずれも誤差）。詳細：タップから dialog が 0.10s → 0.19s（0.12〜0.23s、先読み済み・ネットワーク 0）で、MS2c の記録と同じく遅く見える。#136・#138・#139 など別の変更も入っているため、この PR では切り分けない。また 1 回目の計測（制限なし 3 回 + 遅い 4G の 2 回目）で、詳細の dialog が 30 秒で出ず失敗した（再測定では出た。原因は未確認）。制限なしの条件は再測定していない。生データは commit していない |
 
-### 発足時 → 最終（本番 `ff856fc`、2026-11-19、390x844 DPR2、未ログイン、遅い 4G + CPU 4x、3 回の中央値）
+### 発足時 → 最終（本番 `ff856fc`、2026-11-19、390x844 DPR2、未ログイン、遅い 4G + CPU 4x、3 回の中央値。2 回目の訪問だけ #143 のあと `124463a` で再測定）
 
 | 指標 | 発足時 | ゴール | 最終 | 判定 |
 |---|---|---|---|---|
@@ -144,7 +145,7 @@ MS ごとに、計測の before / after と、分かったこと・残った課�
 | LCP | 16.5s | 4.0s 以下 | 2.82s | 達成 |
 | 初回の通信量 | 1,167KB | 700KB 以下 | 612KB | 達成 |
 | 10 枚スクロールまでの通信量（初回込み） | 1,601KB | 1,000KB 以下 | 996KB | 達成（余裕 4KB。DPR 3 は 1,176KB） |
-| 2 回目以降の訪問の通信量 | 200KB | 50KB 以下 | 55KB（60 秒以上空けると 57.7KB。60 秒以内の再訪は 33〜34KB） | **未達**（#143） |
+| 2 回目以降の訪問の通信量 | 200KB | 50KB 以下 | 33KB（60 秒以上空けた再訪。本番 `124463a`、#143 の ETag と 304 で、`ff856fc` の 57.7KB から -24KB） | 達成（#143） |
 | Save-Data の利用者の初回の通信量 | 1,167KB | 500KB 以下 | 432KB | 達成（DPR 3 は 548KB） |
 | 回帰上限：詳細を開くまで | 118ms（遅い回線 311ms） | 悪化しない | 0.10s | 維持（先読み済み・タップ後 0KB） |
 | 回帰上限：エリア選択の待ち | 開くのに待ちなし（props） | 悪化しない | 先に取る（MS2c）。本番のスモークで一覧が出る。`pnpm perf` では測っていない | 維持の見込み（本番のスモークで一覧が出ることだけ確認） |
@@ -153,7 +154,7 @@ MS ごとに、計測の before / after と、分かったこと・残った課�
 
 ### 残った課題
 
-- 2 回目以降の訪問が 50KB を超える：`/api/area-sheet` の取り直し → ETag の 304 で対応（#143、PR 参照）。本番での確認は未。残る 2 回目の中身は document 約 13KB と詳細の先読み RSC 約 20KB（毎回取り直し。先読み応答への ETag は Next の中の挙動を触るので、この PR では扱わない）
+- 2 回目以降の訪問：`/api/area-sheet` を ETag の 304 にして、本番（`124463a`）で 60 秒以上空けた再訪が 33KB になり、ゴール（50KB 以下）を達成した（#143）。残る 2 回目の中身は document 約 13KB と詳細の先読み RSC 約 20KB（毎回取り直し。先読み応答への ETag は Next の中の挙動を触るので扱っていない）
 - 計測の残り：件数 2 倍・5 倍の確認（Docker Desktop が停止で未実施）・ログイン時の Supabase 宛リクエスト・海外の実測・Server-Timing による内訳 → #144
 - 本番にだけある migration 3 本（`feat/quality-check-table` の `dest_quality_check`）が `supabase db push` を止める → #145
 - e2e の seed の slug `lakeside-stay` が本番に無い（`/ja/d/lakeside-stay` は 200 のまま「見つからない」）→ #146
