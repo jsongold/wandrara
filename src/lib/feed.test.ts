@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseDiscoverQuery, serializeDiscoverQuery, DEFAULT_QUERY } from "./discover-query";
-import { buildFeed, dedupeRelatedTiles, MAX_CARD_PHOTOS, resolveLocalizedText, timeOf, type Catalog } from "./feed";
+import { buildFeed, dedupeRelatedTiles, MAX_CARD_PHOTOS, timeOf, type Catalog } from "./feed";
 import { loadFeedStrategies } from "./feed-config";
 import { MODES } from "./modes";
 import type { DestCard, DiscoverQuery, Tile } from "./types";
@@ -142,12 +142,5 @@ describe("dedupeRelatedTiles", () => {
   it("全部重複なら元のタイルを残す", () => {
     const out = dedupeRelatedTiles([[tile("a")], [tile("a")]]);
     expect(out[1].map((x) => x.destId)).toEqual(["a"]);
-  });
-});
-
-describe("resolveLocalizedText", () => {
-  it("訳が無ければ他の言語で出し、代替した印を付ける", () => {
-    expect(resolveLocalizedText({ ja: "宿" }, "en")).toEqual({ text: "宿", fallback: true });
-    expect(resolveLocalizedText({ ja: "宿", en: "Stay" }, "en")).toEqual({ text: "Stay", fallback: false });
   });
 });

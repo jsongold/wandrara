@@ -1,6 +1,7 @@
 // 建物・日帰り温泉・まちで共通の details の部品（zod）。値の形は docs/proposals/web-output-building-hotspring-village.html
 import { z } from "zod";
-import { cautionSchema, currencySchema, dateSchema, localizedTextSchema, timeSchema } from "./accommodation/details.ts";
+import { cautionSchema, currencySchema, dateSchema, timeSchema } from "./accommodation/details.ts";
+import { localizedTextSchema } from "./i18n/localized.ts";
 import { AUDIENCES } from "./vocab/building.ts";
 
 const nonneg = z.number().nonnegative();

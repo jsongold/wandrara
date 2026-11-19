@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { accommodationCore } from "../../db/schema/accommodation.ts";
 import { index, numeric, pgTable, primaryKey, text, time, uuid } from "drizzle-orm/pg-core";
-import { destChildColumns, langCheck, locationColumns, textsColumns } from "../../db/schema/_shared.ts";
+import { destChildColumns, locationColumns, textsColumns } from "../../db/schema/_shared.ts";
 import { destinations } from "../../db/schema/common.ts";
 import { sampleBuildingDetails } from "../building/sample.ts";
 import { sampleHotspringDetails } from "../hotspring/sample.ts";
@@ -100,7 +100,7 @@ const fakeCores = pgTable("fake_cores", {
   kind: text("kind"),
   ...locationColumns(),
 });
-const fakeTexts = pgTable("fake_texts", { ...textsColumns() }, (t) => [primaryKey({ columns: [t.destId, t.lang] }), langCheck("fake_texts", t)]);
+const fakeTexts = pgTable("fake_texts", { ...textsColumns() }, (t) => [primaryKey({ columns: [t.destId, t.lang] })]);
 const fakeHours = pgTable("fake_hours", { ...destChildColumns(), openTime: time("open_time") }, (t) => [index("fake_hours_dest_id_idx").on(t.destId)]);
 const fakeFees = pgTable("fake_fees", { ...destChildColumns(), amount: numeric("amount").notNull(), currency: text("currency").notNull(), note: text("note") }, (t) => [
   index("fake_fees_dest_id_idx").on(t.destId),

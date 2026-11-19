@@ -1,5 +1,5 @@
 // 自然の詳細の画面に出す形。details（jsonb）を、ラベルと文字にしてから渡す。画面は並べるだけ（宿の view.ts と同じ作り）
-import type { LocalizedText } from "../accommodation/details.ts";
+import type { LocalizedText } from "../i18n/localized.ts";
 import { amountText, num, toHHMM } from "../accommodation/view.ts";
 import { resolveLocalizedText } from "../feed.ts";
 import { messages } from "../i18n/messages.ts";

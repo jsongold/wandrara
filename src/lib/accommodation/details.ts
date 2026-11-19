@@ -20,11 +20,11 @@ import {
   SMOKINGS,
   SOURCE_TYPES,
 } from "../vocab/accommodation.ts";
+import { localizedTextSchema } from "../i18n/localized.ts";
 
 // ---- 共通の値 ----
 
-// { ja: "...", en: "..." }。bundle.ts の localizedSchema と同じ形
-export const localizedTextSchema = z.record(z.string(), z.string());
+// LocalizedText（{ ja: "...", en: "..." }）は src/lib/i18n/localized.ts
 
 // "HH:MM"（00:00〜23:59）
 export const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "時刻は HH:MM（00:00〜23:59）");
@@ -246,7 +246,6 @@ export const detailsBaseSchema = z
     });
   });
 
-export type LocalizedText = z.infer<typeof localizedTextSchema>;
 export type Money = z.infer<typeof moneySchema>;
 export type Room = z.infer<typeof roomSchema>;
 export type Bath = z.infer<typeof bathSchema>;

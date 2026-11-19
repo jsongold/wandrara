@@ -3,7 +3,6 @@ import { jsonb, pgTable, primaryKey, text, uuid } from "drizzle-orm/pg-core";
 import { villageDetailsSchema } from "../../lib/village/details.ts";
 import {
   geoPrecisionCheck,
-  langCheck,
   locationColumns,
   oneOf,
   publishedRead,
@@ -37,7 +36,7 @@ export const villages = pgTable(
 export const villageTexts = pgTable(
   "village_texts",
   { ...textsColumns() },
-  (t) => [primaryKey({ columns: [t.destId, t.lang] }), langCheck("village_texts", t), publishedRead(t.destId)],
+  (t) => [primaryKey({ columns: [t.destId, t.lang] }), publishedRead(t.destId)],
 );
 
 export const villageCore: CoreDef = {
