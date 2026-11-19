@@ -4,6 +4,7 @@
 // 環境変数: PERF_RUNS（既定 3）/ PERF_CONDITIONS（既定 "none,slow4g-cpu4x"。overseas-emulated も選べる）/ PERF_OUT（既定 perf-out/result.json）
 //           PERF_DPR（既定 2。3 で DPR3）
 //           PERF_ONLY=saveData|tap で Save-Data の初回表示だけ・詳細のタップだけ測る（他を省く）
+//           PERF_REPEAT_DELAY_MS=65000 で、2 回目の訪問の前に待つ（max-age=60 のキャッシュが切れた再訪を測る。既定 0）
 //           PERF_WARMUP=0 で最初の「サーバー・画像 CDN を温める 1 回」を省く / PERF_SKIP_BUILD=1 で build を省く
 // 条件: Chromium・幅 390・DPR 2（PERF_DPR で変更）・モバイル。none = 制限なし、slow4g-cpu4x = 1.6Mbps・RTT 150ms・CPU 4x。
 // 1 回 = ブラウザキャッシュ空（cold）の context で 初回表示 → 10 枚スクロール → 2 回目の訪問（warm）。
@@ -23,6 +24,7 @@ const OUT = process.env.PERF_OUT ?? "perf-out/result.json";
 const PORT = Number(process.env.PERF_PORT ?? 3127);
 const DPR = Number(process.env.PERF_DPR ?? 2);
 const SCROLL_CARDS = 10;
+const REPEAT_DELAY_MS = Number(process.env.PERF_REPEAT_DELAY_MS ?? 0);
 const UA = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36";
 
 type Condition = { name: string; net: { latency: number; down: number; up: number } | null; cpu: number };
@@ -182,6 +184,7 @@ async function oneRun(base: string, c: Condition, browser: Browser): Promise<{ f
     // 詳細の先読み（/d/）が初回〜スクロールで使った転送バイト
     flat["detailPrefetch.bytes"] = [...s.reqs.values()].filter((r) => isPrefetch(r) && /\/d\//.test(r.url)).reduce((a, r) => a + r.bytes, 0);
 
+    if (REPEAT_DELAY_MS > 0) await sleep(REPEAT_DELAY_MS);
     s.setPhase("repeat");
     await s.page.evaluate(() => document.querySelector("[data-feed]")!.scrollTo(0, 0));
     await s.page.goto(base + PATHNAME, { waitUntil: "load", timeout: 120_000 });
