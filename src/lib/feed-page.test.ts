@@ -89,6 +89,56 @@ describe("cursor", () => {
   });
 });
 
+describe("点数の順（#156）", () => {
+  const plan = { order: "score" as const, algorithm: "order=score@1 primary=by-mode@2 secondary=related-any-kind@1 paging=keyset@1" };
+  const scored = (n: number, score: string) => ({ ...card(n, []), sort_key: score });
+
+  it("p_sort=score で呼び、続きは p_after_score に数で渡す。ラベルと algorithm は点数の順", async () => {
+    const first = fake({ cards: [scored(1, "0.9"), scored(2, "0.25")], has_more: true, total: 3, total_capped: false });
+    const p1 = await fetchFeedPage(first.db, "u", { ...args, limit: 2, plan });
+    expect(first.rpc).toHaveBeenCalledWith("feed_page", expect.objectContaining({ p_sort: "score", p_after_key: null, p_after_score: null }));
+    expect(p1.orderLabel).toBe("おすすめ順");
+    expect(p1.algorithm).toBe(plan.algorithm);
+
+    const second = fake({ cards: [scored(3, "1e-05")], has_more: false, total: null, total_capped: false });
+    await fetchFeedPage(second.db, "u", { ...args, cursor: p1.nextCursor, plan });
+    expect(second.rpc).toHaveBeenCalledWith("feed_page", expect.objectContaining({ p_sort: "score", p_after_key: null, p_after_score: 0.25, p_after_id: id(2) }));
+  });
+
+  it("新着順は戦略によらず作成日の順", async () => {
+    const { db, rpc } = fake({ cards: [], has_more: false, total: 0, total_capped: false });
+    const r = await fetchFeedPage(db, "u", { ...args, query: { ...DEFAULT_QUERY, sort: "fresh" }, plan });
+    expect(rpc).toHaveBeenCalledWith("feed_page", expect.objectContaining({ p_sort: "fresh", p_after_score: null }));
+    expect(r.orderLabel).toBe("新着順");
+  });
+
+  it("編集部の順の cursor は点数の順では使えない（並びの値の形が違う）", async () => {
+    const cursor = encodeCursor({ v: 1, q: feedQueryKey(DEFAULT_QUERY, "ja"), k: "2026-01-01T00:00:00+00:00", i: id(1), p: [] });
+    await expect(fetchFeedPage(fake({}).db, "u", { ...args, cursor, plan })).rejects.toThrow(FeedCursorError);
+    const scoreKey = feedQueryKey(DEFAULT_QUERY, "ja", "score");
+    expect(() => decodeCursor(encodeCursor({ v: 1, q: scoreKey, k: "2026-01-01T00:00:00+00:00", i: id(1), p: [] }), scoreKey, "score")).toThrow(FeedCursorError);
+  });
+});
+
+describe("dbFeedPlan", () => {
+  it("並びが editorial か score で、メイン・関連タイルが既定なら DB 版", async () => {
+    const { loadFeedStrategies } = await import("./feed-config");
+    const { dbFeedPlan } = await import("./feed-page");
+    expect(dbFeedPlan(loadFeedStrategies({}))?.order).toBe("editorial");
+    expect(dbFeedPlan(loadFeedStrategies({ order: "score" }))).toEqual({
+      order: "score", algorithm: "order=score@1 primary=by-mode@2 secondary=related-any-kind@1 paging=keyset@1",
+    });
+  });
+
+  it("関連タイルを差し替えているときは点数の順を選べず、編集部の順の全件版になる", async () => {
+    const { loadFeedStrategies } = await import("./feed-config");
+    const { dbFeedPlan } = await import("./feed-page");
+    const s = loadFeedStrategies({ order: "score", secondary: "related-other-mode" });
+    expect(s.id.startsWith("order=editorial@1 ")).toBe(true);
+    expect(dbFeedPlan(s)).toBeNull();
+  });
+});
+
 describe("dbFeedApplies", () => {
   it("既定の 3 戦略だけ DB 版。差し替えているときは buildFeed に分岐する", async () => {
     const { loadFeedStrategies } = await import("./feed-config");
