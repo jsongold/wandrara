@@ -228,7 +228,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
               <section
                 aria-label={item.name}
                 data-testid="area-story-peek"
-                className="filter-mark-in absolute inset-x-0 bottom-0 z-[4] flex flex-col gap-3 rounded-t-3xl bg-[#1b1b19] px-5 pb-8 pt-5"
+                className="filter-mark-in absolute inset-x-0 bottom-0 z-[4] flex max-h-[85%] flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-3xl bg-[#1b1b19] px-5 pb-8 pt-5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-col gap-1">
@@ -245,7 +245,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                     <Icon name="close" />
                   </button>
                 </div>
-                <span aria-hidden="true" className="block h-36 w-full rounded-2xl" style={photo(item.color)} />
+                <span aria-hidden="true" className="block h-36 w-full flex-none rounded-2xl" style={photo(item.color)} />
                 <p className="m-0 text-sm leading-relaxed text-white/90">{item.note}</p>
                 {item.pr && <span className="self-start rounded border border-white/60 px-1.5 py-0.5 text-[10px] font-semibold">{m.pr}</span>}
               </section>
