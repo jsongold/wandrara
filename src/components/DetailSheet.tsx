@@ -14,6 +14,7 @@ import { SheetBarContext, SheetCloseContext } from "./sheet-context";
 const CLOSE_DISTANCE = 120; // これ以上引き下げたら閉じる（px）
 const FLICK_SPEED = 0.6; // これより速く下へ払ったら、短くても閉じる（px/ms）
 const FLICK_MIN = 30; // 払って閉じるときの最低の距離（px）
+const FLICK_STALE_MS = 100; // 最後の動きからこれ以上止まっていたら、払ったとは見なさない（ms）
 const LOCK_SLOP = 8; // 縦か横かを決めるまでの動き（px）
 const SOLID_AT = 340; // ここまでスクロールしたらバーに背景を付ける（写真 420px の下の方）
 const CLOSE_MS = 320; // globals.css の --sheet-close-ms と合わせる
@@ -93,9 +94,18 @@ export function DetailSheet({ children, label }: { children: ReactNode; label?: 
     setDragging(false);
     if (!d || d.axis !== "y") return;
     const y = dragYRef.current;
-    if (y > CLOSE_DISTANCE || (y > FLICK_MIN && d.v > FLICK_SPEED)) close();
+    // 引いてから止めて離したときは、止まる前の速さを使わない（e.timeStamp と performance.now は同じ基準）
+    const flick = performance.now() - d.lastT < FLICK_STALE_MS && d.v > FLICK_SPEED;
+    if (y > CLOSE_DISTANCE || (y > FLICK_MIN && flick)) close();
     else moveTo(0);
   }, [close, moveTo]);
+
+  // 引くのをやめて元に戻す（2 本目の指が触れた＝ピンチなど、閉じる操作ではない）
+  const cancelDrag = useCallback(() => {
+    const d = drag.current;
+    drag.current = null;
+    if (d?.axis === "y") { setDragging(false); moveTo(0); }
+  }, [moveTo]);
 
   // 指の動き。本文がいちばん上で、最初の動きが下向きの縦なら、パネルを指について動かす。
   // 横なら写真の切り替え（PhotoCarousel の横スクロール）に任せる。
@@ -106,13 +116,15 @@ export function DetailSheet({ children, label }: { children: ReactNode; label?: 
     const body = scroller.current;
     if (!el || !body) return;
     function onStart(e: TouchEvent) {
-      if (e.touches.length !== 1 || closing) return;
+      if (e.touches.length !== 1) { cancelDrag(); return; }
+      if (closing) return;
       const t = e.touches[0];
       drag.current = { x: t.clientX, y: t.clientY, axis: null, lastY: t.clientY, lastT: e.timeStamp, v: 0 };
     }
     function onMove(e: TouchEvent) {
       const d = drag.current;
       if (!d || !body) return;
+      if (e.touches.length !== 1) { cancelDrag(); return; }
       const t = e.touches[0];
       const dx = t.clientX - d.x, dy = t.clientY - d.y;
       if (d.axis === null) {
@@ -137,7 +149,7 @@ export function DetailSheet({ children, label }: { children: ReactNode; label?: 
       el.removeEventListener("touchend", release);
       el.removeEventListener("touchcancel", release);
     };
-  }, [closing, moveTo, release]);
+  }, [cancelDrag, closing, moveTo, release]);
 
   // マウスではバーの空いているところ（名前の上も）を掴んで引く。
   // 名前は portal でバーに差し込むので React のイベントはバーを通らない。パネルで受けて DOM の位置で見分ける
