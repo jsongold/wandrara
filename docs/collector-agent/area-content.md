@@ -45,6 +45,7 @@ pnpm import:bundle <bundle.json> --area-local=src/lib/area-local
 ```
 - `--dry-run` は `dry-run: エリアの中身 <region_id>：products N / ... を確認した` が出れば通っている。
 - `--area-local=<dir>` は同じ検証をしてから、`<dir>/<region_id>.json` を画面が読む形（camelCase）で書く（あれば上書き）。API は呼ばない。`--dry-run` と一緒には使えない。
+- この JSON を読む画面（`src/lib/area-highlights.ts` が `src/lib/area-local/<region_id>.json` を読む）は、試作のブランチ `proto/area-purchase`（#113）にある。main ではまだ画面に出ない。試作のブランチの worktree で `--area-local=src/lib/area-local` を使う。新しいエリアは area-highlights.ts の読み込みにも足す（#114 で DB から取る形に替える）。
 - `--dry-run` も `--area-local` も無いと、`area_content` のある bundle は送らずに止まる（まだ DB に送れない）。
 
 ## 報告

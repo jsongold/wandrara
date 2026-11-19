@@ -3,6 +3,7 @@
 //   環境変数 WANDRARA_API_URL / WANDRARA_API_KEY（API を呼ぶときだけ）
 //   --dry-run: 検証と写真の読み込みまで。API は呼ばない
 //   --area-local=<dir>: 検証した area_content を <dir>/<region_id>.json（画面が読む形）に書く。API は呼ばない
+//     読む画面（area-highlights.ts）は試作のブランチ proto/area-purchase（#113）にあり、この変更には含めない
 //   area_content のある bundle は、まだ API に送れない（表は MS1 #114 で作る）。--dry-run か --area-local で使う
 //   --parallel: 写真の読み込み・アップロードと dest の登録を同時に 6 つ（=N なら N）まで走らせる。無ければ 1 つずつ
 
