@@ -315,7 +315,7 @@ function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           {!o.online && (
             <a href={mapsUrl(o)} target="_blank" rel="noopener" aria-label={m.openMapOf(o.shopName)} title={m.openMapOf(o.shopName)} className={ICON_BTN}>
               <Icon name="pin" size={18} />
@@ -326,8 +326,8 @@ function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
               <Icon name="external" size={18} />
             </a>
           )}
-          <button type="button" disabled aria-label={`${m.buyHere}（${m.buyHereSoon}）`} title={`${m.buyHere}（${m.buyHereSoon}）`} className={`${ICON_BTN} ml-auto cursor-not-allowed opacity-50`}>
-            <Icon name="bag" size={18} />
+          <button type="button" disabled aria-label={`${m.buyHere}（${m.buyHereSoon}）`} title={`${m.buyHere}（${m.buyHereSoon}）`} className={`${ICON_BTN} cursor-not-allowed opacity-50`}>
+            <Icon name="wallet" size={18} />
           </button>
         </div>
       </div>

@@ -25,7 +25,7 @@ const PATHS: Record<string, string> = {
   "chevron-down": "M6 9l6 6 6-6",
   external: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
   plus: "M12 5v14M5 12h14",
-  bag: "M5 8h14l-1.2 12H6.2zM9 8V6.5a3 3 0 0 1 6 0V8",
+  wallet: "M4 7a2 2 0 0 1 2-2h11v3M4 7v11a2 2 0 0 0 2 2h14V8H6a2 2 0 0 1-2-1zM16 13.5h2",
 };
 
 export function Icon({ name, size = 20, className }: { name: string; size?: number; className?: string }) {
