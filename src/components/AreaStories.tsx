@@ -254,7 +254,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                     type="button"
                     onClick={closePeek}
                     aria-label={common.close}
-                    className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl border border-white/[0.14] bg-white/[0.08] text-white"
+                    className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl border-0 bg-white/[0.08] text-white"
                   >
                     <Icon name="close" />
                   </button>
@@ -296,7 +296,7 @@ export function mapsUrl(o: Pick<HighlightOffer, "shopName" | "address">): string
 }
 
 // 行動ボタンはアイコンだけの角丸の四角（アプリ全体のボタンと同じ形）
-const ICON_BTN = "flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-white/[0.14] bg-white/[0.08] text-white";
+const ICON_BTN = "flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-white/[0.08] text-white";
 
 function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
   const where = o.online ? m.online : o.address;
