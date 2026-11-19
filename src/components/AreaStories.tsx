@@ -288,6 +288,12 @@ function PeekShops({ item, m }: { item: HighlightItem; m: HM }) {
   );
 }
 
+// Google マップで店を開く（Maps URLs。API キーは要らない）。MS1 で place_id を持てば query_place_id も付ける
+export function mapsUrl(o: Pick<HighlightOffer, "shopName" | "address">): string {
+  const q = [o.shopName, o.address].filter(Boolean).join(" ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+}
+
 function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
   const where = o.online ? m.online : o.address;
   const when = [o.hours, o.closed && m.closedOn(o.closed)].filter(Boolean).join(" · ");
@@ -314,6 +320,17 @@ function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
             className="flex h-10 flex-1 items-center justify-center gap-1 rounded-xl border border-white/30 text-[13px] font-semibold text-white no-underline"
           >
             {m.toShopSite} <span aria-hidden="true">↗</span>
+          </a>
+        )}
+        {!o.online && (
+          <a
+            href={mapsUrl(o)}
+            target="_blank"
+            rel="noopener"
+            aria-label={m.openMapOf(o.shopName)}
+            className="flex h-10 w-12 flex-none items-center justify-center rounded-xl border border-white/30 text-white"
+          >
+            <Icon name="pin" size={18} />
           </a>
         )}
         <button type="button" disabled title={m.buyHereSoon} className="h-10 flex-1 rounded-xl border-0 text-[13px] font-semibold" style={{ background: "rgba(244,241,234,0.35)", color: "#141413" }}>

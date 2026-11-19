@@ -61,3 +61,13 @@ describe("丸の列", () => {
     expect(renderToStaticMarkup(<AreaStories locale="ja" area="all" areaLabel="" groups={[]} />)).toBe("");
   });
 });
+
+describe("Google マップ", () => {
+  it("店名と住所で検索する URL を作る", async () => {
+    const { mapsUrl } = await import("./AreaStories");
+    expect(mapsUrl({ shopName: "釜鶴ひもの店", address: "熱海市銀座町10-18" })).toBe(
+      "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent("釜鶴ひもの店 熱海市銀座町10-18"),
+    );
+    expect(mapsUrl({ shopName: "店", address: null })).toBe("https://www.google.com/maps/search/?api=1&query=%E5%BA%97");
+  });
+});
