@@ -2,6 +2,7 @@
 // メイン・関連タイルは buildFeed の既定（primary=by-mode・secondary=related-any-kind）と同じ。並びは editorial（buildFeed と同じ）か score（#156。DB にだけある点数）。
 // それ以外の戦略に差し替えている間は buildFeed を使うこと（dbFeedPlan が null）。
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { loadCarouselStrategy, storiesAreaOf, type CarouselEntry, type CarouselRegion } from "./carousel";
 import { env, photoUrl, supabase } from "./data";
 import { dedupeRelatedTiles, kindLabelOf, MAX_CARD_PHOTOS, resolveLocalizedText, type Strategies } from "./feed";
 import { messages } from "./i18n/messages";
@@ -19,6 +20,7 @@ export const FEED_ALGORITHM = `order=editorial@1 ${DB_REST} ${PAGING}`;
 // 関連タイルは全種類から選ぶ（related-any-kind）
 const ALL_CORE_TYPES: string[] = Object.values(MODES).flat();
 
+// carousel の段は DB の後に TS で組むので、ここでは見ない（どの carousel 戦略でも DB 版を使える）
 export type DbOrder = "editorial" | "score";
 // DB 版で出すときの並びと、表示の記録に付ける algorithm
 export type DbFeedPlan = { order: DbOrder; algorithm: string };
@@ -56,18 +58,23 @@ export class FeedCursorError extends Error {
 
 // 条件の同一性。cursor と結果に入れ、別の条件の cursor・結果を取り違えない。
 // 点数の順は並びの値の形が違う（時刻でなく数）ので、別の条件として扱う（戦略を切り替えた直後の古い cursor を読まない）
-export function feedQueryKey(query: DiscoverQuery, locale: Locale, order: DbOrder = "editorial"): string {
+// carouselId：カルーセルの戦略（例：carousel=stories-first-once@1）。戦略が変わったら古い cursor を query-mismatch にして、
+// 先頭から取り直させる（並べ方と同じ。続きのページだけ新しい戦略で、記録には古い戦略が付くのを防ぐ）
+export function feedQueryKey(query: DiscoverQuery, locale: Locale, order: DbOrder = "editorial", carouselId?: string): string {
   const key = [locale, query.mode, query.area, query.cat, query.sort, query.q];
-  return JSON.stringify(dbSortOf(query, order) === "score" ? [...key, "score"] : key);
+  const withOrder = dbSortOf(query, order) === "score" ? [...key, "score"] : key;
+  return JSON.stringify(carouselId ? [...withOrder, carouselId] : withOrder);
 }
 
 // ---- cursor ----
 
 // k：最後のカードの並びの値（DB が返した文字列をそのまま戻す）、i：その dest_id、p：その最後のカードに出した関連タイルの destId
 // （次のページの最初のカードの重複の間引きに使う。これで、ページを順にたどった結果は buildFeed の全件の結果と一致する）
-type Cursor = { v: 1; q: string; k: string; i: string; p: string[] };
+// a：最後のカードのエリアの一言のエリア（無ければ null）。carousel の戦略が「前のカードと同じエリアなら出さない」を決めるのに使う。a の無い古い cursor も受ける
+type Cursor = { v: 1; q: string; k: string; i: string; p: string[]; a?: string | null };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const AREA = /^[\w-]{1,64}$/;
 const KEY = /^(-infinity|\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}(:?\d{2})?)?)$/;
 // 点数の順の並びの値（double precision を DB が文字にしたもの）
 const SCORE_KEY = /^-?\d+(\.\d+)?(e[+-]?\d+)?$/i;
@@ -84,7 +91,8 @@ export function decodeCursor(raw: string, queryKey: string, sort: DbSort = "edit
     throw new FeedCursorError("invalid");
   }
   const ok = c && c.v === 1 && typeof c.q === "string" && typeof c.k === "string" && typeof c.i === "string" && UUID.test(c.i) &&
-    Array.isArray(c.p) && c.p.length <= MAX_TILES && c.p.every((x) => typeof x === "string" && UUID.test(x));
+    Array.isArray(c.p) && c.p.length <= MAX_TILES && c.p.every((x) => typeof x === "string" && UUID.test(x)) &&
+    (c.a === undefined || c.a === null || (typeof c.a === "string" && AREA.test(c.a)));
   if (!ok) throw new FeedCursorError("invalid");
   // 条件の違いを並びの値の形より先に見る。並べ方が変わった直後の古い cursor は値の形も違うが、query-mismatch（409）にして先頭から取り直させる
   if (c.q !== queryKey) throw new FeedCursorError("query-mismatch");
@@ -97,7 +105,9 @@ export function decodeCursor(raw: string, queryKey: string, sort: DbSort = "edit
 type PhotoRow = { storage_key: string; license: string | null; credit: string | null };
 type RegionNames = { region_name: LocalizedText | null; parent_region_name: LocalizedText | null };
 type TileRow = RegionNames & { dest_id: string; slug: string; name: LocalizedText | null; photo: PhotoRow | null };
+// region_id・parent_region_id は 20261119140000 から。入る前の DB では無い（カルーセルのエリアの一言を出さないだけ）
 type CardRow = RegionNames & {
+  region_id?: string | null; parent_region_id?: string | null;
   dest_id: string; core_type: string; slug: string; name: LocalizedText | null; photos: PhotoRow[]; sort_key: string; tiles: TileRow[];
 };
 type RpcResult = { cards: CardRow[]; has_more: boolean; total: number | null; total_capped: boolean };
@@ -124,15 +134,24 @@ function toTile(row: TileRow, baseUrl: string, locale: Locale): Tile {
   };
 }
 
+// カードの地区とその親（カルーセルのエリアの一言を引く順）
+function regionsOf(c: CardRow, locale: Locale): CarouselRegion[] {
+  const out: CarouselRegion[] = [];
+  if (c.region_id) out.push({ id: c.region_id, name: t(c.region_name, locale) });
+  if (c.parent_region_id) out.push({ id: c.parent_region_id, name: t(c.parent_region_name, locale) });
+  return out;
+}
+
 // ---- 取得 ----
 
-export type FeedPageArgs = { query: DiscoverQuery; locale: Locale; cursor?: string | null; limit?: number; plan?: DbFeedPlan };
+// carousel：カルーセルに何を並べるか（既定は環境変数 CAROUSEL_STRATEGY）
+export type FeedPageArgs = { query: DiscoverQuery; locale: Locale; cursor?: string | null; limit?: number; plan?: DbFeedPlan; carousel?: CarouselEntry };
 
 export async function fetchFeedPage(db: SupabaseClient, baseUrl: string, args: FeedPageArgs): Promise<FeedPageResult> {
-  const { query, locale } = args;
+  const { query, locale, carousel = loadCarouselStrategy() } = args;
   const plan = args.plan ?? EDITORIAL_PLAN;
   const sort = dbSortOf(query, plan.order);
-  const queryKey = feedQueryKey(query, locale, plan.order);
+  const queryKey = feedQueryKey(query, locale, plan.order, carousel.id);
   const cursor = args.cursor ? decodeCursor(args.cursor, queryKey, sort) : null;
   const limit = Math.min(Math.max(Math.trunc(args.limit ?? FEED_PAGE_SIZE), 1), FEED_PAGE_MAX);
 
@@ -155,6 +174,8 @@ export async function fetchFeedPage(db: SupabaseClient, baseUrl: string, args: F
 
   const m = messages(locale).home;
   const tiles = dedupeRelatedTiles(res.cards.map((c) => c.tiles.map((x) => toTile(x, baseUrl, locale))), MAX_TILES, 1, cursor?.p);
+  const regions = res.cards.map((c) => regionsOf(c, locale));
+  const items = carousel.run(regions.map((r, i) => ({ tiles: tiles[i], regions: r })), { locale, prevArea: cursor?.a ?? null });
   const cards: FeedCard[] = res.cards.map((c, i) => ({
     key: c.dest_id,
     destId: c.dest_id,
@@ -164,16 +185,16 @@ export async function fetchFeedPage(db: SupabaseClient, baseUrl: string, args: F
     relLabel: m.relNearby,
     photos: c.photos.slice(0, MAX_CARD_PHOTOS).map((p) => toPhoto(baseUrl, p)),
     href: `/${locale}/d/${c.slug}`,
-    tiles: tiles[i],
+    carousel: items[i],
   }));
   const last = res.cards.at(-1);
   return {
     cards,
     orderLabel: sort === "fresh" ? m.orderFresh : sort === "score" ? m.orderScore : m.orderEditorial,
-    algorithm: plan.algorithm,
+    algorithm: `${plan.algorithm} ${carousel.id}`,
     emptyReason: cards.length === 0 && !cursor ? "no-match" : null,
     queryKey,
-    nextCursor: res.has_more && last ? encodeCursor({ v: 1, q: queryKey, k: last.sort_key, i: last.dest_id, p: tiles.at(-1)!.map((x) => x.destId) }) : null,
+    nextCursor: res.has_more && last ? encodeCursor({ v: 1, q: queryKey, k: last.sort_key, i: last.dest_id, p: tiles.at(-1)!.map((x) => x.destId), a: storiesAreaOf(regions.at(-1)!, locale)?.id ?? null }) : null,
     total: cursor ? null : res.total,
     totalIsLowerBound: !cursor && res.total_capped,
   };

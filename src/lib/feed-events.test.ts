@@ -38,6 +38,16 @@ describe("clickEventOf", () => {
     expect(clickEventOf({ tileDestId: "bath", tilePosition: "0" }, card))
       .toEqual({ name: "tile_click", destId: "bath", position: 0, fromDestId: "inn" });
   });
+  it("stories_click の地区は、条件の area（全国など）で上書きされない", () => {
+    const got: FeedEventRecord[] = [];
+    setFeedEventSink((r) => got.push(r));
+    trackFeedEvent(ctx, clickEventOf({ tileDestId: null, tilePosition: "0", storiesArea: "atami" }, card)!);
+    expect(got[0]).toMatchObject({ name: "stories_click", storiesArea: "atami", area: "all" });
+  });
+  it("Stories のボタンは stories_click（エリアとカルーセルの中の位置）", () => {
+    expect(clickEventOf({ tileDestId: null, tilePosition: "0", storiesArea: "atami" }, card))
+      .toEqual({ name: "stories_click", storiesArea: "atami", position: 0, fromDestId: "inn" });
+  });
   it("それ以外のリンクは card_click", () => {
     expect(clickEventOf({ tileDestId: null, tilePosition: null }, card)).toEqual({ name: "card_click", destId: "inn", position: 1 });
   });

@@ -425,6 +425,9 @@ const ja = {
   },
   highlights: {
     label: (area: string) => `${area}で知っておきたいこと`,
+    // カルーセルのエリアの一言の 1 枚
+    tile: (area: string) => `${area}の一言`,
+    tileSub: (n: number) => `${n} 件`,
     kind: { meisan: "名産", tokusan: "特産", shun: "旬", benri: "便利", ninki: "人気" },
     open: (kind: string, n: number) => `${kind}を見る（${n} 件）`,
     position: (area: string, i: number, n: number) => `${area} · ${i} / ${n}`,
@@ -863,6 +866,8 @@ const en: Messages = {
   },
   highlights: {
     label: (area: string) => `Good to know in ${area}`,
+    tile: (area: string) => `${area} highlights`,
+    tileSub: (n: number) => (n === 1 ? "1 item" : `${n} items`),
     kind: { meisan: "Local food", tokusan: "Specialty", shun: "In season", benri: "Handy", ninki: "Popular" },
     open: (kind: string, n: number) => `See ${kind} (${n})`,
     position: (area: string, i: number, n: number) => `${area} · ${i} / ${n}`,

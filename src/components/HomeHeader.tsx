@@ -2,7 +2,7 @@
 
 // home-header：トップのヘッダー。左にタイトルと今のエリア、右にアカウント（ユーザーのアイコン）
 // 一覧をスクロールしたら畳む（collapsed）：タイトルは上へ抜けて見えなくなり、エリアの名前が左へ寄る。いちばん上に戻ると元に戻る
-// area はエリアの名前の場所に置く物（エリアの一言があればそれを開くボタン、無ければ名前だけ）
+// area はエリアの名前の場所に置く物（今のエリアの名前）
 import type { CSSProperties, ReactNode } from "react";
 import { AccountButton } from "./AccountButton";
 

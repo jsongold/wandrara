@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { areaHighlights, HIGHLIGHT_KINDS, inSeason, type HighlightGroup, type HighlightItem } from "@/lib/area-highlights";
-import { AreaStories } from "./AreaStories";
+import { messages } from "@/lib/i18n/messages";
+import { NearbySuggestions } from "../NearbySuggestions";
 import { nextPos, prevPos } from "./story-nav";
 
 const item = (id: string): HighlightItem => ({ id, type: "product", name: id, note: "", description: "", color: "#000", photo: null, season: null, offers: [] });
@@ -54,14 +55,21 @@ describe("ストーリーの送り", () => {
   });
 });
 
-describe("丸の列", () => {
-  it("項目ごとに丸と項目名を出す", () => {
-    const h = renderToStaticMarkup(<AreaStories locale="ja" area="atami" areaLabel="熱海" groups={groups} />);
-    expect(h).toContain("熱海で知っておきたいこと");
-    for (const k of ["名産", "便利"]) expect(h).toContain(`>${k}</span>`);
+describe("カルーセルのエリアの一言の 1 枚", () => {
+  const stories = () => {};
+  const dest = { type: "dest" as const, tile: { destId: "d1", label: "宿", sub: "", photo: null, href: "/ja/d/d1" } };
+  it("エリア名と件数、項目名を出し、押した記録のための印を付ける", () => {
+    const h = renderToStaticMarkup(<NearbySuggestions title="近く" items={[{ type: "stories", area: "atami", label: "熱海" }, dest]} stories={stories} />);
+    expect(h).toContain("熱海の一言");
+    expect(h).toContain('data-stories-area="atami"');
+    expect(h).toContain('data-tile-position="0"');
+    expect(h).toContain('data-tile-position="1"');
+    for (const g of areaHighlights("atami", "ja").slice(0, 4)) expect(h).toContain(`>${messages("ja").highlights.kind[g.kind]}</span>`);
   });
-  it("候補が無ければ何も出さない", () => {
-    expect(renderToStaticMarkup(<AreaStories locale="ja" area="all" areaLabel="" groups={[]} />)).toBe("");
+  it("データの無いエリアでは 1 枚を出さない", () => {
+    const h = renderToStaticMarkup(<NearbySuggestions title="近く" items={[{ type: "stories", area: "hakone", label: "箱根" }, dest]} stories={stories} />);
+    expect(h).not.toContain("data-stories-area");
+    expect(h).toContain('data-tile-dest-id="d1"');
   });
 });
 

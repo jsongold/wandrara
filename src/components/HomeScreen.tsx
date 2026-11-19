@@ -21,7 +21,7 @@ import { Chip } from "./Chip";
 import { CurrentFilterDisplay } from "./CurrentFilterDisplay";
 import { HomeHeader } from "./HomeHeader";
 import { Icon } from "./icons";
-import { NearbySuggestions } from "./NearbySuggestions";
+import { NearbySuggestions, type StoriesOpener } from "./NearbySuggestions";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
 import { useScrolledAway } from "./use-scrolled-away";
@@ -143,7 +143,10 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
   const isStay = query.mode === "stay";
   const allCats: CategoryView[] = [{ id: "all", label: m.home.allCats, icon: "grid" }, ...categories];
   const currentArea = areaLabel ?? m.home.allAreas;
-  const highlights = areaHighlights(query.area, locale);
+  // カルーセルから開いたエリアの一言（押した 1 枚のカードの地区）。押した 1 枚にフォーカスを戻す。絞り込みが変わったら閉じる
+  const [storiesOpen, setStoriesOpen] = useState<{ area: string; label: string; trigger: HTMLElement; queryKey: string } | null>(null);
+  const stories: StoriesOpener = (area, label, trigger) => setStoriesOpen({ area, label, trigger, queryKey });
+  const storyGroups = storiesOpen && storiesOpen.queryKey === queryKey ? areaHighlights(storiesOpen.area, locale) : [];
 
   return (
     <div data-home className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
@@ -158,7 +161,7 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
       >
-        <FeedList key={feedKey} feed={feed} query={query} locale={locale} track={track} onAlgorithmChange={refreshFeed} />
+        <FeedList key={feedKey} feed={feed} query={query} locale={locale} track={track} onAlgorithmChange={refreshFeed} stories={stories} />
         {feed.cards.length === 0 && (
           <div className="flex flex-col items-center gap-3.5 px-8 pt-[180px] text-center">
             <Icon name="search" size={40} />
@@ -175,21 +178,20 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
         )}
       </div>
 
-      {/* Top bar。エリアの名前は、エリアの一言があればそれを開くボタン（全国・データの無いエリアでは名前だけ） */}
+      {/* Top bar */}
       <HomeHeader
         locale={locale}
         next={serializeDiscoverQuery(query, locale)}
         subtitle={`${feed.orderLabel} · ${m.home.demo}`}
         iconStyle={ICON_SOLID}
         collapsed={scrolledAway}
-        area={
-          highlights.length > 0 ? (
-            <AreaStories locale={locale} area={query.area} areaLabel={currentArea} groups={highlights} scrollRoot={feedRef} />
-          ) : (
-            <CurrentFilterDisplay label={query.area === "all" || currentArea === m.home.allAreas ? null : currentArea} className="min-w-0" />
-          )
-        }
+        area={<CurrentFilterDisplay label={query.area === "all" || currentArea === m.home.allAreas ? null : currentArea} className="min-w-0" />}
       />
+
+      {/* エリアの一言の全画面。カルーセルの 1 枚から開く */}
+      {storiesOpen && storyGroups.length > 0 && (
+        <AreaStories locale={locale} area={storiesOpen.area} areaLabel={storiesOpen.label} groups={storyGroups} returnFocus={storiesOpen.trigger} onClose={() => setStoriesOpen(null)} />
+      )}
 
       {/* Floating overlay */}
       {/* 横幅は画面の 80% まで、中央に置く */}
@@ -374,8 +376,8 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
 // 続きのリンクは検索エンジンがたどる普通の <a>（?after=cursor）。JS が動くときは押すと loadMore になり、失敗したときの再試行も兼ねる
 // 並べ方の切り替え（deploy）で続きの取得が先頭から取り直し、並べ方が変わったら、記録にはその並べ方を付け、
 // 画面全体（並びのラベルなど）はサーバーの描画を取り直してそろえる（onAlgorithmChange）
-function FeedList({ feed, query, locale, track, onAlgorithmChange }: {
-  feed: FeedPageResult; query: DiscoverQuery; locale: Locale; track: (e: FeedEvent, algo?: string) => void; onAlgorithmChange: () => void;
+function FeedList({ feed, query, locale, track, onAlgorithmChange, stories }: {
+  feed: FeedPageResult; query: DiscoverQuery; locale: Locale; track: (e: FeedEvent, algo?: string) => void; onAlgorithmChange: () => void; stories: StoriesOpener;
 }) {
   const m = messages(locale);
   const [pager] = useState(() => new FeedPager(feed, apiFetchPage(query, locale)));
@@ -406,7 +408,7 @@ function FeedList({ feed, query, locale, track, onAlgorithmChange }: {
   return (
     <>
       {s.cards.map((card, i) => (
-        <FeedCardView key={card.key} card={card} position={i} track={trackHere} />
+        <FeedCardView key={card.key} card={card} position={i} track={trackHere} stories={stories} />
       ))}
       {s.nextCursor && (
         <div ref={sentinel} className="flex flex-col items-center gap-1 px-4 pb-6 pt-2 text-center text-[13px] text-white/80 [overflow-anchor:none]">
@@ -435,7 +437,7 @@ const OFFSCREEN: CSSProperties = { contentVisibility: "auto", containIntrinsicSi
 // 半分以上見えたら 1 回だけ card_view を残す
 const VIEW_THRESHOLD = 0.5;
 
-function FeedCardView({ card, position, track }: { card: FeedCard; position: number; track: (e: FeedEvent) => void }) {
+function FeedCardView({ card, position, track, stories }: { card: FeedCard; position: number; track: (e: FeedEvent) => void; stories: StoriesOpener }) {
   const m = useMessages();
   const first = position === 0;
   const ref = useRef<HTMLElement>(null);
@@ -458,9 +460,13 @@ function FeedCardView({ card, position, track }: { card: FeedCard; position: num
 
   // Link は画面内の遷移のために preventDefault するので defaultPrevented では見ない。
   // スワイプの残りのクリックは PhotoCarousel が capture で stopPropagation するので、ここには来ない
+  // エリアの一言の 1 枚はリンクではなくボタン（data-stories-area）
   function onClick(e: MouseEvent<HTMLElement>) {
-    const a = (e.target as Element).closest("a");
-    const event = clickEventOf(a && { tileDestId: a.getAttribute("data-tile-dest-id"), tilePosition: a.getAttribute("data-tile-position") }, { destId, position });
+    const a = (e.target as Element).closest("a, [data-stories-area]");
+    const event = clickEventOf(
+      a && { tileDestId: a.getAttribute("data-tile-dest-id"), tilePosition: a.getAttribute("data-tile-position"), storiesArea: a.getAttribute("data-stories-area") },
+      { destId, position },
+    );
     if (event) track(event);
   }
 
@@ -480,7 +486,7 @@ function FeedCardView({ card, position, track }: { card: FeedCard; position: num
           <span className="text-[13px] text-white/90">{card.areaLabel}</span>
         </span>
       </PhotoCarousel>
-      <NearbySuggestions title={card.relLabel} tiles={card.tiles} />
+      <NearbySuggestions title={card.relLabel} items={card.carousel} stories={stories} />
     </article>
   );
 }

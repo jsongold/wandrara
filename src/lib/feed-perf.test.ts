@@ -47,10 +47,10 @@ describe("buildFeed（大きい catalog）", () => {
     const catalog = bigCatalog();
     const out = queries.map((q) => run(catalog, q));
     // 関連タイルが実際に出ていること（空のまま一致して見えるのを防ぐ）
-    expect(out[0].cards.some((c) => c.tiles.length > 0)).toBe(true);
+    expect(out[0].cards.some((c) => c.carousel.length > 0)).toBe(true);
     const hash = createHash("sha256").update(JSON.stringify(out)).digest("hex");
-    // 関連タイルを全種類にした（secondary=related-any-kind@1）ときに出力が変わったので更新した
-    expect(hash).toBe("0239b40ea5cb00713967766cada39184b047984811658b7e888c13beacb1b588");
+    // 関連タイルを全種類にした（secondary=related-any-kind@1）ときと、tiles を carousel（CarouselItem[]）にして algorithm に carousel 段を足したとき・既定を stories-first-once@1 にしたとき（いずれも中身は前と同じことを確かめた）に更新した
+    expect(hash).toBe("25183873c821df5a31f5f906364962aa31b6ae894dd57aedbb028bcc134bbaef");
   });
 
   it("5 つの条件を組み立てても遅くならない（変更前は約 3.6 秒。しきい値は余裕を持たせてある）", () => {
