@@ -6,7 +6,7 @@ import { cacheLife } from "next/cache";
 import { toAccommodationView, type AccommodationView } from "./accommodation/view";
 import { toBuildingView, type BuildingView } from "./building/view";
 import { toExperienceView, type ExperienceView } from "./experience/view";
-import { getCatalog, photoUrl } from "./data";
+import { getRegions, photoUrl } from "./data";
 import { toHotspringView, type HotspringView } from "./hotspring/view";
 import { areaLabel, resolveLocalizedText } from "./feed";
 import { coreLabels } from "./i18n/core-labels";
@@ -140,12 +140,12 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
           : [];
   const coreCols = [...new Set(["region_id", ...names(core.table, core.columns), ...extraCols])];
 
-  const [coreRes, textsRes, photosRes, placeRes, catalog, ...detailRes] = await Promise.all([
+  const [coreRes, textsRes, photosRes, placeRes, regions, ...detailRes] = await Promise.all([
     db.from(getTableName(core.table)).select(coreCols.join(", ")).eq("dest_id", id).maybeSingle(),
     db.from(getTableName(core.texts)).select("lang, name, summary").eq("dest_id", id),
     db.from("dest_photos").select("storage_key, license, credit, subject_key").eq("dest_id", id).order("sort"),
     db.from("dest_cards").select("lat, lng").eq("dest_id", id).maybeSingle(),
-    getCatalog(),
+    getRegions(),
     ...core.details.map((d) =>
       db.from(getTableName(d.table)).select(["id", ...names(d.table, d.columns)].join(", ")).eq("dest_id", id).order("sort"),
     ),
@@ -189,7 +189,7 @@ export async function getDestDetail(slug: string, locale: Locale): Promise<DestD
   return {
     id,
     title: resolveLocalizedText(pick("name"), locale).text,
-    areaLabel: areaLabel((coreRow?.region_id as string | null) ?? null, catalog.regions, locale),
+    areaLabel: areaLabel((coreRow?.region_id as string | null) ?? null, regions, locale),
     // 新しい画面の宿・体験・自然・建物・日帰り温泉・まちは種類（一棟貸し・ツアー・海岸…）を出す。ほかは今どおりコアの名前
     kindLabel: ((accommodation ?? experience ?? nature ?? building ?? hotspring ?? village) && coreLabels(core, locale).kindLabels[str("kind") ?? ""]) || coreLabels(core, locale).label,
     summary: resolveLocalizedText(pick("summary"), locale).text || null,

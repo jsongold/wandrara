@@ -6,7 +6,7 @@ import type { AreaTraits } from "./area-filter";
 import { resolveLocalizedText, type Catalog } from "./feed";
 import { selectAll } from "./supabase/select-all";
 import { MODES } from "./modes";
-import type { AreaGroupView, CategoryView, DestCard, Locale, LocalizedText, Mode, Photo } from "./types";
+import type { AreaGroupView, CategoryView, DestCard, Locale, LocalizedText, Mode, Photo, Region } from "./types";
 
 function env() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -40,15 +40,24 @@ export function photoUrl(baseUrl: string, storageKey: string): string {
   return `${baseUrl}/storage/v1/object/public/dest-photos/${storageKey}`;
 }
 
+// 地域だけ。詳細が地域名の解決に使う（全件の Catalog を読まずに済む）。getCatalog もこれを使うので読み込みは共有される
+export async function getRegions(): Promise<Region[]> {
+  "use cache";
+  cacheLife("minutes");
+  // regions は 1000 行を超える（Data API は黙って切る）のでページを送って読み切る
+  const rows = await selectAll<{ id: string; parent_id: string | null; name: LocalizedText; sort: number | null }>(
+    supabase(), "regions", "id, parent_id, name, sort", ["sort", "id"],
+  );
+  return rows.map((r) => ({ id: r.id, parentId: r.parent_id, name: r.name, sort: r.sort ?? 0 }));
+}
+
 export async function getCatalog(): Promise<Catalog> {
   "use cache";
   cacheLife("minutes");
   const { url } = env();
   const db = supabase();
   const [regions, categories, dests] = await Promise.all([
-    // regions は 1000 行を超える（Data API は黙って切る）のでページを送って読み切る
-    selectAll<{ id: string; parent_id: string | null; name: LocalizedText; sort: number | null }>(db, "regions", "id, parent_id, name, sort", ["sort", "id"])
-      .then((data) => ({ data, error: null }), (e: Error) => ({ data: null, error: e })),
+    getRegions().then((data) => ({ data, error: null }), (e: Error) => ({ data: null, error: e })),
     db.from("categories").select("id, parent_id, name, icon, sort").order("sort"),
     db.from("dest_cards").select("dest_id, core_type, slug, is_demo, created_at, published_at, region_id, name, summary, category_ids, photos"),
   ]);
@@ -60,7 +69,7 @@ export async function getCatalog(): Promise<Catalog> {
     url: photoUrl(url, p.storage_key), license: p.license, credit: p.credit, isDemo: false, placeholderSky: null, placeholderLand: null,
   });
   return {
-    regions: regions.data!.map((r) => ({ id: r.id, parentId: r.parent_id, name: r.name, sort: r.sort ?? 0 })),
+    regions: regions.data!,
     categories: categories.data.map((c) => ({ id: c.id, parentId: c.parent_id, name: c.name, icon: c.icon, sort: c.sort ?? 0 })),
     dests: (dests.data as DestCardRow[]).map((d): DestCard => ({
       id: d.dest_id, coreType: d.core_type, slug: d.slug, regionId: d.region_id, name: d.name ?? {}, summary: d.summary,
