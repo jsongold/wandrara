@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type CSSProperties, type FormEvent, type MouseEvent } from "react";
 import { areaHighlights } from "@/lib/area-highlights";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
 import { installFeedEventBeacon } from "@/lib/feed-event-beacon";
@@ -14,11 +14,10 @@ import { useMessages } from "@/lib/i18n/use-locale";
 import { SaveDataHint, useSaveData } from "@/lib/use-save-data";
 import { otherMode } from "@/lib/modes";
 import { areaSheetLoader, IDLE_AREA_SHEET } from "@/lib/area-sheet-client";
-import type { TraitView } from "@/lib/area-filter";
-import { cardTraitIds, orderBySuggest, suggestReason, type SuggestReason } from "@/lib/suggest";
 import type { CategoryView, DiscoverQuery, FeedCard, Locale, SortKey } from "@/lib/types";
 import { AreaMap } from "./AreaMap";
 import { AreaStories } from "./area-stories/AreaStories";
+import { BottomSheet, SheetHeader } from "./BottomSheet";
 import { Chip } from "./Chip";
 import { CurrentFilterDisplay } from "./CurrentFilterDisplay";
 import { HomeHeader } from "./HomeHeader";
@@ -26,11 +25,12 @@ import { Icon } from "./icons";
 import { NearbySuggestions, type StoriesOpener } from "./NearbySuggestions";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
+import { SuggestBar } from "./SuggestBar";
 import { useScrolledAway } from "./use-scrolled-away";
 
 // saveData：サーバーが決めた「通信量を抑える」（最初の描画に使う。以降はクライアントの値に従う）
 type Props = { locale: Locale; query: DiscoverQuery; feed: FeedPageResult; categories: CategoryView[]; areaLabel: string | null; saveData?: boolean };
-type Sheet = null | "area" | "filter" | "suggest";
+type Sheet = null | "area" | "filter";
 type AreaView = "list" | "map";
 
 const GLASS: CSSProperties = {
@@ -52,8 +52,8 @@ const sorts = (m: Messages): { id: SortKey; label: string }[] => [
 // トップのテキスト入力とフィルター。今は Off
 const SHOW_SEARCH_AND_FILTER = false;
 
-// 全画面フィード：1 画面にカード 1 枚と、その提案の理由。下のバーから提案の条件（エリアの特性）を選び、「提案」でまだ見ていない先を並べ替える（試し中）
-const FULLSCREEN_FEED = true;
+// 提案から始める Home（試し中）：これまでの Feed と下のアイコンを出さず、提案の入力バーだけを出す。「提案」で /[lang]/plan に移る
+const SUGGEST_HOME = true;
 
 // areaLabel：今のエリアの名前（サーバーが渡す。「すべてのエリア」・知らない id は null）。エリアの一覧・地図に要る地域と特性は、シートを開いたときに取る（MS2c）
 export function HomeScreen({ saveData = false, ...props }: Props) {
@@ -157,21 +157,6 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
   const [storiesOpen, setStoriesOpen] = useState<{ area: string; label: string; trigger: HTMLElement; queryKey: string } | null>(null);
   const stories: StoriesOpener = (area, label, trigger) => setStoriesOpen({ area, label, trigger, queryKey });
   const storyGroups = storiesOpen && storiesOpen.queryKey === queryKey ? areaHighlights(storiesOpen.area, locale) : [];
-  // 提案の条件：picked は当てたもの（作り直した FeedList の初期値にも使う）、draft はシートで選んでいる途中のもの
-  const [picked, setPicked] = useState<string[]>([]);
-  const [draft, setDraft] = useState<string[]>([]);
-  const applySuggest = useRef<((picked: string[]) => void) | null>(null);
-  const traits = areaData?.traits ?? null;
-  function openSuggest() {
-    loadAreaSheet();
-    setDraft(picked);
-    setSheet("suggest");
-  }
-  function onSuggest() {
-    setPicked(draft);
-    applySuggest.current?.(draft);
-    setSheet(null);
-  }
 
   return (
     <div data-home className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
@@ -182,11 +167,12 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
         data-feed-algorithm={feed.algorithm}
         data-feed-total={feed.total ?? undefined}
         data-feed-total-lower-bound={feed.totalIsLowerBound || undefined}
-        className={`absolute inset-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${FULLSCREEN_FEED ? "snap-y snap-mandatory overscroll-contain" : "pb-[120px]"}`}
+        className="absolute inset-0 overflow-y-auto pb-[120px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
+        hidden={SUGGEST_HOME}
       >
-        <FeedList key={feedKey} feed={feed} query={query} locale={locale} track={track} onAlgorithmChange={refreshFeed} stories={stories} onCardSeen={onCardSeen} fullscreen={FULLSCREEN_FEED} picked={picked} traits={traits} applyRef={applySuggest} />
+        <FeedList key={feedKey} feed={feed} query={query} locale={locale} track={track} onAlgorithmChange={refreshFeed} stories={stories} onCardSeen={onCardSeen} />
         {feed.cards.length === 0 && (
           <div className="flex flex-col items-center gap-3.5 px-8 pt-[180px] text-center">
             <Icon name="search" size={40} />
@@ -218,23 +204,10 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
         <AreaStories locale={locale} area={storiesOpen.area} areaLabel={storiesOpen.label} groups={storyGroups} returnFocus={storiesOpen.trigger} onClose={() => setStoriesOpen(null)} />
       )}
 
-      {/* 提案の入力バー（全画面フィードのとき。常に出ていて、押すと提案の条件のシートが開く） */}
-      {FULLSCREEN_FEED && (
-        <button
-          type="button"
-          onClick={openSuggest}
-          onPointerDown={loadAreaSheet}
-          className="absolute inset-x-3 bottom-[18px] z-[6] mx-auto flex h-[52px] max-w-[456px] cursor-pointer items-center gap-2.5 rounded-[18px] px-4 text-left text-[15px] text-white/90"
-          style={GLASS}
-        >
-          <Icon name="sparkle" size={18} className="flex-none" />
-          <span className="min-w-0 flex-auto truncate">{m.home.suggestBar}</span>
-        </button>
-      )}
-
       {/* Floating overlay */}
       {/* 横幅は画面の 80% まで、中央に置く */}
-      <div hidden={FULLSCREEN_FEED} className="absolute inset-x-0 bottom-[22px] z-[6] mx-auto flex w-[80%] flex-col gap-2">
+      {SUGGEST_HOME && <SuggestBar locale={locale} />}
+      <div hidden={SUGGEST_HOME} className="absolute inset-x-0 bottom-[22px] z-[6] mx-auto flex w-[80%] flex-col gap-2">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -321,48 +294,6 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
           </div>
         )}
       </div>
-
-      {/* 提案の条件のシート。条件（エリアの特性）だけを線のピルで出し、「提案」で当てる */}
-      {sheet === "suggest" && (
-        <BottomSheet label={m.home.suggestSheet} onClose={() => setSheet(null)}>
-          <SheetHeader title={m.home.suggestSheet} onClose={() => setSheet(null)} />
-          {areaSheet.status === "error" && (
-            <button type="button" onClick={loadAreaSheet} className="h-11 cursor-pointer self-start rounded-xl border border-white/40 bg-transparent px-[18px] text-sm text-white">
-              {m.home.moreFailed}
-            </button>
-          )}
-          {areaSheet.status !== "ready" && areaSheet.status !== "error" && <p role="status" className="m-0 text-[13px] text-white/70">{m.common.loading}</p>}
-          {traits && (traits.traits.length === 0 ? (
-            <p className="m-0 text-[13px] text-white/70">{m.home.suggestNone}</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {traits.traits.map((t) => {
-                const on = draft.includes(t.id);
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => setDraft((d) => (on ? d.filter((x) => x !== t.id) : [...d, t.id]))}
-                    className={`flex h-10 cursor-pointer items-center gap-1.5 rounded-full border bg-transparent px-3.5 text-[14px] ${on ? "border-[#f4f1ea] font-bold text-[#f4f1ea]" : "border-white/35 text-white/75"}`}
-                  >
-                    <Icon name={t.icon} size={16} />
-                    {t.label}
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={onSuggest}
-            disabled={!traits}
-            className="h-12 cursor-pointer rounded-[14px] border-0 bg-[#f4f1ea] text-[15px] font-bold text-[#141413] disabled:cursor-default disabled:opacity-50"
-          >
-            {m.home.suggestApply}
-          </button>
-        </BottomSheet>
-      )}
 
       {/* Area sheet */}
       {sheet === "area" && (
@@ -457,11 +388,8 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
 // 続きのリンクは検索エンジンがたどる普通の <a>（?after=cursor）。JS が動くときは押すと loadMore になり、失敗したときの再試行も兼ねる
 // 並べ方の切り替え（deploy）で続きの取得が先頭から取り直し、並べ方が変わったら、記録にはその並べ方を付け、
 // 画面全体（並びのラベルなど）はサーバーの描画を取り直してそろえる（onAlgorithmChange）
-// 全画面フィード（fullscreen）では、提案の条件（picked）で、見たカードまでを動かさずにその先を並べ替える。
-// 「提案」を押したときの今の並びと今見ているカードはここにしか無いので、当てる関数は applyRef に入れて渡す（押したときだけ呼ばれる）
-function FeedList({ feed, query, locale, track, onAlgorithmChange, stories, onCardSeen, fullscreen, picked, traits, applyRef }: {
+function FeedList({ feed, query, locale, track, onAlgorithmChange, stories, onCardSeen }: {
   feed: FeedPageResult; query: DiscoverQuery; locale: Locale; track: (e: FeedEvent, algo?: string) => void; onAlgorithmChange: () => void; stories: StoriesOpener; onCardSeen: (areaLabel: string) => void;
-  fullscreen: boolean; picked: string[]; traits: { traits: TraitView[]; byRegion: Record<string, string[]> } | null; applyRef: { current: ((picked: string[]) => void) | null };
 }) {
   const m = messages(locale);
   const [pager] = useState(() => new FeedPager(feed, apiFetchPage(query, locale)));
@@ -474,35 +402,6 @@ function FeedList({ feed, query, locale, track, onAlgorithmChange, stories, onCa
   }, [changed, onAlgorithmChange]);
   const sentinel = useRef<HTMLDivElement>(null);
   const idle = s.status === "idle";
-
-  // 提案：prefix は「提案」を押した時点で見終わっていた・見ていたカード（動かさない）、その先を picked で並べ替える
-  const [suggest, setSuggest] = useState<{ prefix: string[]; picked: string[] }>(() => ({ prefix: [], picked }));
-  const byRegion = traits?.byRegion;
-  const traitsOf = useCallback((c: FeedCard) => (byRegion ? cardTraitIds(c.regionIds, byRegion) : []), [byRegion]);
-  const shown = useMemo(() => {
-    if (!fullscreen) return s.cards;
-    const byKey = new Map(s.cards.map((c) => [c.key, c]));
-    const head = suggest.prefix.flatMap((k) => byKey.get(k) ?? []);
-    const fixed = new Set(suggest.prefix);
-    return [...head, ...orderBySuggest(s.cards.filter((c) => !fixed.has(c.key)), -1, suggest.picked, traitsOf)];
-  }, [fullscreen, s.cards, suggest, traitsOf]);
-  // 今見ているカードの位置（全画面のとき。カードが見えたら更新）
-  const current = useRef(0);
-  const shownRef = useRef(shown);
-  useEffect(() => {
-    shownRef.current = shown;
-  }, [shown]);
-  useEffect(() => {
-    if (!fullscreen) return;
-    applyRef.current = (next) => setSuggest({ prefix: shownRef.current.slice(0, current.current + 1).map((c) => c.key), picked: next });
-    return () => {
-      applyRef.current = null;
-    };
-  }, [fullscreen, applyRef]);
-  const onSeenAt = useCallback((label: string, position: number) => {
-    current.current = position;
-    onCardSeen(label);
-  }, [onCardSeen]);
 
   // 失敗したときは自動で再取得しない（押されたら loadMore）。取得のたびに観察し直すので、まだ見えていれば続けて取る
   useEffect(() => {
@@ -520,17 +419,8 @@ function FeedList({ feed, query, locale, track, onAlgorithmChange, stories, onCa
 
   return (
     <>
-      {shown.map((card, i) => (
-        <FeedCardView
-          key={card.key}
-          card={card}
-          position={i}
-          track={trackHere}
-          stories={stories}
-          onSeen={onSeenAt}
-          fullscreen={fullscreen}
-          reason={fullscreen && traits ? suggestReason(traitsOf(card), suggest.picked, traits.traits) : null}
-        />
+      {s.cards.map((card, i) => (
+        <FeedCardView key={card.key} card={card} position={i} track={trackHere} stories={stories} onSeen={onCardSeen} />
       ))}
       {s.nextCursor && (
         <div ref={sentinel} className="flex flex-col items-center gap-1 px-4 pb-6 pt-2 text-center text-[13px] text-white/80 [overflow-anchor:none]">
@@ -561,9 +451,7 @@ const VIEW_THRESHOLD = 0.5;
 // 「今見ているカード」：Feed の上から 30% の線にかかっているカード（root の上 30%・下 69.9% を除いた細い帯）
 const SEEN_BAND = "-30% 0px -69.9% 0px";
 
-function FeedCardView({ card, position, track, stories, onSeen, fullscreen, reason }: {
-  card: FeedCard; position: number; track: (e: FeedEvent) => void; stories: StoriesOpener; onSeen: (areaLabel: string, position: number) => void; fullscreen: boolean; reason: SuggestReason | null;
-}) {
+function FeedCardView({ card, position, track, stories, onSeen }: { card: FeedCard; position: number; track: (e: FeedEvent) => void; stories: StoriesOpener; onSeen: (areaLabel: string) => void }) {
   const m = useMessages();
   const first = position === 0;
   const ref = useRef<HTMLElement>(null);
@@ -590,13 +478,13 @@ function FeedCardView({ card, position, track, stories, onSeen, fullscreen, reas
     if (!el) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) onSeen(areaLabel, position);
+        if (entries.some((e) => e.isIntersecting)) onSeen(areaLabel);
       },
       { root: el.closest("[data-feed]"), rootMargin: SEEN_BAND },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [onSeen, areaLabel, position]);
+  }, [onSeen, areaLabel]);
 
   // Link は画面内の遷移のために preventDefault するので defaultPrevented では見ない。
   // スワイプの残りのクリックは PhotoCarousel が capture で stopPropagation するので、ここには来ない
@@ -611,73 +499,22 @@ function FeedCardView({ card, position, track, stories, onSeen, fullscreen, reas
   }
 
   return (
-    <article ref={ref} onClick={onClick} className={fullscreen ? "flex h-full snap-start snap-always flex-col" : "flex flex-col"} style={first || fullscreen ? undefined : OFFSCREEN}>
+    <article ref={ref} onClick={onClick} className="flex flex-col" style={first ? undefined : OFFSCREEN}>
       {/* 写真は横にスワイプで切り替え、タップで詳細を開く */}
-      <PhotoCarousel photos={card.photos} href={card.href} label={card.title} className={fullscreen ? "h-full text-white" : "h-[520px] text-white"} counterClassName="right-4 top-[76px]" priority={first}>
+      <PhotoCarousel photos={card.photos} href={card.href} label={card.title} className="h-[520px] text-white" counterClassName="right-4 top-[76px]" priority={first}>
         {(card.photos[0]?.isDemo ?? true) && (
           <span className="pointer-events-none absolute left-4 top-[76px] rounded-md bg-[rgba(15,15,14,0.6)] px-2 py-1 text-[11px] font-semibold tracking-[0.06em]">{m.home.photoDemo}</span>
         )}
         {/* 写真の枚数表示（right-4 top-[76px]）の下。ボタンだけ押せる */}
         <SaveButton destId={card.destId} variant="card" className="absolute right-3 top-[104px]" />
         <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[200px] bg-gradient-to-b from-transparent to-black/60" />
-        <span className={`pointer-events-none absolute inset-x-4 flex flex-col gap-1.5 ${fullscreen ? "bottom-[96px]" : "bottom-5"}`}>
-          {reason && (
-            <span className="flex items-center gap-1.5 text-[13px] font-bold text-[#f4f1ea]">
-              <Icon name={reason.traits[0].icon} size={15} />
-              {reason.kind === "match" ? m.home.reasonMatch(reason.traits.map((t) => t.label).join(m.common.listSep)) : m.home.reasonTrait(reason.traits[0].label)}
-            </span>
-          )}
+        <span className="pointer-events-none absolute inset-x-4 bottom-5 flex flex-col gap-1.5">
           <span className="self-start rounded-md border border-white/50 px-2 py-[3px] text-[11px] font-semibold">{card.kindLabel}</span>
           <span className="text-2xl font-bold leading-[1.3]">{card.title}</span>
           <span className="text-[13px] text-white/90">{card.areaLabel}</span>
         </span>
       </PhotoCarousel>
-      {!fullscreen && <NearbySuggestions title={card.relLabel} items={card.carousel} stories={stories} />}
+      <NearbySuggestions title={card.relLabel} items={card.carousel} stories={stories} />
     </article>
   );
 }
-
-function BottomSheet({
-  label,
-  onClose,
-  children,
-  height,
-}: {
-  label: string;
-  onClose: () => void;
-  children: ReactNode;
-  height?: string;
-}) {
-  const m = useMessages();
-  return (
-    <>
-      <button type="button" aria-label={m.home.closeSheet(label)} onClick={onClose} className="absolute inset-0 z-[19] cursor-pointer border-0 bg-transparent" />
-      <section
-        role="dialog"
-        aria-label={label}
-        style={height ? { height } : undefined}
-        className="absolute inset-x-0 bottom-0 z-20 flex max-h-[700px] flex-col gap-5 overflow-y-auto rounded-t-3xl bg-[#1b1b19] px-5 pb-7 pt-5"
-      >
-        {children}
-      </section>
-    </>
-  );
-}
-
-function SheetHeader({ title, onClose }: { title: string; onClose: () => void }) {
-  const m = useMessages();
-  return (
-    <div className="flex items-center justify-between">
-      <h2 className="m-0 text-lg font-bold">{title}</h2>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label={m.common.close}
-        className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-0 bg-white/10 text-white"
-      >
-        <Icon name="close" size={18} />
-      </button>
-    </div>
-  );
-}
-

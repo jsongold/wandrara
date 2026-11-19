@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardTraitIds, orderBySuggest, suggestReason } from "./suggest";
+import { cardTraitIds, orderBySuggest, parseSuggestTraits, suggestPlanHref, suggestReason } from "./suggest";
 
 const byRegion = { hakone: ["onsen", "hike"], kanagawa: ["coast"], nagano: ["plateau", "lake"] };
 const traits = [
@@ -11,8 +11,11 @@ const traits = [
 ];
 
 describe("cardTraitIds", () => {
-  it("地区と親の特性を重複なしで合わせる", () => {
-    expect(cardTraitIds(["hakone", "kanagawa"], byRegion)).toEqual(["onsen", "hike", "coast"]);
+  it("地区の特性を使い、親は合わせない", () => {
+    expect(cardTraitIds(["hakone", "kanagawa"], byRegion)).toEqual(["onsen", "hike"]);
+  });
+  it("地区に特性が無ければ親を見る。どちらにも無ければ空", () => {
+    expect(cardTraitIds(["unknown", "kanagawa"], byRegion)).toEqual(["coast"]);
     expect(cardTraitIds(["unknown"], byRegion)).toEqual([]);
   });
 });
@@ -46,5 +49,18 @@ describe("suggestReason", () => {
   });
   it("特性が無ければ null", () => {
     expect(suggestReason([], ["lake"], traits)).toBeNull();
+  });
+});
+
+describe("提案ページの URL", () => {
+  it("?t= を読み、形の違うもの・重複を捨てる", () => {
+    expect(parseSuggestTraits("onsen,hike,onsen,BAD,,x y")).toEqual(["onsen", "hike"]);
+    expect(parseSuggestTraits(["lake", "coast"])).toEqual(["lake"]);
+    expect(parseSuggestTraits(undefined)).toEqual([]);
+  });
+  it("条件を URL にし、読み戻すと同じ", () => {
+    expect(suggestPlanHref("ja", ["onsen", "hike"])).toBe("/ja/plan?t=onsen,hike");
+    expect(suggestPlanHref("en", [])).toBe("/en/plan");
+    expect(parseSuggestTraits(new URL(`http://x${suggestPlanHref("ja", ["onsen", "lake"])}`).searchParams.get("t") ?? undefined)).toEqual(["onsen", "lake"]);
   });
 });
