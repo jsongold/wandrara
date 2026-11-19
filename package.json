@@ -19,6 +19,7 @@
     "perf": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/perf/measure.ts",
     "area-map:build": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/area-map/build.ts",
     "area-map:labels": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/area-map/add-labels.ts",
+    "feed:score": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/feed-score.ts",
     "backfill:regions": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/backfill-regions.ts"
   },
   "dependencies": {
