@@ -1,5 +1,5 @@
 // フィードの組み立て。並べ方・メインの選び方・関連タイルの選び方の 3 戦略を独立に差し替えられる。
-import { loadCarouselStrategy, type CarouselEntry } from "./carousel";
+import { loadCarouselStrategy, type CarouselEntry, type CarouselRegion } from "./carousel";
 import { coreLabels } from "./i18n/core-labels";
 import { messages } from "./i18n/messages";
 import { CORES } from "./ingest/cores";
@@ -203,6 +203,15 @@ export function dedupeRelatedTiles(tilesPerCard: Tile[][], show = 3, minKeep = 1
 
 // ---- 組み立て ----
 
+// 地区とその親（カルーセルのエリアの一言を引く順）
+function regionChain(regionId: string | null, regions: Region[], locale: Locale): CarouselRegion[] {
+  const idx = regionIndex(regions);
+  const r = regionId ? idx.get(regionId) : undefined;
+  if (!r) return [];
+  const parent = r.parentId ? idx.get(r.parentId) : undefined;
+  return [r, ...(parent ? [parent] : [])].map((x) => ({ id: x.id, name: t(x.name, locale) }));
+}
+
 // トップのカードに載せる写真の上限。全部の写真は詳細で見る（ページに埋め込むデータと画像の数を抑える）
 export const MAX_CARD_PHOTOS = 6;
 
@@ -212,7 +221,10 @@ export function buildFeed(ctx: Ctx, strategies: Strategies, carousel: CarouselEn
   const primary = strategies.primary(candidates, ctx);
   const ordered = strategies.order(primary, ctx);
   const tiles = dedupeRelatedTiles(strategies.secondary(ordered.cards, ctx), MAX_TILES);
-  const items = carousel.run(tiles, { area: ctx.query.area, locale: ctx.locale });
+  const items = carousel.run(
+    ordered.cards.map((c, i) => ({ tiles: tiles[i], regions: regionChain(c.anchor.regionId, ctx.catalog.regions, ctx.locale) })),
+    { locale: ctx.locale, prevArea: null },
+  );
   const cards: FeedCard[] = ordered.cards.map((c, i) => ({
     key: c.key, destId: c.destId, title: c.title, areaLabel: c.areaLabel, kindLabel: c.kindLabel, relLabel: c.relLabel,
     photos: c.photos.slice(0, MAX_CARD_PHOTOS), href: c.href, carousel: items[i],

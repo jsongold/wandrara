@@ -136,10 +136,10 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
   const isStay = query.mode === "stay";
   const allCats: CategoryView[] = [{ id: "all", label: m.home.allCats, icon: "grid" }, ...categories];
   const currentArea = areaLabel ?? m.home.allAreas;
-  // カルーセルから開いたエリアの一言。押した 1 枚にフォーカスを戻す。エリアが変わったら閉じる
-  const [storiesOpen, setStoriesOpen] = useState<{ area: string; trigger: HTMLElement } | null>(null);
-  const stories: StoriesOpener = { areaLabel: currentArea, open: (area, trigger) => setStoriesOpen({ area, trigger }) };
-  const storyGroups = storiesOpen && storiesOpen.area === query.area ? areaHighlights(storiesOpen.area, locale) : [];
+  // カルーセルから開いたエリアの一言（押した 1 枚のカードの地区）。押した 1 枚にフォーカスを戻す。絞り込みが変わったら閉じる
+  const [storiesOpen, setStoriesOpen] = useState<{ area: string; label: string; trigger: HTMLElement; queryKey: string } | null>(null);
+  const stories: StoriesOpener = (area, label, trigger) => setStoriesOpen({ area, label, trigger, queryKey });
+  const storyGroups = storiesOpen && storiesOpen.queryKey === queryKey ? areaHighlights(storiesOpen.area, locale) : [];
 
   return (
     <div data-home className="relative mx-auto h-[100dvh] w-full max-w-[480px] overflow-hidden bg-[#0f0f0e] text-white">
@@ -183,7 +183,7 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
 
       {/* エリアの一言の全画面。カルーセルの 1 枚から開く */}
       {storiesOpen && storyGroups.length > 0 && (
-        <AreaStories locale={locale} area={storiesOpen.area} areaLabel={currentArea} groups={storyGroups} returnFocus={storiesOpen.trigger} onClose={() => setStoriesOpen(null)} />
+        <AreaStories locale={locale} area={storiesOpen.area} areaLabel={storiesOpen.label} groups={storyGroups} returnFocus={storiesOpen.trigger} onClose={() => setStoriesOpen(null)} />
       )}
 
       {/* Floating overlay */}

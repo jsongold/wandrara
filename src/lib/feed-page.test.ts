@@ -66,6 +66,29 @@ describe("fetchFeedPage", () => {
     const db = { rpc: async () => ({ data: null, error: { message: "boom" } }) } as unknown as SupabaseClient;
     await expect(fetchFeedPage(db, "u", args)).rejects.toThrow("feed_page: boom");
   });
+
+  // 伊豆で絞り込むと熱海と東伊豆が混ざる。エリアの一言はカードの地区で決め、前のカードと同じエリアなら出さない（既定 stories-first-once）
+  const at = (n: number, region: string, label: string) => ({ ...card(n, [n + 10]), region_id: region, parent_region_id: "izu", region_name: name(label), parent_region_name: name("伊豆") });
+  const stories = (r: Awaited<ReturnType<typeof fetchFeedPage>>) => r.cards.map((c) => c.carousel.filter((x) => x.type === "stories"));
+
+  it("エリアの一言はカードの地区で決める。前のカードと同じエリアなら出さず、ページをまたいでも続きを見る", async () => {
+    const first = fake({ cards: [at(1, "atami", "熱海"), at(2, "atami", "熱海"), at(3, "higashi-izu", "東伊豆")], has_more: true, total: 4, total_capped: false });
+    const p1 = await fetchFeedPage(first.db, "u", { ...args, limit: 3 });
+    expect(stories(p1)).toEqual([[{ type: "stories", area: "atami", label: "熱海" }], [], []]);
+    expect(p1.algorithm).toMatch(/ carousel=stories-first-once@1$/);
+
+    const second = fake({ cards: [at(4, "atami", "熱海")], has_more: false, total: null, total_capped: false });
+    expect(stories(await fetchFeedPage(second.db, "u", { ...args, cursor: p1.nextCursor }))).toEqual([[{ type: "stories", area: "atami", label: "熱海" }]]);
+    const again = fake({ cards: [at(1, "atami", "熱海"), at(2, "atami", "熱海")], has_more: true, total: 3, total_capped: false });
+    const q1 = await fetchFeedPage(again.db, "u", { ...args, limit: 2 });
+    expect(decodeCursor(q1.nextCursor!, feedQueryKey(DEFAULT_QUERY, "ja")).a).toBe("atami");
+    expect(stories(await fetchFeedPage(fake({ cards: [at(3, "atami", "熱海")], has_more: false, total: null, total_capped: false }).db, "u", { ...args, cursor: q1.nextCursor }))).toEqual([[]]);
+  });
+
+  it("地区の id が無い行（migration 20261119120000 の前の DB）では出さない", async () => {
+    const r = await fetchFeedPage(fake({ cards: [card(1, [10])], has_more: false, total: 1, total_capped: false }).db, "u", args);
+    expect(stories(r)).toEqual([[]]);
+  });
 });
 
 describe("cursor", () => {
@@ -82,8 +105,13 @@ describe("cursor", () => {
     ["並びの値が日付でない", encodeCursor({ ...good, k: "'; drop table x" })],
     ["dest_id が uuid でない", encodeCursor({ ...good, i: "abc" })],
     ["タイルが多すぎる", encodeCursor({ ...good, p: Array.from({ length: 7 }, (_, n) => id(n)) })],
+    ["エリアが id の形でない", encodeCursor({ ...good, a: "a b" })],
   ])("不正な cursor は invalid：%s", (_, raw) => {
     try { decodeCursor(raw, key); throw new Error("no throw"); } catch (e) { expect((e as FeedCursorError).code).toBe("invalid"); }
+  });
+  it("エリア（a）は無くても、null でも、地区の id でも受け付ける", () => {
+    expect(decodeCursor(encodeCursor({ ...good, a: null }), key).a).toBeNull();
+    expect(decodeCursor(encodeCursor({ ...good, a: "higashi-izu" }), key).a).toBe("higashi-izu");
   });
   it("-infinity（公開日なし）の cursor を受け付ける", () => {
     expect(decodeCursor(encodeCursor({ ...good, k: "-infinity" }), key).k).toBe("-infinity");

@@ -16,8 +16,8 @@ import { useSeen } from "./area-stories/seen-store";
 
 export type NearbyLayout = "carousel";
 
-// エリアの一言（Stories）の 1 枚を押したときに開く。areaLabel はその 1 枚に出すエリアの名前
-export type StoriesOpener = { areaLabel: string; open: (area: string, trigger: HTMLElement) => void };
+// エリアの一言（Stories）の 1 枚を押したときに開く。area は地区の id、label はその名前
+export type StoriesOpener = (area: string, label: string, trigger: HTMLElement) => void;
 
 type LayoutProps = { items: CarouselItem[]; stories: StoriesOpener };
 
@@ -48,7 +48,7 @@ function DestTile({ tile, position, saveData, quality }: { tile: Tile; position:
 }
 
 // エリアの一言をまとめた 1 枚。項目（名産・旬など）の 1 件目の写真か色面を、隙間なく 2×2 に並べる。まだ見ていない項目があれば右上に点
-function StoriesTile({ area, position, stories }: { area: string; position: number; stories: StoriesOpener }) {
+function StoriesTile({ area, label, position, stories }: { area: string; label: string; position: number; stories: StoriesOpener }) {
   const locale = useLocale();
   const m = useMessages().highlights;
   const groups = areaHighlights(area, locale);
@@ -56,14 +56,14 @@ function StoriesTile({ area, position, stories }: { area: string; position: numb
   if (groups.length === 0) return null;
   const unread = groups.some((g) => !seen.includes(g.kind));
   const count = groups.reduce((n, g) => n + g.items.length, 0);
-  const title = m.tile(stories.areaLabel);
+  const title = m.tile(label);
   return (
     <button
       type="button"
       data-stories-area={area}
       data-tile-position={position}
       data-testid="stories-tile"
-      onClick={(e) => stories.open(area, e.currentTarget)}
+      onClick={(e) => stories(area, label, e.currentTarget)}
       aria-label={`${title}（${m.tileSub(count)}）`}
       className={`${TILE} cursor-pointer border-0 bg-transparent p-0 text-left`}
     >
@@ -101,7 +101,7 @@ function NearbyCarousel({ items, stories }: LayoutProps) {
         x.type === "dest" ? (
           <DestTile key={x.tile.destId} tile={x.tile} position={i} saveData={saveData} quality={quality} />
         ) : (
-          <StoriesTile key={`stories:${x.area}`} area={x.area} position={i} stories={stories} />
+          <StoriesTile key={`stories:${x.area}`} area={x.area} label={x.label} position={i} stories={stories} />
         ),
       )}
     </div>

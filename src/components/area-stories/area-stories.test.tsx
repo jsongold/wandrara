@@ -56,10 +56,10 @@ describe("ストーリーの送り", () => {
 });
 
 describe("カルーセルのエリアの一言の 1 枚", () => {
-  const stories = { areaLabel: "熱海", open: () => {} };
+  const stories = () => {};
   const dest = { type: "dest" as const, tile: { destId: "d1", label: "宿", sub: "", photo: null, href: "/ja/d/d1" } };
   it("エリア名と件数、項目名を出し、押した記録のための印を付ける", () => {
-    const h = renderToStaticMarkup(<NearbySuggestions title="近く" items={[{ type: "stories", area: "atami" }, dest]} stories={stories} />);
+    const h = renderToStaticMarkup(<NearbySuggestions title="近く" items={[{ type: "stories", area: "atami", label: "熱海" }, dest]} stories={stories} />);
     expect(h).toContain("熱海の一言");
     expect(h).toContain('data-stories-area="atami"');
     expect(h).toContain('data-tile-position="0"');
@@ -67,7 +67,7 @@ describe("カルーセルのエリアの一言の 1 枚", () => {
     for (const g of areaHighlights("atami", "ja").slice(0, 4)) expect(h).toContain(`>${messages("ja").highlights.kind[g.kind]}</span>`);
   });
   it("データの無いエリアでは 1 枚を出さない", () => {
-    const h = renderToStaticMarkup(<NearbySuggestions title="近く" items={[{ type: "stories", area: "hakone" }, dest]} stories={stories} />);
+    const h = renderToStaticMarkup(<NearbySuggestions title="近く" items={[{ type: "stories", area: "hakone", label: "箱根" }, dest]} stories={stories} />);
     expect(h).not.toContain("data-stories-area");
     expect(h).toContain('data-tile-dest-id="d1"');
   });

@@ -46,8 +46,8 @@ export type AreaGroupView = { id: string; label: string; subs: { id: string; lab
 export type Tile = { destId: string; label: string; sub: string; photo: Photo | null; href: string };
 
 // カードの下のカルーセルの 1 枚（何をどの順で出すかは carousel の戦略が決める。src/lib/carousel.ts）
-// 行き先のタイルか、エリアの一言（Area Stories）をまとめた 1 枚。stories は開くエリアだけを持ち、中身は画面が areaHighlights で読む
-export type CarouselItem = { type: "dest"; tile: Tile } | { type: "stories"; area: string };
+// 行き先のタイルか、エリアの一言（Area Stories）をまとめた 1 枚。stories は開くエリア（地区の id）とその名前だけを持ち、中身は画面が areaHighlights で読む
+export type CarouselItem = { type: "dest"; tile: Tile } | { type: "stories"; area: string; label: string };
 
 export type FeedCard = {
   key: string;
@@ -64,7 +64,7 @@ export type FeedCard = {
 export type FeedPage = {
   cards: FeedCard[];
   orderLabel: string;              // 例：「編集部のおすすめ順」
-  algorithm: string;               // 使った戦略の名前と版。例：「order=editorial@1 primary=by-mode@2 secondary=related-any-kind@1 carousel=stories-first@1」
+  algorithm: string;               // 使った戦略の名前と版。例：「order=editorial@1 primary=by-mode@2 secondary=related-any-kind@1 carousel=stories-first-once@1」
   emptyReason: "no-match" | null;  // 0 件のときの理由
 };
 

@@ -109,7 +109,7 @@ describe("buildFeed", () => {
   });
   it("使った戦略の名前と版を返す。知らない名前は既定に戻す", () => {
     const id = "order=editorial@1 primary=by-mode@2 secondary=related-any-kind@1";
-    expect(run({}).algorithm).toBe(`${id} carousel=stories-first@1`);
+    expect(run({}).algorithm).toBe(`${id} carousel=stories-first-once@1`);
     expect(loadFeedStrategies({ order: "nope" }).id).toBe(id);
   });
   it("公開日が無い dest は最後に出す", () => {
