@@ -202,7 +202,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
               type="button"
               onClick={() => setOpen(null)}
               aria-label={common.close}
-              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-white"
+              className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border-0 bg-transparent text-white"
             >
               <Icon name="close" />
             </button>
@@ -223,11 +223,15 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                   type="button"
                   onClick={() => setPeekView("shops")}
                   aria-expanded={peek}
-                  className="flex h-9 cursor-pointer items-center gap-1.5 rounded-full border-0 px-4 text-[13px] font-semibold"
+                  aria-label={m.findWithCount(item.offers.length)}
+                  title={m.find}
+                  className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border-0"
                   style={{ background: "#f4f1ea", color: "#141413" }}
                 >
-                  {m.find}
-                  <span className="text-xs font-normal">{m.shopCount(item.offers.length)}</span>
+                  <Icon name="search" />
+                  <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-md bg-[#141413] px-1 text-[10px] font-semibold text-white">
+                    {item.offers.length}
+                  </span>
                 </button>
               </div>
             )}
@@ -253,7 +257,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                     type="button"
                     onClick={closePeek}
                     aria-label={common.close}
-                    className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-full border-0 bg-white/[0.08] text-white"
+                    className="flex h-11 w-11 flex-none cursor-pointer items-center justify-center rounded-xl border border-white/[0.14] bg-white/[0.08] text-white"
                   >
                     <Icon name="close" />
                   </button>
@@ -276,7 +280,7 @@ function PeekShops({ item, m }: { item: HighlightItem; m: HM }) {
   return (
     <>
       <div className="-mt-1 flex flex-wrap items-center gap-2">
-        {item.season && <span className="rounded-full bg-white/[0.08] px-2.5 py-1 text-[11px]">{m.season(item.season.from, item.season.to)}</span>}
+        {item.season && <span className="rounded-md bg-white/[0.08] px-2 py-1 text-[11px]">{m.season(item.season.from, item.season.to)}</span>}
         <span className="text-xs text-white/75">{item.note}</span>
       </div>
       <ul className="m-0 flex list-none flex-col gap-5 p-0 pt-1" data-testid="area-story-shops">
@@ -294,10 +298,12 @@ export function mapsUrl(o: Pick<HighlightOffer, "shopName" | "address">): string
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
 }
 
+// 行動ボタンはアイコンだけの角丸の四角（アプリ全体のボタンと同じ形）
+const ICON_BTN = "flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-white/[0.14] bg-white/[0.08] text-white";
+
 function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
   const where = o.online ? m.online : o.address;
   const when = [o.hours, o.closed && m.closedOn(o.closed)].filter(Boolean).join(" · ");
-  const pill = "flex h-8 items-center gap-1 rounded-full px-3 text-xs font-semibold no-underline";
   return (
     <li className="flex gap-3">
       <ShopThumbs o={o} />
@@ -312,20 +318,19 @@ function OfferRow({ o, m }: { o: HighlightOffer; m: HM }) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {!o.online && (
-            <a href={mapsUrl(o)} target="_blank" rel="noopener" aria-label={m.openMapOf(o.shopName)} className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/[0.08] text-white">
-              <Icon name="pin" size={15} />
+            <a href={mapsUrl(o)} target="_blank" rel="noopener" aria-label={m.openMapOf(o.shopName)} title={m.openMapOf(o.shopName)} className={ICON_BTN}>
+              <Icon name="pin" size={18} />
             </a>
           )}
           {o.url && (
-            <a href={o.url} target="_blank" rel="noopener" className={`${pill} bg-white/[0.08] text-white`}>
-              {m.toShopSite}
-              <span aria-hidden="true" className="text-[10px]">↗</span>
+            <a href={o.url} target="_blank" rel="noopener" aria-label={m.openSiteOf(o.shopName)} title={m.openSiteOf(o.shopName)} className={ICON_BTN}>
+              <Icon name="external" size={18} />
             </a>
           )}
-          <button type="button" disabled title={m.buyHereSoon} className={`${pill} ml-auto border-0`} style={{ background: "rgba(244,241,234,0.4)", color: "#141413" }}>
-            {m.buyHere}
+          <button type="button" disabled aria-label={`${m.buyHere}（${m.buyHereSoon}）`} title={`${m.buyHere}（${m.buyHereSoon}）`} className={`${ICON_BTN} ml-auto cursor-not-allowed opacity-50`}>
+            <Icon name="bag" size={18} />
           </button>
         </div>
       </div>
