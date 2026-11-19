@@ -86,6 +86,8 @@ export async function registerDest(
   json: unknown,
   principal: { keyId: string; userId: string },
   deps: RegionDeps = defaultRegionDeps,
+  // 公開済みかもしれない既存の dest を書き換える直前に slug を知らせる（dest_apply は公開を draft に戻す）。新規は公開されていないので呼ばない
+  onWrite?: (slug: string) => void,
 ): Promise<RegisterResult> {
   const parsed = parseDestInput(core, json);
   if (!parsed.ok) return { ok: false, status: 400, errors: parsed.errors };
@@ -116,6 +118,7 @@ export async function registerDest(
     uuid: randomUUID,
     region: { regionId: region.regionId, lookupVersion: deps.manifest.version },
   });
+  if (existing) onWrite?.(existing.slug);
   const res = await applyDestWrite(db, plan);
   // unchanged: 中身が前回と同じで何も書かなかった（公開中ならそのまま）
   if (res.unchanged) return { ok: true, dest_id: res.dest_id, slug: res.slug, status: res.status, unchanged: true };

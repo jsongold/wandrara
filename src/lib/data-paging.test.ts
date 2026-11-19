@@ -4,7 +4,7 @@ import { fakeDb } from "./supabase/fake-db";
 
 const state = vi.hoisted(() => ({ make: null as null | (() => unknown) }));
 
-vi.mock("next/cache", () => ({ cacheLife: () => {} }));
+vi.mock("next/cache", () => ({ cacheLife: () => {}, cacheTag: () => {} }));
 vi.mock("@supabase/supabase-js", () => ({ createClient: () => state.make!() }));
 
 const card = (i: number) => ({
