@@ -79,13 +79,14 @@ describe("Google マップ", () => {
   });
 });
 
-describe("スワイプで閉じる", () => {
-  it("しきい値を超えるか、素早く払ったら閉じる", async () => {
+describe("スワイプで閉じる（詳細ページと同じ決まり）", () => {
+  it("120px より引いたら閉じる。短くても素早く払ったら閉じる。止めてから離したら払ったと見なさない", async () => {
     const { swipeDecision } = await import("./use-swipe-down");
-    expect(swipeDecision(120, 600, 90)).toBe(true);
-    expect(swipeDecision(60, 150, 90)).toBe(true);
-    expect(swipeDecision(60, 600, 90)).toBe(false);
-    expect(swipeDecision(20, 100, 90)).toBe(false);
+    expect(swipeDecision(130, 0, 500)).toBe(true);
+    expect(swipeDecision(50, 0.8, 20)).toBe(true);
+    expect(swipeDecision(50, 0.8, 300)).toBe(false);
+    expect(swipeDecision(20, 2, 10)).toBe(false);
+    expect(swipeDecision(100, 0.2, 10)).toBe(false);
   });
 });
 

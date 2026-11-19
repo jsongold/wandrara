@@ -142,8 +142,8 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
   });
 
   // 下へのスワイプ：一覧のシートは中身が上までスクロールされているときだけ閉じる。ストーリーはシートが無いときだけ閉じる
-  const { dy: sheetDy, attach: attachSheet } = useSwipeDown<HTMLElement>(() => closePeek(), { enabled: peek, canStart: (el) => el.scrollTop <= 0 });
-  const { dy: storyDy, attach: attachStory } = useSwipeDown<HTMLDivElement>(() => setOpen(null), { enabled: open !== null && !peek, threshold: 110 });
+  const { style: sheetSwipeStyle, attach: attachSheet } = useSwipeDown<HTMLElement>(() => closePeek(), { enabled: peek, canStart: (el) => el.scrollTop <= 0 });
+  const { style: storySwipeStyle, attach: attachStory } = useSwipeDown<HTMLDivElement>(() => setOpen(null), { enabled: open !== null && !peek });
 
   if (groups.length === 0) return null;
 
@@ -201,12 +201,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
         <div
           data-testid="area-story"
           className="relative flex h-full flex-col text-white"
-          style={{
-            ...photo(item.color),
-            transform: storyDy ? `translateY(${storyDy}px) scale(${1 - Math.min(storyDy, 300) / 3000})` : undefined,
-            opacity: storyDy ? 1 - Math.min(storyDy, 300) / 600 : undefined,
-            transition: storyDy ? "none" : "transform 0.2s ease, opacity 0.2s ease",
-          }}
+          style={{ ...photo(item.color), ...storySwipeStyle }}
           ref={attachStory}
         >
           {item.photo && <ItemPhoto item={item} className="absolute inset-0 h-full w-full" />}
@@ -267,7 +262,7 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                 aria-label={item.name}
                 data-testid="area-story-peek"
                 className="filter-mark-in absolute inset-x-0 bottom-0 z-[4] flex max-h-[85%] flex-col gap-3 overflow-y-auto overscroll-contain rounded-t-3xl bg-[#1b1b19] px-5 pb-8 pt-2.5"
-                style={{ transform: sheetDy ? `translateY(${sheetDy}px)` : undefined, transition: sheetDy ? "none" : "transform 0.2s ease" }}
+                style={sheetSwipeStyle}
                 ref={attachSheet}
               >
                 {/* 下に引いて閉じられることを示すつまみ */}

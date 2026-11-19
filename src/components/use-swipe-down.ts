@@ -1,82 +1,134 @@
 "use client";
 
-// use-swipe-down：下へのスワイプで閉じる。指に合わせて下げ（dy）、しきい値を超えるか素早く払って離したら onClose
-// - 縦より横に動いたとき・上へ動いたときは何もしない（中身のスクロールはそのまま）
-// - 下に引いている間は、ブラウザ本来のスクロール（iOS の弾み）を止める。React の touch は passive で止められないので、ブラウザのイベントで受ける
-// - スワイプの直後に指で起きた click だけを止める（スワイプがタップ扱いにならないように）。キーボードの click（detail = 0）は止めない
+// use-swipe-down：下に引いて閉じる。詳細ページ（DetailSheet）と同じ手ざわりにする
+// - 指（マウスでも）に合わせて下げる。最初の動きが下向きの縦のときだけ引く（横・上はふつうの操作に任せる）
+// - 遠くまで引いた・素早く払ったら、下へ滑らせてから閉じる（CLOSE_MS）。それ以外は元に戻す
+// - 引いている間はブラウザのスクロール（iOS の弾み）を止める。React の touch は passive で止められないので、ブラウザのイベントで受ける
+// - 引いた直後に指・マウスで起きた click だけを止める（引く操作がタップ扱いにならないように）。キーボードの click（detail = 0）は止めない
 import { useEffect, useRef, useState } from "react";
+
+// DetailSheet と同じ値
+export const CLOSE_DISTANCE = 120; // これ以上引き下げたら閉じる（px）
+const FLICK_SPEED = 0.6; // これより速く下へ払ったら、短くても閉じる（px/ms）
+const FLICK_MIN = 30; // 払って閉じるときの最低の距離（px）
+const FLICK_STALE_MS = 100; // 最後の動きからこれ以上止まっていたら、払ったとは見なさない（ms）
+const LOCK_SLOP = 8; // 縦か横かを決めるまでの動き（px）
+export const CLOSE_MS = 320; // 下へ滑らせる時間（globals.css の --sheet-close-ms）
+export const SWIPE_EASE = "cubic-bezier(0.32, 0.72, 0, 1)";
+const SUPPRESS_MS = 400; // 引き終わってから click を止める時間（ms）
+
+// 引き終わりで閉じるか。y：引いた距離、v：最後の速さ（px/ms）、idleMs：最後の動きからの時間
+export function swipeDecision(y: number, v: number, idleMs: number): boolean {
+  const flick = idleMs < FLICK_STALE_MS && v > FLICK_SPEED;
+  return y > CLOSE_DISTANCE || (y > FLICK_MIN && flick);
+}
 
 type Options = {
   enabled?: boolean;
-  threshold?: number;
-  // 指を置いた時点で始めてよいか（例：中身が上までスクロールされているときだけ）
+  // 引き始めてよいか（例：中身がいちばん上までスクロールされているときだけ）
   canStart?: (el: HTMLElement) => boolean;
 };
 
-export function swipeDecision(dy: number, ms: number, threshold: number): boolean {
-  return dy > threshold || (dy > 40 && ms < 250);
-}
+type Drag = { x: number; y: number; axis: "y" | null; lastY: number; lastT: number; v: number };
 
-// 指を離してから、指による click を止める時間（ms）
-const SUPPRESS_MS = 400;
-
-export function useSwipeDown<T extends HTMLElement>(onClose: () => void, { enabled = true, threshold = 90, canStart }: Options = {}) {
+export function useSwipeDown<T extends HTMLElement>(onClose: () => void, { enabled = true, canStart }: Options = {}) {
   const [el, setEl] = useState<T | null>(null);
   const [dy, setDy] = useState(0);
-  const latest = useRef({ onClose, enabled, threshold, canStart });
+  const [dragging, setDragging] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const latest = useRef({ onClose, enabled, canStart });
   useEffect(() => {
-    latest.current = { onClose, enabled, threshold, canStart };
+    latest.current = { onClose, enabled, canStart };
   });
 
   useEffect(() => {
     if (!el) return;
-    let start: { x: number; y: number; t: number } | null = null;
+    let drag: Drag | null = null;
     let cur = 0;
-    let moved = false;
     let suppressUntil = 0;
-    const set = (v: number) => {
+    let closingNow = false;
+    const move = (v: number) => {
       cur = v;
       setDy(v);
     };
-    const onStart = (e: TouchEvent) => {
+    const begin = (x: number, y: number, t: number) => {
       const o = latest.current;
-      moved = false;
-      if (!o.enabled || e.touches.length !== 1 || (o.canStart && !o.canStart(el))) {
-        start = null;
-        return;
+      if (!o.enabled || closingNow) return;
+      drag = { x, y, axis: null, lastY: y, lastT: t, v: 0 };
+    };
+    // 動き。true を返したら、この動きは引く操作（ブラウザの既定の動きを止める）
+    const step = (x: number, y: number, t: number): boolean => {
+      const d = drag;
+      if (!d) return false;
+      const dx = x - d.x;
+      const dyNow = y - d.y;
+      if (d.axis === null) {
+        if (Math.hypot(dx, dyNow) < LOCK_SLOP) return false;
+        const o = latest.current;
+        if (Math.abs(dyNow) > Math.abs(dx) && dyNow > 0 && (!o.canStart || o.canStart(el))) {
+          d.axis = "y";
+          setDragging(true);
+        } else {
+          drag = null;
+          return false;
+        }
       }
+      const dt = Math.max(1, t - d.lastT);
+      d.v = (y - d.lastY) / dt;
+      d.lastY = y;
+      d.lastT = t;
+      move(Math.max(0, dyNow));
+      return true;
+    };
+    const release = () => {
+      const d = drag;
+      drag = null;
+      setDragging(false);
+      if (!d || d.axis !== "y") return;
+      suppressUntil = Date.now() + SUPPRESS_MS;
+      if (swipeDecision(cur, d.v, performance.now() - d.lastT)) {
+        closingNow = true;
+        setClosing(true);
+        window.setTimeout(() => {
+          closingNow = false;
+          setClosing(false);
+          move(0);
+          latest.current.onClose();
+        }, CLOSE_MS);
+      } else {
+        move(0);
+      }
+    };
+    const cancel = () => {
+      const d = drag;
+      drag = null;
+      if (d?.axis === "y") {
+        setDragging(false);
+        move(0);
+      }
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return cancel();
       const t = e.touches[0];
-      start = { x: t.clientX, y: t.clientY, t: Date.now() };
+      begin(t.clientX, t.clientY, e.timeStamp);
     };
-    const onMove = (e: TouchEvent) => {
-      if (!start) return;
-      if (e.touches.length !== 1) {
-        start = null;
-        set(0);
-        return;
-      }
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return cancel();
       const t = e.touches[0];
-      const d = t.clientY - start.y;
-      const dx = t.clientX - start.x;
-      if (Math.abs(d) > 8 || Math.abs(dx) > 8) moved = true;
-      if (d > 0 && Math.abs(d) > Math.abs(dx)) {
-        e.preventDefault();
-        set(d);
-      } else if (cur !== 0) {
-        set(0);
-      }
+      if (step(t.clientX, t.clientY, e.timeStamp)) e.preventDefault();
     };
-    const onEnd = () => {
-      const s = start;
-      const d = cur;
-      start = null;
-      set(0);
-      if (moved) suppressUntil = Date.now() + SUPPRESS_MS;
-      if (s && swipeDecision(d, Date.now() - s.t, latest.current.threshold)) latest.current.onClose();
+    // マウス・ペン：押して引く。指は touch の方で受ける
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === "touch" || e.button !== 0) return;
+      begin(e.clientX, e.clientY, e.timeStamp);
     };
-    const onCancel = () => {
-      start = null;
-      set(0);
+    const onPointerMove = (e: PointerEvent) => {
+      if (e.pointerType === "touch" || !drag) return;
+      if (step(e.clientX, e.clientY, e.timeStamp) && !el.hasPointerCapture(e.pointerId)) el.setPointerCapture(e.pointerId);
+    };
+    const onPointerUp = (e: PointerEvent) => {
+      if (e.pointerType !== "touch") release();
     };
     const onClick = (e: MouseEvent) => {
       if (e.detail > 0 && Date.now() < suppressUntil) {
@@ -84,20 +136,32 @@ export function useSwipeDown<T extends HTMLElement>(onClose: () => void, { enabl
         e.stopPropagation();
       }
     };
-    el.addEventListener("touchstart", onStart, { passive: true });
-    el.addEventListener("touchmove", onMove, { passive: false });
-    el.addEventListener("touchend", onEnd);
-    el.addEventListener("touchcancel", onCancel);
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", release);
+    el.addEventListener("touchcancel", release);
+    el.addEventListener("pointerdown", onPointerDown);
+    el.addEventListener("pointermove", onPointerMove);
+    el.addEventListener("pointerup", onPointerUp);
+    el.addEventListener("pointercancel", onPointerUp);
     el.addEventListener("click", onClick, true);
     return () => {
-      el.removeEventListener("touchstart", onStart);
-      el.removeEventListener("touchmove", onMove);
-      el.removeEventListener("touchend", onEnd);
-      el.removeEventListener("touchcancel", onCancel);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", release);
+      el.removeEventListener("touchcancel", release);
+      el.removeEventListener("pointerdown", onPointerDown);
+      el.removeEventListener("pointermove", onPointerMove);
+      el.removeEventListener("pointerup", onPointerUp);
+      el.removeEventListener("pointercancel", onPointerUp);
       el.removeEventListener("click", onClick, true);
     };
   }, [el]);
 
-  // attach は要素に ref={...attach} で付ける（callback ref）
-  return { dy, attach: setEl };
+  // attach は要素に ref={attach} で付ける（callback ref）。style は引いている・閉じている間の動き
+  const style = {
+    transform: closing ? "translateY(100%)" : `translateY(${dy}px)`,
+    transition: dragging ? "none" : `transform ${CLOSE_MS}ms ${SWIPE_EASE}`,
+  };
+  return { style, attach: setEl };
 }
