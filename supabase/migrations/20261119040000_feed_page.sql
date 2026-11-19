@@ -69,7 +69,8 @@ create or replace function public.feed_entry_refresh(p_dest uuid) returns void
 language plpgsql security definer set search_path = ''
 as $$
 begin
-  -- 同じ dest を別の transaction が書いている間に作り直すと、古い値で作ってしまう。dest ごとに待ち合わせる（待った後の各文は、書き終えた側の変更を見る）
+  -- 同じ dest を別の transaction が書いている間に作り直すと、古い値で作ってしまう。dest ごとに待ち合わせる（待った後の各文は、書き終えた側の変更を見る）。
+  -- trigger は commit 時に走らせる（下）ので、この lock を持っている間に元の表の行を待つことが無く、dest_apply・公開との lock の順の食い違い（deadlock）が起きない
   perform pg_advisory_xact_lock(hashtextextended(p_dest::text, 0));
   delete from public.feed_entries where dest_id = p_dest;
   insert into public.feed_entries (dest_id, area_id, core_type, dest_created_at, published_at, pub_key, region_id, parent_region_id, top_region_id)
@@ -96,7 +97,7 @@ declare t text;
 begin
   foreach t in array array['destinations', 'publications', 'accommodations', 'experiences', 'natures', 'villages', 'buildings', 'hotsprings'] loop
     execute format('drop trigger if exists feed_entry_sync on public.%I', t);
-    execute format('create trigger feed_entry_sync after insert or update or delete on public.%I for each row execute function public.feed_entry_touch()', t);
+    execute format('create constraint trigger feed_entry_sync after insert or update or delete on public.%I deferrable initially deferred for each row execute function public.feed_entry_touch()', t);
   end loop;
 end $$;
 
@@ -111,7 +112,7 @@ end;
 $$;
 revoke execute on function public.feed_entry_regions_touch() from public, anon, authenticated;
 drop trigger if exists feed_entry_sync on public.regions;
-create trigger feed_entry_sync after update of parent_id on public.regions for each row execute function public.feed_entry_regions_touch();
+create constraint trigger feed_entry_sync after update of parent_id on public.regions deferrable initially deferred for each row execute function public.feed_entry_regions_touch();
 
 -- 今ある分を写す
 insert into public.feed_entries (dest_id, area_id, core_type, dest_created_at, published_at, pub_key, region_id, parent_region_id, top_region_id)
@@ -252,7 +253,7 @@ begin
       from prim p join det d on d.dest_id = p.dest_id
     ), '[]'::jsonb),
     'has_more', (select count(*) from page) > v_limit,
-    'total', least(v_total, v_cap),
+    'total', case when p_with_total then least(v_total, v_cap) end,
     'total_capped', coalesce(v_total > v_cap, false)
   ) into v_out;
   return v_out;

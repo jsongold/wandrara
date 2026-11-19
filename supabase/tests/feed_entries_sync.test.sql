@@ -2,6 +2,8 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(8);
+-- 写しは commit 時に作り直される（deferred）。この test は 1 つの transaction の中で見るので、文ごとに作り直させる
+set constraints all immediate;
 
 -- feed_entries が feed_index（あるべき中身）と 1 行も違わない
 create or replace function pg_temp.drift() returns bigint language sql as $$

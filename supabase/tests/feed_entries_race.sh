@@ -20,4 +20,10 @@ sleep 1
 $P -c "update public.publications set status = 'published', published_at = now() where dest_id = '$D'"
 wait
 $P -c "select case when exists (select 1 from public.feed_entries where dest_id = '$D' and area_id = 'race-b') and not exists (select 1 from public.feed_entries where dest_id = '$D' and area_id = 'race-a') then 'ok: 索引は race-b' else 'NG: 索引が古い地域のまま' end"
+# 2 つ目：dest_apply（destinations を先に、publications を後に書く）と、publications だけを書く公開が重なっても deadlock しない
+$P -c "begin; update public.destinations set updated_at = now() where dest_id = '$D'; select pg_sleep(3); update public.publications set status = 'draft' where dest_id = '$D'; commit;" &
+sleep 1
+$P -c "update public.publications set published_at = now() where dest_id = '$D'"
+wait
+echo "ok: deadlock なし"
 $P -c "delete from public.destinations where dest_id = '$D'"
