@@ -224,14 +224,11 @@ export function AreaStories({ locale, area, areaLabel, groups }: Props) {
                   onClick={() => setPeekView("shops")}
                   aria-expanded={peek}
                   aria-label={m.findWithCount(item.offers.length)}
-                  title={m.find}
-                  className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border-0"
+                  className="flex h-11 cursor-pointer items-center gap-2 rounded-xl border-0 px-4 text-sm font-semibold"
                   style={{ background: "#f4f1ea", color: "#141413" }}
                 >
-                  <Icon name="search" />
-                  <span aria-hidden="true" className="absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-md bg-[#141413] px-1 text-[10px] font-semibold text-white">
-                    {item.offers.length}
-                  </span>
+                  {m.find}
+                  <span aria-hidden="true" className="text-xs font-normal text-[#141413]/70">{m.shopCount(item.offers.length)}</span>
                 </button>
               </div>
             )}
