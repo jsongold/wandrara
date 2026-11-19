@@ -1,7 +1,7 @@
 // フィードの点数の batch（#156）：直近 FEED_SCORE_WINDOW_DAYS 日の記録を DB から読み、FEED_WEIGHTS で点数にして書き戻す。
-// 何度走らせても同じ結果（全部を計算し直して置き換える）。/api/cron/feed-score が 1 日 1 回呼ぶ
+// 何度走らせても同じ結果（全部を計算し直して置き換える）。scripts/feed-score.ts（pnpm feed:score）から走らせる
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { FEED_WEIGHTS, scoreDests, type ActionCount, type FeedAction, type FeedWeights } from "./feed-score";
+import { FEED_WEIGHTS, scoreDests, type ActionCount, type FeedAction, type FeedWeights } from "./feed-score.ts";
 
 export const FEED_SCORE_WINDOW_DAYS = 90;
 const ACTIONS: readonly FeedAction[] = ["card_view", "card_click", "tile_click", "save"];

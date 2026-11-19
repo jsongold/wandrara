@@ -1,5 +1,5 @@
 -- #156：フィードを点数（重み付きアクション）で並べる。
--- 点数は 1 日 1 回の batch（/api/cron/feed-score → src/lib/feed-score-batch.ts）が計算して feed_scores に書き、feed_entries.score に写す。
+-- 点数は batch（pnpm feed:score → src/lib/feed-score-batch.ts）が計算して feed_scores に書き、feed_entries.score に写す。
 -- feed_entries の行は公開・投入のたびに trigger が作り直すので、点数の正は feed_scores に置き、作り直すときに写す。
 -- まだ点数の無い dest（batch の後に公開されたもの）は、種類の平均（feed_score_priors）で並べる。
 
@@ -25,11 +25,14 @@ grant all on public.feed_scores, public.feed_score_priors to service_role;
 alter table public.feed_entries add column if not exists score double precision not null default 0;
 create index if not exists feed_entries_score_idx on public.feed_entries (area_id, score desc, dest_id);
 
--- 写しを作り直すときに点数も写す（feed_page.sql の版に score を足しただけ）
+-- 写しを作り直すときに点数も写す（feed_page.sql の版に、点数と下の共有 lock を足した）。
+-- 点数の書き込み（feed_scores_apply）と同時に走ると、古い点数で作り直した行が残る。作り直しは共有、書き込みは排他で同じ lock を取り、
+-- 書き込みは進行中の作り直しが終わるのを待ち、作り直しは書き込みの後の点数を読む（作り直しどうしは待たない）
 create or replace function public.feed_entry_refresh(p_dest uuid) returns void
 language plpgsql security definer set search_path = ''
 as $$
 begin
+  perform pg_advisory_xact_lock_shared(hashtextextended('feed_scores_apply', 0));
   perform pg_advisory_xact_lock(hashtextextended(p_dest::text, 0));
   delete from public.feed_entries where dest_id = p_dest;
   insert into public.feed_entries (dest_id, area_id, core_type, dest_created_at, published_at, pub_key, region_id, parent_region_id, top_region_id, score)
@@ -72,7 +75,7 @@ $$;
 revoke execute on function public.feed_score_inputs(timestamptz) from public, anon, authenticated;
 grant execute on function public.feed_score_inputs(timestamptz) to service_role;
 
--- batch の書き込み：点数と種類の平均を置き換え、feed_entries に写す。何度呼んでも同じ結果（cron は二重に呼ばれることがある）。
+-- batch の書き込み：点数と種類の平均を置き換え、feed_entries に写す。何度呼んでも同じ結果。
 -- p_scores：[{dest_id, score}]、p_priors：[{core_type, score}]
 create or replace function public.feed_scores_apply(p_scores jsonb, p_priors jsonb, p_algorithm text)
 returns int
@@ -80,7 +83,8 @@ language plpgsql security definer set search_path = ''
 as $$
 declare v_n int;
 begin
-  -- 同時に 2 つ走らせない（後から来た方は前の方が終わるのを待つ）
+  -- 同時に 2 つ走らせない。進行中の作り直し（feed_entry_refresh は同じ lock を共有で取る）が終わるのも待つ。
+  -- 以降の文は lock を取った後の snapshot で読む（read committed）ので、作り直した行も見える
   perform pg_advisory_xact_lock(hashtextextended('feed_scores_apply', 0));
 
   delete from public.feed_score_priors where true;  -- Data API 経由は WHERE の無い DELETE を拒む（safeupdate）

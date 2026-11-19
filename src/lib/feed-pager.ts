@@ -105,13 +105,16 @@ export class FeedPager {
         res = await this.fetchWithRetry(null, ctrl.signal);
       }
       if (!current()) return;
-      if (res.queryKey !== queryKey) {
+      // 取り直した先頭ページは、この pager の条件で取ったもの。queryKey が違うのはサーバーの並べ方が変わったとき（例：編集部の順 → 点数の順）なので、
+      // その queryKey ごと置き換える（そうしないと 409 → 取り直し → 不一致を繰り返し、続きが読めなくなる）
+      if (!restarted && res.queryKey !== queryKey) {
         // 今の条件と違う答え。反映せず、自動の再取得もしない（error で止めて、押されたときだけやり直す）
         this.set({ status: "error" });
         return;
       }
       this.set({
         cards: restarted ? res.cards : mergeCards(this.state.cards, res.cards),
+        queryKey: res.queryKey,
         nextCursor: res.nextCursor,
         status: "idle",
         ...(restarted ? { total: res.total, totalIsLowerBound: res.totalIsLowerBound } : {}),

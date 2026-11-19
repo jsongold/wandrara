@@ -144,6 +144,19 @@ describe("FeedPager.loadMore", () => {
     expect(p.getSnapshot().cards.map((c) => c.destId)).toEqual(["d5", "d6"]);
   });
 
+  it("並べ方が変わって 409 になったら、取り直した先頭ページの queryKey ごと置き換え、その後の続きも読める", async () => {
+    const fetchPage = vi.fn<FetchPage>(async (cursor) => {
+      if (cursor === "c1") throw new CursorMismatch();
+      return cursor === null ? page([5], { queryKey: "Q1+score", nextCursor: "s1" }) : page([6], { queryKey: "Q1+score", nextCursor: null });
+    });
+    const p = new FeedPager(first, fetchPage, { sleep: noSleep });
+    await p.loadMore();
+    expect(p.getSnapshot()).toMatchObject({ queryKey: "Q1+score", nextCursor: "s1", status: "idle" });
+    await p.loadMore();
+    expect(p.getSnapshot()).toMatchObject({ nextCursor: null, status: "idle" });
+    expect(p.getSnapshot().cards.map((c) => c.destId)).toEqual(["d5", "d6"]);
+  });
+
   it("状態の変化を購読者に知らせる", async () => {
     const p = new FeedPager(first, async () => page([3], { nextCursor: null }));
     const seen: string[] = [];

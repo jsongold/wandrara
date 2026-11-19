@@ -7,6 +7,5 @@
       "**": false,
       "main": true
     }
-  },
-  "crons": [{ "path": "/api/cron/feed-score", "schedule": "0 18 * * *" }]
+  }
 }
