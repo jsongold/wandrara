@@ -73,7 +73,7 @@ async function main(): Promise<number> {
     changed = true;
   }
   // DB を直接書くので、サイトのキャッシュは捨てない。すぐ反映したいときは pnpm dest:publish（API 経由）を使う
-  if (changed) console.warn("注意：サーバーキャッシュは捨てていない。一覧・詳細に反映されるまで最大 15 分（cacheLife の revalidate）かかる");
+  if (changed) console.warn("注意：サーバーキャッシュは捨てていない。反映されるまで一覧は最大約 1 分、詳細は最大 15 分（cacheLife の revalidate）かかる");
   return failed > 0 ? 1 : 0;
 }
 

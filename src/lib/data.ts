@@ -55,13 +55,14 @@ export async function getRegions(): Promise<Region[]> {
 }
 
 // 公開・非公開・投入で変わる。tag（catalog）を付け、更新経路が捨てる。ただしインスタンス内のキャッシュ（use cache）なので、
-// 捨てられるのは書き込みを受けたインスタンスだけ。ほかのインスタンスは revalidate の 15 分で追いつく。
-// remote（全インスタンスに効く）にしないのは、Catalog が大きく（/ja の RSC が展開後 1.6MB）、2MB の上限と読み取り課金が危ないため。MS2c で小さくして測ってから
+// 捨てられるのは書き込みを受けたインスタンスだけ。ほかのインスタンスは revalidate で追いつく。
+// 寿命は main と同じ "minutes" 相当（stale 300 / revalidate 60 / expire 3600。同梱の cacheLife.md の表）を明示する。
+// Catalog は日々増えるので全件キャッシュを長くしない。remote にしないのは 2MB の上限・読み取り課金が危ないため。全件読みそのものを MS2b でなくす
 export async function getCatalog(): Promise<Catalog> {
   "use cache";
   // regions は中の getRegions と同じ内容。外側にも付けておく（入れ子の tag が外へ伝わるとは文書に無い）
   cacheTag(CATALOG_TAG, REGIONS_TAG);
-  cacheLife({ stale: 300, revalidate: 900, expire: 86400 });
+  cacheLife({ stale: 300, revalidate: 60, expire: 3600 });
   const { url } = env();
   const db = supabase();
   const [regions, categories, dests] = await Promise.all([

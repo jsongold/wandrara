@@ -26,12 +26,12 @@ describe("キャッシュの tag と寿命", () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "key");
   });
 
-  it("getCatalog は catalog（公開・非公開で捨てる）と regions を付け、15 分で取り直し・1 日で失効（remote ではなくインスタンス内）", async () => {
+  it("getCatalog は catalog（公開・非公開で捨てる）と regions を付け、main と同じ約 1 分で取り直し・1 時間で失効（remote ではなくインスタンス内）", async () => {
     const { getCatalog } = await import("./data");
     await getCatalog();
     const tags = cacheTag.mock.calls.flat();
     expect(tags).toEqual(expect.arrayContaining(["catalog", "regions"]));
-    expect(cacheLife).toHaveBeenCalledWith({ stale: 300, revalidate: 900, expire: 86400 });
+    expect(cacheLife).toHaveBeenCalledWith({ stale: 300, revalidate: 60, expire: 3600 });
   });
 
   it("getDestDetail は slug ごとの tag（dest:<slug>）を付ける。見つからない slug も付き、寿命は短い", async () => {
