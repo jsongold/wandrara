@@ -174,8 +174,9 @@ export const relatedOtherMode: SecondaryStrategy = (cards, ctx) => {
 // ---- 重複の間引き（戦略とは独立） ----
 
 // 直前のカードに出たタイルは次のカードで出さない。最低 minKeep 枚は残す
-export function dedupeRelatedTiles(tilesPerCard: Tile[][], show = 3, minKeep = 1): Tile[][] {
-  let prev = new Set<string>();
+// prevIds：この列の直前のカード（ページ送りで前のページの最後のカード）に出したタイルの destId
+export function dedupeRelatedTiles(tilesPerCard: Tile[][], show = 3, minKeep = 1, prevIds: Iterable<string> = []): Tile[][] {
+  let prev = new Set<string>(prevIds);
   return tilesPerCard.map((tiles) => {
     const fresh = tiles.filter((x) => !prev.has(x.destId));
     const picked = (fresh.length >= minKeep ? fresh : tiles).slice(0, show);
