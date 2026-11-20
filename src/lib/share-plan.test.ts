@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DestDetailView } from "./detail";
-import { mapUrlOf, shareItemOf, shareText, type ShareText } from "./share-plan";
+import { finalDraft, mapUrlOf, shareItemOf, shareText, type ShareText } from "./share-plan";
 
 const base = { id: "d1", title: "森の宿", areaLabel: "箱根・仙石原", kindLabel: "宿", summary: "森の中の一棟貸し。", isDemo: false, photos: [], facts: [], accommodation: null, experience: null, nature: null, building: null, hotspring: null, village: null, location: { lat: 35.25, lng: 139.02 } } as DestDetailView;
 
@@ -49,4 +49,17 @@ describe("shareText", () => {
     expect(text).not.toContain("予約");
   });
   it("地図の URL", () => expect(mapUrlOf(null)).toBeNull());
+});
+
+describe("finalDraft", () => {
+  const ft = { instructions: ["指示1", "指示2"], gapsTitle: "埋める所", gap: (x: string, f: string[]) => `- ${x}：${f.join("、")}`, noGaps: "なし", fields: { price: "料金", access: "行き方", booking: "予約リンク" }, draftStart: "<<<", draftEnd: ">>>" };
+  it("指示・埋める所・下書きの順。埋める所は料金・行き方・予約リンクの無いもの", () => {
+    const stayItem = shareItemOf(stay, "stay", "u1", "ja");
+    const exp = { ...shareItemOf({ ...base, accommodation: null, experience: { priceTable: null } } as unknown as DestDetailView, "activity", "u2", "ja"), title: "カヌー" };
+    const out = finalDraft("下書き", [stayItem, exp], ft);
+    expect(out).toBe("指示1\n指示2\n\n埋める所\n- カヌー：料金、行き方、予約リンク\n\n<<<\n下書き\n>>>");
+  });
+  it("埋める所が無ければ、なし", () => {
+    expect(finalDraft("d", [shareItemOf(stay, "stay", "u", "ja")], ft)).toContain("埋める所\nなし");
+  });
 });

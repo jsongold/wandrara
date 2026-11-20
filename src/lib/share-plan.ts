@@ -120,3 +120,37 @@ export function shareText(title: string, items: ShareItem[], t: ShareText): stri
   });
   return [t.heading(title), ...blocks, t.footer].join("\n\n");
 }
+
+// ---- FinalDraft：Agent（ChatGPT・Claude など）に渡して、不明の所とリンクを補ってもらうための文 ----
+
+export type FinalDraftText = {
+  /** 先頭の指示（何をしてほしいか・守ること・出力の形）。行の配列 */
+  instructions: string[];
+  /** 埋める所の見出しと、1 件の書き方 */
+  gapsTitle: string;
+  gap: (title: string, fields: string[]) => string;
+  noGaps: string;
+  fields: { price: string; access: string; booking: string };
+  draftStart: string;
+  draftEnd: string;
+};
+
+/** 埋める所：料金を出す種類で料金が無い・行き方が無い・予約が要る種類で予約リンクが無い */
+export function gapsOf(items: ShareItem[], f: FinalDraftText["fields"]): { title: string; fields: string[] }[] {
+  return items
+    .map((it) => ({
+      title: it.title,
+      fields: [it.priced && !it.price ? f.price : null, !it.access ? f.access : null, it.priced && !it.links.length ? f.booking : null].filter((x): x is string => Boolean(x)),
+    }))
+    .filter((g) => g.fields.length);
+}
+
+/** 指示 → 埋める所 → 下書き（区切りで囲む）の順。Agent が下書きの形を保ったまま完成させられるようにする */
+export function finalDraft(draft: string, items: ShareItem[], t: FinalDraftText): string {
+  const gaps = gapsOf(items, t.fields);
+  return [
+    t.instructions.join("\n"),
+    [t.gapsTitle, ...(gaps.length ? gaps.map((g) => t.gap(g.title, g.fields)) : [t.noGaps])].join("\n"),
+    [t.draftStart, draft, t.draftEnd].join("\n"),
+  ].join("\n\n");
+}

@@ -23,7 +23,7 @@ import {
   type Strategies,
 } from "@/lib/propose";
 import type { Reaction } from "@/lib/reactions";
-import { bookable, needsBooking, type ShareItem } from "@/lib/share-plan";
+import { bookable, finalDraft, needsBooking, type ShareItem } from "@/lib/share-plan";
 import type { Locale } from "@/lib/types";
 import { SaveDataHint } from "@/lib/use-save-data";
 import { Icon } from "./icons";
@@ -271,7 +271,7 @@ function ShareArtifact({ locale, name, stay, activities }: { locale: Locale; nam
   const m = messages(locale);
   const t = m.plan;
   const [share, setShare] = useState<ShareState>({ status: "loading" });
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"final" | "plain" | null>(null);
   const query = new URLSearchParams({ lang: locale, title: name, ...(stay ? { stay: slugOf(stay.href) } : {}), acts: activities.map((c) => slugOf(c.href)).join(",") }).toString();
   useEffect(() => {
     let live = true;
@@ -287,14 +287,16 @@ function ShareArtifact({ locale, name, stay, activities }: { locale: Locale; nam
   if (share.status !== "ready") return <p className="m-0 mt-2 text-[12.5px] text-white/60">{share.status === "loading" ? t.shareLoading : t.shareFailed}</p>;
   const ready = share.items.filter(bookable).length;
   const toBook = share.items.filter(needsBooking).length;
-  async function copy(text: string) {
+  async function copy(text: string, which: "final" | "plain") {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
+      setCopied(which);
     } catch {
-      setCopied(false);
+      setCopied(null);
     }
   }
+  // FinalDraft：Agent に渡す指示・埋める所・下書き
+  const final = finalDraft(share.text, share.items, t.finalDraft);
   const canSend = typeof navigator !== "undefined" && "share" in navigator;
   return (
     <div className="mt-2 flex flex-col gap-2">
@@ -302,16 +304,26 @@ function ShareArtifact({ locale, name, stay, activities }: { locale: Locale; nam
         <h3 className="m-0 text-[13px] font-bold text-[#f4f1ea]">{t.shareTitle}</h3>
         <span className="text-[11.5px] text-white/60">{t.bookableCount(ready, toBook)}</span>
       </div>
-      <p className="m-0 text-[12px] text-white/60">{t.shareLead}</p>
+      <ol className="m-0 flex list-none flex-col gap-0.5 p-0 text-[12px] text-white/70">
+        {t.finalSteps.map((s) => (
+          <li key={s}>{s}</li>
+        ))}
+      </ol>
       <pre className="m-0 max-h-[260px] overflow-y-auto whitespace-pre-wrap break-all rounded-[12px] bg-black/30 p-3 font-sans text-[12.5px] leading-relaxed text-white/90">{share.text}</pre>
       <div className="flex gap-2">
-        <button type="button" onClick={() => copy(share.text)} className="flex h-11 flex-auto cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 bg-[#f4f1ea] text-[14px] font-bold text-[#141413]">
-          <Icon name={copied ? "check" : "copy"} size={16} />
-          {copied ? t.copied : t.copy}
+        <button type="button" onClick={() => copy(final, "final")} className="flex h-11 flex-auto cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 bg-[#f4f1ea] text-[14px] font-bold text-[#141413]">
+          <Icon name={copied === "final" ? "check" : "copy"} size={16} />
+          {copied === "final" ? t.copied : t.copyFinal}
+        </button>
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => copy(share.text, "plain")} className="flex min-h-11 flex-auto cursor-pointer items-center justify-center gap-2 border-0 bg-transparent text-[13px] text-white/75">
+          <Icon name={copied === "plain" ? "check" : "copy"} size={15} />
+          {copied === "plain" ? t.copied : t.copyPlain}
         </button>
         {canSend && (
-          <button type="button" onClick={() => navigator.share({ text: share.text }).catch(() => {})} className="flex h-11 flex-auto cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-white/30 bg-transparent text-[14px] font-bold text-white">
-            <Icon name="share" size={16} />
+          <button type="button" onClick={() => navigator.share({ text: share.text }).catch(() => {})} className="flex min-h-11 flex-auto cursor-pointer items-center justify-center gap-2 border-0 bg-transparent text-[13px] text-white/75">
+            <Icon name="share" size={15} />
             {t.send}
           </button>
         )}
