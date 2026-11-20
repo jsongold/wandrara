@@ -59,7 +59,8 @@ export function orderBySuggest<T>(cards: T[], pivot: number, picked: string[], k
 // ---- 提案ページの URL（/[lang]/plan?t=near_lake,plateau&area=hakone） ----
 
 const KEY = /^[a-z0-9_-]{1,40}$/;
-const MAX_KEYWORDS = 20;
+/** 選べるキーワードの上限。シートもこの数を超えて足さない（URL で黙って捨てないため） */
+export const MAX_KEYWORDS = 40;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 /** ?t= をキーワード id にする。形の違うもの・重複は捨てる */

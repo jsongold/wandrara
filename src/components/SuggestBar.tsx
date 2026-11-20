@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { areaSheetLoader, IDLE_AREA_SHEET } from "@/lib/area-sheet-client";
 import { messages } from "@/lib/i18n/messages";
-import { countMatching, hasData, suggestPlanHref, type PlanItem } from "@/lib/suggest";
+import { countMatching, hasData, MAX_KEYWORDS, suggestPlanHref, type PlanItem } from "@/lib/suggest";
 import type { PresetView } from "@/lib/suggest-presets";
 import { BIG_CATEGORIES, KEYWORDS, keywordOf, PRESETS, type Preset } from "@/lib/suggest-vocab";
 import type { Locale } from "@/lib/types";
@@ -77,9 +77,14 @@ export function SuggestBar({ locale, initial = [], initialArea = "all" }: { loca
     setOpenArea(undefined);
     setOpen(true);
   }
-  const toggle = (id: string) => setDraft((d) => (d.includes(id) ? d.filter((x) => x !== id) : [...d, id]));
+  const toggle = (id: string) => setDraft((d) => (d.includes(id) ? d.filter((x) => x !== id) : d.length < MAX_KEYWORDS ? [...d, id] : d));
   const presetOn = (p: Preset) => p.keywords.every((k) => draft.includes(k));
-  const togglePreset = (p: Preset) => setDraft((d) => (presetOn(p) ? d.filter((k) => !p.keywords.includes(k)) : [...new Set([...d, ...p.keywords])]));
+  const togglePreset = (p: Preset) =>
+    setDraft((d) => {
+      if (presetOn(p)) return d.filter((k) => !p.keywords.includes(k));
+      const next = [...new Set([...d, ...p.keywords])];
+      return next.length <= MAX_KEYWORDS ? next : d;
+    });
   const pickArea = (id: string) => setArea((a) => (a === id ? "all" : id));
   function onSuggest() {
     setOpen(false);
