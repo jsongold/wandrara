@@ -24,6 +24,7 @@ const PATHS: Record<string, string> = {
   share: "M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6",
   "chevron-down": "M6 9l6 6 6-6",
   check: "M5 12l5 5 9-10",
+  copy: "M9 9h11v11H9zM5 15V4h11",
   lock: "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4",
   flag: "M5 21V4h11l-2 4 2 4H5",
   arrow: "M5 12h14M13 6l6 6-6 6",

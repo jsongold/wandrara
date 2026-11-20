@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { messages } from "@/lib/i18n/messages";
 import { buildItinerary } from "@/lib/itinerary";
 import type { PlanCard, RoomData } from "@/lib/plan-room";
@@ -23,6 +23,7 @@ import {
   type Strategies,
 } from "@/lib/propose";
 import type { Reaction } from "@/lib/reactions";
+import { bookable, needsBooking, type ShareItem } from "@/lib/share-plan";
 import type { Locale } from "@/lib/types";
 import { SaveDataHint } from "@/lib/use-save-data";
 import { Icon } from "./icons";
@@ -149,7 +150,7 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
                   })}
                 </div>
               )}
-              {msg.t === "plan" && <PlanMessage locale={locale} msg={msg} cardById={cardById} onFix={() => setView("share")} />}
+              {msg.t === "plan" && <PlanMessage locale={locale} name={name} msg={msg} cardById={cardById} onFix={() => setView("share")} />}
               {msg.t === "choices" && (
                 <ChoiceChips choices={msg.choices} picked={msg.picked} label={choiceText} onPick={(f) => onChoose(f, i)} ariaLabel={t.choicesAsk} indent />
               )}
@@ -233,8 +234,8 @@ function advanceRoom(r: Room, state: ProposeState, cause: Cause, data: RoomData,
   return { state: applyRound(state, res), thread, latest: res.done ? r.latest : res.ids, choices: res.choices, done: res.done, algorithm: res.algorithm };
 }
 
-// そろったプラン：宿と過ごし方を並べ、Fix へ
-function PlanMessage({ locale, msg, cardById, onFix }: { locale: Locale; msg: Extract<Msg, { t: "plan" }>; cardById: Map<string, PlanCard>; onFix: () => void }) {
+// そろったプラン：宿と過ごし方を並べ、その下にグループへ送る文（アーティファクト）。Fix は控えめに
+function PlanMessage({ locale, name, msg, cardById, onFix }: { locale: Locale; name: string; msg: Extract<Msg, { t: "plan" }>; cardById: Map<string, PlanCard>; onFix: () => void }) {
   const m = messages(locale);
   const rows = [msg.stay, ...msg.activities].map((id) => cardById.get(id)).filter((c): c is PlanCard => Boolean(c));
   return (
@@ -253,11 +254,69 @@ function PlanMessage({ locale, msg, cardById, onFix }: { locale: Locale; msg: Ex
           </span>
         </div>
       ))}
-      <button type="button" onClick={onFix} className="mt-2 flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 bg-[#f4f1ea] text-[14px] font-bold text-[#141413]">
-        <Icon name="flag" size={16} />
+      <ShareArtifact locale={locale} name={name} stay={cardById.get(msg.stay)} activities={msg.activities.map((id) => cardById.get(id)).filter((c): c is PlanCard => Boolean(c))} />
+      <button type="button" onClick={onFix} className="mt-1 flex min-h-11 cursor-pointer items-center justify-center gap-2 border-0 bg-transparent text-[13px] text-white/70">
+        <Icon name="flag" size={15} />
         {m.plan.fixThisPlan}
       </button>
     </section>
+  );
+}
+
+const slugOf = (href: string) => href.slice(href.lastIndexOf("/") + 1);
+type ShareState = { status: "loading" } | { status: "error" } | { status: "ready"; text: string; items: ShareItem[] };
+
+// グループへ送る文：データカタログの詳細（料金・時間・行き方）を本文に、地図・予約・公式・WANDRARA のリンクを添える。コピーか、端末の共有で送る
+function ShareArtifact({ locale, name, stay, activities }: { locale: Locale; name: string; stay: PlanCard | undefined; activities: PlanCard[] }) {
+  const m = messages(locale);
+  const t = m.plan;
+  const [share, setShare] = useState<ShareState>({ status: "loading" });
+  const [copied, setCopied] = useState(false);
+  const query = new URLSearchParams({ lang: locale, title: name, ...(stay ? { stay: slugOf(stay.href) } : {}), acts: activities.map((c) => slugOf(c.href)).join(",") }).toString();
+  useEffect(() => {
+    let live = true;
+    fetch(`/api/plan-share?${query}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((j: { text: string; items: ShareItem[] }) => live && setShare({ status: "ready", text: j.text, items: j.items }))
+      .catch(() => live && setShare({ status: "error" }));
+    return () => {
+      live = false;
+    };
+  }, [query]);
+
+  if (share.status !== "ready") return <p className="m-0 mt-2 text-[12.5px] text-white/60">{share.status === "loading" ? t.shareLoading : t.shareFailed}</p>;
+  const ready = share.items.filter(bookable).length;
+  const toBook = share.items.filter(needsBooking).length;
+  async function copy(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+  const canSend = typeof navigator !== "undefined" && "share" in navigator;
+  return (
+    <div className="mt-2 flex flex-col gap-2">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="m-0 text-[13px] font-bold text-[#f4f1ea]">{t.shareTitle}</h3>
+        <span className="text-[11.5px] text-white/60">{t.bookableCount(ready, toBook)}</span>
+      </div>
+      <p className="m-0 text-[12px] text-white/60">{t.shareLead}</p>
+      <pre className="m-0 max-h-[260px] overflow-y-auto whitespace-pre-wrap break-all rounded-[12px] bg-black/30 p-3 font-sans text-[12.5px] leading-relaxed text-white/90">{share.text}</pre>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => copy(share.text)} className="flex h-11 flex-auto cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 bg-[#f4f1ea] text-[14px] font-bold text-[#141413]">
+          <Icon name={copied ? "check" : "copy"} size={16} />
+          {copied ? t.copied : t.copy}
+        </button>
+        {canSend && (
+          <button type="button" onClick={() => navigator.share({ text: share.text }).catch(() => {})} className="flex h-11 flex-auto cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-white/30 bg-transparent text-[14px] font-bold text-white">
+            <Icon name="share" size={16} />
+            {t.send}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
