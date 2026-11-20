@@ -10,7 +10,7 @@ const judge = (fit: number, o: Partial<Judge> = {}): Judge => ({ fit, reason: `�
 const scenario = (id: string, m: EvalMetrics | null, j?: Judge): ScenarioResult => ({
   id, who: `誰-${id}`, want: `したい-${id}`, query: {},
   ...(m
-    ? { result: { name: id, trip: "2 人", conditions: ["湖畔"], algorithm: "a@1", metrics: m, rounds: [{ cause: "start", lead: "どうぞ", cards: [{ name: "宿A", kind: "宿", area: "仙石原", features: ["湖畔"] }] }], plan: ["宿A", "滝B"] } }
+    ? { result: { name: id, trip: "2 人", conditions: ["湖畔"], algorithm: "a@1", metrics: m, rounds: [{ cause: "start", lead: "どうぞ", cards: [{ name: "宿A", kind: "宿", area: "仙石原", features: ["露天風呂"], areaTraits: ["湖畔"] }] }], plan: ["宿A", "滝B"] } }
     : { error: "500" }),
   ...(j ? { judge: j } : {}),
 });
@@ -78,7 +78,8 @@ describe("judgePrompt", () => {
     expect(p).toContain("- 誰が：誰-a");
     expect(p).toContain("- したいこと：したい-a");
     expect(p).toContain("1 回目「どうぞ」");
-    expect(p).toContain("  - 宿A（種類：宿／エリア：仙石原／特徴：湖畔）");
+    expect(p).toContain("  - 宿A（種類：宿／エリア：仙石原／場所の特徴：露天風呂／地区の特性：湖畔）");
+    expect(p).toContain("その場所自体にあるとは限りません");
     expect(p).toContain("最後のプラン：宿A → 滝B");
     expect(p).toContain("取得に失敗：500");
   });

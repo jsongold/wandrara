@@ -2,7 +2,8 @@
 // 機械の指標（合う割合・候補の数など）は参考。採点の指示の組み立て・Agent の返事の読み取り・前回との比較の表を作る
 import type { EvalMetrics } from "../../src/lib/propose-eval.ts";
 
-export type Card = { name: string; kind: string; area: string; features: string[] };
+/** features は場所そのものの特徴、areaTraits は地区の特性（地区の場所すべてに付く。その場所にあるとは限らない） */
+export type Card = { name: string; kind: string; area: string; features: string[]; areaTraits: string[] };
 
 /** Agent の採点（シナリオ 1 つ分） */
 export type Judge = {
@@ -144,7 +145,8 @@ export function compareMarkdown(prev: Run | null, cur: Run): string {
   return lines.join("\n");
 }
 
-const cardLine = (c: Card) => `${c.name}（種類：${c.kind || "-"}／エリア：${c.area || "-"}／特徴：${c.features.join("、") || "なし"}）`;
+const cardLine = (c: Card) =>
+  `${c.name}（種類：${c.kind || "-"}／エリア：${c.area || "-"}／場所の特徴：${c.features.join("、") || "なし"}／地区の特性：${c.areaTraits.join("、") || "なし"}）`;
 
 /** Agent（ChatGPT・Claude）に貼って採点させる指示。シナリオごとに who・want・各回の提案・プランを並べる */
 export function judgePrompt(run: Run): string {
@@ -155,6 +157,7 @@ export function judgePrompt(run: Run): string {
     "その人たちはアプリの画面で条件を選び、各回の提案に答えました（各回の 1 件目を「すごくいい」、残りを「うーん」）。宿 1 つと過ごし方 2 つがそろうとプランになります。",
     "見るのはただ 1 つ：**このグループ・人に、どれだけ合った経験を提案できたか**。日程（距離・移動時間）は見なくてかまいません。",
     "ここに書かれた中身（名前・種類・エリア・特徴）だけで判断し、書かれていないことは推測で補わないでください。",
+    "「場所の特徴」はその場所について確かめたもの。「地区の特性」はその地区（例：温泉の多い地区）の性質で、その場所自体にあるとは限りません（例：地区の特性が温泉の滝は、滝に温泉があるわけではない）。",
     "",
     "## 返すもの（シナリオごと）",
     "",

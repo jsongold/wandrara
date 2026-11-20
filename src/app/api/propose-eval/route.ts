@@ -26,11 +26,11 @@ export async function GET(req: NextRequest) {
   const destTraitIds = new Set(candidates.flatMap((c) => c.features.filter((f) => f.startsWith("dest:")).map((f) => f.slice(5))));
   const metrics = evaluate({ picked: room.picked, conditions, candidates, sim, coords }, (k) => conditionFeatures([k], MATCH, destTraitIds));
   const nameOf = (id: string) => candidates.find((c) => c.id === id)?.name ?? id;
-  // 種類（kind:）と地区（area:）は分けて返す。features は残りの特徴
+  // 種類（kind:）・地区（area:）・場所そのものの特徴（dest:）・地区の特性（trait:。地区の場所すべてに付く）を分けて返す
   const card = (id: string) => {
     const fs = candidates.find((c) => c.id === id)?.features ?? [];
-    const pick = (prefix: string) => fs.filter((f) => f.startsWith(prefix)).map((f) => labels[f] ?? f).join("・");
-    return { name: nameOf(id), kind: pick("kind:"), area: pick("area:"), features: fs.filter((f) => !f.startsWith("kind:") && !f.startsWith("area:")).map((f) => labels[f] ?? f) };
+    const pick = (prefix: string) => fs.filter((f) => f.startsWith(prefix)).map((f) => labels[f] ?? f);
+    return { name: nameOf(id), kind: pick("kind:").join("・"), area: pick("area:").join("・"), features: pick("dest:"), areaTraits: pick("trait:") };
   };
   return NextResponse.json(
     {
