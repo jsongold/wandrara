@@ -33,7 +33,7 @@ describe("evaluate", () => {
       { picked: ["onsen", "quiet", "forest"], conditions: ["trait:onsen", "dest:quiet"], candidates: all, sim, coords: { s1: { lat: 35, lng: 139 }, x3: { lat: 35.1, lng: 139 } } },
       (k) => ({ onsen: ["trait:onsen"], quiet: ["dest:quiet"] })[k] ?? [],
     );
-    expect(m).toMatchObject({ pool: 8, shown: 3, dropped: ["forest"], fit: 0.67, placeFit: 0.33, reasonTruth: 0.5, variety: 1, roundsToPlan: 2, planMaxKm: 11.1 });
+    expect(m).toMatchObject({ pool: 8, shown: 3, dropped: ["forest"], fit: 0.67, placeFit: 0.33, reasonTruth: 0.5, variety: 1, roundsToPlan: 2, planMaxKm: 11.1, feasible: true, tapsToPlan: 3 });
   });
   it("距離", () => expect(km({ lat: 35, lng: 139 }, { lat: 35, lng: 139 })).toBe(0));
 });

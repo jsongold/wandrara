@@ -28,7 +28,14 @@ export type EvalMetrics = {
   roundsToPlan: number | null;
   /** プランの宿から、ほかの場所までの一番遠い距離（km） */
   planMaxKm: number | null;
+  /** 日程として回れるか：プランがそろい、宿からどこも FEASIBLE_KM 以内（座標が無ければ null） */
+  feasible: boolean | null;
+  /** プランがそろうまでのタップ（リアクション）の数。そろわなければ null */
+  tapsToPlan: number | null;
 };
+
+/** 1 泊 2 日で無理なく回れる、宿からの距離の目安（km） */
+export const FEASIBLE_KM = 20;
 
 const PLACE_LEVEL = (f: FeatureId) => f.startsWith("dest:") || f.startsWith("kind:");
 const ratio = (n: number, d: number) => (d ? Math.round((n / d) * 100) / 100 : null);
@@ -59,5 +66,8 @@ export function evaluate(x: EvalInput, keywordFeatures: (keyword: string) => Fea
     variety: ratio(new Set(shown.map((c) => c.features.find((f) => f.startsWith("area:")))).size, shown.length),
     roundsToPlan: x.sim.roundsToPlan,
     planMaxKm: dists.length ? Math.max(...dists) : null,
+    feasible: x.sim.goal?.complete ? (dists.length && dists.length === plan.length - 1 ? Math.max(...dists) <= FEASIBLE_KM : null) : false,
+    // 利用者は出したものすべてにリアクションする（1 件 1 タップ）
+    tapsToPlan: x.sim.roundsToPlan === null ? null : shown.length,
   };
 }
