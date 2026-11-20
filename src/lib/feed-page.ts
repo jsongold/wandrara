@@ -186,6 +186,8 @@ export async function fetchFeedPage(db: SupabaseClient, baseUrl: string, args: F
     photos: c.photos.slice(0, MAX_CARD_PHOTOS).map((p) => toPhoto(baseUrl, p)),
     href: `/${locale}/d/${c.slug}`,
     carousel: items[i],
+    regionIds: regions[i].map((r) => r.id),
+    coreType: c.core_type,
   }));
   const last = res.cards.at(-1);
   return {

@@ -5,6 +5,8 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
+  // 開発時の Next.js の印は右下に置く（左下は提案シートの切り替えボタン、左上は戻る、右上は閉じると重なる）
+  devIndicators: { position: "bottom-right" },
   // 写真は Supabase Storage の dest-photos だけを最適化する。
   // 幅の種類を絞るのは Hobby の変換枠（月 5K。キーは 画像 × 幅 × 画質 × 形式）に収めるため。
   // カルーセル・部屋（sizes あり）は deviceSizes から、タイル（sizes 38vw）は imageSizes の 384 / 480 から選ぶ。

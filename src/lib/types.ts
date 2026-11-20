@@ -59,6 +59,8 @@ export type FeedCard = {
   photos: Photo[]; // 先頭がカードの最初の写真。横にスワイプして切り替える
   href: string;        // 詳細へのリンク
   carousel: CarouselItem[];
+  regionIds: string[]; // カードの地区とその親（提案の条件＝エリアの特性を引く）
+  coreType: string;    // dest の種類（accommodation・nature など。提案の「行き先の種類」に使う）
 };
 
 export type FeedPage = {

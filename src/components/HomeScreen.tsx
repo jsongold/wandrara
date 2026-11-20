@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition, type CSSProperties, type FormEvent, type MouseEvent } from "react";
 import { areaHighlights } from "@/lib/area-highlights";
 import { DEFAULT_QUERY, serializeDiscoverQuery } from "@/lib/discover-query";
 import { installFeedEventBeacon } from "@/lib/feed-event-beacon";
@@ -17,6 +17,7 @@ import { areaSheetLoader, IDLE_AREA_SHEET } from "@/lib/area-sheet-client";
 import type { CategoryView, DiscoverQuery, FeedCard, Locale, SortKey } from "@/lib/types";
 import { AreaMap } from "./AreaMap";
 import { AreaStories } from "./area-stories/AreaStories";
+import { BottomSheet, SheetHeader } from "./BottomSheet";
 import { Chip } from "./Chip";
 import { CurrentFilterDisplay } from "./CurrentFilterDisplay";
 import { HomeHeader } from "./HomeHeader";
@@ -24,6 +25,7 @@ import { Icon } from "./icons";
 import { NearbySuggestions, type StoriesOpener } from "./NearbySuggestions";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
+import { SuggestBar } from "./SuggestBar";
 import { useScrolledAway } from "./use-scrolled-away";
 
 // saveData：サーバーが決めた「通信量を抑える」（最初の描画に使う。以降はクライアントの値に従う）
@@ -49,6 +51,9 @@ const sorts = (m: Messages): { id: SortKey; label: string }[] => [
 
 // トップのテキスト入力とフィルター。今は Off
 const SHOW_SEARCH_AND_FILTER = false;
+
+// 提案から始める Home（試し中）：これまでの Feed と下のアイコンを出さず、提案の入力バーだけを出す。「提案」で /[lang]/plan に移る
+const SUGGEST_HOME = true;
 
 // areaLabel：今のエリアの名前（サーバーが渡す。「すべてのエリア」・知らない id は null）。エリアの一覧・地図に要る地域と特性は、シートを開いたときに取る（MS2c）
 export function HomeScreen({ saveData = false, ...props }: Props) {
@@ -165,6 +170,7 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
         className="absolute inset-0 overflow-y-auto pb-[120px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ opacity: isPending ? 0.6 : 1, transition: "opacity 0.2s" }}
         aria-busy={isPending}
+        hidden={SUGGEST_HOME}
       >
         <FeedList key={feedKey} feed={feed} query={query} locale={locale} track={track} onAlgorithmChange={refreshFeed} stories={stories} onCardSeen={onCardSeen} />
         {feed.cards.length === 0 && (
@@ -200,7 +206,8 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
 
       {/* Floating overlay */}
       {/* 横幅は画面の 80% まで、中央に置く */}
-      <div className="absolute inset-x-0 bottom-[22px] z-[6] mx-auto flex w-[80%] flex-col gap-2">
+      {SUGGEST_HOME && <SuggestBar locale={locale} />}
+      <div hidden={SUGGEST_HOME} className="absolute inset-x-0 bottom-[22px] z-[6] mx-auto flex w-[80%] flex-col gap-2">
         <div className="flex items-center gap-1.5">
           <button
             type="button"
@@ -511,48 +518,3 @@ function FeedCardView({ card, position, track, stories, onSeen }: { card: FeedCa
     </article>
   );
 }
-
-function BottomSheet({
-  label,
-  onClose,
-  children,
-  height,
-}: {
-  label: string;
-  onClose: () => void;
-  children: ReactNode;
-  height?: string;
-}) {
-  const m = useMessages();
-  return (
-    <>
-      <button type="button" aria-label={m.home.closeSheet(label)} onClick={onClose} className="absolute inset-0 z-[19] cursor-pointer border-0 bg-transparent" />
-      <section
-        role="dialog"
-        aria-label={label}
-        style={height ? { height } : undefined}
-        className="absolute inset-x-0 bottom-0 z-20 flex max-h-[700px] flex-col gap-5 overflow-y-auto rounded-t-3xl bg-[#1b1b19] px-5 pb-7 pt-5"
-      >
-        {children}
-      </section>
-    </>
-  );
-}
-
-function SheetHeader({ title, onClose }: { title: string; onClose: () => void }) {
-  const m = useMessages();
-  return (
-    <div className="flex items-center justify-between">
-      <h2 className="m-0 text-lg font-bold">{title}</h2>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label={m.common.close}
-        className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border-0 bg-white/10 text-white"
-      >
-        <Icon name="close" size={18} />
-      </button>
-    </div>
-  );
-}
-

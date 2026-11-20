@@ -11,7 +11,7 @@ export type Catalog = { regions: Region[]; categories: Category[]; dests: DestCa
 export type Ctx = { catalog: Catalog; query: DiscoverQuery; locale: Locale };
 
 // メインカード（並べる前）。並べ方の戦略は anchor を見る
-export type PrimaryCard = Omit<FeedCard, "carousel"> & { anchor: DestCard };
+export type PrimaryCard = Omit<FeedCard, "carousel" | "regionIds"> & { anchor: DestCard };
 
 export type OrderStrategy = (cards: PrimaryCard[], ctx: Ctx) => { cards: PrimaryCard[]; label: string };
 export type PrimaryStrategy = (candidates: DestCard[], ctx: Ctx) => PrimaryCard[];
@@ -96,6 +96,7 @@ export const primaryByMode: PrimaryStrategy = (candidates, ctx) => {
       title: t(d.name, locale),
       areaLabel: areaLabel(d.regionId, catalog.regions, locale),
       kindLabel: kindLabelOf(d.coreType, locale),
+      coreType: d.coreType,
       relLabel: messages(locale).home.relNearby,
       photos: d.photos,
       href: `/${locale}/d/${d.slug}`,
@@ -221,13 +222,14 @@ export function buildFeed(ctx: Ctx, strategies: Strategies, carousel: CarouselEn
   const primary = strategies.primary(candidates, ctx);
   const ordered = strategies.order(primary, ctx);
   const tiles = dedupeRelatedTiles(strategies.secondary(ordered.cards, ctx), MAX_TILES);
+  const chains = ordered.cards.map((c) => regionChain(c.anchor.regionId, ctx.catalog.regions, ctx.locale));
   const items = carousel.run(
-    ordered.cards.map((c, i) => ({ tiles: tiles[i], regions: regionChain(c.anchor.regionId, ctx.catalog.regions, ctx.locale) })),
+    ordered.cards.map((c, i) => ({ tiles: tiles[i], regions: chains[i] })),
     { locale: ctx.locale, prevArea: null },
   );
   const cards: FeedCard[] = ordered.cards.map((c, i) => ({
     key: c.key, destId: c.destId, title: c.title, areaLabel: c.areaLabel, kindLabel: c.kindLabel, relLabel: c.relLabel,
-    photos: c.photos.slice(0, MAX_CARD_PHOTOS), href: c.href, carousel: items[i],
+    photos: c.photos.slice(0, MAX_CARD_PHOTOS), href: c.href, carousel: items[i], regionIds: chains[i].map((r) => r.id), coreType: c.coreType,
   }));
   return { cards, orderLabel: ordered.label, algorithm: `${strategies.id} ${carousel.id}`, emptyReason: cards.length === 0 ? "no-match" : null };
 }

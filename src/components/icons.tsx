@@ -23,6 +23,7 @@ const PATHS: Record<string, string> = {
   back: "M15 5l-7 7 7 7",
   share: "M12 3v12M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6",
   "chevron-down": "M6 9l6 6 6-6",
+  check: "M5 12l5 5 9-10",
   external: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
   plus: "M12 5v14M5 12h14",
   wallet: "M4 7a2 2 0 0 1 2-2h11v3M4 7v11a2 2 0 0 0 2 2h14V8H6a2 2 0 0 1-2-1zM16 13.5h2",

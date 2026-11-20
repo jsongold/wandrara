@@ -49,8 +49,8 @@ describe("buildFeed（大きい catalog）", () => {
     // 関連タイルが実際に出ていること（空のまま一致して見えるのを防ぐ）
     expect(out[0].cards.some((c) => c.carousel.length > 0)).toBe(true);
     const hash = createHash("sha256").update(JSON.stringify(out)).digest("hex");
-    // 関連タイルを全種類にした（secondary=related-any-kind@1）ときと、tiles を carousel（CarouselItem[]）にして algorithm に carousel 段を足したとき・既定を stories-first-once@1 にしたとき（いずれも中身は前と同じことを確かめた）に更新した
-    expect(hash).toBe("25183873c821df5a31f5f906364962aa31b6ae894dd57aedbb028bcc134bbaef");
+    // 関連タイルを全種類にした（secondary=related-any-kind@1）ときと、tiles を carousel（CarouselItem[]）にして algorithm に carousel 段を足したとき・既定を stories-first-once@1 にしたとき・カードに regionIds・coreType を足したとき（いずれも中身は前と同じことを確かめた）に更新した
+    expect(hash).toBe("580f28cddc8405715ea20565c95e66ac8a7e10da6013ddd1a8b7f3bd5f69fd92");
   });
 
   it("5 つの条件を組み立てても遅くならない（変更前は約 3.6 秒。しきい値は余裕を持たせてある）", () => {
