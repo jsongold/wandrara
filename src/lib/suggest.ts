@@ -74,10 +74,12 @@ export function parseSuggestArea(raw: string | string[] | undefined): string {
   return v && KEY.test(v) ? v : "all";
 }
 
-export function suggestPlanHref(locale: string, picked: string[], area = "all"): string {
+/** extra：ほかに足す値（旅の目的 ?p=&m=&o= など） */
+export function suggestPlanHref(locale: string, picked: string[], area = "all", extra: Record<string, string> = {}): string {
   const p = new URLSearchParams();
   if (picked.length) p.set("t", picked.join(","));
   if (area !== "all") p.set("area", area);
+  for (const [k, v] of Object.entries(extra)) p.set(k, v);
   const s = p.toString().replaceAll("%2C", ",");
   return s ? `/${locale}/plan?${s}` : `/${locale}/plan`;
 }

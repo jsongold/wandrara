@@ -34,7 +34,7 @@ export function HomeHeader({ locale, next, subtitle, iconStyle, collapsed, area 
             style={{ width: "calc(var(--title-w) - 12px)", transform: collapsed ? "translateY(-160%)" : "none", opacity: collapsed ? 0 : 1, transition: `transform ${MOTION}, opacity ${MOTION}` }}
           >
             <span className="text-[15px] font-semibold tracking-[0.24em] [text-shadow:0_1px_6px_rgba(0,0,0,0.55)]">WANDRARA</span>
-            <span className="truncate text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{subtitle}</span>
+            {subtitle && <span className="truncate text-[11px] text-white/90 [text-shadow:0_1px_6px_rgba(0,0,0,0.7)]">{subtitle}</span>}
           </div>
         </div>
         {area}

@@ -52,12 +52,15 @@ describe("shareText", () => {
 });
 
 describe("finalDraft", () => {
-  const ft = { instructions: ["指示1", "指示2"], gapsTitle: "埋める所", gap: (x: string, f: string[]) => `- ${x}：${f.join("、")}`, noGaps: "なし", fields: { price: "料金", access: "行き方", booking: "予約リンク" }, draftStart: "<<<", draftEnd: ">>>" };
+  const ft = { instructions: ["指示1", "指示2"], gapsTitle: "埋める所", gap: (x: string, f: string[]) => `- ${x}：${f.join("、")}`, noGaps: "なし", fields: { price: "料金", access: "行き方", booking: "予約リンク" }, draftStart: "<<<", draftEnd: ">>>", trip: (x: string) => `条件：${x}` };
   it("指示・埋める所・下書きの順。埋める所は料金・行き方・予約リンクの無いもの", () => {
     const stayItem = shareItemOf(stay, "stay", "u1", "ja");
     const exp = { ...shareItemOf({ ...base, accommodation: null, experience: { priceTable: null } } as unknown as DestDetailView, "activity", "u2", "ja"), title: "カヌー" };
     const out = finalDraft("下書き", [stayItem, exp], ft);
     expect(out).toBe("指示1\n指示2\n\n埋める所\n- カヌー：料金、行き方、予約リンク\n\n<<<\n下書き\n>>>");
+  });
+  it("旅の条件があれば、指示のすぐあとに入れる", () => {
+    expect(finalDraft("d", [], ft, "2人・11月")).toBe("指示1\n指示2\n\n条件：2人・11月\n\n埋める所\nなし\n\n<<<\nd\n>>>");
   });
   it("埋める所が無ければ、なし", () => {
     expect(finalDraft("d", [shareItemOf(stay, "stay", "u", "ja")], ft)).toContain("埋める所\nなし");

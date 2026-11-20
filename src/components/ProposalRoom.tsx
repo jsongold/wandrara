@@ -40,7 +40,8 @@ type Msg =
 
 type Room = { state: ProposeState; thread: Msg[]; latest: string[]; choices: Choice[]; done: boolean; algorithm: string | null };
 
-type Props = { locale: Locale; name: string; picked: string[]; area: string; data: RoomData };
+// trip：旅の目的の短い名前（人数・時期・そのほか。無ければ空）
+type Props = { locale: Locale; name: string; picked: string[]; area: string; trip: string; data: RoomData };
 
 // 提案ルーム。ステージング（自分だけ）で提案が続き、Fix で共有ルーム（Fix した旅程が一番上）を開く。
 // 提案の中身は src/lib/propose（機械的に選ぶ。画面は結果を並べるだけ）
@@ -54,7 +55,7 @@ export function ProposalRoom({ saveData, ...props }: Props & { saveData: boolean
 }
 
 // data-home：詳細シートが開いている間、裏を操作できなくする目印（DetailSheet が inert にする）
-function RoomBody({ locale, name, picked, area, data }: Props) {
+function RoomBody({ locale, name, picked, area, trip, data }: Props) {
   const m = messages(locale);
   const t = m.plan;
   const cardById = useMemo(() => new Map(data.cards.map((c) => [c.destId, c])), [data.cards]);
@@ -150,7 +151,7 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
                   })}
                 </div>
               )}
-              {msg.t === "plan" && <PlanMessage locale={locale} name={name} msg={msg} cardById={cardById} onFix={() => setView("share")} />}
+              {msg.t === "plan" && <PlanMessage locale={locale} name={trip ? `${name}（${trip}）` : name} trip={trip} msg={msg} cardById={cardById} onFix={() => setView("share")} />}
               {msg.t === "choices" && (
                 <ChoiceChips choices={msg.choices} picked={msg.picked} label={choiceText} onPick={(f) => onChoose(f, i)} ariaLabel={t.choicesAsk} indent />
               )}
@@ -235,7 +236,7 @@ function advanceRoom(r: Room, state: ProposeState, cause: Cause, data: RoomData,
 }
 
 // そろったプラン：宿と過ごし方を並べ、その下にグループへ送る文（アーティファクト）。Fix は控えめに
-function PlanMessage({ locale, name, msg, cardById, onFix }: { locale: Locale; name: string; msg: Extract<Msg, { t: "plan" }>; cardById: Map<string, PlanCard>; onFix: () => void }) {
+function PlanMessage({ locale, name, trip, msg, cardById, onFix }: { locale: Locale; name: string; trip: string; msg: Extract<Msg, { t: "plan" }>; cardById: Map<string, PlanCard>; onFix: () => void }) {
   const m = messages(locale);
   const rows = [msg.stay, ...msg.activities].map((id) => cardById.get(id)).filter((c): c is PlanCard => Boolean(c));
   return (
@@ -254,7 +255,7 @@ function PlanMessage({ locale, name, msg, cardById, onFix }: { locale: Locale; n
           </span>
         </div>
       ))}
-      <ShareArtifact locale={locale} name={name} stay={cardById.get(msg.stay)} activities={msg.activities.map((id) => cardById.get(id)).filter((c): c is PlanCard => Boolean(c))} />
+      <ShareArtifact locale={locale} name={name} trip={trip} stay={cardById.get(msg.stay)} activities={msg.activities.map((id) => cardById.get(id)).filter((c): c is PlanCard => Boolean(c))} />
       <button type="button" onClick={onFix} className="mt-1 flex min-h-11 cursor-pointer items-center justify-center gap-2 border-0 bg-transparent text-[13px] text-white/70">
         <Icon name="flag" size={15} />
         {m.plan.fixThisPlan}
@@ -267,7 +268,7 @@ const slugOf = (href: string) => href.slice(href.lastIndexOf("/") + 1);
 type ShareState = { status: "loading" } | { status: "error" } | { status: "ready"; text: string; items: ShareItem[] };
 
 // グループへ送る文：データカタログの詳細（料金・時間・行き方）を本文に、地図・予約・公式・WANDRARA のリンクを添える。コピーか、端末の共有で送る
-function ShareArtifact({ locale, name, stay, activities }: { locale: Locale; name: string; stay: PlanCard | undefined; activities: PlanCard[] }) {
+function ShareArtifact({ locale, name, trip, stay, activities }: { locale: Locale; name: string; trip: string; stay: PlanCard | undefined; activities: PlanCard[] }) {
   const m = messages(locale);
   const t = m.plan;
   const [share, setShare] = useState<ShareState>({ status: "loading" });
@@ -296,7 +297,7 @@ function ShareArtifact({ locale, name, stay, activities }: { locale: Locale; nam
     }
   }
   // FinalDraft：Agent に渡す指示・埋める所・下書き
-  const final = finalDraft(share.text, share.items, t.finalDraft);
+  const final = finalDraft(share.text, share.items, t.finalDraft, trip);
   const canSend = typeof navigator !== "undefined" && "share" in navigator;
   return (
     <div className="mt-2 flex flex-col gap-2">

@@ -7,6 +7,8 @@ import { areaSheetLoader, IDLE_AREA_SHEET } from "@/lib/area-sheet-client";
 import { messages } from "@/lib/i18n/messages";
 import { countMatching, hasData, MAX_KEYWORDS, suggestPlanHref, type PlanItem } from "@/lib/suggest";
 import type { PresetView } from "@/lib/suggest-presets";
+import { tripQuery } from "@/lib/trip";
+import { currentTrip } from "@/lib/use-trip";
 import { BIG_CATEGORIES, KEYWORDS, keywordOf, PRESETS, type Preset } from "@/lib/suggest-vocab";
 import type { Locale } from "@/lib/types";
 import { AreaMap } from "./AreaMap";
@@ -90,7 +92,7 @@ export function SuggestBar({ locale, initial = [], initialArea = "all", trigger 
   const pickArea = (id: string) => setArea((a) => (a === id ? "all" : id));
   function onSuggest() {
     setOpen(false);
-    router.push(suggestPlanHref(locale, draft, area));
+    router.push(suggestPlanHref(locale, draft, area, tripQuery(currentTrip())));
   }
 
   const total = count(draft);

@@ -133,6 +133,8 @@ export type FinalDraftText = {
   fields: { price: string; access: string; booking: string };
   draftStart: string;
   draftEnd: string;
+  /** 旅の条件の一行（人数・時期・そのほか）。無ければ出さない */
+  trip: (label: string) => string;
 };
 
 /** 埋める所：料金を出す種類で料金が無い・行き方が無い・予約が要る種類で予約リンクが無い */
@@ -146,10 +148,11 @@ export function gapsOf(items: ShareItem[], f: FinalDraftText["fields"]): { title
 }
 
 /** 指示 → 埋める所 → 下書き（区切りで囲む）の順。Agent が下書きの形を保ったまま完成させられるようにする */
-export function finalDraft(draft: string, items: ShareItem[], t: FinalDraftText): string {
+export function finalDraft(draft: string, items: ShareItem[], t: FinalDraftText, tripLabel = ""): string {
   const gaps = gapsOf(items, t.fields);
   return [
     t.instructions.join("\n"),
+    ...(tripLabel ? [t.trip(tripLabel)] : []),
     [t.gapsTitle, ...(gaps.length ? gaps.map((g) => t.gap(g.title, g.fields)) : [t.noGaps])].join("\n"),
     [t.draftStart, draft, t.draftEnd].join("\n"),
   ].join("\n\n");
