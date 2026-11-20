@@ -1,13 +1,14 @@
 import { Suspense } from "react";
 import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { SuggestPlan, type PlanCard } from "@/components/SuggestPlan";
+import { ProposalRoom } from "@/components/ProposalRoom";
 import { getAreaSheetData } from "@/lib/data";
+import { messages } from "@/lib/i18n/messages";
 import { isLocale } from "@/lib/i18n/locale";
 import { planCards } from "@/lib/plan-candidates";
+import { roomData, type PlanCard } from "@/lib/plan-room";
 import { SAVE_DATA_COOKIE, saveDataOfRequest } from "@/lib/save-data";
-import { messages } from "@/lib/i18n/messages";
-import { inArea, matchedKeywords, orderBySuggest, parseSuggestArea, parseSuggestTraits, proposalName } from "@/lib/suggest";
+import { inArea, matchedKeywords, parseSuggestArea, parseSuggestTraits, proposalName } from "@/lib/suggest";
 import { keywordOf } from "@/lib/suggest-vocab";
 
 export default function PlanPage(props: PageProps<"/[lang]/plan">) {
@@ -18,7 +19,7 @@ export default function PlanPage(props: PageProps<"/[lang]/plan">) {
   );
 }
 
-// 提案ページ：?area= で絞り（これまでどおり）、?t= のこだわり（キーワード）に合う数の多い順に宿と体験を並べる。こだわりは絞り込みではない
+// 提案ルーム：?area= で候補を絞り、?t= のこだわりを条件にして、ステージングのチャットで提案を続ける（どれを出すかは src/lib/propose）
 async function Plan({ params, searchParams }: Pick<PageProps<"/[lang]/plan">, "params" | "searchParams">) {
   const { lang: locale } = await params;
   if (!isLocale(locale)) notFound();
@@ -29,14 +30,12 @@ async function Plan({ params, searchParams }: Pick<PageProps<"/[lang]/plan">, "p
   // 通信量を抑える利用者（Save-Data ヘッダか本人が選んだ cookie）。Home と同じく最初の描画から写真の画質を下げる
   const saveData = saveDataOfRequest(h.get("save-data"), jar.get(SAVE_DATA_COOKIE)?.value);
   const { byRegion } = sheet.traits;
-  const matched = new Map(all.map((c) => [c.key, matchedKeywords(c, picked, byRegion)]));
-  const cards: PlanCard[] = orderBySuggest(all.filter((c) => inArea(c, area)), -1, picked, (c) => matched.get(c.key) ?? []).map((c) => ({
-    ...c,
-    reason: (matched.get(c.key) ?? []).map((k) => keywordOf(k)?.label ?? k),
-  }));
-  // ページの名前：エリアの名前（地区なら地区）と、選んだこだわりの名前
+  const cards: PlanCard[] = all
+    .filter((c) => inArea(c, area))
+    .map((c) => ({ ...c, reason: matchedKeywords(c, picked, byRegion).map((k) => keywordOf(k)?.label ?? k) }));
+  // ルームの名前：エリアの名前（地区なら地区）と、選んだこだわりの名前
   const m = messages(locale);
   const areaLabel = sheet.areas.flatMap((g) => [g, ...g.subs]).find((x) => x.id === area)?.label ?? null;
   const name = proposalName(areaLabel, picked.map((k) => keywordOf(k)?.label ?? k), { all: m.plan.allAreas, sep: m.plan.nameSep, more: m.plan.nameMore });
-  return <SuggestPlan locale={locale} name={name} picked={picked} area={area} cards={cards} saveData={saveData} />;
+  return <ProposalRoom locale={locale} name={name} picked={picked} area={area} data={roomData(cards, picked, sheet.traits, sheet.areas)} saveData={saveData} />;
 }

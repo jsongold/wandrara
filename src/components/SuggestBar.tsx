@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { useMemo, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { areaSheetLoader, IDLE_AREA_SHEET } from "@/lib/area-sheet-client";
 import { messages } from "@/lib/i18n/messages";
 import { countMatching, hasData, MAX_KEYWORDS, suggestPlanHref, type PlanItem } from "@/lib/suggest";
@@ -12,7 +12,7 @@ import type { Locale } from "@/lib/types";
 import { AreaMap } from "./AreaMap";
 import { Icon } from "./icons";
 
-const GLASS: CSSProperties = {
+export const GLASS: CSSProperties = {
   background: "rgba(18,18,16,0.46)",
   backdropFilter: "blur(16px) saturate(1.2)",
   WebkitBackdropFilter: "blur(16px) saturate(1.2)",
@@ -40,7 +40,9 @@ function loadIndex(locale: Locale): Promise<PlanIndex> {
 // 画面の下に常に出る提案の入力バー。押すと提案シートが開く。
 // シートは 1 画面に 1 つ（おすすめ → こだわり → エリアのリスト → エリアの地図）で、下のバーの左のボタンで回す。
 // こだわりは 大分類 > 分類 > キーワード、エリアは エリア > 地区。行を押すとその下に開く。「提案」で提案ページ（/[lang]/plan?t=…&area=…）へ
-export function SuggestBar({ locale, initial = [], initialArea = "all" }: { locale: Locale; initial?: string[]; initialArea?: string }) {
+// trigger：下のバーを差し替える（提案ルームでは選択肢のポップアップを先に出し、そこから条件のシートを開く）。open はシートを開く、preload は先読み
+type Trigger = (open: () => void, preload: () => void) => ReactNode;
+export function SuggestBar({ locale, initial = [], initialArea = "all", trigger }: { locale: Locale; initial?: string[]; initialArea?: string; trigger?: Trigger }) {
   const m = messages(locale);
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -96,17 +98,21 @@ export function SuggestBar({ locale, initial = [], initialArea = "all" }: { loca
 
   return (
     <>
-      <button
-        type="button"
-        onClick={openSheet}
-        onPointerDown={load}
-        onFocus={load}
-        className="absolute inset-x-3 bottom-[18px] z-[6] flex h-[52px] cursor-pointer items-center gap-2.5 rounded-[18px] px-4 text-left text-[15px] text-white/90"
-        style={GLASS}
-      >
-        <Icon name="sparkle" size={18} className="flex-none" />
-        <span className="min-w-0 flex-auto truncate">{m.home.suggestBar}</span>
-      </button>
+      {trigger ? (
+        trigger(openSheet, load)
+      ) : (
+        <button
+          type="button"
+          onClick={openSheet}
+          onPointerDown={load}
+          onFocus={load}
+          className="absolute inset-x-3 bottom-[18px] z-[6] flex h-[52px] cursor-pointer items-center gap-2.5 rounded-[18px] px-4 text-left text-[15px] text-white/90"
+          style={GLASS}
+        >
+          <Icon name="sparkle" size={18} className="flex-none" />
+          <span className="min-w-0 flex-auto truncate">{m.home.suggestBar}</span>
+        </button>
+      )}
 
       {open && (
         <>
