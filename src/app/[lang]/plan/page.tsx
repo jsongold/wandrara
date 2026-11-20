@@ -2,16 +2,9 @@ import { Suspense } from "react";
 import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ProposalRoom } from "@/components/ProposalRoom";
-import { getAreaSheetData } from "@/lib/data";
-import { messages } from "@/lib/i18n/messages";
 import { isLocale } from "@/lib/i18n/locale";
-import { planCards } from "@/lib/plan-candidates";
-import { getDestTraits } from "@/lib/dest-traits-source";
-import { roomData } from "@/lib/plan-room";
+import { loadRoom } from "@/lib/plan-room-load";
 import { SAVE_DATA_COOKIE, saveDataOfRequest } from "@/lib/save-data";
-import { inArea, parseSuggestArea, parseSuggestTraits, proposalName } from "@/lib/suggest";
-import { keywordOf } from "@/lib/suggest-vocab";
-import { parseTrip, tripKeywords, tripLabel, tripQuery } from "@/lib/trip";
 
 export default function PlanPage(props: PageProps<"/[lang]/plan">) {
   return (
@@ -21,23 +14,12 @@ export default function PlanPage(props: PageProps<"/[lang]/plan">) {
   );
 }
 
-// 提案ルーム：?area= で候補を絞り、?t= のこだわりを条件にして、ステージングのチャットで提案を続ける（どれを出すかは src/lib/propose）
+// 提案ルーム：?area= で候補を絞り、?t= のこだわりと旅の目的を条件にして、ステージングのチャットで提案を続ける（どれを出すかは src/lib/propose）
 async function Plan({ params, searchParams }: Pick<PageProps<"/[lang]/plan">, "params" | "searchParams">) {
   const { lang: locale } = await params;
   if (!isLocale(locale)) notFound();
-  const sp = await searchParams;
-  const picked = parseSuggestTraits(sp.t);
-  const area = parseSuggestArea(sp.area);
-  // 旅の目的（目的シート）：そのほか（犬連れ など）と季節は条件に足す。人数・時期は送る文と FinalDraft に入れる
-  const trip = parseTrip(sp);
-  const conditions = [...new Set([...picked, ...tripKeywords(trip)])];
-  const [all, sheet, destTraits, h, jar] = await Promise.all([planCards(locale), getAreaSheetData(locale), getDestTraits(), headers(), cookies()]);
+  const [room, h, jar] = await Promise.all([loadRoom(locale, await searchParams), headers(), cookies()]);
   // 通信量を抑える利用者（Save-Data ヘッダか本人が選んだ cookie）。Home と同じく最初の描画から写真の画質を下げる
   const saveData = saveDataOfRequest(h.get("save-data"), jar.get(SAVE_DATA_COOKIE)?.value);
-  const cards = all.filter((c) => inArea(c, area));
-  // ルームの名前：エリアの名前（地区なら地区）と、選んだこだわりの名前
-  const m = messages(locale);
-  const areaLabel = sheet.areas.flatMap((g) => [g, ...g.subs]).find((x) => x.id === area)?.label ?? null;
-  const name = proposalName(areaLabel, picked.map((k) => keywordOf(k)?.label ?? k), { all: m.plan.allAreas, sep: m.plan.nameSep, more: m.plan.nameMore });
-  return <ProposalRoom locale={locale} name={name} picked={picked} area={area} tripParams={tripQuery(trip)} trip={tripLabel(trip, { people: m.trip.peopleUnit, month: m.trip.month, option: m.trip.option, sep: m.trip.sep })} data={roomData(cards, conditions, sheet.traits, sheet.areas, destTraits)} saveData={saveData} />;
+  return <ProposalRoom locale={locale} name={room.name} picked={room.picked} area={room.area} tripParams={room.tripParams} trip={room.trip} data={room.data} saveData={saveData} />;
 }
