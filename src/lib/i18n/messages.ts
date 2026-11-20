@@ -68,6 +68,14 @@ const ja = {
     suggestPickedIn: (n: number) => `${n} 個選んだ`,
   },
   photos: { open: (label: string) => `${label}の詳細を開く`, prev: "前の写真", next: "次の写真" },
+  plan: {
+    allAreas: "すべてのエリア",
+    nameSep: "・",
+    nameMore: (n: number) => ` ほか ${n}`,
+    count: (n: number) => `候補 ${n} 件`,
+    reactions: { good: "いいね", great: "すごくいい", hmm: "うーん" },
+    reactionsOf: (title: string) => `${title}へのリアクション`,
+  },
   detail: {
     sheetLabel: "スポットの詳細",
     demoData: "デモデータ",
@@ -532,6 +540,14 @@ const en: Messages = {
     suggestPickedIn: (n: number) => `${n} picked`,
   },
   photos: { open: (label: string) => `Open details for ${label}`, prev: "Previous photo", next: "Next photo" },
+  plan: {
+    allAreas: "All areas",
+    nameSep: " · ",
+    nameMore: (n: number) => ` +${n}`,
+    count: (n: number) => `${n} places`,
+    reactions: { good: "Good", great: "Love it", hmm: "Hmm" },
+    reactionsOf: (title: string) => `Reactions to ${title}`,
+  },
   detail: {
     sheetLabel: "Place details",
     demoData: "Demo data",

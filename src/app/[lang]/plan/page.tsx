@@ -6,7 +6,8 @@ import { getAreaSheetData } from "@/lib/data";
 import { isLocale } from "@/lib/i18n/locale";
 import { planCards } from "@/lib/plan-candidates";
 import { SAVE_DATA_COOKIE, saveDataOfRequest } from "@/lib/save-data";
-import { inArea, matchedKeywords, orderBySuggest, parseSuggestArea, parseSuggestTraits } from "@/lib/suggest";
+import { messages } from "@/lib/i18n/messages";
+import { inArea, matchedKeywords, orderBySuggest, parseSuggestArea, parseSuggestTraits, proposalName } from "@/lib/suggest";
 import { keywordOf } from "@/lib/suggest-vocab";
 
 export default function PlanPage(props: PageProps<"/[lang]/plan">) {
@@ -33,5 +34,9 @@ async function Plan({ params, searchParams }: Pick<PageProps<"/[lang]/plan">, "p
     ...c,
     reason: (matched.get(c.key) ?? []).map((k) => keywordOf(k)?.label ?? k),
   }));
-  return <SuggestPlan locale={locale} picked={picked} area={area} cards={cards} saveData={saveData} />;
+  // ページの名前：エリアの名前（地区なら地区）と、選んだこだわりの名前
+  const m = messages(locale);
+  const areaLabel = sheet.areas.flatMap((g) => [g, ...g.subs]).find((x) => x.id === area)?.label ?? null;
+  const name = proposalName(areaLabel, picked.map((k) => keywordOf(k)?.label ?? k), { all: m.plan.allAreas, sep: m.plan.nameSep, more: m.plan.nameMore });
+  return <SuggestPlan locale={locale} name={name} picked={picked} area={area} cards={cards} saveData={saveData} />;
 }

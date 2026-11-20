@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardTraitIds, countMatching, hasData, inArea, matchedKeywords, orderBySuggest, parseSuggestArea, parseSuggestTraits, suggestPlanHref, type PlanItem } from "./suggest";
+import { cardTraitIds, countMatching, hasData, inArea, matchedKeywords, orderBySuggest, parseSuggestArea, proposalName, parseSuggestTraits, suggestPlanHref, type PlanItem } from "./suggest";
 
 const byRegion = { hakone: ["onsen", "hike"], ashinoko: ["lake", "hike"], izu: ["coast"], ito: ["coast", "plateau"] };
 const match = { near_lake: { trait: "lake" }, near_sea: { trait: "coast" }, plateau: { trait: "plateau" }, "kind-nature": { core: "nature" } };
@@ -72,5 +72,15 @@ describe("提案ページの URL", () => {
     const u = new URL(`http://x${suggestPlanHref("ja", ["near_lake", "kind-nature"], "izu")}`);
     expect(parseSuggestTraits(u.searchParams.get("t") ?? undefined)).toEqual(["near_lake", "kind-nature"]);
     expect(parseSuggestArea(u.searchParams.get("area") ?? undefined)).toBe("izu");
+  });
+});
+
+describe("proposalName", () => {
+  const t = { all: "すべてのエリア", sep: "・", more: (n: number) => ` ほか ${n}` };
+  it("エリアとこだわりをつなぐ", () => {
+    expect(proposalName("箱根", ["湖の近く", "静か"], t)).toBe("箱根・湖の近く・静か");
+  });
+  it("エリアが無ければすべてのエリア、多ければ先頭 3 個とほか N", () => {
+    expect(proposalName(null, ["森", "静か", "小さな宿", "サウナ", "朝食"], t)).toBe("すべてのエリア・森・静か・小さな宿 ほか 2");
   });
 });
