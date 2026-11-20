@@ -1,5 +1,5 @@
 // 提案の評価を全シナリオ（グループ・人）で回す。開発サーバー（next dev）の /api/propose-eval を呼ぶ。
-//   pnpm propose:eval                 http://localhost:3300 に対して回す（PROPOSE_EVAL_BASE で変える）
+//   pnpm propose:eval                 http://localhost:3000（pnpm dev）に対して回す。別のポートは PROPOSE_EVAL_BASE=http://localhost:3300
 // 出力（data/propose-eval/）：<日時>.json・<日時>.md（前回との比較。fit は未採点）・<日時>-judge.md（Agent に貼る採点の指示）
 // 採点：-judge.md を ChatGPT・Claude に貼り、返事をコピーして pnpm propose:eval:judge（クリップボードかファイル）
 import fs from "node:fs";
@@ -7,7 +7,7 @@ import path from "node:path";
 import { judgePrompt, type Run, type ScenarioResult } from "./report.ts";
 import { OUT, save, stampOf } from "./store.ts";
 
-const BASE = process.env.PROPOSE_EVAL_BASE ?? "http://localhost:3300";
+const BASE = process.env.PROPOSE_EVAL_BASE ?? "http://localhost:3000";
 
 type Scenario = { id: string; who: string; want: string; query: Record<string, string> };
 
