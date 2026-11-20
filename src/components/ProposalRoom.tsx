@@ -18,6 +18,7 @@ import {
   type Choice,
   type FeatureId,
   type ProposeState,
+  type Strategies,
 } from "@/lib/propose";
 import type { Reaction } from "@/lib/reactions";
 import type { Locale } from "@/lib/types";
@@ -57,28 +58,19 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
   const strategies = useMemo(() => defaultStrategies(t.lead, (f) => data.labels[f] ?? f), [t.lead, data.labels]);
   const choiceText = (f: FeatureId) => t.choiceLabel(f.slice(0, f.indexOf(":")), labelOf(f));
 
-  const [room, setRoom] = useState<Room>(() => ({
-    state: initialState(data.conditions),
-    thread: [{ t: "user", text: name }, { t: "bot", text: t.startHint }],
-    latest: [],
-    choices: [],
-    done: false,
-    algorithm: null,
-  }));
+  // 開いたら最初の回を出す（条件の吹き出しのあとに、最初の候補）
+  const [room, setRoom] = useState<Room>(() => {
+    const empty: Room = { state: initialState(data.conditions), thread: [{ t: "user", text: name }], latest: [], choices: [], done: false, algorithm: null };
+    return advanceRoom(empty, empty.state, { type: "start" }, data, strategies);
+  });
   const [view, setView] = useState<"staging" | "share">("staging");
   const [popup, setPopup] = useState(false);
 
-  // 次の回を出す。withChoices：選択肢のメッセージも続けて出す（全部にリアクションしたとき）
-  function advance(r: Room, state: ProposeState, cause: Cause, pre: Msg[] = [], withChoices = false): Room {
-    const res = nextRound(state, cause, data.candidates, strategies);
-    const thread = [...r.thread, ...pre, { t: "bot" as const, text: res.lead, ids: res.done ? undefined : res.ids }];
-    if (withChoices && !res.done && res.choices.length) thread.push({ t: "choices", choices: res.choices, picked: null });
-    return { state: applyRound(state, res), thread, latest: res.done ? r.latest : res.ids, choices: res.choices, done: res.done, algorithm: res.algorithm };
-  }
+  const advance = (r: Room, state: ProposeState, cause: Cause, pre: Msg[] = [], withChoices = false) => advanceRoom(r, state, cause, data, strategies, pre, withChoices);
 
   function onNext() {
     if (room.done) return;
-    setRoom((r) => advance(r, r.state, r.state.round === 0 ? { type: "start" } : { type: "next" }));
+    setRoom((r) => advance(r, r.state, { type: "next" }));
   }
 
   function onReact(id: string, reaction: Reaction) {
@@ -103,7 +95,6 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
 
   const reactions = room.state.reactions;
   const likedCount = Object.values(reactions).filter((r) => r !== "hmm").length;
-  const started = room.state.round > 0;
 
   if (view === "share") {
     return <ShareRoom locale={locale} name={name} data={data} reactions={reactions} onBack={() => setView("staging")} />;
@@ -208,7 +199,7 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
               <button
                 type="button"
                 onClick={onNext}
-                aria-label={started ? t.next : t.start}
+                aria-label={t.next}
                 aria-disabled={room.done}
                 className={`flex h-[52px] w-[52px] flex-none cursor-pointer items-center justify-center rounded-[18px] border-0 ${room.done ? "bg-white/[0.12] text-white/40" : "bg-[#f4f1ea] text-[#141413]"}`}
               >
@@ -220,6 +211,14 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
       />
     </div>
   );
+}
+
+// 次の回を出す（純関数）。withChoices：選択肢のメッセージも続けて出す（全部にリアクションしたとき）
+function advanceRoom(r: Room, state: ProposeState, cause: Cause, data: RoomData, strategies: Strategies, pre: Msg[] = [], withChoices = false): Room {
+  const res = nextRound(state, cause, data.candidates, strategies);
+  const thread: Msg[] = [...r.thread, ...pre, { t: "bot", text: res.lead, ids: res.done ? undefined : res.ids }];
+  if (withChoices && !res.done && res.choices.length) thread.push({ t: "choices", choices: res.choices, picked: null });
+  return { state: applyRound(state, res), thread, latest: res.done ? r.latest : res.ids, choices: res.choices, done: res.done, algorithm: res.algorithm };
 }
 
 function BotLine({ text }: { text: string }) {

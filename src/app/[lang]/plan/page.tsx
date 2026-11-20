@@ -6,9 +6,10 @@ import { getAreaSheetData } from "@/lib/data";
 import { messages } from "@/lib/i18n/messages";
 import { isLocale } from "@/lib/i18n/locale";
 import { planCards } from "@/lib/plan-candidates";
-import { roomData, type PlanCard } from "@/lib/plan-room";
+import { getDestTraits } from "@/lib/dest-traits-source";
+import { roomData } from "@/lib/plan-room";
 import { SAVE_DATA_COOKIE, saveDataOfRequest } from "@/lib/save-data";
-import { inArea, matchedKeywords, parseSuggestArea, parseSuggestTraits, proposalName } from "@/lib/suggest";
+import { inArea, parseSuggestArea, parseSuggestTraits, proposalName } from "@/lib/suggest";
 import { keywordOf } from "@/lib/suggest-vocab";
 
 export default function PlanPage(props: PageProps<"/[lang]/plan">) {
@@ -26,16 +27,13 @@ async function Plan({ params, searchParams }: Pick<PageProps<"/[lang]/plan">, "p
   const sp = await searchParams;
   const picked = parseSuggestTraits(sp.t);
   const area = parseSuggestArea(sp.area);
-  const [all, sheet, h, jar] = await Promise.all([planCards(locale), getAreaSheetData(locale), headers(), cookies()]);
+  const [all, sheet, destTraits, h, jar] = await Promise.all([planCards(locale), getAreaSheetData(locale), getDestTraits(), headers(), cookies()]);
   // 通信量を抑える利用者（Save-Data ヘッダか本人が選んだ cookie）。Home と同じく最初の描画から写真の画質を下げる
   const saveData = saveDataOfRequest(h.get("save-data"), jar.get(SAVE_DATA_COOKIE)?.value);
-  const { byRegion } = sheet.traits;
-  const cards: PlanCard[] = all
-    .filter((c) => inArea(c, area))
-    .map((c) => ({ ...c, reason: matchedKeywords(c, picked, byRegion).map((k) => keywordOf(k)?.label ?? k) }));
+  const cards = all.filter((c) => inArea(c, area));
   // ルームの名前：エリアの名前（地区なら地区）と、選んだこだわりの名前
   const m = messages(locale);
   const areaLabel = sheet.areas.flatMap((g) => [g, ...g.subs]).find((x) => x.id === area)?.label ?? null;
   const name = proposalName(areaLabel, picked.map((k) => keywordOf(k)?.label ?? k), { all: m.plan.allAreas, sep: m.plan.nameSep, more: m.plan.nameMore });
-  return <ProposalRoom locale={locale} name={name} picked={picked} area={area} data={roomData(cards, picked, sheet.traits, sheet.areas)} saveData={saveData} />;
+  return <ProposalRoom locale={locale} name={name} picked={picked} area={area} data={roomData(cards, picked, sheet.traits, sheet.areas, destTraits)} saveData={saveData} />;
 }

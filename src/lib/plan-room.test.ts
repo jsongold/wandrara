@@ -17,3 +17,18 @@ describe("roomData", () => {
     expect(d.labels).toMatchObject({ "trait:lake": "湖畔", "kind:accommodation": "宿", "area:sengokuhara": "仙石原" });
   });
 });
+
+describe("roomData と dest_traits", () => {
+  it("dest_traits にある条件は dest: の特徴になり、合うカードに理由が付く", () => {
+    const d = roomData(
+      [card("a", ["yumoto", "hakone"], "accommodation", "宿"), card("b", ["yumoto", "hakone"], "accommodation", "宿")],
+      ["kakenagashi", "onsen"],
+      { traits: [{ id: "onsen", label: "温泉", icon: "" }], byRegion: { yumoto: ["onsen"] } },
+      [],
+      { a: ["kakenagashi"] },
+    );
+    expect(d.conditions).toEqual(["dest:kakenagashi", "trait:onsen"]);
+    expect(d.cards.map((c) => c.reason)).toEqual([["源泉かけ流し", "温泉"], ["温泉"]]);
+    expect(d.labels["dest:kakenagashi"]).toBe("源泉かけ流し");
+  });
+});

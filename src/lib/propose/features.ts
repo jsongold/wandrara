@@ -21,12 +21,15 @@ export function toCandidates(items: CandidateSource[], byRegion: Record<string, 
   return items.map((c) => ({ id: c.destId, name: c.title, features: featuresOf(c, byRegion, destTraitsOf(c.destId)) }));
 }
 
-/** 条件のこだわり（キーワード id）を特徴にする。値を持たないキーワードは捨てる */
-export function conditionFeatures(keywords: string[], match: Record<string, KeywordSource> = MATCH): FeatureId[] {
+/**
+ * 条件のこだわり（キーワード id）を特徴にする。地区の特性・種類（match）を先に見て、無ければ dest_traits の特徴（destTraitIds にあるもの）。
+ * どちらも無いキーワードは捨てる（値を持たない）
+ */
+export function conditionFeatures(keywords: string[], match: Record<string, KeywordSource> = MATCH, destTraitIds: ReadonlySet<string> = new Set()): FeatureId[] {
   return keywords.flatMap((k) => {
     const src = match[k];
-    if (!src) return [];
-    return ["core" in src ? `kind:${src.core}` : `trait:${src.trait}`];
+    if (src) return ["core" in src ? `kind:${src.core}` : `trait:${src.trait}`];
+    return destTraitIds.has(k) ? [`dest:${k}`] : [];
   });
 }
 
