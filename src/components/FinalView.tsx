@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import type { BookingResult } from "@/lib/booking/types";
 import { requestsOf, summarize } from "@/lib/booking/run";
+import { downloadText } from "@/lib/download-text";
 import { finalFileName } from "@/lib/final";
 import { finalFromRaw, rawFinals } from "@/lib/final-store";
 import { messages } from "@/lib/i18n/messages";
@@ -50,12 +51,7 @@ export function FinalView({ locale, id }: { locale: Locale; id: string }) {
       setBooking({ status: "error" });
     }
   }
-  function download() {
-    const url = URL.createObjectURL(new Blob([final!.text], { type: "text/plain;charset=utf-8" }));
-    const a = Object.assign(document.createElement("a"), { href: url, download: finalFileName(final!) });
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+  const download = () => downloadText(final.text, finalFileName(final));
   const date = new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", { dateStyle: "long" }).format(new Date(final.createdAt));
   const sum = booking.status === "done" ? summarize(booking.results) : null;
 

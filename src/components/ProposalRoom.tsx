@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { makeFinal } from "@/lib/final";
+import { downloadText } from "@/lib/download-text";
+import { finalFileName, makeFinal } from "@/lib/final";
 import { saveFinal } from "@/lib/final-store";
 import { isUsableFinal, parseFinal, type ParsedFinal } from "@/lib/final-text";
 import { messages } from "@/lib/i18n/messages";
@@ -367,7 +368,8 @@ function ShareArtifact({ locale, name, trip, stay, activities }: { locale: Local
 
 // 完成版の取り込み：Agent の返事をコピーしたあと押すと、クリップボードから読む（文字は打たない）。
 // 読めたら、場所と予約リンクの数・要確認を出し、グループに送る・これで確定（ファイナル）へ
-type Imported = { status: "idle" } | { status: "denied" } | { status: "unusable" } | { status: "ready"; text: string; parsed: ParsedFinal } | { status: "notSaved" };
+// notSaved：このブラウザに保存できなかった（取り込んだ文は残し、ファイルに保存できるようにする）
+type Imported = { status: "idle" } | { status: "denied" } | { status: "unusable" } | { status: "ready"; text: string; parsed: ParsedFinal; notSaved?: boolean };
 function ImportFinal({ locale, trip }: { locale: Locale; trip: string }) {
   const f = messages(locale).final;
   const router = useRouter();
@@ -384,7 +386,7 @@ function ImportFinal({ locale, trip }: { locale: Locale; trip: string }) {
   }
   function confirm(text: string, parsed: ParsedFinal) {
     const final = makeFinal(text, parsed, trip, crypto.randomUUID(), new Date());
-    if (!saveFinal(final)) return setState({ status: "notSaved" });
+    if (!saveFinal(final)) return setState({ status: "ready", text, parsed, notSaved: true });
     router.push(`/${locale}/final/${final.id}`);
   }
   const links = state.status === "ready" ? state.parsed.places.reduce((n, p) => n + p.bookings.length, 0) : 0;
@@ -395,9 +397,9 @@ function ImportFinal({ locale, trip }: { locale: Locale; trip: string }) {
         {f.importFinal}
       </button>
       {state.status === "idle" && <p className="m-0 text-[12px] text-white/55">{f.importHint}</p>}
-      {(state.status === "denied" || state.status === "unusable" || state.status === "notSaved") && (
+      {(state.status === "denied" || state.status === "unusable") && (
         <p role="alert" className="m-0 text-[12.5px] text-[#f4c9a8]">
-          {state.status === "denied" ? f.importDenied : state.status === "unusable" ? f.importFailed : f.notSaved}
+          {state.status === "denied" ? f.importDenied : f.importFailed}
         </p>
       )}
       {state.status === "ready" && (
@@ -416,6 +418,15 @@ function ImportFinal({ locale, trip }: { locale: Locale; trip: string }) {
             </ul>
           )}
           <pre className="m-0 max-h-[200px] overflow-y-auto whitespace-pre-wrap break-all rounded-[12px] bg-black/30 p-3 font-sans text-[12.5px] leading-relaxed text-white/90">{state.text}</pre>
+          {state.notSaved && (
+            <div role="alert" className="flex flex-col gap-2">
+              <p className="m-0 text-[12.5px] text-[#f4c9a8]">{f.notSaved}</p>
+              <button type="button" onClick={() => downloadText(state.text, finalFileName({ heading: state.parsed.heading, createdAt: new Date().toISOString() }))} className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-white/30 bg-transparent text-[14px] font-bold text-white">
+                <Icon name="copy" size={16} />
+                {f.download}
+              </button>
+            </div>
+          )}
           <div className="flex gap-2">
             <button
               type="button"
