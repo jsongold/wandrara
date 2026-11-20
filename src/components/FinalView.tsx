@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
-import type { BookingResult } from "@/lib/booking/types";
-import { requestsOf, summarize } from "@/lib/booking/run";
+import { bookingHandoff } from "@/lib/booking/handoff";
 import { downloadText } from "@/lib/download-text";
 import { finalFileName } from "@/lib/final";
 import { finalFromRaw, rawFinals } from "@/lib/final-store";
@@ -17,9 +16,8 @@ const FORMATS: Format[] = ["text", "image", "slides", "video"];
 const READY: Format[] = ["text"]; // 画像・プレゼン・動画は準備中
 
 const noop = () => () => {};
-type Booking = { status: "idle" } | { status: "running" } | { status: "error" } | { status: "done"; results: BookingResult[] };
-
-// ファイナル：確定した完成版。旅程の形を選び（今はテキスト）、ファイルに保存・共有し、予約するとできた・できなかったを返す
+// ファイナル：確定した完成版。旅程の形を選び（今はテキスト）、ファイルに保存・共有する。
+// 予約は Agent に任せる：指示（予約するもの・リンク・守ること・報告の形）をコピーして渡す。自動の予約（/api/booking）は方式が決まるまで使わない
 export function FinalView({ locale, id }: { locale: Locale; id: string }) {
   const m = messages(locale);
   const f = m.final;
@@ -27,7 +25,7 @@ export function FinalView({ locale, id }: { locale: Locale; id: string }) {
   const final = useMemo(() => finalFromRaw(raw, id), [raw, id]);
   const sites = useBookingSites();
   const [format, setFormat] = useState<Format>("text");
-  const [booking, setBooking] = useState<Booking>({ status: "idle" });
+  const [copied, setCopied] = useState(false);
 
   if (!final) {
     return (
@@ -40,20 +38,17 @@ export function FinalView({ locale, id }: { locale: Locale; id: string }) {
     );
   }
 
-  const requests = requestsOf(final, sites);
-  async function book() {
-    setBooking({ status: "running" });
+  const handoff = bookingHandoff(final, f.handoff, sites);
+  async function copyHandoff() {
     try {
-      const r = await fetch("/api/booking", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requests }) });
-      if (!r.ok) throw new Error(String(r.status));
-      setBooking({ status: "done", results: ((await r.json()) as { results: BookingResult[] }).results });
+      await navigator.clipboard.writeText(handoff);
+      setCopied(true);
     } catch {
-      setBooking({ status: "error" });
+      setCopied(false);
     }
   }
   const download = () => downloadText(final.text, finalFileName(final));
   const date = new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", { dateStyle: "long" }).format(new Date(final.createdAt));
-  const sum = booking.status === "done" ? summarize(booking.results) : null;
 
   return (
     <main className="mx-auto flex min-h-[100dvh] w-full max-w-[480px] flex-col gap-5 bg-[#0f0f0e] px-4 pb-12 pt-3 text-white">
@@ -103,52 +98,22 @@ export function FinalView({ locale, id }: { locale: Locale; id: string }) {
         </section>
       )}
 
-      {/* 予約：ファイナルの予約リンクから、場所ごとに 1 件。自動でできないものは手続きのリンクを返す */}
-      <section aria-label={f.book} className="flex flex-col gap-2.5 rounded-[18px] bg-[#1b1b19] p-4">
-        {requests.length === 0 ? (
-          <p className="m-0 text-[13px] text-white/60">{f.noBookings}</p>
-        ) : (
-          <>
-            <button type="button" onClick={book} disabled={booking.status === "running"} className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 bg-[#f4f1ea] text-[15px] font-bold text-[#141413] disabled:opacity-60">
-              <Icon name="check" size={16} />
-              {booking.status === "running" ? f.booking : f.book}
-            </button>
-            <p className="m-0 text-[12px] text-white/55">{f.bookHint}</p>
-          </>
-        )}
-        {booking.status === "error" && (
-          <p role="alert" className="m-0 text-[12.5px] text-[#f4c9a8]">
-            {f.failed}
-          </p>
-        )}
-        {booking.status === "done" && sum && (
-          <div aria-live="polite" className="flex flex-col gap-2">
-            <h2 className="m-0 mt-1 text-[14px] font-bold">
-              {f.results}　<span className="text-[12px] font-normal text-white/70">{f.summary(sum.booked, sum.notBooked)}</span>
-            </h2>
-            <ul className="m-0 flex list-none flex-col p-0">
-              {booking.results.map((r) => (
-                <li key={r.url} className="flex flex-col gap-1 border-t border-white/[0.08] py-2.5">
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="truncate text-[14px] font-bold">{r.placeTitle}</span>
-                    <span className={`flex-none text-[12px] font-bold ${r.status === "booked" ? "text-[#bfe3c8]" : "text-[#f4c9a8]"}`}>{f.status[r.status]}</span>
-                  </span>
-                  <span className="text-[12px] text-white/65">
-                    {r.label ? `${r.label}　` : ""}
-                    {f.reason[r.reason]}
-                    {r.confirmation ? `　${f.confirmation(r.confirmation)}` : ""}
-                  </span>
-                  {r.status !== "booked" && (
-                    <a href={r.url} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center gap-1.5 self-start text-[13px] font-bold text-[#f4f1ea]">
-                      <Icon name="external" size={14} />
-                      {f.openLink}
-                    </a>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+      {/* 予約を Agent に任せる：指示をコピーして、ブラウザを操作できる Agent に貼る */}
+      <section aria-label={f.agentBook} className="flex flex-col gap-2.5 rounded-[18px] bg-[#1b1b19] p-4">
+        <h2 className="m-0 text-[15px] font-bold">{f.agentBook}</h2>
+        <ol className="m-0 flex list-none flex-col gap-1 p-0 text-[12.5px] leading-relaxed text-white/75">
+          {f.agentBookSteps.map((x) => (
+            <li key={x}>{x}</li>
+          ))}
+        </ol>
+        <button type="button" onClick={copyHandoff} className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 bg-[#f4f1ea] text-[15px] font-bold text-[#141413]">
+          <Icon name={copied ? "check" : "copy"} size={16} />
+          {copied ? m.plan.copied : f.agentBookCopy}
+        </button>
+        <details className="text-[12.5px] text-white/70">
+          <summary className="cursor-pointer py-2">{f.agentBookShow}</summary>
+          <pre className="m-0 max-h-[320px] overflow-y-auto whitespace-pre-wrap break-all rounded-[12px] bg-black/30 p-3 font-sans text-[12px] leading-relaxed text-white/85">{handoff}</pre>
+        </details>
       </section>
     </main>
   );
