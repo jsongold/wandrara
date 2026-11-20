@@ -32,20 +32,23 @@ export const MATCH: Record<string, KeywordSource> = {
   "kind-building": { core: "building" },
 };
 
-export type Preset = { id: string; text: string; keywords: string[]; season?: string };
+/** おすすめの代表の場所。photo はその dest の何枚目の写真か（0 始まり） */
+export type PresetExample = { slug: string; photo?: number };
+/** examples の 1 つ目が表紙の写真。場所の名前は説明に使う */
+export type Preset = { id: string; text: string; keywords: string[]; season?: string; examples: PresetExample[] };
 
-/** おすすめ。旬（season）は今は 11 月に合わせて手で付けている */
+/** おすすめ。旬（season）と代表の場所は、今は 11 月に合わせて手で選んでいる */
 export const PRESETS: Preset[] = [
-  { id: "forest-quiet", text: "森の中で静かに過ごす", keywords: ["forest", "quiet", "small_inn"] },
-  { id: "sea-sauna", text: "海沿いでサウナを楽しむ", keywords: ["near_sea", "sauna", "outdoor_rest"] },
-  { id: "lake-morning", text: "湖のほとりで朝を迎える", keywords: ["near_lake", "sunrise_view", "terrace"] },
-  { id: "plateau-walk", text: "高原のすすきを歩く", keywords: ["plateau", "walking"], season: "11月の旬" },
-  { id: "kakenagashi", text: "源泉かけ流しの湯にこもる", keywords: ["onsen", "kakenagashi", "private_bath"] },
-  { id: "gorge-leaves", text: "渓谷で紅葉を見る", keywords: ["near_gorge", "autumn_leaves", "near_river"], season: "11月の旬" },
-  { id: "onsen-town", text: "古い温泉街をそぞろ歩く", keywords: ["kind-village", "onsen_town", "walking"] },
-  { id: "hike-dinner", text: "山歩きのあと、地元の食材で夕食", keywords: ["hiking", "local_food", "dinner"] },
-  { id: "solo-toji", text: "ひとりで湯治", keywords: ["solo_ok", "toji_culture", "onsen"] },
-  { id: "stars-fire", text: "星空と焚き火の夜", keywords: ["dark_sky", "stargazing", "bonfire"] },
+  { id: "forest-quiet", text: "森の中で静かに過ごす", keywords: ["forest", "quiet", "small_inn"], examples: [{ slug: "wr-gora-vil-002", photo: 1 }, { slug: "wr-shuzenji-hike-004", photo: 5 }] },
+  { id: "sea-sauna", text: "海沿いでサウナを楽しむ", keywords: ["near_sea", "sauna", "outdoor_rest"], examples: [{ slug: "wr-shimoda-nat-010", photo: 4 }, { slug: "wr-shimoda-hike-001" }] },
+  { id: "lake-morning", text: "湖のほとりで朝を迎える", keywords: ["near_lake", "sunrise_view", "terrace"], examples: [{ slug: "wr-ashinoko-nat-001" }, { slug: "wr-ashinoko-exp-007" }] },
+  { id: "plateau-walk", text: "高原のすすきを歩く", keywords: ["plateau", "walking"], season: "11月の旬", examples: [{ slug: "wr-sengokuhara-nat-001" }, { slug: "wr-sengokuhara-vil-001", photo: 2 }] },
+  { id: "kakenagashi", text: "源泉かけ流しの湯にこもる", keywords: ["onsen", "kakenagashi", "private_bath"], examples: [{ slug: "wr-yumoto-vil-001" }, { slug: "wr-sengokuhara-vil-001" }] },
+  { id: "gorge-leaves", text: "渓谷で紅葉を見る", keywords: ["near_gorge", "autumn_leaves", "near_river"], season: "11月の旬", examples: [{ slug: "wr-shuzenji-hike-004", photo: 2 }] },
+  { id: "onsen-town", text: "古い温泉街をそぞろ歩く", keywords: ["kind-village", "onsen_town", "walking"], examples: [{ slug: "wr-yumoto-vil-002", photo: 2 }, { slug: "wr-yumoto-vil-001", photo: 3 }] },
+  { id: "hike-dinner", text: "山歩きのあと、地元の食材で夕食", keywords: ["hiking", "local_food", "dinner"], examples: [{ slug: "wr-yumoto-vil-003", photo: 1 }, { slug: "wr-ashinoko-vil-003", photo: 1 }] },
+  { id: "solo-toji", text: "ひとりで湯治", keywords: ["solo_ok", "toji_culture", "onsen"], examples: [{ slug: "wr-yumoto-hsp-005", photo: 5 }, { slug: "wr-ashinoko-vil-003" }] },
+  { id: "stars-fire", text: "星空と焚き火の夜", keywords: ["dark_sky", "stargazing", "bonfire"], examples: [{ slug: "wr-nishi-izu-hike-002", photo: 2 }, { slug: "wr-gora-vil-001", photo: 1 }] },
 ];
 
 const byId = new Map(KEYWORDS.map((k) => [k.id, k]));

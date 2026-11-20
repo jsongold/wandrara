@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useSyncExternalStore, type CSSProperties } from "react";
 import { areaSheetLoader, IDLE_AREA_SHEET } from "@/lib/area-sheet-client";
 import { messages } from "@/lib/i18n/messages";
 import { countMatching, hasData, suggestPlanHref, type PlanItem } from "@/lib/suggest";
+import type { PresetView } from "@/lib/suggest-presets";
 import { BIG_CATEGORIES, KEYWORDS, keywordOf, PRESETS, type Preset } from "@/lib/suggest-vocab";
 import type { Locale } from "@/lib/types";
 import { AreaMap } from "./AreaMap";
@@ -22,12 +24,12 @@ const VIEWS: View[] = ["rec", "kw", "list", "map"];
 const VIEW_ICON: Record<View, string> = { rec: "sparkle", kw: "filter", list: "menu", map: "map" };
 const next = (v: View) => VIEWS[(VIEWS.indexOf(v) + 1) % VIEWS.length];
 
-// 提案シートの件数に使う候補の一覧（/api/plan-index）。ページの間 1 度だけ取る
-let indexCache: Promise<PlanItem[]> | null = null;
-function loadIndex(locale: Locale): Promise<PlanItem[]> {
+// 提案シートの件数に使う候補の一覧と、おすすめの表紙・代表の場所（/api/plan-index）。ページの間 1 度だけ取る
+type PlanIndex = { items: PlanItem[]; presets: Record<string, PresetView> };
+let indexCache: Promise<PlanIndex> | null = null;
+function loadIndex(locale: Locale): Promise<PlanIndex> {
   indexCache ??= fetch(`/api/plan-index?lang=${locale}`)
     .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-    .then((j: { items: PlanItem[] }) => j.items)
     .catch((e) => {
       indexCache = null;
       throw e;
@@ -49,13 +51,14 @@ export function SuggestBar({ locale, initial = [], initialArea = "all" }: { loca
   const [openSub, setOpenSub] = useState<string | null>(null);
   // 開いているエリアの行。undefined はまだ触っていない（選んでいるエリアの行を開いたことにする）
   const [openAreaState, setOpenArea] = useState<string | null | undefined>(undefined);
-  const [items, setItems] = useState<PlanItem[] | null>(null);
+  const [index, setIndex] = useState<PlanIndex | null>(null);
+  const items = index?.items ?? null;
   const sheet = useSyncExternalStore(areaSheetLoader.subscribe, () => areaSheetLoader.get(locale), () => IDLE_AREA_SHEET);
   const data = sheet.status === "ready" ? sheet.data : null;
   const byRegion = data?.traits.byRegion;
   const load = () => {
     areaSheetLoader.load(locale);
-    loadIndex(locale).then(setItems, () => setItems(null));
+    loadIndex(locale).then(setIndex, () => setIndex(null));
   };
 
   const labelById = useMemo(() => new Map((data?.areas ?? []).flatMap((g) => [[g.id, g.label] as const, ...g.subs.map((x) => [x.id, x.label] as const)])), [data]);
@@ -141,7 +144,7 @@ export function SuggestBar({ locale, initial = [], initialArea = "all" }: { loca
             )}
 
             <div className={`min-h-0 flex-auto overflow-y-auto px-4 pb-2 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${view === "map" ? "flex flex-col" : ""}`}>
-              {view === "rec" && <PresetList m={m} on={presetOn} toggle={togglePreset} count={count} />}
+              {view === "rec" && <PresetList m={m} on={presetOn} toggle={togglePreset} count={count} views={index?.presets ?? null} />}
               {view === "kw" && (
                 <KeywordTree draft={draft} toggle={toggle} openBig={openBig} openSub={openSub} setOpenBig={(b) => { setOpenBig(b); setOpenSub(null); }} setOpenSub={setOpenSub} count={count} />
               )}
@@ -200,52 +203,43 @@ export function SuggestBar({ locale, initial = [], initialArea = "all" }: { loca
 
 type M = ReturnType<typeof messages>;
 
-// おすすめ：一言は明朝で大きく。旬を先に、残りは当てはまる件数の多い順（数えられないものは後ろ）
-function PresetList({ m, on, toggle, count }: { m: M; on: (p: Preset) => boolean; toggle: (p: Preset) => void; count: (k: string[]) => number | null }) {
+// おすすめ：左に一言（明朝）・説明（代表の場所とキーワード）・件数、右に代表の場所の写真。枠線と背景は付けない。
+// 並びは旬が先、残りは当てはまる件数の多い順（数えられないものは後ろ）
+function PresetList({ m, on, toggle, count, views }: { m: M; on: (p: Preset) => boolean; toggle: (p: Preset) => void; count: (k: string[]) => number | null; views: Record<string, PresetView> | null }) {
   const rows = PRESETS.map((p, i) => {
     const live = p.keywords.filter((k) => hasData(k));
     return { p, i, n: live.length ? count(live) : null, live: live.length > 0 };
   }).sort((a, b) => (b.p.season ? 1 : 0) - (a.p.season ? 1 : 0) || Number(b.live) - Number(a.live) || (b.n ?? 0) - (a.n ?? 0) || a.i - b.i);
   return (
-    <>
-      <p className="m-0 mb-1 text-[12px] text-white/55">{m.home.suggestPresetLead}</p>
-      <ul className="m-0 list-none p-0">
-        {rows.map(({ p, n, live }) => {
-          const pressed = on(p);
-          return (
-            <li key={p.id} className="border-t border-white/10 first:border-t-0">
-              <button type="button" aria-pressed={pressed} onClick={() => toggle(p)} className="grid w-full cursor-pointer grid-cols-[22px_minmax(0,1fr)_auto] items-start gap-2.5 border-0 bg-transparent px-0.5 py-3.5 text-left text-white">
-                <span aria-hidden="true" className={`mt-1 flex h-[22px] w-[22px] items-center justify-center rounded-full border ${pressed ? "border-[#f4f1ea] bg-[#f4f1ea] text-[#141413]" : "border-white/30"}`}>
-                  {pressed && <Icon name="check" size={14} />}
-                </span>
-                <span className="flex min-w-0 flex-col gap-1">
-                  <span className={`font-[family-name:var(--font-phrase)] text-[19px] font-bold leading-[1.45] tracking-[0.02em] [text-wrap:balance] ${pressed ? "text-[#f4f1ea]" : "text-white/90"}`}>{p.text}</span>
-                  <span className="text-[12px] leading-[1.6] text-white/70">
-                    {p.keywords.map((k, j) => (
-                      <span key={k}>
-                        {j > 0 && <span className="text-white/35">、</span>}
-                        <span className={hasData(k) ? "" : "text-white/35"}>{keywordOf(k)?.label ?? k}</span>
-                      </span>
-                    ))}
-                    {p.season && <span className="ml-2 border-b border-[#f4f1ea]/60 text-[11px] text-[#f4f1ea]">{p.season}</span>}
+    <ul className="m-0 flex list-none flex-col gap-1 p-0">
+      {rows.map(({ p, n, live }) => {
+        const pressed = on(p);
+        const view = views?.[p.id];
+        const desc = [view?.places.length ? m.home.suggestPlaces(view.places.join(m.common.listSep)) : "", p.keywords.map((k) => keywordOf(k)?.label ?? k).join(m.common.listSep)].filter(Boolean).join("");
+        return (
+          <li key={p.id}>
+            <button type="button" aria-pressed={pressed} onClick={() => toggle(p)} className="flex w-full cursor-pointer items-stretch gap-3 border-0 bg-transparent p-0 text-left">
+              <span className="flex min-w-0 flex-auto flex-col gap-[5px] py-3">
+                <span className={`font-[family-name:var(--font-phrase)] text-[17px] font-bold leading-[1.4] [text-wrap:balance] ${pressed ? "text-[#f4f1ea]" : "text-white"}`}>{p.text}</span>
+                <span className="text-[12px] leading-[1.55] text-white/70">{desc}</span>
+                <span className="flex items-center gap-2 text-[12px] text-white/90">
+                  <span aria-hidden="true" className={`flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full border-[1.5px] ${pressed ? "border-[#f4f1ea] bg-[#f4f1ea] text-[#141413]" : "border-white/50 text-transparent"}`}>
+                    <Icon name="check" size={11} />
                   </span>
+                  {live && n !== null ? m.home.suggestCount(n) : m.home.suggestNotYet}
+                  {p.season && <span className="text-[#f4f1ea]">{p.season}</span>}
                 </span>
-                <span className="mt-0.5 text-[20px] font-medium tabular-nums text-white/90">
-                  {live && n !== null ? (
-                    <>
-                      {n}
-                      <small className="ml-0.5 text-[11px] text-white/55">件</small>
-                    </>
-                  ) : (
-                    <small className="text-[11px] text-white/55">{m.home.suggestNotYet}</small>
-                  )}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </>
+              </span>
+              {view?.cover ? (
+                <Image src={view.cover} alt="" width={118} height={118} sizes="118px" className="my-2.5 h-[118px] w-[118px] flex-none rounded-xl object-cover" />
+              ) : (
+                <span aria-hidden="true" className="my-2.5 h-[118px] w-[118px] flex-none rounded-xl bg-white/5" />
+              )}
+            </button>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
