@@ -11,6 +11,8 @@ import {
   applyReaction,
   applyRound,
   defaultStrategies,
+  GOAL_V1,
+  goalStatus,
   initialState,
   nextRound,
   reactionCause,
@@ -32,7 +34,8 @@ import { GLASS, SuggestBar } from "./SuggestBar";
 type Msg =
   | { t: "user"; text: string }
   | { t: "bot"; text: string; ids?: string[] }
-  | { t: "choices"; choices: Choice[]; picked: FeatureId | null };
+  | { t: "choices"; choices: Choice[]; picked: FeatureId | null }
+  | { t: "plan"; stay: string; activities: string[] };
 
 type Room = { state: ProposeState; thread: Msg[]; latest: string[]; choices: Choice[]; done: boolean; algorithm: string | null };
 
@@ -68,8 +71,11 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
 
   const advance = (r: Room, state: ProposeState, cause: Cause, pre: Msg[] = [], withChoices = false) => advanceRoom(r, state, cause, data, strategies, pre, withChoices);
 
+  // ゴール（宿 1 ＋ 過ごし方）の埋まり具合。Fix はプランがそろったら
+  const goal = goalStatus(room.state, data.candidates);
+
   function onNext() {
-    if (room.done) return;
+    if (room.done || goal.complete) return;
     setRoom((r) => advance(r, r.state, { type: "next" }));
   }
 
@@ -94,10 +100,13 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
   }
 
   const reactions = room.state.reactions;
-  const likedCount = Object.values(reactions).filter((r) => r !== "hmm").length;
+  const planIds = goal.stay ? [goal.stay, ...goal.activities] : goal.activities;
+  const canFix = goal.complete;
 
   if (view === "share") {
-    return <ShareRoom locale={locale} name={name} data={data} reactions={reactions} onBack={() => setView("staging")} />;
+    // 旅程は、そろったプランの宿と過ごし方だけから作る
+    const planReactions = Object.fromEntries(planIds.map((id) => [id, reactions[id] ?? "good"]));
+    return <ShareRoom locale={locale} name={name} data={data} reactions={planReactions} onBack={() => setView("staging")} />;
   }
 
   return (
@@ -110,15 +119,15 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
           <h1 className="m-0 truncate font-[family-name:var(--font-phrase)] text-[19px] font-bold leading-snug">{name}</h1>
           <p className="m-0 flex items-center gap-1 text-[12px] text-white/60">
             <Icon name="lock" size={12} />
-            {t.staging}　{t.likedCount(likedCount)}
+            {t.staging}　{t.progress(goal.stay ? 1 : 0, goal.activities.length, GOAL_V1.activities)}
           </p>
         </div>
         <button
           type="button"
-          onClick={() => likedCount > 0 && setView("share")}
+          onClick={() => canFix && setView("share")}
           aria-label={t.fixLabel}
-          aria-disabled={likedCount === 0}
-          className={`flex h-12 min-w-[52px] flex-none cursor-pointer flex-col items-center justify-center gap-px border-0 bg-transparent ${likedCount > 0 ? "text-[#f4f1ea]" : "text-white/30"}`}
+          aria-disabled={!canFix}
+          className={`flex h-12 min-w-[52px] flex-none cursor-pointer flex-col items-center justify-center gap-px border-0 bg-transparent ${canFix ? "text-[#f4f1ea]" : "text-white/30"}`}
         >
           <Icon name="flag" size={20} />
           <span className="text-[10px] font-bold">{t.fix}</span>
@@ -131,7 +140,7 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
           {room.thread.map((msg, i) => (
             <li key={i} className="flex flex-col gap-2.5">
               {msg.t === "user" && <p className="m-0 ml-[72px] mr-4 self-end rounded-[18px_18px_4px_18px] bg-[#f4f1ea] px-3.5 py-2 text-[14px] leading-normal text-[#141413]">{msg.text}</p>}
-              {msg.t !== "user" && <BotLine text={msg.t === "choices" ? t.choicesAsk : msg.text} />}
+              {(msg.t === "bot" || msg.t === "choices") && <BotLine text={msg.t === "choices" ? t.choicesAsk : msg.text} />}
               {msg.t === "bot" && msg.ids && (
                 <div className="flex snap-x snap-mandatory scroll-pl-[52px] gap-3 overflow-x-auto pl-[52px] pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {msg.ids.map((id) => {
@@ -140,6 +149,7 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
                   })}
                 </div>
               )}
+              {msg.t === "plan" && <PlanMessage locale={locale} msg={msg} cardById={cardById} onFix={() => setView("share")} />}
               {msg.t === "choices" && (
                 <ChoiceChips choices={msg.choices} picked={msg.picked} label={choiceText} onPick={(f) => onChoose(f, i)} ariaLabel={t.choicesAsk} indent />
               )}
@@ -200,8 +210,8 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
                 type="button"
                 onClick={onNext}
                 aria-label={t.next}
-                aria-disabled={room.done}
-                className={`flex h-[52px] w-[52px] flex-none cursor-pointer items-center justify-center rounded-[18px] border-0 ${room.done ? "bg-white/[0.12] text-white/40" : "bg-[#f4f1ea] text-[#141413]"}`}
+                aria-disabled={room.done || goal.complete}
+                className={`flex h-[52px] w-[52px] flex-none cursor-pointer items-center justify-center rounded-[18px] border-0 ${room.done || goal.complete ? "bg-white/[0.12] text-white/40" : "bg-[#f4f1ea] text-[#141413]"}`}
               >
                 <Icon name="arrow" size={22} />
               </button>
@@ -216,9 +226,39 @@ function RoomBody({ locale, name, picked, area, data }: Props) {
 // 次の回を出す（純関数）。withChoices：選択肢のメッセージも続けて出す（全部にリアクションしたとき）
 function advanceRoom(r: Room, state: ProposeState, cause: Cause, data: RoomData, strategies: Strategies, pre: Msg[] = [], withChoices = false): Room {
   const res = nextRound(state, cause, data.candidates, strategies);
-  const thread: Msg[] = [...r.thread, ...pre, { t: "bot", text: res.lead, ids: res.done ? undefined : res.ids }];
-  if (withChoices && !res.done && res.choices.length) thread.push({ t: "choices", choices: res.choices, picked: null });
+  const thread: Msg[] = [...r.thread, ...pre, { t: "bot", text: res.lead, ids: res.done || !res.ids.length ? undefined : res.ids }];
+  // ゴールがそろったら、プランを出す（候補はもう出さない）
+  if (res.goal?.complete && res.goal.stay) thread.push({ t: "plan", stay: res.goal.stay, activities: res.goal.activities });
+  else if (withChoices && !res.done && res.choices.length) thread.push({ t: "choices", choices: res.choices, picked: null });
   return { state: applyRound(state, res), thread, latest: res.done ? r.latest : res.ids, choices: res.choices, done: res.done, algorithm: res.algorithm };
+}
+
+// そろったプラン：宿と過ごし方を並べ、Fix へ
+function PlanMessage({ locale, msg, cardById, onFix }: { locale: Locale; msg: Extract<Msg, { t: "plan" }>; cardById: Map<string, PlanCard>; onFix: () => void }) {
+  const m = messages(locale);
+  const rows = [msg.stay, ...msg.activities].map((id) => cardById.get(id)).filter((c): c is PlanCard => Boolean(c));
+  return (
+    <section aria-label={m.plan.planTitle} className="ml-[52px] mr-4 flex flex-col gap-1 rounded-[18px] bg-[#1b1b19] px-3.5 pb-3.5 pt-3">
+      <h2 className="m-0 mb-1 text-[13px] font-bold text-[#f4f1ea]">{m.plan.planTitle}</h2>
+      {rows.map((c) => (
+        <div key={c.destId} className="flex items-center gap-3 py-1.5">
+          <PhotoCarousel photos={c.photos.slice(0, 1)} label={c.title} className="h-11 w-11 flex-none rounded-[10px]" priority={false} />
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-[14px] font-bold">{c.title}</span>
+            <span className="text-[11.5px] text-white/60">
+              {c.kindLabel}
+              {m.common.listSep}
+              {c.areaLabel}
+            </span>
+          </span>
+        </div>
+      ))}
+      <button type="button" onClick={onFix} className="mt-2 flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 bg-[#f4f1ea] text-[14px] font-bold text-[#141413]">
+        <Icon name="flag" size={16} />
+        {m.plan.fixThisPlan}
+      </button>
+    </section>
+  );
 }
 
 function BotLine({ text }: { text: string }) {

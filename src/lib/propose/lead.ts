@@ -10,14 +10,22 @@ export type LeadText = {
   hmm: (name: string) => string;
   next: () => string;
   end: () => string;
+  /** ゴールがあるとき：宿を探す・宿の近くで体験を探す・プランがそろった */
+  goalStay?: () => string;
+  goalActivity?: (stayName: string) => string;
+  goalComplete?: () => string;
 };
 
 export function templateLead(text: LeadText, labelOf: (f: FeatureId) => string, name = "lead-template@1"): LeadWriter {
   return {
     name,
-    write({ cause, picked, topFeature }: LeadInput) {
+    write({ cause, picked, topFeature, goal, stayName }: LeadInput) {
+      if (goal?.complete && text.goalComplete) return text.goalComplete();
       if (!picked.length) return text.end();
       const label = topFeature ? labelOf(topFeature) : null;
+      // ゴールの枠が変わる回（始め・宿が決まった直後）は、枠の一言を優先する
+      if (goal?.target === "stay" && cause.type === "start" && text.goalStay) return text.goalStay();
+      if (goal?.target === "activity" && stayName && goal.activities.length === 0 && text.goalActivity) return text.goalActivity(stayName);
       switch (cause.type) {
         case "start":
           return text.start(picked.length);

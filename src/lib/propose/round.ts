@@ -6,7 +6,7 @@ import type { Candidate, Cause, FeatureId, ProposeState, RoundResult, Strategies
 export const initialState = (conditions: FeatureId[]): ProposeState => ({ conditions, reactions: {}, choices: [], shown: [], round: 0 });
 
 /** 使った戦略の名前と版（記録・A/B 用） */
-export const algorithmOf = (s: Strategies): string => [s.preference.name, s.picker.name, s.chooser.name, s.lead.name].join(" ");
+export const algorithmOf = (s: Strategies): string => [s.goal?.name, s.preference.name, s.picker.name, s.chooser.name, s.lead.name].filter(Boolean).join(" ");
 
 /** 選んだ候補に一番効いた特徴（重みが正のもので、重み × 持っている数が最大） */
 export function topFeature(picked: Candidate[], w: Weights): FeatureId | null {
@@ -17,19 +17,25 @@ export function topFeature(picked: Candidate[], w: Weights): FeatureId | null {
   return best;
 }
 
-/** 次の回：出していない・うーんでない候補から選び、残りから選択肢を作り、一言を付ける */
+/**
+ * 次の回：出していない・うーんでない候補から選び、残りから選択肢を作り、一言を付ける。
+ * ゴールがあれば、候補を次に埋める枠に向け（focus）、重みを足す（boost）。ゴールが埋まっていれば候補は出さない（goal.complete）
+ */
 export function nextRound(state: ProposeState, cause: Cause, all: Candidate[], s: Strategies): RoundResult {
   const byId = new Map(all.map((c) => [c.id, c]));
   const ctx = { state, featuresOf: (id: string) => byId.get(id)?.features ?? [] };
-  const w = s.preference.weigh(ctx);
+  const goal = s.goal?.status(state, all);
+  const w = goal && s.goal ? s.goal.boost(s.preference.weigh(ctx), goal, ctx.featuresOf) : s.preference.weigh(ctx);
   const shown = new Set(state.shown);
   const pool = all.filter((c) => !shown.has(c.id) && state.reactions[c.id] !== "hmm");
-  const ids = s.picker.pick(pool, w, ctx);
+  const focused = goal && s.goal ? s.goal.focus(pool, goal) : pool;
+  const ids = goal?.complete ? [] : s.picker.pick(focused, w, ctx);
   const chosen = new Set(ids);
-  const choices = s.chooser.choose(pool.filter((c) => !chosen.has(c.id)), w, ctx);
+  const choices = s.chooser.choose(focused.filter((c) => !chosen.has(c.id)), w, ctx);
   const picked = ids.map((id) => byId.get(id)!);
-  const leadInput = { cause, picked, topFeature: topFeature(picked, w) };
-  return { ids, lead: s.lead.write(leadInput), leadInput, choices, algorithm: algorithmOf(s), done: ids.length === 0 };
+  const stayName = goal?.stay ? (byId.get(goal.stay)?.name ?? null) : null;
+  const leadInput = { cause, picked, topFeature: topFeature(picked, w), goal, stayName };
+  return { ids, lead: s.lead.write(leadInput), leadInput, choices, algorithm: algorithmOf(s), done: ids.length === 0 && !goal?.complete, goal };
 }
 
 // ---- 状態の更新 ----

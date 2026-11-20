@@ -13,6 +13,8 @@ import {
   initialState,
   mmrPicker,
   nextRound,
+  goalStatus,
+  planGoal,
   reactionCause,
   templateLead,
   toCandidates,
@@ -115,7 +117,7 @@ describe("lead", () => {
 });
 
 describe("nextRound と状態", () => {
-  const s = defaultStrategies(text, labelOf);
+  const s = { ...defaultStrategies(text, labelOf), goal: undefined }; // ゴール無しの流れ
   it("最初の回から、全部にリアクションして次の回へ。出したもの・うーんは二度と出ない", () => {
     let state = initialState(["trait:lake"]);
     const r1 = nextRound(state, { type: "start" }, all, s);
@@ -149,5 +151,35 @@ describe("features", () => {
     expect(label("trait:lake")).toBe("湖畔");
     expect(label("kind:x")).toBe("x");
     expect(label("area:ashinoko")).toBe("芦ノ湖");
+  });
+});
+
+describe("planGoal（プランを埋める）", () => {
+  const goalText: LeadText = { ...text, goalStay: () => "まず宿", goalActivity: (n) => `${n} の近くで`, goalComplete: () => "そろった" };
+  const s = { ...defaultStrategies(goalText, labelOf), goal: planGoal({ activities: 1, nearStay: 5 }) };
+
+  it("宿 → 宿と同じ地区の体験 → そろったら候補を出さない", () => {
+    let state = initialState([]);
+    const r1 = nextRound(state, { type: "start" }, all, s);
+    expect(r1.lead).toBe("まず宿");
+    expect(r1.ids.every((id) => byId.get(id)!.features.includes("kind:accommodation"))).toBe(true);
+    state = applyRound(state, r1);
+    state = applyReaction(state, "forest", "great"); // 仙石原の宿
+    expect(goalStatus(state, all, { activities: 1, nearStay: 5 })).toMatchObject({ stay: "forest", target: "activity", complete: false });
+    const r2 = nextRound(state, { type: "next" }, all, s);
+    expect(r2.lead).toBe("FOREST の近くで");
+    expect(r2.ids.every((id) => !byId.get(id)!.features.includes("kind:accommodation"))).toBe(true);
+    expect(r2.ids[0]).toBe("stars"); // 仙石原の体験が先
+    state = applyReaction(applyRound(state, r2), "stars", "good");
+    const r3 = nextRound(state, { type: "next" }, all, s);
+    expect(r3).toMatchObject({ ids: [], done: false, lead: "そろった", goal: { stay: "forest", activities: ["stars"], complete: true } });
+  });
+
+  it("枠はすごくいいを先に埋める。その枠の候補が尽きたら、ほかの枠も出す", () => {
+    const state = { ...initialState([]), shown: ["inn", "forest", "lodge"], reactions: { inn: "good", lodge: "great" } as const, round: 1 };
+    expect(goalStatus(state, all).stay).toBe("lodge");
+    const g = planGoal();
+    const noStays = all.filter((c) => !c.features.includes("kind:accommodation"));
+    expect(g.focus(noStays, { stay: null, activities: [], target: "stay", complete: false })).toEqual(noStays);
   });
 });

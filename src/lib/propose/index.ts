@@ -3,6 +3,7 @@
 import { entropyChooser } from "./choices";
 import { templateLead, type LeadText } from "./lead";
 import { mmrPicker } from "./pick";
+import { planGoal } from "./goal";
 import { additivePreference } from "./preference";
 import type { FeatureId, Strategies } from "./types";
 
@@ -13,8 +14,9 @@ export { entropyChooser, ENTROPY_V1 } from "./choices";
 export { templateLead, guardedLead, type LeadText } from "./lead";
 export { nextRound, initialState, applyRound, applyReaction, applyChoice, allReacted, reactionCause, algorithmOf } from "./round";
 export { toCandidates, conditionFeatures, featureLabeler, type FeatureLabels } from "./features";
+export { planGoal, goalStatus, slotOf, GOAL_V1 } from "./goal";
 
-/** 今の既定の戦略（v1）。差し替えるときは一部だけ上書きして渡す */
+/** 今の既定の戦略（v1）。ゴールは「プランを埋める」。差し替えるときは一部だけ上書きして渡す */
 export function defaultStrategies(text: LeadText, labelOf: (f: FeatureId) => string): Strategies {
-  return { preference: additivePreference(), picker: mmrPicker(), chooser: entropyChooser(), lead: templateLead(text, labelOf) };
+  return { goal: planGoal(), preference: additivePreference(), picker: mmrPicker(), chooser: entropyChooser(), lead: templateLead(text, labelOf) };
 }
