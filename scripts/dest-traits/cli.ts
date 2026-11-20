@@ -3,6 +3,11 @@
 //   extract [--from local|env] [--limit N]  dest の紹介文を Haiku で判定 → data/dest-traits/judged.json
 //                                            --from local（既定）：ローカルの Supabase を読む。env：.env.local の NEXT_PUBLIC_SUPABASE_URL を読む（読むだけ）
 //   verify [--n 50]                          judged.json から N 組を選び、Sonnet で判定し直して一致率を出す → data/dest-traits/verify.json
+// API キーを使わずに判定するとき（Claude Code の agent が読んで判定する）：
+//   dump [--from local|env] [--limit N]      判定する dest と尋ねる特徴 → data/dest-traits/tasks.json
+//   ingest --answers <file> [--by <名前>]    agent の答え（{ destId: {"results":[...]} }）を extract と同じ検査に通す → judged.json
+//   verify-dump [--n 50]                     judged.json から N 組を選ぶ → data/dest-traits/verify-tasks.json（別の agent が判定し直す）
+//   verify-ingest --answers <file>           判定し直した答えと比べて一致率を出す → verify.json
 //   load                                     judged.json の値をローカルの Supabase の dest_traits に入れる（ローカル以外の URL には書かない）
 // data/ は git に入れない
 import { execFileSync } from "node:child_process";
@@ -21,6 +26,8 @@ import { parseTraitTsv, type TraitDef } from "./trait-defs.ts";
 const OUT = path.resolve("data/dest-traits");
 const JUDGED = path.join(OUT, "judged.json");
 const VERIFY = path.join(OUT, "verify.json");
+const TASKS = path.join(OUT, "tasks.json");
+const VERIFY_TASKS = path.join(OUT, "verify-tasks.json");
 const VERSION = "text-haiku-5-5-v1"; // dest_traits.version（作り方の版）。プロンプトや判定のモデルを変えたら上げる
 
 type JudgedDest = DestText & { asked: string[]; accepted: Judgement[]; rejected: Reject[]; error?: string };
@@ -116,6 +123,79 @@ async function extract() {
   if (errors[0]) console.log(`失敗の例: ${errors[0].error}`);
 }
 
+// ---- agent で判定する（API キー無し） ----
+
+type Task = DestText & { asked: { id: string; name: string }[] };
+type Answers = Record<string, unknown>; // destId → {"results":[...]}（文字列でもよい）
+
+function readAnswers(): Answers {
+  const file = flag("answers");
+  if (!file) throw new Error("--answers <file> が要る");
+  return JSON.parse(fs.readFileSync(file, "utf8")) as Answers;
+}
+const raw = (v: unknown): string => (typeof v === "string" ? v : JSON.stringify(v ?? { results: [] }));
+
+async function dump() {
+  const from = flag("from") ?? "local";
+  if (from !== "local" && from !== "env") throw new Error("--from は local か env");
+  const db = from === "local" ? localClient() : adminClient();
+  const limit = flag("limit") ? Number(flag("limit")) : undefined;
+  const defs = pickedDefs();
+  const tasks: Task[] = (await readDests(db, limit))
+    .map((d) => ({ ...d, asked: traitsFor(d, defs).map((t) => ({ id: t.id, name: t.name })) }))
+    .filter((t) => t.asked.length > 0);
+  fs.mkdirSync(OUT, { recursive: true });
+  fs.writeFileSync(TASKS, JSON.stringify({ source: from, createdAt: new Date().toISOString(), tasks }, null, 2));
+  console.log(`dest ${tasks.length} 件・尋ねる組 ${tasks.reduce((s, t) => s + t.asked.length, 0)} → ${TASKS}`);
+}
+
+async function ingest() {
+  const { source, tasks } = JSON.parse(fs.readFileSync(TASKS, "utf8")) as { source: string; tasks: Task[] };
+  const answers = readAnswers();
+  const by = flag("by") ?? "claude-code-agent";
+  const dests: JudgedDest[] = tasks.map((t) => {
+    const { asked, ...dest } = t;
+    if (!(t.destId in answers)) return { ...dest, asked: asked.map((a) => a.id), accepted: [], rejected: [], error: "答えが無い" };
+    const { accepted, rejected } = parseResponse(raw(answers[t.destId]), dest, asked);
+    return { ...dest, asked: asked.map((a) => a.id), accepted, rejected };
+  });
+  const out: Judged = { version: `text-agent-v1`, model: by, createdAt: new Date().toISOString(), source, dests };
+  fs.writeFileSync(JUDGED, JSON.stringify(out, null, 2));
+  const missing = dests.filter((d) => d.error).length;
+  console.log(`判定 ${dests.length - missing} 件（答えが無い ${missing}）、値が付いた ${dests.reduce((s, d) => s + d.accepted.length, 0)} 件、除いた ${dests.reduce((s, d) => s + d.rejected.length, 0)} 件 → ${JUDGED}`);
+}
+
+async function verifyDump() {
+  const n = Number(flag("n") ?? 50);
+  const judged = readJudged();
+  const defs = new Map(pickedDefs().map((d) => [d.id, d]));
+  const pairs = judged.dests.filter((d) => !d.error).flatMap((d) => d.asked.map((traitId) => ({ destId: d.destId, traitId, a: d.accepted.some((j) => j.traitId === traitId) })));
+  const chosen = pickVerifySample(pairs, n);
+  const byDest = new Map<string, string[]>();
+  for (const p of chosen) byDest.set(p.destId, [...(byDest.get(p.destId) ?? []), p.traitId]);
+  const tasks: Task[] = [...byDest].map(([destId, ids]) => {
+    const d = judged.dests.find((x) => x.destId === destId)!;
+    return { destId: d.destId, coreType: d.coreType, name: d.name, summary: d.summary, asked: ids.map((id) => ({ id, name: defs.get(id)!.name })) };
+  });
+  fs.writeFileSync(VERIFY_TASKS, JSON.stringify({ pairs: chosen, tasks }, null, 2));
+  console.log(`${pairs.length} 組から ${chosen.length} 組（付いた ${chosen.filter((p) => p.a).length}）、dest ${tasks.length} 件 → ${VERIFY_TASKS}`);
+}
+
+async function verifyIngest() {
+  const { pairs, tasks } = JSON.parse(fs.readFileSync(VERIFY_TASKS, "utf8")) as { pairs: { destId: string; traitId: string; a: boolean }[]; tasks: Task[] };
+  const answers = readAnswers();
+  const b = new Map<string, Set<string>>();
+  for (const t of tasks) {
+    const { asked, ...dest } = t;
+    b.set(t.destId, new Set(parseResponse(raw(answers[t.destId]), dest, asked).accepted.map((j) => j.traitId)));
+  }
+  const compared: Compared[] = pairs.map((p) => ({ ...p, b: b.get(p.destId)?.has(p.traitId) ?? false }));
+  const r = agreement(compared);
+  fs.writeFileSync(VERIFY, JSON.stringify({ a: readJudged().model, b: flag("by") ?? "claude-code-agent-2", ...r, pairs: compared }, null, 2));
+  const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+  console.log(`一致率 ${r.rate === null ? "-" : pct(r.rate)}（${r.agree}/${r.total}）。1 回目が付けた ${r.aTrue.total} 組のうち 2 回目も付けた ${r.aTrue.agree} 組 → ${VERIFY}`);
+}
+
 function readJudged(): Judged {
   if (!fs.existsSync(JUDGED)) throw new Error(`${JUDGED} が無い。先に extract`);
   return JSON.parse(fs.readFileSync(JUDGED, "utf8")) as Judged;
@@ -174,7 +254,11 @@ try {
   if (cmd === "extract") await extract();
   else if (cmd === "verify") await verify();
   else if (cmd === "load") await load();
-  else throw new Error("使い方: pnpm dest-traits extract|verify|load");
+  else if (cmd === "dump") await dump();
+  else if (cmd === "ingest") await ingest();
+  else if (cmd === "verify-dump") await verifyDump();
+  else if (cmd === "verify-ingest") await verifyIngest();
+  else throw new Error("使い方: pnpm dest-traits extract|verify|load|dump|ingest|verify-dump|verify-ingest");
 } catch (e) {
   console.error(`error: ${e instanceof Error ? e.message : e}`);
   process.exitCode = 1;
