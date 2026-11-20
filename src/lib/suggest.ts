@@ -74,10 +74,23 @@ export function parseSuggestArea(raw: string | string[] | undefined): string {
   return v && KEY.test(v) ? v : "all";
 }
 
-export function suggestPlanHref(locale: string, picked: string[], area = "all"): string {
+/** extra：ほかに足す値（旅の目的 ?p=&m=&o= など） */
+export function suggestPlanHref(locale: string, picked: string[], area = "all", extra: Record<string, string> = {}): string {
   const p = new URLSearchParams();
   if (picked.length) p.set("t", picked.join(","));
   if (area !== "all") p.set("area", area);
+  for (const [k, v] of Object.entries(extra)) p.set(k, v);
   const s = p.toString().replaceAll("%2C", ",");
   return s ? `/${locale}/plan?${s}` : `/${locale}/plan`;
+}
+
+// ---- 提案ページの名前（文字を打たせず、条件から付ける。例「箱根・湖の近く・静か」） ----
+
+export type ProposalNameText = { all: string; sep: string; more: (n: number) => string };
+
+/** エリア（無ければ「すべてのエリア」）とこだわりの先頭 max 個をつなぐ。残りは「ほか N」 */
+export function proposalName(areaLabel: string | null, keywordLabels: string[], t: ProposalNameText, max = 3): string {
+  const shown = keywordLabels.slice(0, max);
+  const rest = keywordLabels.length - shown.length;
+  return [areaLabel ?? t.all, ...shown].join(t.sep) + (rest > 0 ? t.more(rest) : "");
 }

@@ -1,0 +1,183 @@
+// プランを、グループのチャットにそのまま貼れる文にする（純関数）。
+// リンクに飛ばなくても決められるように、料金・時間・行き方を本文に入れ、Wandrara・地図・予約（Booking・Airbnb など）・公式のリンクを添える。
+// 料金や行き方が無いときは推測せず「不明」と書く（宿と体験だけ。自然などは料金の行を出さない）
+import { linksFor, missingSites, siteOf, type SiteId } from "./booking-sites";
+import type { DestDetailView } from "./detail";
+import type { Locale } from "./types";
+
+export type ShareRole = "stay" | "activity";
+/** site：予約に使うサイト（公式・楽天トラベル など）。どれでもなければ null */
+export type ShareLink = { label: string; url: string; site: SiteId | null };
+export type ShareItem = {
+  role: ShareRole;
+  title: string;
+  kindLabel: string;
+  areaLabel: string;
+  summary: string | null;
+  /** 料金の一行。料金を出す種類で値が無ければ null（文では「不明」） */
+  price: string | null;
+  /** 料金を出す種類か（宿・体験） */
+  priced: boolean;
+  times: string | null;
+  access: string | null;
+  wandraraUrl: string;
+  mapUrl: string | null;
+  links: ShareLink[];
+};
+
+export type ShareText = {
+  heading: (title: string) => string;
+  role: Record<ShareRole, string>;
+  price: string;
+  times: string;
+  access: string;
+  unknown: string;
+  map: string;
+  book: string;
+  more: string;
+  footer: string;
+};
+
+const yen = (n: number, locale: Locale) => n.toLocaleString(locale === "ja" ? "ja-JP" : "en-US");
+const range = (min: number, max: number, locale: Locale) => (min === max ? yen(min, locale) : `${yen(min, locale)}〜${yen(max, locale)}`);
+
+/**
+ * 料金の一行：単位ごとに 一番安い〜高い（「1 棟 1 泊・税込（円）」）。違う単位は 1 つの幅にまとめず「／」で並べる。
+ * 宿は行ごとの単位（無ければ表の単位）、体験は行の「1 名」「1 グループ」と表の「税込（円）」を合わせたもの
+ */
+function priceLine(view: DestDetailView, locale: Locale): string | null {
+  const stay = view.accommodation?.priceTable;
+  const exp = view.experience?.priceTable;
+  const rows: { min: number; max: number; unit: string }[] = stay?.rows.length
+    ? stay.rows.map((r) => ({ min: r.min, max: r.max, unit: r.unitLabel ?? stay.unitLabel ?? "" }))
+    : exp?.rows.length
+      ? exp.rows.map((r) => ({ min: r.min, max: r.max, unit: [r.perLabel, exp.unitLabel].filter(Boolean).join("・") }))
+      : [];
+  if (!rows.length) return null;
+  const units = [...new Set(rows.map((r) => r.unit))];
+  return units
+    .map((u) => {
+      const rs = rows.filter((r) => r.unit === u);
+      return `${range(Math.min(...rs.map((r) => r.min)), Math.max(...rs.map((r) => r.max)), locale)}${u ? `（${u}）` : ""}`;
+    })
+    .join("／");
+}
+
+type AccessLike = { station: string | null; modeLabel: string | null; minutes: number | null } | null | undefined;
+function accessLine(view: DestDetailView, locale: Locale): string | null {
+  const a: AccessLike = view.accommodation?.access ?? view.nature?.access ?? (view.building as { access?: AccessLike } | null)?.access ?? (view.hotspring as { access?: AccessLike } | null)?.access ?? (view.village as { access?: AccessLike } | null)?.access;
+  if (!a || (!a.station && !a.minutes)) return null;
+  const from = a.station ? (locale === "ja" ? `${a.station}から` : `from ${a.station}`) : "";
+  const how = [a.modeLabel, a.minutes ? (locale === "ja" ? `${a.minutes}分` : `${a.minutes} min`) : null].filter(Boolean).join(" ");
+  return [from, how].filter(Boolean).join(" ");
+}
+
+function timesLine(view: DestDetailView, locale: Locale): string | null {
+  const s = view.accommodation?.stay;
+  if (s && (s.checkIn || s.checkOut)) return locale === "ja" ? `チェックイン ${s.checkIn ?? "不明"}／アウト ${s.checkOut ?? "不明"}` : `Check-in ${s.checkIn ?? "?"} / out ${s.checkOut ?? "?"}`;
+  const e = view.experience?.summary;
+  if (e && (e.durationMinutes || e.reservationRequired !== null)) {
+    const parts = [e.durationMinutes ? (locale === "ja" ? `所要 ${e.durationMinutes}分` : `${e.durationMinutes} min`) : null, e.reservationRequired ? (locale === "ja" ? "要予約" : "Booking required") : null];
+    return parts.filter(Boolean).join(locale === "ja" ? "・" : ", ") || null;
+  }
+  return null;
+}
+
+/** 予約・公式のリンク。公式を先に、同じ URL は 1 つ */
+function linksOf(view: DestDetailView): ShareLink[] {
+  const raw = view.accommodation?.bookingLinks ?? view.experience?.bookingLinks ?? [];
+  const seen = new Set<string>();
+  return [...raw]
+    .sort((a, b) => Number(b.isOfficial) - Number(a.isOfficial))
+    .filter((l) => (seen.has(l.url) ? false : (seen.add(l.url), true)))
+    .map((l) => ({ label: l.label, url: l.url, site: siteOf(l) }));
+}
+
+/** 予約が要る種類（宿・体験）か */
+export const needsBooking = (it: Pick<ShareItem, "priced">): boolean => it.priced;
+/** 文に出すリンク：サイトを選んでいれば、そのサイトのリンクだけを選んだ順に */
+const shownLinks = (it: Pick<ShareItem, "links">, sites?: SiteId[]): ShareLink[] => (sites ? linksFor(it.links, sites) : it.links);
+
+/** 予約できる状態か（予約が要る種類で、選んだサイトのリンクがある） */
+export const bookable = (it: Pick<ShareItem, "priced" | "links">, sites?: SiteId[]): boolean => it.priced && shownLinks(it, sites).length > 0;
+
+export const mapUrlOf = (loc: { lat: number; lng: number } | null): string | null =>
+  loc ? `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lng}` : null;
+
+export function shareItemOf(view: DestDetailView, role: ShareRole, wandraraUrl: string, locale: Locale): ShareItem {
+  return {
+    role,
+    title: view.title,
+    kindLabel: view.kindLabel,
+    areaLabel: view.areaLabel,
+    summary: view.summary,
+    price: priceLine(view, locale),
+    priced: Boolean(view.accommodation || view.experience),
+    times: timesLine(view, locale),
+    access: accessLine(view, locale),
+    wandraraUrl,
+    mapUrl: mapUrlOf(view.location),
+    links: linksOf(view),
+  };
+}
+
+/** 貼り付け用の文。LINE などでそのまま読めるよう、記号と改行だけで組む */
+export function shareText(title: string, items: ShareItem[], t: ShareText, sites?: SiteId[]): string {
+  const blocks = items.map((it) => {
+    const lines = [`■ ${t.role[it.role]}：${it.title}（${it.kindLabel}・${it.areaLabel}）`];
+    if (it.summary) lines.push(it.summary);
+    if (it.priced) lines.push(`・${t.price} ${it.price ?? t.unknown}`);
+    if (it.times) lines.push(`・${it.times}`);
+    lines.push(`・${t.access} ${it.access ?? t.unknown}`);
+    if (it.mapUrl) lines.push(`・${t.map} ${it.mapUrl}`);
+    // 予約できる状態か：予約・公式のリンク。予約が要る種類（宿・体験）で無ければ「予約 不明」（データカタログで埋める所）
+    const links = shownLinks(it, sites);
+    for (const l of links) lines.push(`・${t.book}（${l.label}） ${l.url}`);
+    if (!links.length && it.priced) lines.push(`・${t.book} ${t.unknown}`);
+    lines.push(`・${t.more} ${it.wandraraUrl}`);
+    return lines.join("\n");
+  });
+  return [t.heading(title), ...blocks, t.footer].join("\n\n");
+}
+
+// ---- FinalDraft：Agent（ChatGPT・Claude など）に渡して、不明の所とリンクを補ってもらうための文 ----
+
+export type FinalDraftText = {
+  /** 先頭の指示（何をしてほしいか・守ること・出力の形）。行の配列 */
+  instructions: string[];
+  /** 埋める所の見出しと、1 件の書き方 */
+  gapsTitle: string;
+  gap: (title: string, fields: string[]) => string;
+  noGaps: string;
+  fields: { price: string; access: string; booking: string; bookingAt: (sites: string) => string };
+  /** 予約に使うサイトの指示（サイトの名前を並べたもの） */
+  sites: (labels: string) => string;
+  draftStart: string;
+  draftEnd: string;
+  /** 旅の条件の一行（人数・時期・そのほか）。無ければ出さない */
+  trip: (label: string) => string;
+};
+
+/** 埋める所：料金を出す種類で料金が無い・行き方が無い・予約が要る種類で予約リンクが無い */
+export function gapsOf(items: ShareItem[], f: FinalDraftText["fields"], sites?: SiteId[], siteLabel: (s: SiteId) => string = (s) => s): { title: string; fields: string[] }[] {
+  return items
+    .map((it) => {
+      // 予約リンク：サイトを選んでいれば、リンクの無いサイトを挙げる
+      const missing = it.priced ? (sites ? missingSites(it.links, sites) : it.links.length ? [] : null) : [];
+      const booking = missing === null ? f.booking : missing.length ? f.bookingAt(missing.map(siteLabel).join("・")) : null;
+      return { title: it.title, fields: [it.priced && !it.price ? f.price : null, !it.access ? f.access : null, booking].filter((x): x is string => Boolean(x)) };
+    })
+    .filter((g) => g.fields.length);
+}
+
+/** 指示 → 埋める所 → 下書き（区切りで囲む）の順。Agent が下書きの形を保ったまま完成させられるようにする */
+export function finalDraft(draft: string, items: ShareItem[], t: FinalDraftText, tripLabel = "", sites?: SiteId[], siteLabel: (s: SiteId) => string = (s) => s): string {
+  const gaps = gapsOf(items, t.fields, sites, siteLabel);
+  return [
+    t.instructions.join("\n"),
+    ...(tripLabel ? [t.trip(tripLabel)] : []),
+    ...(sites?.length ? [t.sites(sites.map(siteLabel).join("・"))] : []),
+    [t.gapsTitle, ...(gaps.length ? gaps.map((g) => t.gap(g.title, g.fields)) : [t.noGaps])].join("\n"),
+    [t.draftStart, draft, t.draftEnd].join("\n"),
+  ].join("\n\n");
+}

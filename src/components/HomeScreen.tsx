@@ -25,7 +25,7 @@ import { Icon } from "./icons";
 import { NearbySuggestions, type StoriesOpener } from "./NearbySuggestions";
 import { PhotoCarousel } from "./PhotoCarousel";
 import { SaveButton } from "./SaveButton";
-import { SuggestBar } from "./SuggestBar";
+import { HomeTop } from "./HomeTop";
 import { useScrolledAway } from "./use-scrolled-away";
 
 // saveData：サーバーが決めた「通信量を抑える」（最初の描画に使う。以降はクライアントの値に従う）
@@ -193,10 +193,11 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
       <HomeHeader
         locale={locale}
         next={serializeDiscoverQuery(query, locale)}
-        subtitle={`${feed.orderLabel} · ${m.home.demo}`}
+        // 提案のトップでは Feed の並び順とエリアの名前を出さない（ロゴとアカウントだけ）
+        subtitle={SUGGEST_HOME ? "" : `${feed.orderLabel} · ${m.home.demo}`}
         iconStyle={ICON_SOLID}
         collapsed={scrolledAway}
-        area={<CurrentFilterDisplay label={topArea} className="min-w-0" />}
+        area={SUGGEST_HOME ? null : <CurrentFilterDisplay label={topArea} className="min-w-0" />}
       />
 
       {/* エリアの一言の全画面。カルーセルの 1 枚から開く */}
@@ -206,7 +207,7 @@ function HomeScreenBody({ locale, query, feed, categories, areaLabel }: Omit<Pro
 
       {/* Floating overlay */}
       {/* 横幅は画面の 80% まで、中央に置く */}
-      {SUGGEST_HOME && <SuggestBar locale={locale} />}
+      {SUGGEST_HOME && <HomeTop locale={locale} />}
       <div hidden={SUGGEST_HOME} className="absolute inset-x-0 bottom-[22px] z-[6] mx-auto flex w-[80%] flex-col gap-2">
         <div className="flex items-center gap-1.5">
           <button
