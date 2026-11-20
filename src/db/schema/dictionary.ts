@@ -80,8 +80,11 @@ export const categories = pgTable(
 
 // エリアの特性（温泉・海辺など）のマスター。地図で「この特性があるエリア」に絞るのに使う
 // source = items：公開中の宿・体験の分類（category_ids のどれか）から数える。geo：土地から計算した値を region_traits に入れる（今は行なし）
-export const TRAIT_VALUE_TYPES = ["flag", "number"] as const;
-export const TRAIT_SOURCES = ["items", "geo"] as const;
+// 特性の定義は docs/suggest/trait-candidates.tsv（src/generated/trait-taxonomy.json）。dest ごとの値は dest_traits
+// source（作り方）= text：紹介文から判定・location：位置から計算・external：外部データ・column：列から・calc：ほかの値から計算
+// value_type = flag（1）・number（unit に単位）・level（0〜3）・enum
+export const TRAIT_VALUE_TYPES = ["flag", "number", "level", "enum"] as const;
+export const TRAIT_SOURCES = ["items", "geo", "text", "location", "external", "column", "calc"] as const;
 
 export const traits = pgTable(
   "traits",
@@ -96,13 +99,19 @@ export const traits = pgTable(
     source: text("source").notNull(),
     categoryIds: text("category_ids").array(), // source = items のとき、数える分類
     method: text("method"), // source = geo のときの計算方法の名前（例 coast・elevation_mean）
+    // 定義表（trait-candidates.tsv）の列。items・geo の古い行では null
+    big: text("big"), // 大分類（例 立地）
+    sub: text("sub"), // 分類（例 水辺）
+    target: text("target"), // 対象（全部・宿・体験・自然 など）
+    reference: text("reference"), // 参考（OSM など、作り方の出どころ）
+    fit: text("fit"), // 2 周目との相性（◎ ○ △）
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    check("traits_id_check", sql`${t.id} ~ '^[a-z0-9-]{1,40}$'`),
-    check("traits_value_type_check", sql`${t.valueType} in ('flag', 'number')`),
-    check("traits_source_check", sql`${t.source} in ('items', 'geo')`),
+    check("traits_id_check", sql`${t.id} ~ '^[a-z0-9_-]{1,40}$'`),
+    check("traits_value_type_check", sql`${t.valueType} in ('flag', 'number', 'level', 'enum')`),
+    check("traits_source_check", sql`${t.source} in ('items', 'geo', 'text', 'location', 'external', 'column', 'calc')`),
     anyoneRead(),
   ],
 );
