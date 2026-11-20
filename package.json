@@ -22,6 +22,8 @@
     "feed:score": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/feed-score.ts",
     "dest-traits": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/dest-traits/cli.ts",
     "dest-traits:seed-sql": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/dest-traits/trait-seed-sql.ts",
+    "propose:eval": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/propose-eval/run.ts",
+    "propose:eval:judge": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/propose-eval/judge.ts",
     "backfill:regions": "node --env-file-if-exists=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/backfill-regions.ts"
   },
   "dependencies": {

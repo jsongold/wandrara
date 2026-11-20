@@ -50,6 +50,9 @@ next-env.d.ts
 # dest_traits の判定結果（pnpm dest-traits。ローカルだけに置く）
 /data/dest-traits/
 
+# 提案の評価の結果（pnpm propose:eval）
+/data/propose-eval/
+
 # perf の出力
 /perf-out/
 

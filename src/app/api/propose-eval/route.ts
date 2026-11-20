@@ -26,6 +26,12 @@ export async function GET(req: NextRequest) {
   const destTraitIds = new Set(candidates.flatMap((c) => c.features.filter((f) => f.startsWith("dest:")).map((f) => f.slice(5))));
   const metrics = evaluate({ picked: room.picked, conditions, candidates, sim, coords }, (k) => conditionFeatures([k], MATCH, destTraitIds));
   const nameOf = (id: string) => candidates.find((c) => c.id === id)?.name ?? id;
+  // 種類（kind:）と地区（area:）は分けて返す。features は残りの特徴
+  const card = (id: string) => {
+    const fs = candidates.find((c) => c.id === id)?.features ?? [];
+    const pick = (prefix: string) => fs.filter((f) => f.startsWith(prefix)).map((f) => labels[f] ?? f).join("・");
+    return { name: nameOf(id), kind: pick("kind:"), area: pick("area:"), features: fs.filter((f) => !f.startsWith("kind:") && !f.startsWith("area:")).map((f) => labels[f] ?? f) };
+  };
   return NextResponse.json(
     {
       name: room.name,
@@ -33,7 +39,7 @@ export async function GET(req: NextRequest) {
       conditions: conditions.map((f) => labels[f] ?? f),
       algorithm: sim.algorithm,
       metrics,
-      rounds: sim.rounds.map((r) => ({ cause: r.cause, lead: r.lead, cards: r.ids.map((id) => ({ name: nameOf(id), features: candidates.find((c) => c.id === id)?.features.map((f) => labels[f] ?? f) ?? [] })) })),
+      rounds: sim.rounds.map((r) => ({ cause: r.cause, lead: r.lead, cards: r.ids.map(card) })),
       plan: sim.goal?.stay ? [sim.goal.stay, ...sim.goal.activities].map(nameOf) : [],
     },
     { headers: NO_STORE },
