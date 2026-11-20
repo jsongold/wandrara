@@ -47,7 +47,7 @@ describe("verdict", () => {
 describe("compareMarkdown", () => {
   it("未採点なら fit は未採点、取り込み方を案内する", () => {
     const md = compareMarkdown(null, run([scenario("a", metrics())]));
-    expect(md).toContain("| - | 未採点 |  |  |");
+    expect(md).toContain("| 未採点 | 0/1 | - | - |  |  |");
     expect(md).toContain("pnpm propose:eval:judge");
     expect(md).toContain("| a | 誰-a | 未採点 |");
   });
@@ -55,12 +55,19 @@ describe("compareMarkdown", () => {
     const prev = run([scenario("a", metrics(), judge(2)), scenario("b", metrics(), judge(4))]);
     const cur = run([scenario("a", metrics({ fit: 0.8 }), judge(4)), scenario("b", metrics(), judge(3))], { judgedAt: "t" });
     const md = compareMarkdown(prev, cur);
-    expect(md).toContain("| 3 | 3.5 | +0.5 | 良くなった |");
+    expect(md).toContain("| 3.5 | 2/2 | 3 | 3.5 | +0.5 | 良くなった |");
     expect(md).toContain("1. 誰-b（fit 3）理由3");
     expect(md).toContain("   - 足りないもの：足りない3");
     expect(md).toContain("| a | 誰-a | 4 | +2 | 4 | 足りない4 | - | 0.8 |");
     expect(md.indexOf("fit が低い")).toBeLessThan(md.indexOf("参考：機械の指標"));
     expect(md).toContain("| 条件に合う割合 | 高い | 0.5 | 0.65 | +0.15 | 良くなった |");
+  });
+  it("前回との差は両方で採点したシナリオだけで比べる", () => {
+    const prev = run([scenario("a", metrics(), judge(1)), scenario("b", metrics(), judge(5))]);
+    const cur = run([scenario("a", metrics()), scenario("b", metrics(), judge(5))]);
+    const md = compareMarkdown(prev, cur);
+    expect(md).toContain("| 5 | 1/2 | 5 | 5 | 0 | 同じ |");
+    expect(md).toContain("両方で採点した 1 シナリオ");
   });
   it("失敗したシナリオも行に出し、| をこわさない", () => {
     const md = compareMarkdown(null, run([scenario("x", null), scenario("y", metrics(), judge(1, { missing: ["a|b"] }))]));

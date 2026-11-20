@@ -60,7 +60,13 @@ const mean = (xs: (number | null | undefined)[]): number | null => {
 };
 
 /** 採点した fit の平均（採点が無ければ null） */
-export const fitMean = (run: Run): number | null => mean(run.scenarios.map((s) => s.judge?.fit));
+export const fitMean = (run: Run, ids?: Set<string>): number | null => mean(run.scenarios.filter((s) => !ids || ids.has(s.id)).map((s) => s.judge?.fit));
+
+/** 前回と今回の両方で採点したシナリオの id（比べるのはここだけ。採点の抜けで平均が動かないように） */
+export const sharedJudged = (prev: Run, cur: Run): Set<string> => {
+  const p = new Set(prev.scenarios.filter((s) => s.judge).map((s) => s.id));
+  return new Set(cur.scenarios.filter((s) => s.judge && p.has(s.id)).map((s) => s.id));
+};
 
 /** 機械の指標ごとの全シナリオの平均（値が無いシナリオは除く） */
 export function summarize(run: Run): Record<string, number | null> {
@@ -93,8 +99,11 @@ const list = (xs: string[]) => cell(xs.join("、")) || "-";
 
 /** 前回（無ければ null）と今回を並べた Markdown。fit を先に、機械の指標は右・下に参考として */
 export function compareMarkdown(prev: Run | null, cur: Run): string {
-  const fa = prev ? fitMean(prev) : null;
   const fb = fitMean(cur);
+  const judged = cur.scenarios.filter((s) => s.judge).length;
+  const shared = prev ? sharedJudged(prev, cur) : new Set<string>();
+  const fa = shared.size ? fitMean(prev!, shared) : null;
+  const fbShared = shared.size ? fitMean(cur, shared) : null;
   const a = prev ? summarize(prev) : null;
   const b = summarize(cur);
   const lines = [
@@ -105,9 +114,11 @@ export function compareMarkdown(prev: Run | null, cur: Run): string {
     "",
     "## グループに合った経験か（fit の平均、1〜5）",
     "",
-    "| 前回 | 今回 | 差 | 判定 |",
-    "| --- | --- | --- | --- |",
-    `| ${fmt(fa)} | ${fb === null ? "未採点" : fb} | ${diff(fa, fb)} | ${verdict("high", fa, fb)} |`,
+    "| 今回（全体） | 採点 | 前回（共通） | 今回（共通） | 差 | 判定 |",
+    "| --- | --- | --- | --- | --- | --- |",
+    `| ${fb === null ? "未採点" : fb} | ${judged}/${cur.scenarios.length} | ${fmt(fa)} | ${fmt(fbShared)} | ${diff(fa, fbShared)} | ${verdict("high", fa, fbShared)} |`,
+    "",
+    `前回との差は、両方で採点した ${shared.size} シナリオだけで比べる。`,
     "",
     "## fit が低いシナリオ",
     "",
