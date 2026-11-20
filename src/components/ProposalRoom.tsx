@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { makeFinal } from "@/lib/final";
+import { saveFinal } from "@/lib/final-store";
+import { isUsableFinal, parseFinal, type ParsedFinal } from "@/lib/final-text";
 import { messages } from "@/lib/i18n/messages";
 import { buildItinerary } from "@/lib/itinerary";
 import type { PlanCard, RoomData } from "@/lib/plan-room";
@@ -344,6 +348,7 @@ function ShareArtifact({ locale, name, trip, stay, activities }: { locale: Local
           {copied === "final" ? t.copied : t.copyFinal}
         </button>
       </div>
+      <ImportFinal locale={locale} trip={trip} />
       <div className="flex gap-2">
         <button type="button" onClick={() => copy(text, "plain")} className="flex min-h-11 flex-auto cursor-pointer items-center justify-center gap-2 border-0 bg-transparent text-[13px] text-white/75">
           <Icon name={copied === "plain" ? "check" : "copy"} size={15} />
@@ -356,6 +361,77 @@ function ShareArtifact({ locale, name, trip, stay, activities }: { locale: Local
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+// 完成版の取り込み：Agent の返事をコピーしたあと押すと、クリップボードから読む（文字は打たない）。
+// 読めたら、場所と予約リンクの数・要確認を出し、グループに送る・これで確定（ファイナル）へ
+type Imported = { status: "idle" } | { status: "denied" } | { status: "unusable" } | { status: "ready"; text: string; parsed: ParsedFinal } | { status: "notSaved" };
+function ImportFinal({ locale, trip }: { locale: Locale; trip: string }) {
+  const f = messages(locale).final;
+  const router = useRouter();
+  const [state, setState] = useState<Imported>({ status: "idle" });
+  async function read() {
+    let text: string;
+    try {
+      text = await navigator.clipboard.readText();
+    } catch {
+      return setState({ status: "denied" });
+    }
+    const parsed = parseFinal(text);
+    setState(isUsableFinal(parsed) ? { status: "ready", text, parsed } : { status: "unusable" });
+  }
+  function confirm(text: string, parsed: ParsedFinal) {
+    const final = makeFinal(text, parsed, trip, crypto.randomUUID(), new Date());
+    if (!saveFinal(final)) return setState({ status: "notSaved" });
+    router.push(`/${locale}/final/${final.id}`);
+  }
+  const links = state.status === "ready" ? state.parsed.places.reduce((n, p) => n + p.bookings.length, 0) : 0;
+  return (
+    <div className="mt-1 flex flex-col gap-2 border-t border-white/10 pt-3">
+      <button type="button" onClick={read} className="flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-white/30 bg-transparent text-[14px] font-bold text-white">
+        <Icon name="plus" size={16} />
+        {f.importFinal}
+      </button>
+      {state.status === "idle" && <p className="m-0 text-[12px] text-white/55">{f.importHint}</p>}
+      {(state.status === "denied" || state.status === "unusable" || state.status === "notSaved") && (
+        <p role="alert" className="m-0 text-[12.5px] text-[#f4c9a8]">
+          {state.status === "denied" ? f.importDenied : state.status === "unusable" ? f.importFailed : f.notSaved}
+        </p>
+      )}
+      {state.status === "ready" && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className="m-0 text-[13px] font-bold text-[#f4f1ea]">{f.draftTitle}</h3>
+            <span className="text-[11.5px] text-white/60">{f.counts(state.parsed.places.length, links)}</span>
+          </div>
+          {state.parsed.checks.length > 0 && (
+            <ul className="m-0 flex list-none flex-col gap-0.5 p-0 text-[12px] text-[#f4c9a8]">
+              {state.parsed.checks.map((c) => (
+                <li key={c}>
+                  {f.checks}：{c}
+                </li>
+              ))}
+            </ul>
+          )}
+          <pre className="m-0 max-h-[200px] overflow-y-auto whitespace-pre-wrap break-all rounded-[12px] bg-black/30 p-3 font-sans text-[12.5px] leading-relaxed text-white/90">{state.text}</pre>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => (typeof navigator.share === "function" ? navigator.share({ text: state.text }).catch(() => {}) : navigator.clipboard.writeText(state.text).catch(() => {}))}
+              className="flex h-11 flex-auto cursor-pointer items-center justify-center gap-2 rounded-[14px] border border-white/30 bg-transparent text-[14px] font-bold text-white"
+            >
+              <Icon name="share" size={16} />
+              {f.share}
+            </button>
+            <button type="button" onClick={() => confirm(state.text, state.parsed)} className="flex h-11 flex-auto cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 bg-[#f4f1ea] text-[14px] font-bold text-[#141413]">
+              <Icon name="flag" size={16} />
+              {f.confirm}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
