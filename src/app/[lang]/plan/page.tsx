@@ -2,15 +2,12 @@ import { Suspense } from "react";
 import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { SuggestPlan, type PlanCard } from "@/components/SuggestPlan";
-import { getAreaSheetData, getCatalog } from "@/lib/data";
-import { DEFAULT_QUERY } from "@/lib/discover-query";
-import { buildFeed } from "@/lib/feed";
-import { loadFeedStrategies } from "@/lib/feed-config";
-import { dbFeedPlan, FEED_PAGE_MAX, getFeedPage } from "@/lib/feed-page";
+import { getAreaSheetData } from "@/lib/data";
 import { isLocale } from "@/lib/i18n/locale";
+import { planCards } from "@/lib/plan-candidates";
 import { SAVE_DATA_COOKIE, saveDataOfRequest } from "@/lib/save-data";
-import { cardTraitIds, orderBySuggest, parseSuggestTraits, suggestReason } from "@/lib/suggest";
-import type { FeedCard, Locale, Mode } from "@/lib/types";
+import { inArea, matchedKeywords, orderBySuggest, parseSuggestArea, parseSuggestTraits } from "@/lib/suggest";
+import { keywordOf } from "@/lib/suggest-vocab";
 
 export default function PlanPage(props: PageProps<"/[lang]/plan">) {
   return (
@@ -20,32 +17,21 @@ export default function PlanPage(props: PageProps<"/[lang]/plan">) {
   );
 }
 
-// 宿と体験を 1 ページ分ずつ取る（試し中なので続きは取らない）
-async function candidates(mode: Mode, locale: Locale): Promise<FeedCard[]> {
-  const query = { ...DEFAULT_QUERY, mode };
-  const strategies = loadFeedStrategies();
-  const plan = dbFeedPlan(strategies);
-  if (!plan) return buildFeed({ catalog: await getCatalog(), query, locale }, strategies).cards;
-  return (await getFeedPage({ query, locale, limit: FEED_PAGE_MAX, plan })).cards;
-}
-
-// 宿と体験を交互に並べる（元の順。条件で並べ替えるときの同点の順になる）
-function interleave<T>(a: T[], b: T[]): T[] {
-  const out: T[] = [];
-  for (let i = 0; i < Math.max(a.length, b.length); i++) out.push(...(i < a.length ? [a[i]] : []), ...(i < b.length ? [b[i]] : []));
-  return out;
-}
-
-// 提案ページ：?t= の条件（今はエリアの特性。今後は dest が持つ条件の表に替える）に合う数の多い順に、宿と体験を並べる。絞り込みではないので件数は減らさない
+// 提案ページ：?area= で絞り（これまでどおり）、?t= のこだわり（キーワード）に合う数の多い順に宿と体験を並べる。こだわりは絞り込みではない
 async function Plan({ params, searchParams }: Pick<PageProps<"/[lang]/plan">, "params" | "searchParams">) {
   const { lang: locale } = await params;
   if (!isLocale(locale)) notFound();
-  const picked = parseSuggestTraits((await searchParams).t);
-  const [stay, todo, sheet, h, jar] = await Promise.all([candidates("stay", locale), candidates("do", locale), getAreaSheetData(locale), headers(), cookies()]);
+  const sp = await searchParams;
+  const picked = parseSuggestTraits(sp.t);
+  const area = parseSuggestArea(sp.area);
+  const [all, sheet, h, jar] = await Promise.all([planCards(locale), getAreaSheetData(locale), headers(), cookies()]);
   // 通信量を抑える利用者（Save-Data ヘッダか本人が選んだ cookie）。Home と同じく最初の描画から写真の画質を下げる
   const saveData = saveDataOfRequest(h.get("save-data"), jar.get(SAVE_DATA_COOKIE)?.value);
-  const { traits, byRegion } = sheet.traits;
-  const traitsOf = (c: FeedCard) => cardTraitIds(c.regionIds, byRegion);
-  const cards: PlanCard[] = orderBySuggest(interleave(stay, todo), -1, picked, traitsOf).map((c) => ({ ...c, reason: suggestReason(traitsOf(c), picked, traits) }));
-  return <SuggestPlan locale={locale} picked={picked} cards={cards} saveData={saveData} />;
+  const { byRegion } = sheet.traits;
+  const matched = new Map(all.map((c) => [c.key, matchedKeywords(c, picked, byRegion)]));
+  const cards: PlanCard[] = orderBySuggest(all.filter((c) => inArea(c, area)), -1, picked, (c) => matched.get(c.key) ?? []).map((c) => ({
+    ...c,
+    reason: (matched.get(c.key) ?? []).map((k) => keywordOf(k)?.label ?? k),
+  }));
+  return <SuggestPlan locale={locale} picked={picked} area={area} cards={cards} saveData={saveData} />;
 }

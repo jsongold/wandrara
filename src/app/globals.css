@@ -25,6 +25,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* 提案シートのおすすめの一言だけに使う明朝（ウェブフォントは読まず、端末の明朝を使う） */
+:root {
+  --font-phrase: "Hiragino Mincho ProN", "Hiragino Mincho Pro", "Yu Mincho", YuMincho, "Noto Serif JP", serif;
+}
+
 /* 詳細：下からスライドして全画面に上がり、下へ滑って閉じる（閉じる動きは DetailSheet.tsx の transform） */
 :root {
   --sheet-ease: cubic-bezier(0.32, 0.72, 0, 1); /* iOS のシートに近い減速 */
