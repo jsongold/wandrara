@@ -1,11 +1,13 @@
 // プランを、グループのチャットにそのまま貼れる文にする（純関数）。
 // リンクに飛ばなくても決められるように、料金・時間・行き方を本文に入れ、Wandrara・地図・予約（Booking・Airbnb など）・公式のリンクを添える。
 // 料金や行き方が無いときは推測せず「不明」と書く（宿と体験だけ。自然などは料金の行を出さない）
+import { linksFor, missingSites, siteOf, type SiteId } from "./booking-sites";
 import type { DestDetailView } from "./detail";
 import type { Locale } from "./types";
 
 export type ShareRole = "stay" | "activity";
-export type ShareLink = { label: string; url: string };
+/** site：予約に使うサイト（公式・楽天トラベル など）。どれでもなければ null */
+export type ShareLink = { label: string; url: string; site: SiteId | null };
 export type ShareItem = {
   role: ShareRole;
   title: string;
@@ -75,13 +77,16 @@ function linksOf(view: DestDetailView): ShareLink[] {
   return [...raw]
     .sort((a, b) => Number(b.isOfficial) - Number(a.isOfficial))
     .filter((l) => (seen.has(l.url) ? false : (seen.add(l.url), true)))
-    .map((l) => ({ label: l.label, url: l.url }));
+    .map((l) => ({ label: l.label, url: l.url, site: siteOf(l) }));
 }
 
 /** 予約が要る種類（宿・体験）か */
 export const needsBooking = (it: Pick<ShareItem, "priced">): boolean => it.priced;
-/** 予約できる状態か（予約が要る種類で、予約・公式のリンクがある） */
-export const bookable = (it: Pick<ShareItem, "priced" | "links">): boolean => it.priced && it.links.length > 0;
+/** 文に出すリンク：サイトを選んでいれば、そのサイトのリンクだけを選んだ順に */
+const shownLinks = (it: Pick<ShareItem, "links">, sites?: SiteId[]): ShareLink[] => (sites ? linksFor(it.links, sites) : it.links);
+
+/** 予約できる状態か（予約が要る種類で、選んだサイトのリンクがある） */
+export const bookable = (it: Pick<ShareItem, "priced" | "links">, sites?: SiteId[]): boolean => it.priced && shownLinks(it, sites).length > 0;
 
 export const mapUrlOf = (loc: { lat: number; lng: number } | null): string | null =>
   loc ? `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lng}` : null;
@@ -104,7 +109,7 @@ export function shareItemOf(view: DestDetailView, role: ShareRole, wandraraUrl: 
 }
 
 /** 貼り付け用の文。LINE などでそのまま読めるよう、記号と改行だけで組む */
-export function shareText(title: string, items: ShareItem[], t: ShareText): string {
+export function shareText(title: string, items: ShareItem[], t: ShareText, sites?: SiteId[]): string {
   const blocks = items.map((it) => {
     const lines = [`■ ${t.role[it.role]}：${it.title}（${it.kindLabel}・${it.areaLabel}）`];
     if (it.summary) lines.push(it.summary);
@@ -113,8 +118,9 @@ export function shareText(title: string, items: ShareItem[], t: ShareText): stri
     lines.push(`・${t.access} ${it.access ?? t.unknown}`);
     if (it.mapUrl) lines.push(`・${t.map} ${it.mapUrl}`);
     // 予約できる状態か：予約・公式のリンク。予約が要る種類（宿・体験）で無ければ「予約 不明」（データカタログで埋める所）
-    for (const l of it.links) lines.push(`・${t.book}（${l.label}） ${l.url}`);
-    if (!it.links.length && it.priced) lines.push(`・${t.book} ${t.unknown}`);
+    const links = shownLinks(it, sites);
+    for (const l of links) lines.push(`・${t.book}（${l.label}） ${l.url}`);
+    if (!links.length && it.priced) lines.push(`・${t.book} ${t.unknown}`);
     lines.push(`・${t.more} ${it.wandraraUrl}`);
     return lines.join("\n");
   });
@@ -130,7 +136,9 @@ export type FinalDraftText = {
   gapsTitle: string;
   gap: (title: string, fields: string[]) => string;
   noGaps: string;
-  fields: { price: string; access: string; booking: string };
+  fields: { price: string; access: string; booking: string; bookingAt: (sites: string) => string };
+  /** 予約に使うサイトの指示（サイトの名前を並べたもの） */
+  sites: (labels: string) => string;
   draftStart: string;
   draftEnd: string;
   /** 旅の条件の一行（人数・時期・そのほか）。無ければ出さない */
@@ -138,21 +146,24 @@ export type FinalDraftText = {
 };
 
 /** 埋める所：料金を出す種類で料金が無い・行き方が無い・予約が要る種類で予約リンクが無い */
-export function gapsOf(items: ShareItem[], f: FinalDraftText["fields"]): { title: string; fields: string[] }[] {
+export function gapsOf(items: ShareItem[], f: FinalDraftText["fields"], sites?: SiteId[], siteLabel: (s: SiteId) => string = (s) => s): { title: string; fields: string[] }[] {
   return items
-    .map((it) => ({
-      title: it.title,
-      fields: [it.priced && !it.price ? f.price : null, !it.access ? f.access : null, it.priced && !it.links.length ? f.booking : null].filter((x): x is string => Boolean(x)),
-    }))
+    .map((it) => {
+      // 予約リンク：サイトを選んでいれば、リンクの無いサイトを挙げる
+      const missing = it.priced ? (sites ? missingSites(it.links, sites) : it.links.length ? [] : null) : [];
+      const booking = missing === null ? f.booking : missing.length ? f.bookingAt(missing.map(siteLabel).join("・")) : null;
+      return { title: it.title, fields: [it.priced && !it.price ? f.price : null, !it.access ? f.access : null, booking].filter((x): x is string => Boolean(x)) };
+    })
     .filter((g) => g.fields.length);
 }
 
 /** 指示 → 埋める所 → 下書き（区切りで囲む）の順。Agent が下書きの形を保ったまま完成させられるようにする */
-export function finalDraft(draft: string, items: ShareItem[], t: FinalDraftText, tripLabel = ""): string {
-  const gaps = gapsOf(items, t.fields);
+export function finalDraft(draft: string, items: ShareItem[], t: FinalDraftText, tripLabel = "", sites?: SiteId[], siteLabel: (s: SiteId) => string = (s) => s): string {
+  const gaps = gapsOf(items, t.fields, sites, siteLabel);
   return [
     t.instructions.join("\n"),
     ...(tripLabel ? [t.trip(tripLabel)] : []),
+    ...(sites?.length ? [t.sites(sites.map(siteLabel).join("・"))] : []),
     [t.gapsTitle, ...(gaps.length ? gaps.map((g) => t.gap(g.title, g.fields)) : [t.noGaps])].join("\n"),
     [t.draftStart, draft, t.draftEnd].join("\n"),
   ].join("\n\n");

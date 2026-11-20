@@ -23,7 +23,9 @@ import {
   type Strategies,
 } from "@/lib/propose";
 import type { Reaction } from "@/lib/reactions";
-import { bookable, finalDraft, needsBooking, type ShareItem } from "@/lib/share-plan";
+import { BOOKING_SITES, type SiteId } from "@/lib/booking-sites";
+import { bookable, finalDraft, needsBooking, shareText, type ShareItem } from "@/lib/share-plan";
+import { setBookingSites, useBookingSites } from "@/lib/use-booking-sites";
 import type { Locale } from "@/lib/types";
 import { SaveDataHint } from "@/lib/use-save-data";
 import { Icon } from "./icons";
@@ -265,7 +267,7 @@ function PlanMessage({ locale, name, trip, msg, cardById, onFix }: { locale: Loc
 }
 
 const slugOf = (href: string) => href.slice(href.lastIndexOf("/") + 1);
-type ShareState = { status: "loading" } | { status: "error" } | { status: "ready"; text: string; items: ShareItem[] };
+type ShareState = { status: "loading" } | { status: "error" } | { status: "ready"; items: ShareItem[] };
 
 // グループへ送る文：データカタログの詳細（料金・時間・行き方）を本文に、地図・予約・公式・WANDRARA のリンクを添える。コピーか、端末の共有で送る
 function ShareArtifact({ locale, name, trip, stay, activities }: { locale: Locale; name: string; trip: string; stay: PlanCard | undefined; activities: PlanCard[] }) {
@@ -273,12 +275,19 @@ function ShareArtifact({ locale, name, trip, stay, activities }: { locale: Local
   const t = m.plan;
   const [share, setShare] = useState<ShareState>({ status: "loading" });
   const [copied, setCopied] = useState<"final" | "plain" | null>(null);
-  const query = new URLSearchParams({ lang: locale, title: name, ...(stay ? { stay: slugOf(stay.href) } : {}), acts: activities.map((c) => slugOf(c.href)).join(",") }).toString();
+  // 予約に使うサイト（選んだ順）。文の予約リンクと、FinalDraft の指示・埋める所に効く
+  const sites = useBookingSites();
+  const siteLabel = (s: SiteId) => t.siteLabels[s];
+  const toggleSite = (s: SiteId) => {
+    setCopied(null);
+    setBookingSites(sites.includes(s) ? sites.filter((x) => x !== s) : [...sites, s]);
+  };
+  const query = new URLSearchParams({ lang: locale, ...(stay ? { stay: slugOf(stay.href) } : {}), acts: activities.map((c) => slugOf(c.href)).join(",") }).toString();
   useEffect(() => {
     let live = true;
     fetch(`/api/plan-share?${query}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((j: { text: string; items: ShareItem[] }) => live && setShare({ status: "ready", text: j.text, items: j.items }))
+      .then((j: { items: ShareItem[] }) => live && setShare({ status: "ready", items: j.items }))
       .catch(() => live && setShare({ status: "error" }));
     return () => {
       live = false;
@@ -286,7 +295,7 @@ function ShareArtifact({ locale, name, trip, stay, activities }: { locale: Local
   }, [query]);
 
   if (share.status !== "ready") return <p className="m-0 mt-2 text-[12.5px] text-white/60">{share.status === "loading" ? t.shareLoading : t.shareFailed}</p>;
-  const ready = share.items.filter(bookable).length;
+  const ready = share.items.filter((it) => bookable(it, sites)).length;
   const toBook = share.items.filter(needsBooking).length;
   async function copy(text: string, which: "final" | "plain") {
     try {
@@ -296,8 +305,9 @@ function ShareArtifact({ locale, name, trip, stay, activities }: { locale: Local
       setCopied(null);
     }
   }
-  // FinalDraft：Agent に渡す指示・埋める所・下書き
-  const final = finalDraft(share.text, share.items, t.finalDraft, trip);
+  // 送る文（選んだサイトのリンクだけ）と、FinalDraft（Agent に渡す指示・旅の条件・サイト・埋める所・下書き）
+  const text = shareText(name, share.items, t.share, sites);
+  const final = finalDraft(text, share.items, t.finalDraft, trip, sites, siteLabel);
   const canSend = typeof navigator !== "undefined" && "share" in navigator;
   return (
     <div className="mt-2 flex flex-col gap-2">
@@ -310,7 +320,20 @@ function ShareArtifact({ locale, name, trip, stay, activities }: { locale: Local
           <li key={s}>{s}</li>
         ))}
       </ol>
-      <pre className="m-0 max-h-[260px] overflow-y-auto whitespace-pre-wrap break-all rounded-[12px] bg-black/30 p-3 font-sans text-[12.5px] leading-relaxed text-white/90">{share.text}</pre>
+      <div role="group" aria-label={t.bookingSites} className="flex flex-col gap-1.5">
+        <span className="text-[12px] text-white/60">{t.bookingSites}</span>
+        <div className="flex flex-wrap gap-1.5">
+          {BOOKING_SITES.map(({ id }) => {
+            const on = sites.includes(id);
+            return (
+              <button key={id} type="button" aria-pressed={on} onClick={() => toggleSite(id)} className={`min-h-9 cursor-pointer rounded-full border px-3 text-[12.5px] ${on ? "border-[#f4f1ea] bg-[#f4f1ea] font-bold text-[#141413]" : "border-white/25 bg-transparent text-white/85"}`}>
+                {siteLabel(id)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <pre className="m-0 max-h-[260px] overflow-y-auto whitespace-pre-wrap break-all rounded-[12px] bg-black/30 p-3 font-sans text-[12.5px] leading-relaxed text-white/90">{text}</pre>
       <div className="flex gap-2">
         <button type="button" onClick={() => copy(final, "final")} className="flex h-11 flex-auto cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 bg-[#f4f1ea] text-[14px] font-bold text-[#141413]">
           <Icon name={copied === "final" ? "check" : "copy"} size={16} />
@@ -318,12 +341,12 @@ function ShareArtifact({ locale, name, trip, stay, activities }: { locale: Local
         </button>
       </div>
       <div className="flex gap-2">
-        <button type="button" onClick={() => copy(share.text, "plain")} className="flex min-h-11 flex-auto cursor-pointer items-center justify-center gap-2 border-0 bg-transparent text-[13px] text-white/75">
+        <button type="button" onClick={() => copy(text, "plain")} className="flex min-h-11 flex-auto cursor-pointer items-center justify-center gap-2 border-0 bg-transparent text-[13px] text-white/75">
           <Icon name={copied === "plain" ? "check" : "copy"} size={15} />
           {copied === "plain" ? t.copied : t.copyPlain}
         </button>
         {canSend && (
-          <button type="button" onClick={() => navigator.share({ text: share.text }).catch(() => {})} className="flex min-h-11 flex-auto cursor-pointer items-center justify-center gap-2 border-0 bg-transparent text-[13px] text-white/75">
+          <button type="button" onClick={() => navigator.share({ text }).catch(() => {})} className="flex min-h-11 flex-auto cursor-pointer items-center justify-center gap-2 border-0 bg-transparent text-[13px] text-white/75">
             <Icon name="share" size={15} />
             {t.send}
           </button>

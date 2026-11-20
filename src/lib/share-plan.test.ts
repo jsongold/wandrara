@@ -23,7 +23,7 @@ describe("shareItemOf", () => {
     expect(it.access).toBe("箱根湯本駅から バス 30分");
     expect(it.times).toBe("チェックイン 15:00／アウト 10:00");
     expect(it.mapUrl).toBe("https://www.google.com/maps/search/?api=1&query=35.25,139.02");
-    expect(it.links).toEqual([{ label: "公式", url: "https://official.example" }, { label: "Airbnb", url: "https://airbnb.example/1" }]);
+    expect(it.links).toEqual([{ label: "公式", url: "https://official.example", site: "official" }, { label: "Airbnb", url: "https://airbnb.example/1", site: null }]);
   });
   it("料金を出さない種類（自然など）は priced が false。値が無ければ null", () => {
     const it = shareItemOf({ ...base, kindLabel: "自然", location: null }, "activity", "u", "ja");
@@ -52,7 +52,7 @@ describe("shareText", () => {
 });
 
 describe("finalDraft", () => {
-  const ft = { instructions: ["指示1", "指示2"], gapsTitle: "埋める所", gap: (x: string, f: string[]) => `- ${x}：${f.join("、")}`, noGaps: "なし", fields: { price: "料金", access: "行き方", booking: "予約リンク" }, draftStart: "<<<", draftEnd: ">>>", trip: (x: string) => `条件：${x}` };
+  const ft = { instructions: ["指示1", "指示2"], gapsTitle: "埋める所", gap: (x: string, f: string[]) => `- ${x}：${f.join("、")}`, noGaps: "なし", fields: { price: "料金", access: "行き方", booking: "予約リンク", bookingAt: (s: string) => `予約リンク（${s}）` }, draftStart: "<<<", draftEnd: ">>>", trip: (x: string) => `条件：${x}`, sites: (x: string) => `サイト：${x}` };
   it("指示・埋める所・下書きの順。埋める所は料金・行き方・予約リンクの無いもの", () => {
     const stayItem = shareItemOf(stay, "stay", "u1", "ja");
     const exp = { ...shareItemOf({ ...base, accommodation: null, experience: { priceTable: null } } as unknown as DestDetailView, "activity", "u2", "ja"), title: "カヌー" };
@@ -64,5 +64,22 @@ describe("finalDraft", () => {
   });
   it("埋める所が無ければ、なし", () => {
     expect(finalDraft("d", [shareItemOf(stay, "stay", "u", "ja")], ft)).toContain("埋める所\nなし");
+  });
+});
+
+describe("予約に使うサイト", () => {
+  const withRakuten = { ...stay, accommodation: { ...(stay as unknown as { accommodation: object }).accommodation, bookingLinks: [{ label: "公式", url: "https://official.example", isOfficial: true }, { label: "楽天", url: "https://hotel.travel.rakuten.co.jp/hotelinfo/1", isOfficial: false }] } } as unknown as DestDetailView;
+  const ft = { instructions: ["指示"], gapsTitle: "埋める所", gap: (x: string, f: string[]) => `- ${x}：${f.join("、")}`, noGaps: "なし", fields: { price: "料金", access: "行き方", booking: "予約リンク", bookingAt: (s: string) => `予約リンク（${s}）` }, draftStart: "<<<", draftEnd: ">>>", trip: (x: string) => x, sites: (x: string) => `サイト：${x}` };
+  const label = (s: string) => ({ official: "公式", rakuten: "楽天トラベル", jalan: "じゃらん" })[s] ?? s;
+  it("選んだサイトのリンクだけを、選んだ順に出す", () => {
+    const it = shareItemOf(withRakuten, "stay", "u", "ja");
+    const text = shareText("x", [it], t, ["rakuten", "official"]);
+    expect(text.indexOf("rakuten")).toBeLessThan(text.indexOf("official.example"));
+    expect(shareText("x", [it], t, ["jalan"])).toContain("・予約 不明");
+  });
+  it("FinalDraft に、選んだサイトの指示と、リンクの無いサイトを入れる", () => {
+    const out = finalDraft("d", [shareItemOf(withRakuten, "stay", "u", "ja")], ft, "", ["rakuten", "jalan"], label);
+    expect(out).toContain("サイト：楽天トラベル・じゃらん");
+    expect(out).toContain("- 森の宿：予約リンク（じゃらん）");
   });
 });
