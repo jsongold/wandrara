@@ -11,7 +11,7 @@ import { roomData } from "@/lib/plan-room";
 import { SAVE_DATA_COOKIE, saveDataOfRequest } from "@/lib/save-data";
 import { inArea, parseSuggestArea, parseSuggestTraits, proposalName } from "@/lib/suggest";
 import { keywordOf } from "@/lib/suggest-vocab";
-import { parseTrip, tripKeywords, tripLabel } from "@/lib/trip";
+import { parseTrip, tripKeywords, tripLabel, tripQuery } from "@/lib/trip";
 
 export default function PlanPage(props: PageProps<"/[lang]/plan">) {
   return (
@@ -39,5 +39,5 @@ async function Plan({ params, searchParams }: Pick<PageProps<"/[lang]/plan">, "p
   const m = messages(locale);
   const areaLabel = sheet.areas.flatMap((g) => [g, ...g.subs]).find((x) => x.id === area)?.label ?? null;
   const name = proposalName(areaLabel, picked.map((k) => keywordOf(k)?.label ?? k), { all: m.plan.allAreas, sep: m.plan.nameSep, more: m.plan.nameMore });
-  return <ProposalRoom locale={locale} name={name} picked={picked} area={area} trip={tripLabel(trip, { people: m.trip.peopleUnit, month: m.trip.month, option: m.trip.option, sep: m.trip.sep })} data={roomData(cards, conditions, sheet.traits, sheet.areas, destTraits)} saveData={saveData} />;
+  return <ProposalRoom locale={locale} name={name} picked={picked} area={area} tripParams={tripQuery(trip)} trip={tripLabel(trip, { people: m.trip.peopleUnit, month: m.trip.month, option: m.trip.option, sep: m.trip.sep })} data={roomData(cards, conditions, sheet.traits, sheet.areas, destTraits)} saveData={saveData} />;
 }

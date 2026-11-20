@@ -44,7 +44,8 @@ function loadIndex(locale: Locale): Promise<PlanIndex> {
 // こだわりは 大分類 > 分類 > キーワード、エリアは エリア > 地区。行を押すとその下に開く。「提案」で提案ページ（/[lang]/plan?t=…&area=…）へ
 // trigger：下のバーを差し替える（提案ルームでは選択肢のポップアップを先に出し、そこから条件のシートを開く）。open はシートを開く、preload は先読み
 type Trigger = (open: () => void, preload: () => void) => ReactNode;
-export function SuggestBar({ locale, initial = [], initialArea = "all", trigger }: { locale: Locale; initial?: string[]; initialArea?: string; trigger?: Trigger }) {
+// tripParams：旅の目的（?p=&m=&o=）。提案ページでは URL のものを渡す（別のブラウザで開いた URL でも目的を消さない）。無ければこのブラウザの目的
+export function SuggestBar({ locale, initial = [], initialArea = "all", trigger, tripParams }: { locale: Locale; initial?: string[]; initialArea?: string; trigger?: Trigger; tripParams?: Record<string, string> }) {
   const m = messages(locale);
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -92,7 +93,7 @@ export function SuggestBar({ locale, initial = [], initialArea = "all", trigger 
   const pickArea = (id: string) => setArea((a) => (a === id ? "all" : id));
   function onSuggest() {
     setOpen(false);
-    router.push(suggestPlanHref(locale, draft, area, tripQuery(currentTrip())));
+    router.push(suggestPlanHref(locale, draft, area, tripParams ?? tripQuery(currentTrip())));
   }
 
   const total = count(draft);

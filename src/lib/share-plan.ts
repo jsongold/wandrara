@@ -41,13 +41,26 @@ export type ShareText = {
 const yen = (n: number, locale: Locale) => n.toLocaleString(locale === "ja" ? "ja-JP" : "en-US");
 const range = (min: number, max: number, locale: Locale) => (min === max ? yen(min, locale) : `${yen(min, locale)}〜${yen(max, locale)}`);
 
-/** 料金の一行：一番安い〜高い ＋ 単位（「1 棟 1 泊・税込（円）」） */
+/**
+ * 料金の一行：単位ごとに 一番安い〜高い（「1 棟 1 泊・税込（円）」）。違う単位は 1 つの幅にまとめず「／」で並べる。
+ * 宿は行ごとの単位（無ければ表の単位）、体験は行の「1 名」「1 グループ」と表の「税込（円）」を合わせたもの
+ */
 function priceLine(view: DestDetailView, locale: Locale): string | null {
-  const t = view.accommodation?.priceTable ?? view.experience?.priceTable ?? null;
-  if (!t || !t.rows.length) return null;
-  const min = Math.min(...t.rows.map((r) => r.min));
-  const max = Math.max(...t.rows.map((r) => r.max));
-  return `${range(min, max, locale)}${t.unitLabel ? `（${t.unitLabel}）` : ""}`;
+  const stay = view.accommodation?.priceTable;
+  const exp = view.experience?.priceTable;
+  const rows: { min: number; max: number; unit: string }[] = stay?.rows.length
+    ? stay.rows.map((r) => ({ min: r.min, max: r.max, unit: r.unitLabel ?? stay.unitLabel ?? "" }))
+    : exp?.rows.length
+      ? exp.rows.map((r) => ({ min: r.min, max: r.max, unit: [r.perLabel, exp.unitLabel].filter(Boolean).join("・") }))
+      : [];
+  if (!rows.length) return null;
+  const units = [...new Set(rows.map((r) => r.unit))];
+  return units
+    .map((u) => {
+      const rs = rows.filter((r) => r.unit === u);
+      return `${range(Math.min(...rs.map((r) => r.min)), Math.max(...rs.map((r) => r.max)), locale)}${u ? `（${u}）` : ""}`;
+    })
+    .join("／");
 }
 
 type AccessLike = { station: string | null; modeLabel: string | null; minutes: number | null } | null | undefined;

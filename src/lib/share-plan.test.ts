@@ -83,3 +83,10 @@ describe("予約に使うサイト", () => {
     expect(out).toContain("- 森の宿：予約リンク（じゃらん）");
   });
 });
+
+describe("体験の料金の単位", () => {
+  it("行の単位（1 名・1 グループ）を残し、違う単位は 1 つの幅にしない", () => {
+    const exp = { ...base, kindLabel: "体験", experience: { summary: { durationMinutes: null, reservationRequired: null }, priceTable: { unitLabel: "税込（円）", currency: "JPY", taxIncluded: true, rows: [{ courseLabel: "A", people: null, min: 1600, max: 1600, currency: "JPY", perLabel: "1 名", notes: [] }, { courseLabel: "B", people: null, min: 2000, max: 2500, currency: "JPY", perLabel: "1 名", notes: [] }, { courseLabel: "C", people: null, min: 8000, max: 8000, currency: "JPY", perLabel: "1 グループ", notes: [] }], officialUrl: null }, bookingLinks: [] } } as unknown as DestDetailView;
+    expect(shareItemOf(exp, "activity", "u", "ja").price).toBe("1,600〜2,500（1 名・税込（円））／8,000（1 グループ・税込（円））");
+  });
+});

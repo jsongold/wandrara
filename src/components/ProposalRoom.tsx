@@ -43,7 +43,8 @@ type Msg =
 type Room = { state: ProposeState; thread: Msg[]; latest: string[]; choices: Choice[]; done: boolean; algorithm: string | null };
 
 // trip：旅の目的の短い名前（人数・時期・そのほか。無ければ空）
-type Props = { locale: Locale; name: string; picked: string[]; area: string; trip: string; data: RoomData };
+// tripParams：URL にある旅の目的（?p=&m=&o=）。条件を変えて作り直すときにも残す
+type Props = { locale: Locale; name: string; picked: string[]; area: string; trip: string; tripParams: Record<string, string>; data: RoomData };
 
 // 提案ルーム。ステージング（自分だけ）で提案が続き、Fix で共有ルーム（Fix した旅程が一番上）を開く。
 // 提案の中身は src/lib/propose（機械的に選ぶ。画面は結果を並べるだけ）
@@ -57,7 +58,7 @@ export function ProposalRoom({ saveData, ...props }: Props & { saveData: boolean
 }
 
 // data-home：詳細シートが開いている間、裏を操作できなくする目印（DetailSheet が inert にする）
-function RoomBody({ locale, name, picked, area, trip, data }: Props) {
+function RoomBody({ locale, name, picked, area, trip, tripParams, data }: Props) {
   const m = messages(locale);
   const t = m.plan;
   const cardById = useMemo(() => new Map(data.cards.map((c) => [c.destId, c])), [data.cards]);
@@ -86,8 +87,10 @@ function RoomBody({ locale, name, picked, area, trip, data }: Props) {
   function onReact(id: string, reaction: Reaction) {
     setRoom((r) => {
       const state = applyReaction(r.state, id, reaction);
-      // 今の回すべてにリアクションしたら、次の候補と選択肢を出す（前の回の候補へのリアクションでは出さない）
-      if (!r.done && r.latest.includes(id) && allReacted(state, r.latest)) {
+      // 今の回すべてにリアクションしたら、次の候補と選択肢を出す（前の回の候補へのリアクションでは出さない）。
+      // ゴールがそろったときは、今の回の残りを待たずにプランを出す
+      const completes = !goalStatus(r.state, data.candidates).complete && goalStatus(state, data.candidates).complete;
+      if (!r.done && r.latest.includes(id) && (allReacted(state, r.latest) || completes)) {
         return advance(r, state, reactionCause(state, r.latest, (x) => cardById.get(x)?.title ?? x), [], true);
       }
       return { ...r, state };
@@ -167,6 +170,7 @@ function RoomBody({ locale, name, picked, area, trip, data }: Props) {
         locale={locale}
         initial={picked}
         initialArea={area}
+        tripParams={tripParams}
         trigger={(openSheet, preload) => (
           <>
             {popup && (
